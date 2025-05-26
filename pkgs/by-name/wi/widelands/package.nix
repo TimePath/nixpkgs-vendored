@@ -25,18 +25,17 @@
   libSM,
   libICE,
   libXext,
-  darwin,
 }:
 
 stdenv.mkDerivation rec {
   pname = "widelands";
-  version = "1.2";
+  version = "1.2.1";
 
   src = fetchFromGitHub {
     owner = "widelands";
     repo = "widelands";
     rev = "v${version}";
-    sha256 = "sha256-V7eappIMEQMNbf9EGQhv71Fwz0wH679ifi/qAHWwMNU=";
+    sha256 = "sha256-/MEeb0KnefK812w5y238Icd4gW85d/pvZ08xnlVXDdk=";
   };
 
   postPatch = ''
@@ -62,32 +61,24 @@ stdenv.mkDerivation rec {
 
   enableParallelBuilding = true;
 
-  buildInputs =
-    [
-      SDL2
-      SDL2_image
-      SDL2_mixer
-      SDL2_net
-      SDL2_ttf
-      curl
-      glew
-      icu
-      libpng
-      lua
-      python3
-      zlib
-      minizip
-      asio
-      libSM # XXX: these should be propagated by SDL2?
-      libICE
-    ]
-    ++ lib.optional stdenv.hostPlatform.isLinux libXext
-    ++ lib.optionals stdenv.hostPlatform.isDarwin (
-      with darwin.apple_sdk.frameworks;
-      [
-        Cocoa
-      ]
-    );
+  buildInputs = [
+    SDL2
+    SDL2_image
+    SDL2_mixer
+    SDL2_net
+    SDL2_ttf
+    curl
+    glew
+    icu
+    libpng
+    lua
+    python3
+    zlib
+    minizip
+    asio
+    libSM # XXX: these should be propagated by SDL2?
+    libICE
+  ] ++ lib.optional stdenv.hostPlatform.isLinux libXext;
 
   postInstall =
     lib.optionalString stdenv.hostPlatform.isLinux ''

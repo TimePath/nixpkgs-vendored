@@ -54,7 +54,7 @@ let
             If not specified, the amount of data to read from `source` will be
             determined by cryptsetup.
 
-            See `cryptsetup-open(8)` for details.
+            See {manpage}`cryptsetup-open(8)` for details.
           '';
         };
 
@@ -68,7 +68,7 @@ let
             If not specified, the default sector size is determined from the
             underlying block device.
 
-            See `cryptsetup-open(8)` for details.
+            See {manpage}`cryptsetup-open(8)` for details.
           '';
         };
 
@@ -174,7 +174,7 @@ let
             whole swap space is discarded at swapon invocation. If "pages",
             asynchronous discard on freed pages is performed, before returning to
             the available pages pool. With "both", both policies are activated.
-            See swapon(8) for more information.
+            See {manpage}`swapon(8)` for more information.
           '';
         };
 

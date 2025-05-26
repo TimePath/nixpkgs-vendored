@@ -97,7 +97,7 @@ buildPythonPackage rec {
     description = "Checks cloudformation for practices and behaviour that could potentially be improved";
     mainProgram = "cfn-lint";
     homepage = "https://github.com/aws-cloudformation/cfn-lint";
-    changelog = "https://github.com/aws-cloudformation/cfn-lint/blob/v${version}/CHANGELOG.md";
+    changelog = "https://github.com/aws-cloudformation/cfn-lint/blob/${src.tag}/CHANGELOG.md";
     license = licenses.mit;
     maintainers = [ ];
   };

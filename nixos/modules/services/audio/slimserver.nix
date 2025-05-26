@@ -4,9 +4,6 @@
   pkgs,
   ...
 }:
-
-with lib;
-
 let
 
   cfg = config.services.slimserver;
@@ -17,18 +14,18 @@ in
 
     services.slimserver = {
 
-      enable = mkOption {
-        type = types.bool;
+      enable = lib.mkOption {
+        type = lib.types.bool;
         default = false;
         description = ''
           Whether to enable slimserver.
         '';
       };
 
-      package = mkPackageOption pkgs "slimserver" { };
+      package = lib.mkPackageOption pkgs "slimserver" { };
 
-      dataDir = mkOption {
-        type = types.path;
+      dataDir = lib.mkOption {
+        type = lib.types.path;
         default = "/var/lib/slimserver";
         description = ''
           The directory where slimserver stores its state, tag cache,
@@ -40,7 +37,7 @@ in
 
   ###### implementation
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
 
     systemd.tmpfiles.rules = [
       "d '${cfg.dataDir}' - slimserver slimserver - -"

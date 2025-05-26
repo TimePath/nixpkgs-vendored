@@ -20,13 +20,13 @@
 }:
 
 buildPythonPackage rec {
-  name = "MolBar";
-  version = "1.1.1";
+  pname = "MolBar";
+  version = "1.1.3";
 
   src = fetchgit {
     url = "https://git.rwth-aachen.de/bannwarthlab/molbar";
     rev = "release_v${version}";
-    hash = "sha256-AFp2x8gil6nbZbgTZmuv+QAMImUMryyCc1by9U/ukYE=";
+    hash = "sha256-wHvsj1/BJpfbSKEB7Fk8PkH6laN/VMKoluZo+4bprlo=";
   };
 
   pyproject = true;

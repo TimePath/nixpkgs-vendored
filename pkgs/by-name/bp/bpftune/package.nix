@@ -9,30 +9,27 @@
   libcap,
   libnl,
   nixosTests,
+  unstableGitUpdater,
 }:
 
 stdenv.mkDerivation rec {
   pname = "bpftune";
-  version = "0-unstable-2024-06-07";
+  version = "0-unstable-2025-03-20";
 
   src = fetchFromGitHub {
     owner = "oracle";
     repo = "bpftune";
-    rev = "04bab5dd306b55b3e4e13e261af2480b7ccff9fc";
-    hash = "sha256-kVjvupZ6HxJocwXWOrxUNqEGl0welJRlZwvOmMKqeBA=";
+    rev = "8c6a3ffc09265bd44ed89b75c400ef97959d1aff";
+    hash = "sha256-TQ8WaGvMcvyeZC4B9gSjJ2k5NOxpTaV4n7Qi36aA78Q=";
   };
 
   postPatch = ''
     # otherwise shrink rpath would drop $out/lib from rpath
     substituteInPlace src/Makefile \
-      --replace-fail /lib64   /lib \
       --replace-fail /sbin    /bin \
       --replace-fail ldconfig true
     substituteInPlace src/bpftune.service \
       --replace-fail /usr/sbin/bpftune "$out/bin/bpftune"
-    substituteInPlace include/bpftune/libbpftune.h \
-      --replace-fail /usr/lib64/bpftune/       "$out/lib/bpftune/" \
-      --replace-fail /usr/local/lib64/bpftune/ "$out/lib/bpftune/"
     substituteInPlace src/libbpftune.c \
       --replace-fail /lib/modules /run/booted-system/kernel-modules/lib/modules
   '';
@@ -52,6 +49,7 @@ stdenv.mkDerivation rec {
   makeFlags = [
     "prefix=${placeholder "out"}"
     "confprefix=${placeholder "out"}/etc"
+    "libdir=lib"
     "BPFTUNE_VERSION=${version}"
     "NL_INCLUDE=${lib.getDev libnl}/include/libnl3"
     "BPF_INCLUDE=${lib.getDev libbpf}/include"
@@ -62,8 +60,11 @@ stdenv.mkDerivation rec {
     "zerocallusedregs"
   ];
 
-  passthru.tests = {
-    inherit (nixosTests) bpftune;
+  passthru = {
+    tests = {
+      inherit (nixosTests) bpftune;
+    };
+    updateScript = unstableGitUpdater { };
   };
 
   enableParallelBuilding = true;

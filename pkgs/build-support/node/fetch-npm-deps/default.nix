@@ -164,7 +164,7 @@
           forceGitDeps = true;
         };
 
-        # This package has a lockfile v1 git dependency with no `dependencies` attribute, since it sementically has no dependencies.
+        # This package has a lockfile v1 git dependency with no `dependencies` attribute, since it semantically has no dependencies.
         jitsiMeet9111 = makeTest {
           name = "jitsi-meet-9111";
 
@@ -191,6 +191,7 @@
       hash ? "",
       forceGitDeps ? false,
       forceEmptyCache ? false,
+      nativeBuildInputs ? [ ],
       ...
     }@args:
     let
@@ -213,7 +214,7 @@
       // {
         inherit name;
 
-        nativeBuildInputs = [ prefetch-npm-deps ];
+        nativeBuildInputs = nativeBuildInputs ++ [ prefetch-npm-deps ];
 
         buildPhase = ''
           runHook preBuild

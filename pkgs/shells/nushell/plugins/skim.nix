@@ -5,30 +5,25 @@
   rustPlatform,
   nix-update-script,
   fetchFromGitHub,
-  IOKit,
-  CoreFoundation,
   nushell,
   skim,
 }:
 
 rustPlatform.buildRustPackage rec {
   pname = "nu_plugin_skim";
-  version = "0.8.0";
+  version = "0.14.0";
 
   src = fetchFromGitHub {
     owner = "idanarye";
     repo = pname;
-    rev = "v${version}";
-    hash = "sha256-3q2qt35lZ07N8E3p4/BoYX1H4B8qcKXJWnZhdJhgpJE=";
+    tag = "v${version}";
+    hash = "sha256-bH+llby34lqnxZXdtTEBPiw50tvvY72h+YkRRdiXXTc=";
   };
 
-  cargoHash = "sha256-+RYrQsB8LVjxZsQ7dVDK6GT6nXSM4b+qpILOe0Q2SjA=";
+  useFetchCargoVendor = true;
+  cargoHash = "sha256-VTnaEqIuvTalemVhc/GJnTCQh1DCWQrtoo7oGJBZMXs=";
 
   nativeBuildInputs = lib.optionals stdenv.hostPlatform.isDarwin [ rustPlatform.bindgenHook ];
-  buildInputs = lib.optionals stdenv.hostPlatform.isDarwin [
-    IOKit
-    CoreFoundation
-  ];
 
   passthru = {
     updateScript = nix-update-script { };
@@ -50,6 +45,6 @@ rustPlatform.buildRustPackage rec {
     homepage = "https://github.com/idanarye/nu_plugin_skim";
     license = licenses.mit;
     maintainers = with maintainers; [ aftix ];
-    platforms = with platforms; all;
+    platforms = platforms.all;
   };
 }

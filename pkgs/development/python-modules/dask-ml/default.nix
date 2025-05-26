@@ -1,13 +1,13 @@
 {
   lib,
   buildPythonPackage,
-  pythonOlder,
   fetchFromGitHub,
+
+  # build-system
   hatch-vcs,
   hatchling,
-  setuptools-scm,
-  dask,
-  dask-expr,
+
+  # dependencies
   dask-glm,
   distributed,
   multipledispatch,
@@ -17,33 +17,32 @@
   pandas,
   scikit-learn,
   scipy,
+  dask,
+
+  # tests
   pytest-mock,
   pytestCheckHook,
 }:
 
 buildPythonPackage rec {
   pname = "dask-ml";
-  version = "2024.4.4";
+  version = "2025.1.0";
   pyproject = true;
-
-  disabled = pythonOlder "3.6";
 
   src = fetchFromGitHub {
     owner = "dask";
     repo = "dask-ml";
     tag = "v${version}";
-    hash = "sha256-ZiBpCk3b4Tk0Hwb4uapJLEx+Nb/qHFROCnkBTNGDzoU=";
+    hash = "sha256-DHxx0LFuJmGWYuG/WGHj+a5XHAEekBmlHUUb90rl2IY=";
   };
 
   build-system = [
     hatch-vcs
     hatchling
-    setuptools-scm
   ];
 
   dependencies =
     [
-      dask-expr
       dask-glm
       distributed
       multipledispatch
@@ -70,14 +69,27 @@ buildPythonPackage rec {
   ];
 
   disabledTestPaths = [
-    # AttributeError: 'csr_matrix' object has no attribute 'A'
-    # Fixed in https://github.com/dask/dask-ml/pull/996
-    "tests/test_svd.py"
+    # RuntimeError: Attempting to use an asynchronous Client in a synchronous context of `dask.compute`
+    # https://github.com/dask/dask-ml/issues/1016
+    "tests/model_selection/test_hyperband.py"
+    "tests/model_selection/test_incremental.py"
+    "tests/model_selection/test_incremental_warns.py"
+    "tests/model_selection/test_successive_halving.py"
   ];
 
   disabledTests = [
-    # Flaky: `Arrays are not almost equal to 3 decimals` (although values do actually match)
-    "test_whitening"
+    # AssertionError: Regex pattern did not match.
+    "test_unknown_category_transform_array"
+
+    # ValueError: cannot broadcast shape (nan,) to shape (nan,)
+    # https://github.com/dask/dask-ml/issues/1012
+    "test_fit_array"
+    "test_fit_frame"
+    "test_fit_transform_frame"
+    "test_laziness"
+    "test_lr_score"
+    "test_ok"
+    "test_scoring_string"
   ];
 
   __darwinAllowLocalNetworking = true;

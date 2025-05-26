@@ -8,7 +8,7 @@
   libtool,
   libxkbcommon,
   nspr,
-  mesa,
+  libgbm,
   libtiff,
   udev,
   gtk3,
@@ -88,7 +88,7 @@ stdenv.mkDerivation rec {
     libjpeg
     libxkbcommon
     nspr
-    mesa
+    libgbm
     libtiff
     udev
     gtk3

@@ -19,16 +19,16 @@ let
     }:
     buildGoModule rec {
       pname = stname;
-      version = "1.28.0";
+      version = "1.29.5";
 
       src = fetchFromGitHub {
         owner = "syncthing";
         repo = "syncthing";
         tag = "v${version}";
-        hash = "sha256-JW78n/3hssH600uXn4YLxcIJylPbSpEZICtKmqfqamI=";
+        hash = "sha256-mM+llkF9aMFkMzLptcEz+nXyHcuMHt+dpnqkzJgOZqQ=";
       };
 
-      vendorHash = "sha256-9/PfiOSCInduQXZ47KbrD3ca9O0Zt+TP7XoX+HjwQgs=";
+      vendorHash = "sha256-5U0lsGSO4v++eMvz2r1rG5i/XPLbJAbvM9V66BKE6A8=";
 
       nativeBuildInputs = lib.optionals stdenv.hostPlatform.isDarwin [
         # Recent versions of macOS seem to require binaries to be signed when
@@ -65,7 +65,13 @@ let
 
       passthru = {
         tests = {
-          inherit (nixosTests) syncthing syncthing-init syncthing-relay;
+          inherit (nixosTests)
+            syncthing
+            syncthing-init
+            syncthing-many-devices
+            syncthing-no-settings
+            syncthing-relay
+            ;
         };
         updateScript = nix-update-script { };
       };
@@ -99,6 +105,8 @@ in
           mandir="$out/share/man/man$mantype"
           install -Dm644 "$mf" "$mandir/$(basename "$mf")"
         done
+
+        install -Dm644 etc/linux-desktop/syncthing-ui.desktop $out/share/applications/syncthing-ui.desktop
 
       ''
       + lib.optionalString (stdenv.hostPlatform.isLinux) ''

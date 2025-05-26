@@ -19,7 +19,8 @@ rustPlatform.buildRustPackage rec {
     hash = "sha256-TQTHFBOTxtSuzrAG4cjZ9oirl80xc0rPdYeLJ0t39DQ=";
   };
 
-  cargoHash = "sha256-+YGhfEq2RltPq5oLLh1h+vGphDpoGZNVdvzko3P1iUQ=";
+  useFetchCargoVendor = true;
+  cargoHash = "sha256-ITo9qvcT5aOybWLV7kn9BZbux6uxx1RwRGWCGQYdZ2I=";
 
   nativeBuildInputs = [ autoPatchelfHook ];
   buildInputs = [ gcc-unwrapped ];
@@ -35,7 +36,7 @@ rustPlatform.buildRustPackage rec {
     mainProgram = "wlgreet";
     homepage = "https://git.sr.ht/~kennylevinsen/wlgreet";
     license = licenses.gpl3Plus;
-    maintainers = with maintainers; [ luc65r ];
+    maintainers = with maintainers; [ ];
     platforms = platforms.linux;
   };
 }

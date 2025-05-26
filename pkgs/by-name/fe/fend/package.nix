@@ -1,9 +1,7 @@
 {
   lib,
-  stdenv,
   fetchFromGitHub,
   rustPlatform,
-  darwin,
   pandoc,
   pkg-config,
   openssl,
@@ -19,16 +17,17 @@
 
 rustPlatform.buildRustPackage rec {
   pname = "fend";
-  version = "1.5.3";
+  version = "1.5.6";
 
   src = fetchFromGitHub {
     owner = "printfn";
     repo = "fend";
     rev = "v${version}";
-    hash = "sha256-mokBvBJlqvrherpZ+qMy86CXESXlaC6Qh3LISmmfR0Q=";
+    hash = "sha256-FaPP7344rb5789CeDv9L4lysiTrK+7UoEbH8IK/6N3k=";
   };
 
-  cargoHash = "sha256-+8rXZ+xX2fqm0+tFnyQK9HXa/ZuIcbvtzVrB5cOUCp4=";
+  useFetchCargoVendor = true;
+  cargoHash = "sha256-BFWk91FPJaHccr9LeLq5NQlVrkglMz1W0MPTz0HzOfI=";
 
   nativeBuildInputs = [
     pandoc
@@ -36,10 +35,11 @@ rustPlatform.buildRustPackage rec {
     pkg-config
     copyDesktopItems
   ];
+
   buildInputs = [
     pkg-config
     openssl
-  ] ++ lib.optionals stdenv.hostPlatform.isDarwin [ darwin.apple_sdk.frameworks.Security ];
+  ];
 
   postBuild = ''
     patchShebangs --build ./documentation/build.sh

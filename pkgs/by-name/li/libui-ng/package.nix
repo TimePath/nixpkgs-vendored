@@ -2,7 +2,6 @@
   lib,
   stdenv,
   cmocka,
-  darwin,
   fetchFromGitHub,
   gtk3,
   meson,
@@ -11,15 +10,15 @@
   unstableGitUpdater,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation {
   pname = "libui-ng";
-  version = "4.1-unstable-2024-05-19";
+  version = "4.1-unstable-2025-03-15";
 
   src = fetchFromGitHub {
     owner = "libui-ng";
     repo = "libui-ng";
-    rev = "49b04c4cf8ae4d3e38e389f446ef75170eb62762";
-    hash = "sha256-W9LnUBUKwx1x3+BEeUanisBGR2Q4dnbcMM5k8mCondM=";
+    rev = "43ba1ef553c8993a43a67f1ce6e35983a2660d8c";
+    hash = "sha256-pnfrSPDIvG0tFYQoeMBONATkNRNjY/tJGp9n2I4cN/U=";
   };
 
   postPatch = lib.optionalString (stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isx86_64) ''
@@ -33,19 +32,9 @@ stdenv.mkDerivation rec {
     pkg-config
   ];
 
-  buildInputs =
-    if stdenv.hostPlatform.isDarwin then
-      [
-        darwin.libobjc
-        darwin.apple_sdk_11_0.Libsystem
-        darwin.apple_sdk_11_0.frameworks.Cocoa
-        darwin.apple_sdk_11_0.frameworks.AppKit
-        darwin.apple_sdk_11_0.frameworks.CoreFoundation
-      ]
-    else
-      [
-        gtk3
-      ];
+  buildInputs = lib.optionals (!stdenv.hostPlatform.isDarwin) [
+    gtk3
+  ];
 
   mesonFlags = [
     (lib.mesonBool "examples" (!stdenv.hostPlatform.isDarwin))

@@ -113,7 +113,7 @@ composerVendorInstallHook() {
     done
 
     if [[ -f "composer.lock" ]]; then
-        cp -ar composer.lock $(composer config vendor-dir) $out/
+        cp -ar composer.lock $out/
     fi
 
     echo "Finished composerVendorInstallHook"

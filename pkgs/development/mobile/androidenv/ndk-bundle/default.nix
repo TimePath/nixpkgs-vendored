@@ -8,7 +8,9 @@
   deployAndroidPackage,
   package,
   os,
+  arch,
   platform-tools,
+  meta,
 }:
 
 let
@@ -30,7 +32,7 @@ let
     + ":${platform-tools}/platform-tools";
 in
 deployAndroidPackage rec {
-  inherit package os;
+  inherit package os arch;
   nativeBuildInputs = [
     makeWrapper
   ] ++ lib.optionals stdenv.hostPlatform.isLinux [ autoPatchelfHook ];
@@ -101,4 +103,6 @@ deployAndroidPackage rec {
     patchOsAgnostic + lib.optionalString stdenv.hostPlatform.isLinux patchElfBnaries;
 
   noAuditTmpdir = true; # Audit script gets invoked by the build/ component in the path for the make standalone script
+
+  inherit meta;
 }

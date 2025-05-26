@@ -5,7 +5,7 @@
 }:
 buildGoModule rec {
   pname = "buildkite-agent-metrics";
-  version = "5.9.9";
+  version = "5.9.13";
 
   outputs = [
     "out"
@@ -16,10 +16,10 @@ buildGoModule rec {
     owner = "buildkite";
     repo = "buildkite-agent-metrics";
     rev = "v${version}";
-    hash = "sha256-Y39v+OBhR4WpytCeQN6qBuQpdwKlEgiKgeG5U79QFxU=";
+    hash = "sha256-AVFQ3GP4YDQ6d9NSeol3Eobxzmoa9bRyCAKTsDbyZyQ=";
   };
 
-  vendorHash = "sha256-i2+nefRE4BD93rG842oZj0/coamYVRMPxEHio80bdWk=";
+  vendorHash = "sha256-RQmxYxTcQn5VEy8Z96EtArYBnODmde1RlV4CA6fhbZA=";
 
   postInstall = ''
     mkdir -p $lambda/bin
@@ -30,6 +30,6 @@ buildGoModule rec {
     description = "Command-line tool (and Lambda) for collecting Buildkite agent metrics";
     homepage = "https://github.com/buildkite/buildkite-agent-metrics";
     license = licenses.mit;
-    maintainers = teams.determinatesystems.members;
+    teams = [ teams.determinatesystems ];
   };
 }

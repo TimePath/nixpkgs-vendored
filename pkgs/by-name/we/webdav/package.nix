@@ -1,29 +1,30 @@
 {
   lib,
   fetchFromGitHub,
-  buildGo123Module,
+  buildGoModule,
 }:
 
-buildGo123Module rec {
+buildGoModule rec {
   pname = "webdav";
-  version = "5.4.2";
+  version = "5.7.4";
 
   src = fetchFromGitHub {
     owner = "hacdias";
     repo = "webdav";
-    rev = "v${version}";
-    sha256 = "sha256-a1XAlmEW8gNTgVZiJ200CP/wvbwvyv4Lc3L6KP/4Mik=";
+    tag = "v${version}";
+    hash = "sha256-f4Z5DiwrcF18ZSfDeSf1kwQIRmVNK4K5WrkQJYfquIs=";
   };
 
-  vendorHash = "sha256-d8WauJ1i429dr79iHgrbFRZCmx+W6OobSINy8aNGG6w=";
+  vendorHash = "sha256-8M25/Pfu175CYsO+bvLN5wxT7OciUUt7iQV0BkezTVw=";
 
   __darwinAllowLocalNetworking = true;
 
-  meta = with lib; {
+  meta = {
     description = "Simple WebDAV server";
     homepage = "https://github.com/hacdias/webdav";
-    license = licenses.mit;
-    maintainers = with maintainers; [
+    changelog = "https://github.com/hacdias/webdav/releases/tag/v${version}";
+    license = lib.licenses.mit;
+    maintainers = with lib.maintainers; [
       pmy
       pbsds
     ];

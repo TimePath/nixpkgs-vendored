@@ -4,19 +4,17 @@
   lib,
   ...
 }:
-
-with lib;
 let
   cfg = config.services.spice-vdagentd;
 in
 {
   options = {
     services.spice-vdagentd = {
-      enable = mkEnableOption "Spice guest vdagent daemon";
+      enable = lib.mkEnableOption "Spice guest vdagent daemon";
     };
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
 
     environment.systemPackages = [ pkgs.spice-vdagent ];
 

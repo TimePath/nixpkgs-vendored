@@ -14,7 +14,7 @@
   docbook_xml_dtd_45,
   glib,
   gssdp,
-  libsoup,
+  libsoup_2_4,
   libxml2,
   libuuid,
   gnome,
@@ -78,7 +78,7 @@ stdenv.mkDerivation rec {
   propagatedBuildInputs = [
     glib
     gssdp
-    libsoup
+    libsoup_2_4
     libxml2
   ];
 

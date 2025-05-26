@@ -109,12 +109,13 @@ stdenv.mkDerivation rec {
   hardeningDisable = [ "format" ];
 
   meta = with lib; {
-    description = "Clozure Common Lisp";
-    homepage = "https://ccl.clozure.com/";
-    maintainers = lib.teams.lisp.members;
-    platforms = attrNames options;
     # assembler failures during build, x86_64-darwin broken since 2020-10-14
     broken = (stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isx86_64);
+    description = "Clozure Common Lisp";
+    homepage = "https://ccl.clozure.com/";
     license = licenses.asl20;
+    mainProgram = "ccl";
+    teams = [ lib.teams.lisp ];
+    platforms = attrNames options;
   };
 }

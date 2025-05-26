@@ -18,11 +18,11 @@
 
 buildDunePackage rec {
   pname = "tls";
-  version = "1.0.2";
+  version = "2.0.1";
 
   src = fetchurl {
     url = "https://github.com/mirleft/ocaml-tls/releases/download/v${version}/tls-${version}.tbz";
-    hash = "sha256-ohdRIAyzFG/+FUf11t4Ye1FH6O5r7RKwnVLAAtQrP+s=";
+    hash = "sha256-a6uNo61SjT8xLXtO4h2kxZw0qRrj5c9CNHFauaGCDq0=";
   };
 
   minimalOCamlVersion = "4.08";

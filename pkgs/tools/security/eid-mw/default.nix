@@ -6,7 +6,7 @@
   autoreconfHook,
   makeWrapper,
   pkg-config,
-  substituteAll,
+  replaceVarsWith,
   curl,
   gtk3,
   libassuan,
@@ -23,13 +23,13 @@
 stdenv.mkDerivation rec {
   pname = "eid-mw";
   # NOTE: Don't just blindly update to the latest version/tag. Releases are always for a specific OS.
-  version = "5.1.19";
+  version = "5.1.21";
 
   src = fetchFromGitHub {
     owner = "Fedict";
     repo = "eid-mw";
     rev = "v${version}";
-    hash = "sha256-SGdM3GJECFZwd4tAQ6YP7H7YB6DngvD4IU9DTXbJEIo=";
+    hash = "sha256-WFXVQ2CNrEEy4R6xGiwWkAZmbvXK44FtO5w6s1ZUZpA=";
   };
 
   postPatch = ''
@@ -70,10 +70,12 @@ stdenv.mkDerivation rec {
 
   postInstall =
     let
-      eid-nssdb-in = substituteAll {
-        inherit (stdenv) shell;
+      eid-nssdb-in = replaceVarsWith {
         isExecutable = true;
         src = ./eid-nssdb.in;
+        replacements = {
+          inherit (stdenv) shell;
+        };
       };
     in
     ''

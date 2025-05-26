@@ -20,12 +20,12 @@
 
 python3Packages.buildPythonApplication rec {
   pname = "tryton";
-  version = "7.2.6";
+  version = "7.4.7";
   pyproject = true;
 
   src = fetchPypi {
     inherit pname version;
-    hash = "sha256-dyJ+PsMUinJWYZjcwUuDLHQyB+m5AdfCR+gXfUrvjDc=";
+    hash = "sha256-IAKgOOURMJTYDYhSPAcK4MO/uEsafFMb5WlIhmSe+/o=";
   };
 
   build-system = [ python3Packages.setuptools ];

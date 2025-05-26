@@ -32,7 +32,7 @@
 
 buildPythonPackage rec {
   pname = "datasette";
-  version = "0.65";
+  version = "0.65.1";
   pyproject = true;
 
   disabled = pythonOlder "3.8";
@@ -41,7 +41,7 @@ buildPythonPackage rec {
     owner = "simonw";
     repo = pname;
     tag = version;
-    hash = "sha256-POdw2vB0D2B5SyrC/HkFqlsMlWtbdC3cRM/cfDhv7Z4=";
+    hash = "sha256-kVtldBuDy19DmyxEQLtAjs1qiNIjaT8+rnHlFfGNHec=";
   };
 
   postPatch = ''
@@ -73,6 +73,7 @@ buildPythonPackage rec {
     platformdirs
     pluggy
     pyyaml
+    setuptools
     typing-extensions
     uvicorn
   ];

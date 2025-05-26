@@ -10,7 +10,7 @@
   cli11,
   zlib,
   boost,
-  postgresql,
+  libpq,
   python3,
   withLuaJIT ? false,
   lua,
@@ -25,13 +25,13 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "osm2pgsql";
-  version = "2.0.0";
+  version = "2.1.1";
 
   src = fetchFromGitHub {
     owner = "osm2pgsql-dev";
     repo = "osm2pgsql";
     rev = finalAttrs.version;
-    hash = "sha256-YtG/cwEyCIsNjoEhDikMoI/SUqx8fEtPuolpNkLGTlE=";
+    hash = "sha256-5rENMcYCfHUdb4QsyOnnGe/qCbdYLoXI15e7OqJXit4=";
   };
 
   postPatch = ''
@@ -49,9 +49,9 @@ stdenv.mkDerivation (finalAttrs: {
       expat
       fmt_11
       libosmium
+      libpq
       nlohmann_json
       opencv
-      postgresql
       potrace
       proj
       protozero
@@ -73,23 +73,19 @@ stdenv.mkDerivation (finalAttrs: {
     (lib.cmakeBool "WITH_LUAJIT" withLuaJIT)
   ];
 
-  installFlags = [ "install-gen" ];
-
   passthru.tests.version = testers.testVersion {
     package = finalAttrs.finalPackage;
   };
 
-  meta = with lib; {
+  meta = {
     description = "OpenStreetMap data to PostgreSQL converter";
     homepage = "https://osm2pgsql.org";
-    license = licenses.gpl2Plus;
-    platforms = platforms.unix;
-    maintainers =
-      with maintainers;
-      teams.geospatial.members
-      ++ [
-        jglukasik
-        das-g
-      ];
+    license = lib.licenses.gpl2Plus;
+    platforms = lib.platforms.unix;
+    maintainers = with lib.maintainers; [
+      jglukasik
+      das-g
+    ];
+    teams = [ lib.teams.geospatial ];
   };
 })

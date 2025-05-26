@@ -173,7 +173,12 @@ let
         "systemd-modules-load.service"
         "systemd-ask-password-console.service"
       ] ++ lib.optional (config.boot.initrd.clevis.useTang) "network-online.target";
-      requiredBy = getPoolMounts prefix pool ++ [ "zfs-import.target" ];
+      requiredBy =
+        let
+          poolFilesystems = getPoolFilesystems pool;
+          noauto = poolFilesystems != [ ] && lib.all (fs: lib.elem "noauto" fs.options) poolFilesystems;
+        in
+        getPoolMounts prefix pool ++ lib.optional (!noauto) "zfs-import.target";
       before = getPoolMounts prefix pool ++ [
         "shutdown.target"
         "zfs-import.target"
@@ -228,7 +233,7 @@ let
                     tries=3
                     success=false
                     while [[ $success != true ]] && [[ $tries -gt 0 ]]; do
-                      ${systemd}/bin/systemd-ask-password --timeout=${toString cfgZfs.passwordTimeout} "Enter key for $ds:" | ${cfgZfs.package}/sbin/zfs load-key "$ds" \
+                      ${systemd}/bin/systemd-ask-password ${lib.optionalString cfgZfs.useKeyringForCredentials ("--keyname=zfs-$ds")} --timeout=${toString cfgZfs.passwordTimeout} "Enter key for $ds:" | ${cfgZfs.package}/sbin/zfs load-key "$ds" \
                         && success=true \
                         || tries=$((tries - 1))
                     done
@@ -397,6 +402,8 @@ in
           an interactive prompt (keylocation=prompt) and from a file (keylocation=file://).
         '';
       };
+
+      useKeyringForCredentials = lib.mkEnableOption "Uses the kernel keyring for encryption credentials with keyname=zfs-<poolname>";
 
       passwordTimeout = lib.mkOption {
         type = lib.types.int;
@@ -881,6 +888,7 @@ in
             lib.nameValuePair "zfs-sync-${pool}" {
               description = "Sync ZFS pool \"${pool}\"";
               wantedBy = [ "shutdown.target" ];
+              before = [ "final.target" ];
               unitConfig = {
                 DefaultDependencies = false;
               };
@@ -1016,7 +1024,7 @@ in
               wantedBy = [ "timers.target" ];
               timerConfig = {
                 OnCalendar = timer snapName;
-                Persistent = "yes";
+                Persistent = lib.mkDefault "yes";
               };
             };
           }) snapshotNames
@@ -1029,6 +1037,7 @@ in
         after = [ "zfs-import.target" ];
         serviceConfig = {
           Type = "simple";
+          IOSchedulingClass = "idle";
         };
         script = ''
           # shellcheck disable=SC2046
@@ -1046,7 +1055,7 @@ in
         after = [ "multi-user.target" ]; # Apparently scrubbing before boot is complete hangs the system? #53583
         timerConfig = {
           OnCalendar = cfgScrub.interval;
-          Persistent = "yes";
+          Persistent = lib.mkDefault "yes";
           RandomizedDelaySec = cfgScrub.randomizedDelaySec;
         };
       };
@@ -1066,7 +1075,7 @@ in
       };
 
       systemd.timers.zpool-trim.timerConfig = {
-        Persistent = "yes";
+        Persistent = lib.mkDefault "yes";
         RandomizedDelaySec = cfgTrim.randomizedDelaySec;
       };
     })

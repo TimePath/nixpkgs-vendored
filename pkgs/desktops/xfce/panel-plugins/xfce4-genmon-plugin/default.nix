@@ -2,8 +2,8 @@
   lib,
   stdenv,
   fetchurl,
+  gettext,
   pkg-config,
-  intltool,
   libxfce4util,
   xfce4-panel,
   xfconf,
@@ -17,16 +17,16 @@ let
 in
 stdenv.mkDerivation rec {
   pname = "xfce4-genmon-plugin";
-  version = "4.2.0";
+  version = "4.2.1";
 
   src = fetchurl {
     url = "mirror://xfce/src/${category}/${pname}/${lib.versions.majorMinor version}/${pname}-${version}.tar.bz2";
-    sha256 = "sha256-lI0I7l8hQIR/EJtTG8HUzGJoSWkT6nYA08WtiQJaA2I=";
+    sha256 = "sha256-3lQFYuHqWPNanIFeIHNtJq9UGgqTcgERSMt1tfC2WVE=";
   };
 
   nativeBuildInputs = [
+    gettext
     pkg-config
-    intltool
   ];
 
   buildInputs = [
@@ -47,6 +47,6 @@ stdenv.mkDerivation rec {
     description = "Generic monitor plugin for the Xfce panel";
     license = licenses.gpl2Plus;
     platforms = platforms.linux;
-    maintainers = with maintainers; [ ] ++ teams.xfce.members;
+    teams = [ teams.xfce ];
   };
 }

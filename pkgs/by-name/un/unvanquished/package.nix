@@ -20,6 +20,7 @@
   libpng,
   libvorbis,
   libwebp,
+  libX11,
   lua5,
   makeDesktopItem,
   ncurses,
@@ -33,7 +34,7 @@
 }:
 
 let
-  version = "0.55.0";
+  version = "0.55.3";
   binary-deps-version = "10";
 
   src = fetchFromGitHub {
@@ -41,12 +42,12 @@ let
     repo = "Unvanquished";
     rev = "v${version}";
     fetchSubmodules = true;
-    hash = "sha256-4ONge+GnrpV/FHKuA66o7uK7jIygBYizZl8JAUr8x/0=";
+    hash = "sha256-wOFSPPEu7AGsEcqHG7xFWzFlYZRWAIvvfTj5FLZ3HFc=";
   };
 
   unvanquished-binary-deps = stdenv.mkDerivation rec {
     # DISCLAIMER: this is selected binary crap from the NaCl SDK
-    name = "unvanquished-binary-deps";
+    pname = "unvanquished-binary-deps";
     version = binary-deps-version;
 
     src = fetchzip {
@@ -96,7 +97,8 @@ let
   };
 
   fhsEnv = buildFHSEnv {
-    name = "unvanquished-fhs-wrapper";
+    pname = "unvanquished-fhs-wrapper";
+    inherit version;
 
     targetPkgs = pkgs: [ libstdcpp-preload-for-unvanquished-nacl ];
   };
@@ -119,7 +121,7 @@ let
     pname = "unvanquished-assets";
     inherit version src;
 
-    outputHash = "sha256-FDDhwBvmv4EvmSh5g6Cb0HYLuY9T++k7q8egxzo04J8=";
+    outputHash = "sha256-6v6NO4Ad4rMFziWAO9x22CHtm/nfOuT0ptBEVhCMqZo=";
     outputHashMode = "recursive";
 
     nativeBuildInputs = [
@@ -170,6 +172,7 @@ stdenv.mkDerivation rec {
     libvorbis
     libjpeg
     libwebp
+    libX11
     libpng
   ];
 

@@ -14,15 +14,20 @@ let
   gnat_version = lib.versions.major gnat.version;
 
   # gnatprove fsf-14 requires gpr2 from a special branch
-  gpr2_24_2_next = gpr2.overrideAttrs (old: rec {
-    version = "24.2.0-next";
-    src = fetchFromGitHub {
-      owner = "AdaCore";
-      repo = "gpr";
-      rev = "v${version}";
-      hash = "sha256-Tp+N9VLKjVWs1VRPYE0mQY3rl4E5iGb8xDoNatEYBg4=";
-    };
-  });
+  gpr2_24_2_next =
+    (gpr2.override {
+      # pregenerated kb db is not included
+      gpr2kbdir = "${gprbuild}/share/gprconfig";
+    }).overrideAttrs
+      (old: rec {
+        version = "24.2.0-next";
+        src = fetchFromGitHub {
+          owner = "AdaCore";
+          repo = "gpr";
+          rev = "v${version}";
+          hash = "sha256-Tp+N9VLKjVWs1VRPYE0mQY3rl4E5iGb8xDoNatEYBg4=";
+        };
+      });
 
   fetchSpark2014 =
     { rev, hash }:
@@ -56,6 +61,9 @@ let
       patches = [
         # Disable Coq related targets which are missing in the fsf-14 branch
         ./0001-fix-install.patch
+
+        # Suppress warnings on aarch64: https://github.com/AdaCore/spark2014/issues/54
+        ./0002-mute-aarch64-warnings.patch
       ];
       commit_date = "2024-01-11";
     };
@@ -66,7 +74,7 @@ let
       or (builtins.throw "GNATprove depends on a specific GNAT version and can't be built using GNAT ${gnat_version}.");
 
 in
-stdenv.mkDerivation rec {
+stdenv.mkDerivation {
   pname = "gnatprove";
   version = "fsf-${gnat_version}_${thisSpark.commit_date}";
 

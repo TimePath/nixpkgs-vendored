@@ -1,7 +1,7 @@
 {
   stdenv,
   lib,
-  substituteAll,
+  replaceVars,
   fetchurl,
   cmake,
   libogg,
@@ -13,11 +13,12 @@
   libpng,
   SDL2,
   libGL,
+  libX11,
   openal,
   zlib,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation {
   pname = "warsow-engine";
   version = "2.1.0";
 
@@ -27,8 +28,7 @@ stdenv.mkDerivation rec {
   };
 
   patches = [
-    (substituteAll {
-      src = ./libpath.patch;
+    (replaceVars ./libpath.patch {
       inherit
         zlib
         curl
@@ -53,6 +53,7 @@ stdenv.mkDerivation rec {
     libjpeg
     SDL2
     libGL
+    libX11
     openal
     zlib
     libpng

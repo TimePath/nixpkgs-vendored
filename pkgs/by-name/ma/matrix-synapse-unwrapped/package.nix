@@ -2,6 +2,7 @@
   lib,
   stdenv,
   fetchFromGitHub,
+  fetchpatch,
   python3,
   openssl,
   libiconv,
@@ -17,14 +18,14 @@ let
 in
 python3.pkgs.buildPythonApplication rec {
   pname = "matrix-synapse";
-  version = "1.128.0";
+  version = "1.129.0";
   format = "pyproject";
 
   src = fetchFromGitHub {
     owner = "element-hq";
     repo = "synapse";
     rev = "v${version}";
-    hash = "sha256-QgVx/9mZ3Do+42YwO8OtI2dcuckMX/xIaiBUi4HrK4Q=";
+    hash = "sha256-JDaTFbRb2eNtzxZBLn8wOBEN5uJcInNrhFnGFZjI8is=";
   };
 
   cargoDeps = rustPlatform.fetchCargoVendor {
@@ -32,6 +33,15 @@ python3.pkgs.buildPythonApplication rec {
     name = "${pname}-${version}";
     hash = "sha256-PdAyEGLYmMLgcPQjzjuwvQo55olKgr079gsgQnUoKTM=";
   };
+
+  patches = [
+    # fix compatibility with authlib 1.5.2
+    # https://github.com/element-hq/synapse/pull/18390
+    (fetchpatch {
+      url = "https://github.com/element-hq/synapse/commit/c9adbc6a1ce6039b1c04ae3298e463a3e3b25c38.patch";
+      hash = "sha256-0EZL0esZ6IEjmBV1whSpfZoFsMJ2yZQPi1GjW7NQ484=";
+    })
+  ];
 
   postPatch = ''
     # Remove setuptools_rust from runtime dependencies
@@ -46,6 +56,10 @@ python3.pkgs.buildPythonApplication rec {
     # Don't force pillow to be 10.0.1 because we already have patched it, and
     # we don't use the pillow wheels.
     sed -i 's/Pillow = ".*"/Pillow = ">=5.4.0"/' pyproject.toml
+
+    # https://github.com/element-hq/synapse/pull/17878#issuecomment-2575412821
+    substituteInPlace tests/storage/databases/main/test_events_worker.py \
+      --replace-fail "def test_recovery" "def no_test_recovery"
   '';
 
   nativeBuildInputs = with python3.pkgs; [
@@ -148,7 +162,7 @@ python3.pkgs.buildPythonApplication rec {
       mock
       parameterized
     ])
-    ++ lib.flatten (lib.attrValues optional-dependencies);
+    ++ builtins.filter (p: !p.meta.broken) (lib.flatten (lib.attrValues optional-dependencies));
 
   doCheck = !stdenv.hostPlatform.isDarwin;
 
@@ -182,6 +196,7 @@ python3.pkgs.buildPythonApplication rec {
     changelog = "https://github.com/element-hq/synapse/releases/tag/v${version}";
     description = "Matrix reference homeserver";
     license = licenses.agpl3Plus;
-    maintainers = teams.matrix.members;
+    maintainers = with maintainers; [ sumnerevans ];
+    teams = [ teams.matrix ];
   };
 }

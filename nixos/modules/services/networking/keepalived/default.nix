@@ -175,6 +175,8 @@ in
         '';
       };
 
+      package = lib.mkPackageOption pkgs "keepalived" { };
+
       openFirewall = mkOption {
         type = types.bool;
         default = false;
@@ -341,7 +343,6 @@ in
       after = [
         "network.target"
         "network-online.target"
-        "syslog.target"
       ];
       requires = [ "network-online.target" ];
       wantedBy = [ "multi-user.target" ];
@@ -361,7 +362,6 @@ in
         after = [
           "network.target"
           "network-online.target"
-          "syslog.target"
         ];
         wants = [ "network-online.target" ];
         serviceConfig = {
@@ -377,7 +377,7 @@ in
             ''
           );
           ExecStart =
-            "${pkgs.keepalived}/sbin/keepalived"
+            "${lib.getExe cfg.package}"
             + " -f ${finalConfigFile}"
             + " -p ${pidFile}"
             + optionalString cfg.snmp.enable " --snmp";

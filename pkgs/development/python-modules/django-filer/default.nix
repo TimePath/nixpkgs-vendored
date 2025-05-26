@@ -16,7 +16,7 @@
 
 buildPythonPackage rec {
   pname = "django-filer";
-  version = "3.2.3";
+  version = "3.3.1";
   pyproject = true;
 
   disabled = pythonOlder "3.8";
@@ -25,7 +25,7 @@ buildPythonPackage rec {
     owner = "django-cms";
     repo = "django-filer";
     tag = version;
-    hash = "sha256-PoUBnfNymighCsGoJE+iu31lxA9wqVXimFPCytQtPLg=";
+    hash = "sha256-9Gy6yXYRCARXAqJ9+ZoDbNAEQGzhLLtJzbAevF+j/2Q=";
   };
 
   build-system = [ setuptools ];

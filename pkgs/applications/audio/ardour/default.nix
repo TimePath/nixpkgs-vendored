@@ -30,7 +30,6 @@
   libltc,
   libogg,
   libpulseaudio,
-  librdf_raptor,
   librdf_rasqal,
   libsamplerate,
   libsigcxx,
@@ -65,14 +64,14 @@
 }:
 stdenv.mkDerivation rec {
   pname = "ardour";
-  version = "8.8";
+  version = "8.11";
 
   # We can't use `fetchFromGitea` here, as attempting to fetch release archives from git.ardour.org
   # result in an empty archive. See https://tracker.ardour.org/view.php?id=7328 for more info.
   src = fetchgit {
     url = "git://git.ardour.org/ardour/ardour.git";
     rev = version;
-    hash = "sha256-S96hlk4M+38OjjF3T6lhDm3cBjN5t4y6EeYRmvAmVfE=";
+    hash = "sha256-z+rIWFVua1IG4GZ8kH3quKaBbN+I7Yr62vukJZk6KAg=";
   };
 
   bundledContent = fetchzip {
@@ -95,8 +94,8 @@ stdenv.mkDerivation rec {
     sed 's|/usr/include/libintl.h|${glibc.dev}/include/libintl.h|' -i wscript
     patchShebangs ./tools/
     substituteInPlace libs/ardour/video_tools_paths.cc \
-      --replace 'ffmpeg_exe = X_("");' 'ffmpeg_exe = X_("${ffmpeg}/bin/ffmpeg");' \
-      --replace 'ffprobe_exe = X_("");' 'ffprobe_exe = X_("${ffmpeg}/bin/ffprobe");'
+      --replace-fail 'ffmpeg_exe = X_("");' 'ffmpeg_exe = X_("${ffmpeg}/bin/ffmpeg");' \
+      --replace-fail 'ffprobe_exe = X_("");' 'ffprobe_exe = X_("${ffmpeg}/bin/ffprobe");'
   '';
 
   nativeBuildInputs = [
@@ -135,7 +134,6 @@ stdenv.mkDerivation rec {
       libltc
       libogg
       libpulseaudio
-      librdf_raptor
       librdf_rasqal
       libsamplerate
       libsigcxx
@@ -168,7 +166,7 @@ stdenv.mkDerivation rec {
     ];
 
   wafConfigureFlags = [
-    "--cxx11"
+    "--cxx17"
     "--docs"
     "--freedesktop"
     "--no-phone-home"
@@ -212,7 +210,7 @@ stdenv.mkDerivation rec {
 
   LINKFLAGS = "-lpthread";
 
-  meta = with lib; {
+  meta = {
     description = "Multi-track hard disk recording software";
     longDescription = ''
       Ardour is a digital audio workstation (DAW), You can use it to
@@ -224,10 +222,10 @@ stdenv.mkDerivation rec {
       https://community.ardour.org/donate
     '';
     homepage = "https://ardour.org/";
-    license = licenses.gpl2Plus;
+    license = lib.licenses.gpl2Plus;
     mainProgram = "ardour8";
-    platforms = platforms.linux;
-    maintainers = with maintainers; [
+    platforms = lib.platforms.linux;
+    maintainers = with lib.maintainers; [
       magnetophon
       mitchmindtree
     ];

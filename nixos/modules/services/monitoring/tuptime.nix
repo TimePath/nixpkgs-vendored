@@ -4,9 +4,6 @@
   pkgs,
   ...
 }:
-
-with lib;
-
 let
 
   cfg = config.services.tuptime;
@@ -16,24 +13,24 @@ in
 
   options.services.tuptime = {
 
-    enable = mkEnableOption "the total uptime service";
+    enable = lib.mkEnableOption "the total uptime service";
 
     timer = {
-      enable = mkOption {
-        type = types.bool;
+      enable = lib.mkOption {
+        type = lib.types.bool;
         default = true;
         description = "Whether to regularly log uptime to detect bad shutdowns.";
       };
 
-      period = mkOption {
-        type = types.str;
+      period = lib.mkOption {
+        type = lib.types.str;
         default = "*:0/5";
         description = "systemd calendar event";
       };
     };
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
 
     environment.systemPackages = [ pkgs.tuptime ];
 
@@ -64,7 +61,7 @@ in
           };
         };
 
-        tuptime-sync = mkIf cfg.timer.enable {
+        tuptime-sync = lib.mkIf cfg.timer.enable {
           description = "Tuptime scheduled sync service";
           serviceConfig = {
             Type = "oneshot";
@@ -74,7 +71,7 @@ in
         };
       };
 
-      timers.tuptime-sync = mkIf cfg.timer.enable {
+      timers.tuptime-sync = lib.mkIf cfg.timer.enable {
         description = "Tuptime scheduled sync timer";
         # this timer should be started if the service is started
         # even if the timer was previously stopped
@@ -93,6 +90,6 @@ in
     };
   };
 
-  meta.maintainers = [ maintainers.evils ];
+  meta.maintainers = [ lib.maintainers.evils ];
 
 }

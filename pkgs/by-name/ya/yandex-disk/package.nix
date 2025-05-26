@@ -44,7 +44,6 @@ stdenv.mkDerivation rec {
     stdenv.cc.cc
   ];
   builder = writeText "builder.sh" ''
-    . $stdenv/setup
     mkdir -pv $out/bin
     mkdir -pv $out/share
     mkdir -pv $out/etc

@@ -9,7 +9,7 @@
 {
   package,
   moduleNames ? package.meta.pkgConfigModules,
-  testName ? "check-pkg-config-${lib.concatStringsSep "-" moduleNames}",
+  testName ? "check-pkg-config-${package.pname or package.name}",
   version ? package.version or null,
   versionCheck ? false,
 }:
@@ -32,6 +32,7 @@ runCommand testName
         insecure = throw "unused";
         license = throw "unused";
         maintainers = throw "unused";
+        teams = throw "unused";
         platforms = throw "unused";
         unfree = throw "unused";
         unsupported = throw "unused";

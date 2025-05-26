@@ -1,5 +1,5 @@
 diff --git a/platformio/package/manifest/schema.py b/platformio/package/manifest/schema.py
-index c1d22ab5..6c2cfaed 100644
+index 47efae59..6c2cfaed 100644
 --- a/platformio/package/manifest/schema.py
 +++ b/platformio/package/manifest/schema.py
 @@ -276,9 +276,6 @@ class ManifestSchema(BaseSchema):

@@ -1,9 +1,7 @@
 {
   lib,
-  stdenv,
   rustPlatform,
   fetchFromGitea,
-  fetchpatch,
   makeWrapper,
   pkg-config,
   glib,
@@ -11,37 +9,25 @@
   vips,
   ffmpeg,
   callPackage,
-  darwin,
   testers,
   faircamp,
 }:
 
 rustPlatform.buildRustPackage rec {
   pname = "faircamp";
-  version = "0.15.1";
+  version = "1.4.0";
 
   src = fetchFromGitea {
     domain = "codeberg.org";
     owner = "simonrepp";
     repo = "faircamp";
     rev = version;
-    hash = "sha256-TMN4DLur61bJAPp2kahBAAjf2lto62X/7rhC88nhISg=";
+    hash = "sha256-41mec9AdNdWRJz+5xFU7to/4LxIb7fEgm1EQVMAtyto=";
   };
 
-  patches = [
-    # Fix build error in tests
-    (fetchpatch {
-      url = "https://codeberg.org/simonrepp/faircamp/commit/7240dd707f3669d49e755088393d27369ca368c2.patch";
-      hash = "sha256-Ec75Gte2zUp/q912keLdYXUse60QirTQ+DkSaCwEboQ=";
-    })
-  ];
+  useFetchCargoVendor = true;
 
-  cargoLock = {
-    lockFile = ./Cargo.lock;
-    outputHashes = {
-      "enolib-0.4.2" = "sha256-FJuWKcwjoi/wKfTzxghobNWblhnKRdUvHOejhpCF7kY=";
-    };
-  };
+  cargoHash = "sha256-xLRoI4MN1DApL4jXBXnMzsqTaOVUn2FZy3o2mTetvJ8=";
 
   buildFeatures = [ "libvips" ];
 
@@ -50,15 +36,11 @@ rustPlatform.buildRustPackage rec {
     pkg-config
   ];
 
-  buildInputs =
-    [
-      glib
-      libopus
-      vips
-    ]
-    ++ lib.optionals stdenv.hostPlatform.isDarwin [
-      darwin.apple_sdk.frameworks.CoreServices
-    ];
+  buildInputs = [
+    glib
+    libopus
+    vips
+  ];
 
   postInstall = ''
     wrapProgram $out/bin/faircamp \

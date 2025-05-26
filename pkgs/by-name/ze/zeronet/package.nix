@@ -27,7 +27,7 @@ python3Packages.buildPythonApplication rec {
     websocket-client
     gevent-websocket
     rencode
-    bitcoinlib
+    python-bitcoinlib
     maxminddb
     pyopenssl
   ];

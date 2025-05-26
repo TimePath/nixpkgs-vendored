@@ -2,7 +2,7 @@
   lib,
   stdenv,
   fetchFromGitHub,
-  substituteAll,
+  replaceVars,
   pkg-config,
   cmake,
   bluez,
@@ -17,7 +17,7 @@
   libdbi ? null,
   libdbiDrivers ? null,
   postgresSupport ? false,
-  postgresql ? null,
+  libpq ? null,
 }:
 
 stdenv.mkDerivation rec {
@@ -34,8 +34,7 @@ stdenv.mkDerivation rec {
   patches = [
     ./bashcomp-dir.patch
     ./systemd.patch
-    (substituteAll {
-      src = ./gammu-config-dialog.patch;
+    (replaceVars ./gammu-config-dialog.patch {
       dialog = "${dialog}/bin/dialog";
     })
   ];
@@ -61,7 +60,7 @@ stdenv.mkDerivation rec {
       libdbi
       libdbiDrivers
     ]
-    ++ lib.optionals postgresSupport [ postgresql ];
+    ++ lib.optionals postgresSupport [ libpq ];
 
   meta = with lib; {
     homepage = "https://wammu.eu/gammu/";

@@ -3,6 +3,7 @@
   lib,
   fetchFromGitHub,
   fetchzip,
+  fetchpatch,
   autoconf,
   automake,
   libtool,
@@ -91,6 +92,7 @@
   fstrcmp,
   rapidjson,
   lirc,
+  mesa-gl-headers,
   x11Support ? true,
   libX11,
   xorgproto,
@@ -130,7 +132,7 @@
   waylandpp ? null,
   libxkbcommon,
   gbmSupport ? false,
-  mesa,
+  libgbm,
   libinput,
   libdisplay-info,
   buildPackages,
@@ -188,18 +190,23 @@ let
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = "kodi";
-  version = "21.1";
+  version = "21.2";
   kodiReleaseName = "Omega";
 
   src = fetchFromGitHub {
     owner = "xbmc";
     repo = "xbmc";
     rev = "${finalAttrs.version}-${finalAttrs.kodiReleaseName}";
-    hash = "sha256-NjId1T1cw9dl0Fx1QDsijiN1VUpuQ/EFl1kxWSESCR4=";
+    hash = "sha256-RdTJcq6FPerQx05dU3r8iyaorT4L7162hg5RdywsA88=";
   };
 
   patches = [
-    ./no-python-lib.patch
+    # Backport to fix build with Pipewire 1.4
+    # FIXME: remove in the next update
+    (fetchpatch {
+      url = "https://github.com/xbmc/xbmc/commit/269053ebbfd3cc4a3156a511f54ab7f08a09a730.patch";
+      hash = "sha256-JzzrMJvAufrxTxtWnzknUS9JLJEed+qdtVnIYYe9LCw=";
+    })
   ];
 
   # make  derivations declared in the let binding available here, so
@@ -292,7 +299,7 @@ stdenv.mkDerivation (finalAttrs: {
       fstrcmp
       rapidjson
       lirc
-      mesa # for libEGL
+      mesa-gl-headers
     ]
     ++ lib.optionals x11Support [
       libX11
@@ -325,7 +332,7 @@ stdenv.mkDerivation (finalAttrs: {
     ]
     ++ lib.optionals gbmSupport [
       libxkbcommon.dev
-      mesa.dev
+      libgbm
       libinput.dev
       libdisplay-info
     ];
@@ -407,16 +414,11 @@ stdenv.mkDerivation (finalAttrs: {
       # Need these tools on the build system when cross compiling,
       # hacky, but have found no other way.
       CXX=$CXX_FOR_BUILD LD=ld make -C tools/depends/native/JsonSchemaBuilder
-      cmakeFlags+=" -DWITH_JSONSCHEMABUILDER=$PWD/tools/depends/native/JsonSchemaBuilder/bin"
+      appendToVar cmakeFlags "-DWITH_JSONSCHEMABUILDER=$PWD/tools/depends/native/JsonSchemaBuilder/bin"
 
       CXX=$CXX_FOR_BUILD LD=ld make EXTRA_CONFIGURE= -C tools/depends/native/TexturePacker
-      cmakeFlags+=" -DWITH_TEXTUREPACKER=$PWD/tools/depends/native/TexturePacker/bin"
+      appendToVar cmakeFlags "-DWITH_TEXTUREPACKER=$PWD/tools/depends/native/TexturePacker/bin"
     '';
-
-  postPatch = ''
-    substituteInPlace xbmc/platform/posix/PosixTimezone.cpp \
-      --replace 'usr/share/zoneinfo' 'etc/zoneinfo'
-  '';
 
   postInstall = ''
     # TODO: figure out which binaries should be wrapped this way and which shouldn't
@@ -471,7 +473,7 @@ stdenv.mkDerivation (finalAttrs: {
     homepage = "https://kodi.tv/";
     license = licenses.gpl2Plus;
     platforms = platforms.linux;
-    maintainers = teams.kodi.members;
+    teams = [ teams.kodi ];
     mainProgram = "kodi";
   };
 })

@@ -8,7 +8,7 @@
 
 buildPythonPackage rec {
   pname = "lion-pytorch";
-  version = "0.2.2";
+  version = "0.2.3";
   format = "setuptools";
   disabled = pythonOlder "3.6";
 
@@ -16,7 +16,7 @@ buildPythonPackage rec {
     owner = "lucidrains";
     repo = "lion-pytorch";
     tag = version;
-    hash = "sha256-hOPTuXdTrTi/Thv3/5IYqkgH+5cFdzyK1Fshus8u5n0=";
+    hash = "sha256-RHixPIZ1kCawWQiqYqLY+c3r6Rg86LKm3tQTyW2BNFU=";
   };
 
   propagatedBuildInputs = [ torch ];

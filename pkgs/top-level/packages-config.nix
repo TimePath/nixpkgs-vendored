@@ -13,7 +13,6 @@
       inherit (super)
         agdaPackages
         apacheHttpdPackages
-        fdbPackages
         fusePackages
         gns3Packages
         haskellPackages
@@ -24,10 +23,7 @@
         rPackages
         roundcubePlugins
         sourceHanPackages
-        ut2004Packages
-        zabbix50
         zabbix60
-        zeroadPackages
         ;
 
       # Make sure haskell.compiler is included, so alternative GHC versions show up,

@@ -48,12 +48,14 @@ with lib;
     settings = mkOption {
       type =
         with types;
-        attrsOf (oneOf [
-          str
-          int
-          bool
-          (listOf str)
-        ]);
+        attrsOf (
+          attrsOf (oneOf [
+            str
+            int
+            bool
+            (listOf str)
+          ])
+        );
       default = { };
       example = literalExpression "{ global.tor = enable; }";
 

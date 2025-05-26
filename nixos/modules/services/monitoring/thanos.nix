@@ -35,7 +35,7 @@ let
   nullOpt =
     type: description:
     mkOption {
-      type = types.nullOr type;
+      type = if type.check null then type else types.nullOr type;
       default = null;
       description = description;
     };
@@ -97,13 +97,7 @@ let
     };
   };
 
-  toYAML =
-    name: attrs:
-    pkgs.runCommand name {
-      preferLocalBuild = true;
-      json = builtins.toFile "${name}.json" (builtins.toJSON attrs);
-      nativeBuildInputs = [ pkgs.remarshal ];
-    } "json2yaml -i $json -o $out";
+  format = pkgs.formats.yaml { };
 
   thanos =
     cmd:
@@ -186,10 +180,13 @@ let
         option = mkOption {
           type = with types; nullOr str;
           default =
-            if cfg.tracing.config == null then null else toString (toYAML "tracing.yaml" cfg.tracing.config);
+            if cfg.tracing.config == null then
+              null
+            else
+              toString (format.generate "tracing.yaml" cfg.tracing.config);
           defaultText = literalExpression ''
             if config.services.thanos.<cmd>.tracing.config == null then null
-            else toString (toYAML "tracing.yaml" config.services.thanos.<cmd>.tracing.config);
+            else toString (format.generate "tracing.yaml" config.services.thanos.<cmd>.tracing.config);
           '';
           description = ''
             Path to YAML file that contains tracing configuration.
@@ -201,7 +198,7 @@ let
 
       tracing.config = {
         toArgs = _opt: _attrs: [ ];
-        option = nullOpt types.attrs ''
+        option = nullOpt format.type ''
           Tracing configuration.
 
           When not `null` the attribute set gets converted to
@@ -254,10 +251,13 @@ let
         option = mkOption {
           type = with types; nullOr str;
           default =
-            if cfg.objstore.config == null then null else toString (toYAML "objstore.yaml" cfg.objstore.config);
+            if cfg.objstore.config == null then
+              null
+            else
+              toString (format.generate "objstore.yaml" cfg.objstore.config);
           defaultText = literalExpression ''
             if config.services.thanos.<cmd>.objstore.config == null then null
-            else toString (toYAML "objstore.yaml" config.services.thanos.<cmd>.objstore.config);
+            else toString (format.generate "objstore.yaml" config.services.thanos.<cmd>.objstore.config);
           '';
           description = ''
             Path to YAML file that contains object store configuration.
@@ -269,7 +269,7 @@ let
 
       objstore.config = {
         toArgs = _opt: _attrs: [ ];
-        option = nullOpt types.attrs ''
+        option = nullOpt format.type ''
           Object store configuration.
 
           When not `null` the attribute set gets converted to

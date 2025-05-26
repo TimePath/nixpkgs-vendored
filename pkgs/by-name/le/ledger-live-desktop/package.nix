@@ -8,11 +8,11 @@
 
 let
   pname = "ledger-live-desktop";
-  version = "2.89.1";
+  version = "2.111.0";
 
   src = fetchurl {
     url = "https://download.live.ledger.com/${pname}-${version}-linux-x86_64.AppImage";
-    hash = "sha256-PPoQnXDVf6Q6QPVE41guJL1vu7rW7mZdpRZjRME3Ue8=";
+    hash = "sha256-doREuoX6Lpm9V0yPvf/Ne13v4xvSZ16WzqIVAdVBeMw=";
   };
 
   appimageContents = appimageTools.extractType2 {
@@ -31,7 +31,7 @@ appimageTools.wrapType2 rec {
     install -m 444 -D ledger-live-desktop_512.png $out/share/icons/hicolor/512x512/apps/ledger-live-desktop.png
 
     wrapProgram "$out/bin/${pname}" \
-       --add-flags "\''${NIXOS_OZONE_WL:+\''${WAYLAND_DISPLAY:+--ozone-platform=wayland --enable-features=WaylandWindowDecorations --enable-wayland-ime}}"
+       --add-flags "\''${NIXOS_OZONE_WL:+\''${WAYLAND_DISPLAY:+--ozone-platform=wayland --enable-features=WaylandWindowDecorations --enable-wayland-ime=true}}"
 
     substituteInPlace $out/share/applications/ledger-live-desktop.desktop \
       --replace 'Exec=AppRun' 'Exec=${pname}'

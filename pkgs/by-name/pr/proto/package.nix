@@ -3,7 +3,6 @@
   stdenv,
   fetchFromGitHub,
   rustPlatform,
-  darwin,
   libiconv,
   makeBinaryWrapper,
   pkg-config,
@@ -11,19 +10,19 @@
 
 rustPlatform.buildRustPackage rec {
   pname = "proto";
-  version = "0.42.0";
+  version = "0.49.1";
 
   src = fetchFromGitHub {
     owner = "moonrepo";
     repo = "proto";
     rev = "v${version}";
-    hash = "sha256-ZCuqxsCyaw5JmX9bpsSeTpSc07DnvPE9EiRQrHR5UNo=";
+    hash = "sha256-VtU59YvNqpHvZ1WRj87Heo8RDyCOzleB+odE4DOQYag=";
   };
 
-  cargoHash = "sha256-ykl/WC3sfIwT1uhTrnRz2G8bzr1vkoGB03MwNP/Y5Xs=";
+  useFetchCargoVendor = true;
+  cargoHash = "sha256-wPB4YBNzDg9eoVCY4bbbvKu171Qdh7JJZIT9rD5hVdI=";
 
   buildInputs = lib.optionals stdenv.hostPlatform.isDarwin [
-    darwin.apple_sdk.frameworks.SystemConfiguration
     libiconv
   ];
   nativeBuildInputs = [

@@ -1,4 +1,4 @@
-# idea: provide a build environments for your developement of preference
+# idea: provide a build environments for your development of preference
 /*
   #### examples of use: ####
   # Add this to your ~/.config/nixpkgs/config.nix:
@@ -58,7 +58,7 @@
 
 {
   mkDerivation,
-  substituteAll,
+  replaceVars,
   pkgs,
 }:
 {
@@ -66,7 +66,6 @@
   name,
   buildInputs ? [ ],
   propagatedBuildInputs ? [ ],
-  gcc ? stdenv.cc,
   extraCmds ? "",
   cleanupCmds ? "",
   shell ? "${pkgs.bashInteractive}/bin/bash --norc",
@@ -80,10 +79,7 @@ mkDerivation {
     "buildPhase"
     "fixupPhase"
   ];
-  setupNew = substituteAll {
-    src = ../../stdenv/generic/setup.sh;
-    inherit gcc;
-  };
+  setupNew = ../../stdenv/generic/setup.sh;
 
   buildPhase =
     let

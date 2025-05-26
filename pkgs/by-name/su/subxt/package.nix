@@ -1,24 +1,23 @@
 {
   lib,
-  stdenv,
   rustPlatform,
   fetchFromGitHub,
   cmake,
-  darwin,
 }:
 
 rustPlatform.buildRustPackage rec {
   pname = "subxt";
-  version = "0.37.1";
+  version = "0.42.1";
 
   src = fetchFromGitHub {
     owner = "paritytech";
     repo = "subxt";
     rev = "v${version}";
-    hash = "sha256-lCDjqvdjiQktyFAp3KuFHehwapd3BiLxMSLsNK+wDDo=";
+    hash = "sha256-wp6gxIpo5MyODB/Gf6oh62iK/VmwjVaJkuysrytHKf4=";
   };
 
-  cargoHash = "sha256-RmeV2EYHGbMMAeerQkHcYav+RIVY68Tj66zjcFgjUfQ=";
+  useFetchCargoVendor = true;
+  cargoHash = "sha256-1jat45mCpivEnKCp/9BfsW4ZXi0HF9PeAvK5gw5+enw=";
 
   # Only build the command line client
   cargoBuildFlags = [
@@ -28,10 +27,6 @@ rustPlatform.buildRustPackage rec {
 
   # Needed by wabt-sys
   nativeBuildInputs = [ cmake ];
-
-  buildInputs = lib.optionals stdenv.hostPlatform.isDarwin [
-    darwin.apple_sdk.frameworks.Security
-  ];
 
   # Requires a running substrate node
   doCheck = false;

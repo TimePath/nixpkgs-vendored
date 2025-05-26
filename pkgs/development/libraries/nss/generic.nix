@@ -5,6 +5,7 @@
   fetchFromGitHub,
   nspr,
   perl,
+  installShellFiles,
   zlib,
   sqlite,
   ninja,
@@ -41,6 +42,7 @@ stdenv.mkDerivation rec {
       perl
       ninja
       (buildPackages.python3.withPackages (ps: with ps; [ gyp ]))
+      installShellFiles
     ]
     ++ lib.optionals stdenv.hostPlatform.isDarwin [
       cctools
@@ -79,6 +81,7 @@ stdenv.mkDerivation rec {
     "out"
     "dev"
     "tools"
+    "man"
   ];
 
   buildPhase =
@@ -99,24 +102,37 @@ stdenv.mkDerivation rec {
           platform.parsed.cpu.name;
       # yes, this is correct. nixpkgs uses "host" for the platform the binary will run on whereas nss uses "host" for the platform that the build is running on
       target = getArch stdenv.hostPlatform;
+      target_system = stdenv.hostPlatform.uname.system;
       host = getArch stdenv.buildPlatform;
+
+      buildFlags =
+        [
+          "-v"
+          "--opt"
+          "--with-nspr=${nspr.dev}/include:${nspr.out}/lib"
+          "--system-sqlite"
+          "--enable-legacy-db"
+          "--target ${target}"
+          "-Dhost_arch=${host}"
+          "-Duse_system_zlib=1"
+          "--enable-libpkix"
+          "-j"
+          "$NIX_BUILD_CORES"
+        ]
+        ++ lib.optional enableFIPS "--enable-fips"
+        ++ lib.optional stdenv.hostPlatform.isDarwin "--clang"
+        ++ lib.optionals (target_system != stdenv.buildPlatform.uname.system) [
+          "-DOS=${target_system}"
+        ]
+        ++ lib.optionals (!stdenv.buildPlatform.canExecute stdenv.hostPlatform) [
+          "--disable-tests"
+        ];
     in
     ''
       runHook preBuild
 
       sed -i 's|nss_dist_dir="$dist_dir"|nss_dist_dir="'$out'"|;s|nss_dist_obj_dir="$obj_dir"|nss_dist_obj_dir="'$out'"|' build.sh
-      ./build.sh -v --opt \
-        --with-nspr=${nspr.dev}/include:${nspr.out}/lib \
-        --system-sqlite \
-        --enable-legacy-db \
-        --target ${target} \
-        -Dhost_arch=${host} \
-        -Duse_system_zlib=1 \
-        --enable-libpkix \
-        -j $NIX_BUILD_CORES \
-        ${lib.optionalString enableFIPS "--enable-fips"} \
-        ${lib.optionalString stdenv.hostPlatform.isDarwin "--clang"} \
-        ${lib.optionalString (stdenv.hostPlatform != stdenv.buildPlatform) "--disable-tests"}
+      ./build.sh ${lib.concatStringsSep " " buildFlags}
 
       runHook postBuild
     '';
@@ -131,6 +147,14 @@ stdenv.mkDerivation rec {
     ]
     ++ lib.optionals stdenv.hostPlatform.isILP32 [
       "-DNS_PTR_LE_32=1" # See RNG_RandomUpdate() in drdbg.c
+    ]
+    ++ lib.optionals stdenv.hostPlatform.isFreeBSD [
+      "-D_XOPEN_SOURCE=700"
+      "-D__BSD_VISIBLE"
+      # uses compiler intrinsics gated behind runtime checks for cpu feature flags
+      "-mavx2"
+      "-maes"
+      "-mpclmul"
     ]
   );
 
@@ -166,11 +190,13 @@ stdenv.mkDerivation rec {
         -e "s,@MOD_PATCH_VERSION@,$NSS_PATCH_VERSION," \
         pkg/pkg-config/nss-config.in > $out/bin/nss-config
     chmod 0755 $out/bin/nss-config
+
+    installManPage doc/nroff/*
   '';
 
   postInstall = lib.optionalString useP11kit ''
     # Replace built-in trust with p11-kit connection
-    ln -sf ${p11-kit}/lib/pkcs11/p11-kit-trust.so $out/lib/libnssckbi.so
+    ln -sf ${p11-kit}/lib/pkcs11/p11-kit-trust${stdenv.hostPlatform.extensions.sharedLibrary} $out/lib/libnssckbi${stdenv.hostPlatform.extensions.sharedLibrary}
   '';
 
   postFixup =
@@ -210,7 +236,7 @@ stdenv.mkDerivation rec {
 
   passthru.tests =
     lib.optionalAttrs (lib.versionOlder version nss_latest.version) {
-      inherit (nixosTests) firefox-esr-115;
+      inherit (nixosTests) firefox-esr;
     }
     // lib.optionalAttrs (lib.versionAtLeast version nss_latest.version) {
       inherit (nixosTests) firefox;

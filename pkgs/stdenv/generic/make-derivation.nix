@@ -37,6 +37,7 @@ let
     splitString
     subtractLists
     unique
+    zipAttrsWith
     ;
 
   inherit (import ../../build-support/lib/cmake.nix { inherit lib stdenv; }) makeCMakeFlags;
@@ -86,7 +87,48 @@ let
       args = rattrs (args // { inherit finalPackage overrideAttrs; });
       #              ^^^^
 
-      overrideAttrs = f0: makeDerivationExtensible (lib.extends (lib.toExtension f0) rattrs);
+      overrideAttrs =
+        f0:
+        let
+          extends' =
+            overlay: f:
+            (
+              final:
+              let
+                prev = f final;
+                thisOverlay = overlay final prev;
+                warnForBadVersionOverride = (
+                  thisOverlay ? version
+                  && !(thisOverlay ? src)
+                  && !(thisOverlay.__intentionallyOverridingVersion or false)
+                );
+                pname = args.pname or "<unknown name>";
+                version = args.version or "<unknown version>";
+                pos = builtins.unsafeGetAttrPos "version" thisOverlay;
+              in
+              lib.warnIf warnForBadVersionOverride ''
+                ${
+                  args.name or "${pname}-${version}"
+                } was overridden with `version` but not `src` at ${pos.file or "<unknown file>"}:${
+                  builtins.toString pos.line or "<unknown line>"
+                }:${builtins.toString pos.column or "<unknown column>"}.
+
+                This is most likely not what you want. In order to properly change the version of a package, override
+                both the `version` and `src` attributes:
+
+                hello.overrideAttrs (oldAttrs: rec {
+                  version = "1.0.0";
+                  src = pkgs.fetchurl {
+                    url = "mirror://gnu/hello/hello-''${version}.tar.gz";
+                    hash = "...";
+                  };
+                })
+
+                (To silence this warning, set `__intentionallyOverridingVersion = true` in your `overrideAttrs` call.)
+              '' (prev // (builtins.removeAttrs thisOverlay [ "__intentionallyOverridingVersion" ]))
+            );
+        in
+        makeDerivationExtensible (extends' (lib.toExtension f0) rattrs);
 
       finalPackage = mkDerivationSimple overrideAttrs args;
 
@@ -118,6 +160,7 @@ let
     "fortify"
     "fortify3"
     "shadowstack"
+    "nostrictaliasing"
     "pacret"
     "pic"
     "pie"
@@ -140,12 +183,53 @@ let
     "__propagatedImpureHostDeps"
     "sandboxProfile"
     "propagatedSandboxProfile"
+    "disallowedReferences"
+    "disallowedRequisites"
+    "allowedReferences"
+    "allowedRequisites"
   ];
 
   # Turn a derivation into its outPath without a string context attached.
   # See the comment at the usage site.
   unsafeDerivationToUntrackedOutpath =
-    drv: if isDerivation drv then builtins.unsafeDiscardStringContext drv.outPath else drv;
+    drv:
+    if isDerivation drv && (!drv.__contentAddressed or false) then
+      builtins.unsafeDiscardStringContext drv.outPath
+    else
+      drv;
+
+  makeOutputChecks =
+    attrs:
+    # If we use derivations directly here, they end up as build-time dependencies.
+    # This is especially problematic in the case of disallowed*, since the disallowed
+    # derivations will be built by nix as build-time dependencies, while those
+    # derivations might take a very long time to build, or might not even build
+    # successfully on the platform used.
+    # We can improve on this situation by instead passing only the outPath,
+    # without an attached string context, to nix. The out path will be a placeholder
+    # which will be replaced by the actual out path if the derivation in question
+    # is part of the final closure (and thus needs to be built). If it is not
+    # part of the final closure, then the placeholder will be passed along,
+    # but in that case we know for a fact that the derivation is not part of the closure.
+    # This means that passing the out path to nix does the right thing in either
+    # case, both for disallowed and allowed references/requisites, and we won't
+    # build the derivation if it wouldn't be part of the closure, saving time and resources.
+    # While the problem is less severe for allowed*, since we want the derivation
+    # to be built eventually, we would still like to get the error early and without
+    # having to wait while nix builds a derivation that might not be used.
+    # See also https://github.com/NixOS/nix/issues/4629
+    optionalAttrs (attrs ? disallowedReferences) {
+      disallowedReferences = map unsafeDerivationToUntrackedOutpath attrs.disallowedReferences;
+    }
+    // optionalAttrs (attrs ? disallowedRequisites) {
+      disallowedRequisites = map unsafeDerivationToUntrackedOutpath attrs.disallowedRequisites;
+    }
+    // optionalAttrs (attrs ? allowedReferences) {
+      allowedReferences = mapNullable unsafeDerivationToUntrackedOutpath attrs.allowedReferences;
+    }
+    // optionalAttrs (attrs ? allowedRequisites) {
+      allowedRequisites = mapNullable unsafeDerivationToUntrackedOutpath attrs.allowedRequisites;
+    };
 
   makeDerivationArgument =
 
@@ -304,7 +388,7 @@ let
         positions: name: deps:
         imap1 (
           index: dep:
-          if isDerivation dep || dep == null || builtins.isString dep || builtins.isPath dep then
+          if dep == null || isDerivation dep || builtins.isString dep || builtins.isPath dep then
             dep
           else if isList dep then
             checkDependencyList' ([ index ] ++ positions) name dep
@@ -427,6 +511,7 @@ let
             args =
               attrs.args or [
                 "-e"
+                ./source-stdenv.sh
                 (attrs.builder or ./default-builder.sh)
               ];
             inherit stdenv;
@@ -435,7 +520,7 @@ let
             # Derivations set it to choose what sort of machine could be used to
             # execute the build, The build platform entirely determines this,
             # indeed more finely than Nix knows or cares about. The `system`
-            # attribute of `buildPlatfom` matches Nix's degree of specificity.
+            # attribute of `buildPlatform` matches Nix's degree of specificity.
             # exactly.
             inherit (stdenv.buildPlatform) system;
 
@@ -547,37 +632,22 @@ let
               __propagatedImpureHostDeps = computedPropagatedImpureHostDeps ++ __propagatedImpureHostDeps;
             }
           )
-          //
-            # If we use derivations directly here, they end up as build-time dependencies.
-            # This is especially problematic in the case of disallowed*, since the disallowed
-            # derivations will be built by nix as build-time dependencies, while those
-            # derivations might take a very long time to build, or might not even build
-            # successfully on the platform used.
-            # We can improve on this situation by instead passing only the outPath,
-            # without an attached string context, to nix. The out path will be a placeholder
-            # which will be replaced by the actual out path if the derivation in question
-            # is part of the final closure (and thus needs to be built). If it is not
-            # part of the final closure, then the placeholder will be passed along,
-            # but in that case we know for a fact that the derivation is not part of the closure.
-            # This means that passing the out path to nix does the right thing in either
-            # case, both for disallowed and allowed references/requisites, and we won't
-            # build the derivation if it wouldn't be part of the closure, saving time and resources.
-            # While the problem is less severe for allowed*, since we want the derivation
-            # to be built eventually, we would still like to get the error early and without
-            # having to wait while nix builds a derivation that might not be used.
-            # See also https://github.com/NixOS/nix/issues/4629
-            optionalAttrs (attrs ? disallowedReferences) {
-              disallowedReferences = map unsafeDerivationToUntrackedOutpath attrs.disallowedReferences;
-            }
-          // optionalAttrs (attrs ? disallowedRequisites) {
-            disallowedRequisites = map unsafeDerivationToUntrackedOutpath attrs.disallowedRequisites;
-          }
-          // optionalAttrs (attrs ? allowedReferences) {
-            allowedReferences = mapNullable unsafeDerivationToUntrackedOutpath attrs.allowedReferences;
-          }
-          // optionalAttrs (attrs ? allowedRequisites) {
-            allowedRequisites = mapNullable unsafeDerivationToUntrackedOutpath attrs.allowedRequisites;
-          };
+          // (
+            if !__structuredAttrs then
+              makeOutputChecks attrs
+            else
+              {
+                outputChecks = builtins.listToAttrs (
+                  map (name: {
+                    inherit name;
+                    value = zipAttrsWith (_: builtins.concatLists) [
+                      (makeOutputChecks attrs)
+                      (makeOutputChecks attrs.outputChecks.${name} or { })
+                    ];
+                  }) outputs
+                );
+              }
+          );
 
       in
       derivationArg;
@@ -723,30 +793,47 @@ let
             _derivation_original_args = derivationArg.args;
 
             builder = stdenv.shell;
-            # The bash builtin `export` dumps all current environment variables,
+            # The builtin `declare -p` dumps all bash and environment variables,
             # which is where all build input references end up (e.g. $PATH for
             # binaries). By writing this to $out, Nix can find and register
             # them as runtime dependencies (since Nix greps for store paths
-            # through $out to find them)
+            # through $out to find them). Using placeholder for $out works with
+            # and without structuredAttrs.
+            # This build script does not use setup.sh or stdenv, to keep
+            # the env most pristine. This gives us a very bare bones env,
+            # hence the extra/duplicated compatibility logic and "pure bash" style.
             args = [
               "-c"
               ''
-                export > $out
+                out="${placeholder "out"}"
+                if [ -e "$NIX_ATTRS_SH_FILE" ]; then . "$NIX_ATTRS_SH_FILE"; elif [ -f .attrs.sh ]; then . .attrs.sh; fi
+                declare -p > $out
                 for var in $passAsFile; do
                     pathVar="''${var}Path"
                     printf "%s" "$(< "''${!pathVar}")" >> $out
                 done
               ''
             ];
-
-            # inputDerivation produces the inputs; not the outputs, so any
-            # restrictions on what used to be the outputs don't serve a purpose
-            # anymore.
-            allowedReferences = null;
-            allowedRequisites = null;
-            disallowedReferences = [ ];
-            disallowedRequisites = [ ];
           }
+          // (
+            let
+              sharedOutputChecks = {
+                # inputDerivation produces the inputs; not the outputs, so any
+                # restrictions on what used to be the outputs don't serve a purpose
+                # anymore.
+                allowedReferences = null;
+                allowedRequisites = null;
+                disallowedReferences = [ ];
+                disallowedRequisites = [ ];
+              };
+            in
+            if __structuredAttrs then
+              {
+                outputChecks.out = sharedOutputChecks;
+              }
+            else
+              sharedOutputChecks
+          )
         );
 
         inherit passthru overrideAttrs;

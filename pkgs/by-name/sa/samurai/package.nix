@@ -11,7 +11,7 @@ stdenv.mkDerivation rec {
 
   src = fetchFromGitHub {
     owner = "michaelforney";
-    repo = pname;
+    repo = "samurai";
     rev = version;
     hash = "sha256-RPY3MFlnSDBZ5LOkdWnMiR/CZIBdqIFo9uLU+SAKPBI=";
   };
@@ -58,10 +58,7 @@ stdenv.mkDerivation rec {
       mit
       asl20
     ]; # see LICENSE
-    maintainers = with maintainers; [
-      dtzWill
-      AndersonTorres
-    ];
+    maintainers = with maintainers; [ dtzWill ];
     mainProgram = "samu";
     platforms = platforms.all;
   };

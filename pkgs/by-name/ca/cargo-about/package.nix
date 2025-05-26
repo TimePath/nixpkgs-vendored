@@ -4,31 +4,25 @@
   fetchFromGitHub,
   pkg-config,
   zstd,
-  stdenv,
-  darwin,
 }:
 
 rustPlatform.buildRustPackage rec {
   pname = "cargo-about";
-  version = "0.6.4";
+  version = "0.7.1";
 
   src = fetchFromGitHub {
     owner = "EmbarkStudios";
     repo = "cargo-about";
     rev = version;
-    sha256 = "sha256-KFTG4FmmEji+0yNTwrunqOQuaU+qUcu1Vg7ZqoeUy4c=";
+    sha256 = "sha256-h5+Fp6+yGa1quJENsCv6WE4NC2A+ceIGMXVWyeTPPLQ=";
   };
 
-  cargoHash = "sha256-bCw30ooQdSMRD3oM9BeUt9sJe5v+ketO73FjEypNy9s=";
+  useFetchCargoVendor = true;
+  cargoHash = "sha256-JTcRYdBZdXxM7r+XZSbFaAeWrJ5HULM1YE3p3smRW/Q=";
 
   nativeBuildInputs = [ pkg-config ];
 
-  buildInputs =
-    [ zstd ]
-    ++ lib.optionals stdenv.hostPlatform.isDarwin [
-      darwin.apple_sdk.frameworks.Security
-      darwin.apple_sdk.frameworks.SystemConfiguration
-    ];
+  buildInputs = [ zstd ];
 
   env = {
     ZSTD_SYS_USE_PKG_CONFIG = true;

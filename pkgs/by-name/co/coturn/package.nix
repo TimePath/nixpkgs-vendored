@@ -6,35 +6,38 @@
   libevent,
   pkg-config,
   libprom,
-  libpromhttp,
   libmicrohttpd,
   sqlite,
   nixosTests,
+  systemdMinimal,
 }:
 
 stdenv.mkDerivation rec {
   pname = "coturn";
-  version = "4.6.2";
+  version = "4.6.3";
 
   src = fetchFromGitHub {
     owner = "coturn";
     repo = "coturn";
     tag = version;
-    hash = "sha256-BKIto762W7UkKjzIm3eVU18oiHpYUMQYJihebYxBOZs=";
+    hash = "sha256-GG8aQJoCBV5wolPEzSuZhqNn//ytaTAptjY42YKga4E=";
   };
 
   nativeBuildInputs = [
     pkg-config
   ];
 
-  buildInputs = [
-    openssl
-    (libevent.override { inherit openssl; })
-    libprom
-    libpromhttp
-    libmicrohttpd
-    sqlite.dev
-  ];
+  buildInputs =
+    [
+      openssl
+      (libevent.override { inherit openssl; })
+      libprom
+      libmicrohttpd
+      sqlite.dev
+    ]
+    ++ lib.optionals (lib.meta.availableOn stdenv.hostPlatform systemdMinimal) [
+      systemdMinimal
+    ];
 
   patches = [
     ./pure-configure.patch
@@ -42,6 +45,11 @@ stdenv.mkDerivation rec {
     # Don't call setgroups unconditionally in mainrelay
     # https://github.com/coturn/coturn/pull/1508
     ./dont-call-setgroups-unconditionally.patch
+  ];
+
+  configureFlags = [
+    # don't install examples due to broken symlinks
+    "--examplesdir=.."
   ];
 
   # Workaround build failure on -fno-common toolchains like upstream

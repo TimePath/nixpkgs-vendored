@@ -7,7 +7,7 @@
   makeDesktopItem,
   pkg-config,
   gtk3,
-  libsoup,
+  libsoup_2_4,
   webkitgtk_4_0,
 }:
 
@@ -36,12 +36,8 @@ rustPlatform.buildRustPackage rec {
 
   sourceRoot = "${src.name}/src-tauri";
 
-  cargoLock = {
-    lockFile = ./Cargo.lock;
-    outputHashes = {
-      "postflop-solver-0.1.0" = "sha256-coEl09eMbQqSos1sqWLnfXfhujSTsnVnOlOQ+JbdFWY=";
-    };
-  };
+  useFetchCargoVendor = true;
+  cargoHash = "sha256-pMvh2Rr+rMe0nMB9yRDrGatrS36+VM7os0eeBR31oCM=";
 
   postPatch = ''
     substituteInPlace tauri.conf.json \
@@ -58,7 +54,7 @@ rustPlatform.buildRustPackage rec {
 
   buildInputs = [
     gtk3
-    libsoup
+    libsoup_2_4
     webkitgtk_4_0
   ];
 

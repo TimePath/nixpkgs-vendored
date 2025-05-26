@@ -66,10 +66,8 @@ lib.runTests (
       "armv7l-linux"
       "armv7l-netbsd"
       "arm-none"
-      "armv7a-darwin"
     ];
     testarmv7 = mseteq armv7 [
-      "armv7a-darwin"
       "armv7a-linux"
       "armv7l-linux"
       "armv7a-netbsd"
@@ -84,7 +82,6 @@ lib.runTests (
       "i686-cygwin"
       "i686-windows"
       "i686-none"
-      "i686-darwin"
     ];
     testmips = mseteq mips [
       "mips-none"
@@ -145,11 +142,10 @@ lib.runTests (
     ];
     testdarwin = mseteq darwin [
       "x86_64-darwin"
-      "i686-darwin"
       "aarch64-darwin"
-      "armv7a-darwin"
     ];
     testfreebsd = mseteq freebsd [
+      "aarch64-freebsd"
       "i686-freebsd"
       "x86_64-freebsd"
     ];
@@ -230,6 +226,30 @@ lib.runTests (
     test_toLosslessStringMaybe_fail = {
       expr = toLosslessStringMaybe (lib.systems.elaborate "x86_64-linux" // { something = "extra"; });
       expected = null;
+    };
+    test_elaborate_config_over_system = {
+      expr =
+        (lib.systems.elaborate {
+          config = "i686-unknown-linux-gnu";
+          system = "x86_64-linux";
+        }).system;
+      expected = "i686-linux";
+    };
+    test_elaborate_config_over_parsed = {
+      expr =
+        (lib.systems.elaborate {
+          config = "i686-unknown-linux-gnu";
+          parsed = (lib.systems.elaborate "x86_64-linux").parsed;
+        }).parsed.cpu.arch;
+      expected = "i686";
+    };
+    test_elaborate_system_over_parsed = {
+      expr =
+        (lib.systems.elaborate {
+          system = "i686-linux";
+          parsed = (lib.systems.elaborate "x86_64-linux").parsed;
+        }).parsed.cpu.arch;
+      expected = "i686";
     };
   }
 

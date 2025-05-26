@@ -20,15 +20,15 @@
 
 python3.pkgs.buildPythonApplication rec {
   pname = "iotas";
-  version = "0.2.10";
+  version = "0.11.0";
   pyproject = false;
 
   src = fetchFromGitLab {
     domain = "gitlab.gnome.org";
     owner = "World";
     repo = "iotas";
-    rev = version;
-    hash = "sha256-aITt+TJb/LrVOyb/mAC7U6/NJ4stHD76jjBFC7Pt7fU=";
+    tag = version;
+    hash = "sha256-9YYKVBjidHBWyUqFvxo3tNx5DQkpililCDLZofESYRw=";
   };
 
   nativeBuildInputs = [
@@ -51,7 +51,7 @@ python3.pkgs.buildPythonApplication rec {
     webkitgtk_6_0
   ];
 
-  propagatedBuildInputs = with python3.pkgs; [
+  dependencies = with python3.pkgs; [
     pygobject3
     pygtkspellcheck
     requests
@@ -59,6 +59,8 @@ python3.pkgs.buildPythonApplication rec {
     linkify-it-py
     mdit-py-plugins
     pypandoc
+    strenum
+    packaging
   ];
 
   # prevent double wrapping
@@ -67,12 +69,13 @@ python3.pkgs.buildPythonApplication rec {
     makeWrapperArgs+=("''${gappsWrapperArgs[@]}")
   '';
 
-  meta = with lib; {
+  meta = {
     description = "Simple note taking with mobile-first design and Nextcloud sync";
     homepage = "https://gitlab.gnome.org/World/iotas";
-    license = licenses.gpl3Plus;
-    platforms = platforms.linux;
+    license = lib.licenses.gpl3Plus;
+    platforms = lib.platforms.linux;
     mainProgram = "iotas";
-    maintainers = with maintainers; [ zendo ];
+    maintainers = with lib.maintainers; [ zendo ];
+    teams = [ lib.teams.gnome-circle ];
   };
 }

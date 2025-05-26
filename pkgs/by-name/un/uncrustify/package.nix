@@ -8,13 +8,13 @@
 
 stdenv.mkDerivation rec {
   pname = "uncrustify";
-  version = "0.79.0";
+  version = "0.80.1";
 
   src = fetchFromGitHub {
     owner = "uncrustify";
     repo = "uncrustify";
     rev = "uncrustify-${version}";
-    sha256 = "sha256-M9LfLWpkMoCNrvnmMhFhfJhyOwbnitjpm7LKay1M0dI=";
+    sha256 = "sha256-SsPuqPyv3IFjYtAqANjzK8cdTGsyGBXVLzGWEUl28dg=";
   };
 
   nativeBuildInputs = [

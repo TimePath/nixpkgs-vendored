@@ -11,11 +11,12 @@
   coreutils,
   util-linux,
   gnugrep,
-  gnupg1,
+  gnupg,
   gnutar,
   gnused,
   gzip,
   xz,
+  zstd,
   makeWrapper,
   nix-update-script,
   testers,
@@ -32,25 +33,27 @@ let
     dpkg
     gawk
     gnugrep
-    gnupg1
+    gnupg
     gnused
     gnutar
     gzip
     perl
+    util-linux
     wget
     xz
+    zstd
   ];
 in
 stdenv.mkDerivation rec {
   pname = "debootstrap";
-  version = "1.0.137";
+  version = "1.0.140_bpo12+1";
 
   src = fetchFromGitLab {
     domain = "salsa.debian.org";
     owner = "installer-team";
     repo = "debootstrap";
     rev = "refs/tags/${version}";
-    hash = "sha256-l4vdojsrHAJsa8RwZezH3uI6pWJHK/PBs+YZCtnpXnQ=";
+    hash = "sha256-4vINaMRo6IrZ6e2/DAJ06ODy2BWm4COR1JDSY52upUc=";
   };
 
   nativeBuildInputs = [ makeWrapper ];

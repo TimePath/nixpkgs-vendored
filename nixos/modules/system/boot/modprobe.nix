@@ -18,6 +18,12 @@ with lib;
         default = true;
       };
 
+    boot.modprobeConfig.useUbuntuModuleBlacklist =
+      mkEnableOption "Ubuntu distro's module blacklist"
+      // {
+        default = true;
+      };
+
     boot.blacklistedKernelModules = mkOption {
       type = types.listOf types.str;
       default = [ ];
@@ -51,7 +57,11 @@ with lib;
 
   config = mkIf config.boot.modprobeConfig.enable {
 
-    environment.etc."modprobe.d/ubuntu.conf".source = "${pkgs.kmod-blacklist-ubuntu}/modprobe.conf";
+    environment.etc."modprobe.d/ubuntu.conf" =
+      mkIf config.boot.modprobeConfig.useUbuntuModuleBlacklist
+        {
+          source = "${pkgs.kmod-blacklist-ubuntu}/modprobe.conf";
+        };
 
     environment.etc."modprobe.d/nixos.conf".text = ''
       ${flip concatMapStrings config.boot.blacklistedKernelModules (name: ''

@@ -13,8 +13,6 @@
   makeWrapper,
   rustPlatform,
   rustc,
-  CoreFoundation,
-  Security,
   auditable ? !cargo-auditable.meta.broken,
   cargo-auditable,
   pkgsBuildBuild,
@@ -51,18 +49,13 @@ rustPlatform.buildRustPackage.override
         (lib.getDev pkgsHostHost.curl)
         zlib
       ];
-      buildInputs =
-        [
-          file
-          curl
-          python3
-          openssl
-          zlib
-        ]
-        ++ lib.optionals stdenv.hostPlatform.isDarwin [
-          CoreFoundation
-          Security
-        ];
+      buildInputs = [
+        file
+        curl
+        python3
+        openssl
+        zlib
+      ];
 
       # cargo uses git-rs which is made for a version of libgit2 from recent master that
       # is not compatible with the current version in nixpkgs.
@@ -94,7 +87,7 @@ rustPlatform.buildRustPackage.override
       doInstallCheck = !stdenv.hostPlatform.isStatic && stdenv.hostPlatform.isElf;
       installCheckPhase = ''
         runHook preInstallCheck
-        readelf -a $out/bin/.cargo-wrapped | grep -F 'Shared library: [libcurl.so'
+        ${stdenv.cc.targetPrefix}readelf -a $out/bin/.cargo-wrapped | grep -F 'Shared library: [libcurl.so'
         runHook postInstallCheck
       '';
 
@@ -102,7 +95,7 @@ rustPlatform.buildRustPackage.override
         homepage = "https://crates.io";
         description = "Downloads your Rust project's dependencies and builds your project";
         mainProgram = "cargo";
-        maintainers = teams.rust.members;
+        teams = [ teams.rust ];
         license = [
           licenses.mit
           licenses.asl20

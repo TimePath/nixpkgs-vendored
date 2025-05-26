@@ -9,7 +9,7 @@
   ninja,
   pkg-config,
   gcc,
-  mesa,
+  libgbm,
   gtk3,
   glfw,
   libGLU,
@@ -26,7 +26,7 @@ assert enablePython -> pythonPackages != null;
 
 stdenv.mkDerivation rec {
   pname = "librealsense";
-  version = "2.56.2";
+  version = "2.56.3";
 
   outputs = [
     "out"
@@ -37,7 +37,7 @@ stdenv.mkDerivation rec {
     owner = "IntelRealSense";
     repo = pname;
     rev = "v${version}";
-    sha256 = "sha256-7DO+AC9R6mnSs52ex/uIzEv7q+fS7FQ5FGYe5niap4Q=";
+    sha256 = "sha256-Stx337mGcpMCg9DlZmvX4LPQmCSzLRFcUQPxaD/Y0Ds=";
   };
 
   buildInputs =
@@ -55,7 +55,7 @@ stdenv.mkDerivation rec {
       ]
     )
     ++ lib.optionals enableGUI [
-      mesa
+      libgbm
       gtk3
       glfw
       libGLU

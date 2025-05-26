@@ -6,7 +6,6 @@
   buildPythonPackage,
   cargo,
   chroma-hnswlib,
-  darwin,
   fastapi,
   fetchFromGitHub,
   grpcio,
@@ -52,7 +51,7 @@
 
 buildPythonPackage rec {
   pname = "chromadb";
-  version = "0.5.18";
+  version = "0.5.20";
   pyproject = true;
 
   disabled = pythonOlder "3.9";
@@ -61,13 +60,13 @@ buildPythonPackage rec {
     owner = "chroma-core";
     repo = "chroma";
     tag = version;
-    hash = "sha256-kJzBwUaA46HenwTn24AMy0xfgVmBtubJUujDS5/kYXs=";
+    hash = "sha256-DQHkgCHtrn9xi7Kp7TZ5NP1EtFtTH5QOvne9PUvxsWc=";
   };
 
-  cargoDeps = rustPlatform.fetchCargoTarball {
+  cargoDeps = rustPlatform.fetchCargoVendor {
     inherit src;
     name = "${pname}-${version}";
-    hash = "sha256-iW68C3Vp9C1gR7hF2x4VhBIKWX9wlnT8jPj+zMRUC7w=";
+    hash = "sha256-ZtCTg8qNCiqlH7RsZxaWUNAoazdgmXP2GtpjDpRdvbk=";
   };
 
   pythonRelaxDeps = [
@@ -91,7 +90,7 @@ buildPythonPackage rec {
   buildInputs = [
     openssl
     zstd
-  ] ++ lib.optionals stdenv.hostPlatform.isDarwin [ darwin.apple_sdk.frameworks.Security ];
+  ];
 
   dependencies = [
     bcrypt
@@ -151,6 +150,8 @@ buildPythonPackage rec {
     "test_fastapi_server_token_authn_rejects_when_it_should_reject"
     # Issue with event loop
     "test_http_client_bw_compatibility"
+    # Issue with httpx
+    "test_not_existing_collection_delete"
   ];
 
   disabledTestPaths = [

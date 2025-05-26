@@ -15,7 +15,7 @@ in
   zlib,
   python3,
   lldb,
-  dotnet-sdk_8,
+  dotnetCorePackages,
   maven,
   openssl,
   expat,
@@ -44,6 +44,8 @@ let
 
   products = versions.${system} or (throw "Unsupported system: ${system}");
 
+  dotnet-sdk = dotnetCorePackages.sdk_8_0-source;
+
   package = if stdenv.hostPlatform.isDarwin then ./bin/darwin.nix else ./bin/linux.nix;
   mkJetBrainsProductCore = callPackage package { inherit vmopts; };
   mkMeta = meta: fromSource: {
@@ -54,6 +56,7 @@ let
         if fromSource then " (built from source)" else " (patched binaries from jetbrains)"
       );
     maintainers = map (x: lib.maintainers."${x}") meta.maintainers;
+    teams = [ lib.teams.jetbrains ];
     license = if meta.isOpenSource then lib.licenses.asl20 else lib.licenses.unfree;
     sourceProvenance =
       if fromSource then
@@ -80,9 +83,9 @@ let
         pname
         jdk
         extraWrapperArgs
-        extraLdPath
         extraBuildInputs
         ;
+      extraLdPath = extraLdPath ++ lib.optionals (stdenv.hostPlatform.isLinux) [ libGL ];
       src =
         if fromSource then
           communitySources."${pname}"
@@ -188,7 +191,7 @@ rec {
 
               for dir in plugins/clion-radler/DotFiles/linux-*; do
                 rm -rf $dir/dotnet
-                ln -s ${dotnet-sdk_8.unwrapped}/share/dotnet $dir/dotnet
+                ln -s ${dotnet-sdk}/share/dotnet $dir/dotnet
               done
             )
           '';
@@ -334,7 +337,6 @@ rec {
         libICE
         libSM
         libX11
-        libGL
       ];
     }).overrideAttrs
       (attrs: {
@@ -352,7 +354,7 @@ rec {
 
               for dir in lib/ReSharperHost/linux-*; do
                 rm -rf $dir/dotnet
-                ln -s ${dotnet-sdk_8.unwrapped}/share/dotnet $dir/dotnet
+                ln -s ${dotnet-sdk}/share/dotnet $dir/dotnet
               done
             )
           '';
@@ -376,7 +378,6 @@ rec {
           libxcrypt-legacy
           fontconfig
           xorg.libX11
-          libGL
         ]
         ++ lib.optionals (stdenv.hostPlatform.isLinux && stdenv.hostPlatform.isAarch64) [
           expat

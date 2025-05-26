@@ -18,14 +18,14 @@
 }:
 
 stdenv.mkDerivation rec {
-  version = "0.7.30";
+  version = "0.7.32";
   pname = "libsolv";
 
   src = fetchFromGitHub {
     owner = "openSUSE";
     repo = "libsolv";
     rev = version;
-    hash = "sha256-De2lQu80MjKvjnN0W3/Y9JwFbA8g7tleflVXC9Lib5Y=";
+    hash = "sha256-2cvba2S/3CR+3sMLVEnmTxWYTQSAYZoUIoQHr+GZnyY=";
   };
 
   cmakeFlags =
@@ -66,6 +66,6 @@ stdenv.mkDerivation rec {
     homepage = "https://github.com/openSUSE/libsolv";
     license = licenses.bsd3;
     platforms = platforms.linux ++ platforms.darwin;
-    maintainers = with maintainers; [ copumpkin ];
+    maintainers = [ ];
   };
 }

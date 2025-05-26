@@ -6,14 +6,14 @@
   version ? null,
 }:
 
-mkCoqDerivation rec {
+mkCoqDerivation {
   pname = "coq-ext-lib";
   inherit version;
   defaultVersion =
     with lib.versions;
     lib.switch coq.coq-version [
       {
-        case = range "8.14" "8.20";
+        case = range "8.14" "9.0";
         out = "0.13.0";
       }
       {

@@ -213,7 +213,7 @@ in
           }
 
           # start yggdrasil
-          ${binYggdrasil} -useconffile /run/yggdrasil/yggdrasil.conf ${lib.strings.escapeShellArgs cfg.extraArgs}
+          exec ${binYggdrasil} -useconffile /run/yggdrasil/yggdrasil.conf ${lib.strings.escapeShellArgs cfg.extraArgs}
         '';
 
         serviceConfig =

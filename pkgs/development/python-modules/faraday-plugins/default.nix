@@ -16,11 +16,12 @@
   setuptools,
   simplejson,
   tabulate,
+  tldextract,
 }:
 
 buildPythonPackage rec {
   pname = "faraday-plugins";
-  version = "1.19.1";
+  version = "1.24.0";
   pyproject = true;
 
   disabled = pythonOlder "3.7";
@@ -29,7 +30,7 @@ buildPythonPackage rec {
     owner = "infobyte";
     repo = "faraday_plugins";
     tag = version;
-    hash = "sha256-XWPj348kAuA9BF7Y2/hX712eLRfUZ9kH3oL1jb17/K0=";
+    hash = "sha256-GADunGRBcVTnzYzBgXQH2IkDXHRSJiPsdeRBEdJJs0s=";
   };
 
   postPatch = ''
@@ -51,6 +52,7 @@ buildPythonPackage rec {
     requests
     simplejson
     tabulate
+    tldextract
   ];
 
   nativeCheckInputs = [ pytestCheckHook ];

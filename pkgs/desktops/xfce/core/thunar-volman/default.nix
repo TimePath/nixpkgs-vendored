@@ -12,7 +12,7 @@
 mkXfceDerivation {
   category = "xfce";
   pname = "thunar-volman";
-  version = "4.18.0";
+  version = "4.20.0";
 
   buildInputs = [
     exo
@@ -23,12 +23,12 @@ mkXfceDerivation {
     xfconf
   ];
 
-  sha256 = "sha256-NRVoakU8jTCJVe+iyJQwW1xPti2vjd/8n8CYrIYGII0=";
+  sha256 = "sha256-XIVs/vRwy3QJQW/U7eLBvGdzplWlhdxn3f1lyTQsmpE=";
 
   odd-unstable = false;
 
   meta = with lib; {
     description = "Thunar extension for automatic management of removable drives and media";
-    maintainers = with maintainers; [ ] ++ teams.xfce.members;
+    teams = [ teams.xfce ];
   };
 }

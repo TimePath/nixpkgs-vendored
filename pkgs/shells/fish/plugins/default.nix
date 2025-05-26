@@ -28,6 +28,8 @@ lib.makeScope newScope (
 
     done = callPackage ./done.nix { };
 
+    exercism-cli-fish-wrapper = callPackage ./exercism-cli-fish-wrapper.nix { };
+
     fifc = callPackage ./fifc.nix { };
 
     fish-bd = callPackage ./fish-bd.nix { };
@@ -59,6 +61,10 @@ lib.makeScope newScope (
 
     hydro = callPackage ./hydro.nix { };
 
+    macos = callPackage ./macos.nix { };
+
+    nvm = callPackage ./nvm.nix { };
+
     pisces = callPackage ./pisces.nix { };
 
     plugin-git = callPackage ./plugin-git.nix { };
@@ -70,6 +76,8 @@ lib.makeScope newScope (
     pure = callPackage ./pure.nix { };
 
     sdkman-for-fish = callPackage ./sdkman-for-fish.nix { };
+
+    spark = callPackage ./spark.nix { };
 
     sponge = callPackage ./sponge.nix { };
 

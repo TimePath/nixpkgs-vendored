@@ -1,5 +1,7 @@
 {
   lib,
+  callPackage,
+  stdenvNoCC,
   buildGoModule,
   fetchFromGitHub,
   buildNpmPackage,
@@ -16,15 +18,74 @@
     # the version regex here as well.
     #
     # Ensure you also check ../mattermostLatest/package.nix.
-    regex = "^v(9\\.11\\.[0-9]+)$";
-    version = "9.11.11";
-    srcHash = "sha256-ugFGb85Oolg9pXeNi2JFKWQ4eebmdr/O3xIGbKGFSvQ=";
-    vendorHash = "sha256-h/hcdVImU3wFp7BGHS/TxYBEWGv9v06y8etaz9OrHTA=";
-    npmDepsHash = "sha256-Kk0Bbx/Rs5xpwSpgpm9BSMMEMKmO6kgKgyv/oDIAZ7w=";
+    regex = "^v(10\\.5\\.[0-9]+)$";
+    version = "10.5.6";
+    srcHash = "sha256-etHEJ3EBTolXZr/2Kd39Jdtf1qBMuVO5zRkuM6k4F3w=";
+    vendorHash = "sha256-9Jl+lxvSoxUReziTqkDRyeNrijGWcBDbqoywJRIeD2k=";
+    npmDepsHash = "sha256-tIeuDUZbqgqooDm5TRfViiTT5OIyN0BPwvJdI+wf7p0=";
+    lockfileOverlay = ''
+      unlock(.; "@floating-ui/react"; "channels/node_modules/@floating-ui/react")
+    '';
   },
 }:
 
-buildGoModule rec {
+let
+  /*
+    Helper function that sets the `withTests` and `withoutTests` passthru correctly,
+    and returns the version with tests.
+
+    The primary reason to use this helper over reindenting the whole file is to avoid
+    lots of manual backporting when the update script runs.
+  */
+  buildMattermost =
+    { passthru, ... }@args:
+    let
+      # Joins the webapp and Matermost derivation together.
+      # That way patches to the webapp won't cause a rebuild of the server.
+      wrapMattermost =
+        server:
+        stdenvNoCC.mkDerivation {
+          inherit server;
+
+          # src and npmDeps must be provided for the update script!
+          inherit (server)
+            pname
+            version
+            src
+            goModules
+            npmDeps
+            webapp
+            meta
+            ;
+
+          dontUnpack = true;
+
+          # Just link all the server and webapp root directories together.
+          installPhase = ''
+            mkdir -p $out
+            for dir in "$server" "$webapp"; do
+              for path in "$dir"/*; do
+                ln -s "$path" "$out/$(basename -- "$path")"
+              done
+            done
+          '';
+
+          passthru = finalPassthru;
+        };
+      finalPassthru =
+        let
+          withoutTestsUnwrapped = buildGoModule (args // { passthru = finalPassthru; });
+          withTestsUnwrapped = callPackage ./tests.nix { mattermost = withoutTestsUnwrapped; };
+        in
+        lib.recursiveUpdate passthru rec {
+          withoutTests = wrapMattermost withoutTestsUnwrapped;
+          withTests = wrapMattermost withTestsUnwrapped;
+          tests.mattermostWithTests = withTests;
+        };
+    in
+    finalPassthru.withoutTests;
+in
+buildMattermost rec {
   pname = "mattermost";
   inherit (versionInfo) version;
 
@@ -64,14 +125,12 @@ buildGoModule rec {
   # We use go 1.22's workspace vendor command, which is not yet available
   # in the default version of go used in nixpkgs, nor is it used by upstream:
   # https://github.com/mattermost/mattermost/issues/26221#issuecomment-1945351597
-  overrideModAttrs = (
-    _: {
-      buildPhase = ''
-        make setup-go-work
-        go work vendor -e
-      '';
-    }
-  );
+  overrideModAttrs = _: {
+    buildPhase = ''
+      make setup-go-work
+      go work vendor -e -v
+    '';
+  };
 
   npmDeps = fetchNpmDeps {
     inherit src;
@@ -81,46 +140,6 @@ buildGoModule rec {
     forceGitDeps = true;
   };
 
-  webapp = buildNpmPackage rec {
-    pname = "mattermost-webapp";
-    inherit version src;
-
-    sourceRoot = "${src.name}/webapp";
-
-    # Remove deprecated image-webpack-loader causing build failures
-    # See: https://github.com/tcoopman/image-webpack-loader#deprecated
-    postPatch = ''
-      substituteInPlace channels/webpack.config.js \
-        --replace-fail 'options: {}' 'options: { disable: true }'
-    '';
-
-    npmDepsHash = npmDeps.hash;
-    makeCacheWritable = true;
-    forceGitDeps = true;
-
-    npmRebuildFlags = [ "--ignore-scripts" ];
-
-    buildPhase = ''
-      runHook preBuild
-
-      npm run build --workspace=platform/types
-      npm run build --workspace=platform/client
-      npm run build --workspace=platform/components
-      npm run build --workspace=channels
-
-      runHook postBuild
-    '';
-
-    installPhase = ''
-      runHook preInstall
-
-      mkdir -p $out
-      cp -a channels/dist/* $out
-
-      runHook postInstall
-    '';
-  };
-
   inherit (versionInfo) vendorHash;
 
   modRoot = "./server";
@@ -128,7 +147,10 @@ buildGoModule rec {
     make setup-go-work
   '';
 
-  subPackages = [ "cmd/mattermost" ];
+  subPackages = [
+    "cmd/mattermost"
+    "cmd/mmctl"
+  ];
 
   tags = [ "production" ];
 
@@ -147,8 +169,7 @@ buildGoModule rec {
     shopt -s extglob
     mkdir -p $out/{i18n,fonts,templates,config}
 
-    # Link in the client and copy the language packs.
-    ln -sf $webapp $out/client
+    # Copy the language packs.
     cp -a $src/server/i18n/* $out/i18n/
 
     # Fonts have the execute bit set, remove it.
@@ -160,6 +181,13 @@ buildGoModule rec {
     # Generate the config.
     OUTPUT_CONFIG=$out/config/config.json \
       go run -tags production ./scripts/config_generator
+  '';
+
+  doInstallCheck = true;
+  installCheckPhase = ''
+    for subPackage in $subPackages; do
+      "$out/bin/$(basename -- "$subPackage")" version | grep "$version"
+    done
   '';
 
   passthru = {
@@ -175,22 +203,67 @@ buildGoModule rec {
         ];
     };
     tests.mattermost = nixosTests.mattermost;
+
+    # Builds a Mattermost plugin.
+    buildPlugin = callPackage ./build-plugin.nix { };
+
+    # Builds the webapp.
+    webapp = buildNpmPackage rec {
+      pname = "mattermost-webapp";
+      inherit version src;
+
+      sourceRoot = "${src.name}/webapp";
+
+      # Remove deprecated image-webpack-loader causing build failures
+      # See: https://github.com/tcoopman/image-webpack-loader#deprecated
+      postPatch = ''
+        substituteInPlace channels/webpack.config.js \
+          --replace-fail 'options: {}' 'options: { disable: true }'
+      '';
+
+      npmDepsHash = npmDeps.hash;
+      makeCacheWritable = true;
+      forceGitDeps = true;
+
+      npmRebuildFlags = [ "--ignore-scripts" ];
+
+      buildPhase = ''
+        runHook preBuild
+
+        npm run build --workspace=platform/types
+        npm run build --workspace=platform/client
+        npm run build --workspace=platform/components
+        npm run build --workspace=channels
+
+        runHook postBuild
+      '';
+
+      installPhase = ''
+        runHook preInstall
+
+        mkdir -p $out/client
+        cp -a channels/dist/* $out/client
+
+        runHook postInstall
+      '';
+    };
   };
 
-  meta = with lib; {
+  meta = {
     description = "Mattermost is an open source platform for secure collaboration across the entire software development lifecycle";
     homepage = "https://www.mattermost.org";
-    license = with licenses; [
+    license = with lib.licenses; [
       agpl3Only
       asl20
     ];
-    maintainers = with maintainers; [
+    maintainers = with lib.maintainers; [
       ryantm
       numinit
       kranzes
       mgdelacroix
       fsagbuya
     ];
+    platforms = lib.platforms.linux;
     mainProgram = "mattermost";
   };
 }

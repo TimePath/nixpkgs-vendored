@@ -232,7 +232,7 @@ let
       "--disable-toolbox-glue"
     ]
     ++ lib.optionals (stdenv.hostPlatform != stdenv.buildPlatform) [
-      "PYTHON_FOR_BUILD=${lib.getBin buildPackages.python}/bin/python"
+      "PYTHON_FOR_BUILD=${lib.getBin buildPackages.python27}/bin/python"
       "ac_cv_buggy_getaddrinfo=no"
       # Assume little-endian IEEE 754 floating point when cross compiling
       "ac_cv_little_endian_double=yes"
@@ -283,7 +283,7 @@ let
     [ autoreconfHook ]
     ++ lib.optionals (stdenv.hostPlatform != stdenv.buildPlatform) [
       buildPackages.stdenv.cc
-      buildPackages.python
+      buildPackages.python27
     ];
 
   mkPaths = paths: {

@@ -8,8 +8,12 @@ in
 
 self: super: {
 
-  # Should be llvmPackages_6 which has been removed from nixpkgs
-  llvmPackages = null;
+  # Should be llvmPackages_6 which has been removed from nixpkgs,
+  # create attribute set to prevent eval errors.
+  llvmPackages = {
+    llvm = null;
+    clang = null;
+  };
 
   # Disable GHC 8.6.x core libraries.
   array = null;
@@ -43,20 +47,23 @@ self: super: {
     if pkgs.stdenv.hostPlatform == pkgs.stdenv.buildPlatform then
       null
     else
-      doDistribute self.terminfo_0_4_1_6;
+      doDistribute self.terminfo_0_4_1_7;
   text = null;
   time = null;
   transformers = null;
   unix = null;
   # GHC only bundles the xhtml library if haddock is enabled, check if this is
   # still the case when updating: https://gitlab.haskell.org/ghc/ghc/-/blob/0198841877f6f04269d6050892b98b5c3807ce4c/ghc.mk#L463
-  xhtml = if self.ghc.hasHaddock or true then null else doDistribute self.xhtml_3000_3_0_0;
+  xhtml = if self.ghc.hasHaddock or true then null else doDistribute self.xhtml_3000_4_0_0;
 
   # Need the Cabal-syntax-3.6.0.0 fake package for Cabal < 3.8 to allow callPackage and the constraint solver to work
   Cabal-syntax = self.Cabal-syntax_3_6_0_0;
   # These core package only exist for GHC >= 9.4. The best we can do is feign
   # their existence to callPackages, but their is no shim for lower GHC versions.
   system-cxx-std-lib = null;
+
+  # Becomes a core package in GHC >= 9.8
+  semaphore-compat = doDistribute self.semaphore-compat_1_0_0;
 
   # Needs Cabal 3.0.x.
   jailbreak-cabal = super.jailbreak-cabal.overrideScope (cself: _: { Cabal = cself.Cabal_3_2_1_0; });
@@ -93,8 +100,11 @@ self: super: {
   # ghc versions prior to 8.8.x needs additional dependency to compile successfully.
   ghc-lib-parser-ex = addBuildDepend self.ghc-lib-parser super.ghc-lib-parser-ex;
 
+  # Needs base-orphans for GHC < 9.8 / base < 4.19
+  some = addBuildDepend self.base-orphans super.some;
+
   # This became a core library in ghc 8.10., so we don’t have an "exception" attribute anymore.
-  exceptions = self.exceptions_0_10_8;
+  exceptions = self.exceptions_0_10_9;
 
   # vector 0.12.2 indroduced doctest checks that don’t work on older compilers
   vector = dontCheck super.vector;

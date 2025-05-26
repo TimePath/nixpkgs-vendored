@@ -228,7 +228,7 @@ let
         echo Found crate ${pkg.name} at $crateCargoTOML
         tree=$(dirname $crateCargoTOML)
 
-        cp -prvL "$tree/" $out
+        cp -prvL "$tree" "$out" || echo "Warning: certain files couldn't be copied!" >&2
         chmod u+w $out
 
         if grep -q workspace "$out/Cargo.toml"; then

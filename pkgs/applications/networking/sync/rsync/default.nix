@@ -53,6 +53,9 @@ stdenv.mkDerivation rec {
       (lib.enableFeature enableOpenSSL "openssl")
       (lib.enableFeature enableXXHash "xxhash")
       (lib.enableFeature enableZstd "zstd")
+      # Feature detection does a runtime check which varies according to ipv6
+      # availability, so force it on to make reproducible, see #360152.
+      (lib.enableFeature true "ipv6")
       "--with-nobody-group=nogroup"
 
       # disable the included zlib explicitly as it otherwise still compiles and
@@ -74,7 +77,6 @@ stdenv.mkDerivation rec {
     license = licenses.gpl3Plus;
     mainProgram = "rsync";
     maintainers = with lib.maintainers; [
-      ehmry
       kampfschlaefer
       ivan
     ];

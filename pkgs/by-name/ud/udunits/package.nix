@@ -10,7 +10,7 @@
   texinfo,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation {
   pname = "udunits";
   version = "unstable-2021-03-17";
 
@@ -44,10 +44,7 @@ stdenv.mkDerivation rec {
       converting values.
     '';
     license = licenses.asl20;
-    maintainers = with maintainers; [
-      AndersonTorres
-      pSub
-    ];
+    maintainers = with maintainers; [ pSub ];
     platforms = platforms.all;
     mainProgram = "udunits2";
   };

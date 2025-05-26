@@ -70,6 +70,12 @@ stdenv.mkDerivation rec {
     runHook postBuild
   '';
 
+  patches = [
+    # fix includes of poco headers
+    # https://github.com/MCJack123/craftos2/issues/391
+    ./fix-poco-header-includes.patch
+  ];
+
   dontStrip = true;
 
   installPhase = ''

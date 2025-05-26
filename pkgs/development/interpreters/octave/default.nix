@@ -56,7 +56,6 @@
   enableQt ? false,
   libsForQt5,
   libiconv,
-  darwin,
 }:
 
 let
@@ -98,19 +97,22 @@ let
   allPkgs = pkgs;
 in
 stdenv.mkDerivation (finalAttrs: {
-  version = "9.2.0";
+  version = "10.1.0";
   pname = "octave";
 
   src = fetchurl {
     url = "mirror://gnu/octave/octave-${finalAttrs.version}.tar.gz";
-    sha256 = "sha256-BjZVSwWZaZfkMcqtRCLAA4bS18aJAEcnAP7PX/63yZE=";
+    sha256 = "sha256-rtRJy6N5/B4Rhuw/w8luCGB4knj7yCOuLOvmA0Q0S3g=";
   };
+
+  postPatch = ''
+    patchShebangs --build build-aux/*.pl
+  '';
 
   buildInputs =
     [
       readline
       ncurses
-      perl
       flex
       qhull
       graphicsmagick
@@ -152,11 +154,10 @@ stdenv.mkDerivation (finalAttrs: {
     ]
     ++ lib.optionals stdenv.hostPlatform.isDarwin [
       libiconv
-      darwin.apple_sdk.frameworks.Accelerate
-      darwin.apple_sdk.frameworks.Cocoa
     ];
   nativeBuildInputs =
     [
+      perl
       pkg-config
       gfortran
       texinfo
@@ -183,7 +184,6 @@ stdenv.mkDerivation (finalAttrs: {
       "--with-lapack=lapack"
       (if use64BitIdx then "--enable-64" else "--disable-64")
     ]
-    ++ lib.optionals stdenv.hostPlatform.isDarwin [ "--enable-link-all-dependencies" ]
     ++ lib.optionals enableReadline [ "--enable-readline" ]
     ++ lib.optionals stdenv.hostPlatform.isDarwin [ "--with-x=no" ]
     ++ lib.optionals enableQt [ "--with-qt=5" ];

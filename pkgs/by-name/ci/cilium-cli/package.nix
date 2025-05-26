@@ -9,13 +9,13 @@
 
 buildGoModule rec {
   pname = "cilium-cli";
-  version = "0.16.19";
+  version = "0.18.3";
 
   src = fetchFromGitHub {
     owner = "cilium";
     repo = "cilium-cli";
     tag = "v${version}";
-    hash = "sha256-I5HC1H517oCizZf2mcHOKmgJqnvPjkNVfDy2/9Kkw44=";
+    hash = "sha256-9+nNZEXjSoNB/Ftn/CtoBcR/uaD71C1jzDEaEG3Wpb4=";
   };
 
   nativeBuildInputs = [ installShellFiles ];
@@ -27,7 +27,7 @@ buildGoModule rec {
   ldflags = [
     "-s"
     "-w"
-    "-X=github.com/cilium/cilium-cli/defaults.CLIVersion=${version}"
+    "-X=github.com/cilium/cilium/cilium-cli/defaults.CLIVersion=${version}"
   ];
 
   # Required to workaround install check error:

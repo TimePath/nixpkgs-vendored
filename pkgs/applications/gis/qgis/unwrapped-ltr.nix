@@ -3,7 +3,7 @@
   fetchFromGitHub,
   makeWrapper,
   mkDerivation,
-  substituteAll,
+  replaceVars,
   wrapGAppsHook3,
   wrapQtAppsHook,
 
@@ -21,6 +21,7 @@
   grass,
   gsl,
   hdf5,
+  libpq,
   libspatialindex,
   libspatialite,
   libzip,
@@ -28,10 +29,9 @@
   ninja,
   openssl,
   pdal,
-  postgresql,
   proj,
   protobuf,
-  python311,
+  python3,
   qca-qt5,
   qscintilla,
   qt3d,
@@ -50,11 +50,12 @@
 }:
 
 let
-  py = python311.override {
+  py = python3.override {
     self = py;
     packageOverrides = self: super: {
       pyqt5 = super.pyqt5.override {
         withLocation = true;
+        withSerialPort = true;
       };
     };
   };
@@ -81,14 +82,14 @@ let
   ];
 in
 mkDerivation rec {
-  version = "3.34.11";
+  version = "3.40.6";
   pname = "qgis-ltr-unwrapped";
 
   src = fetchFromGitHub {
     owner = "qgis";
     repo = "QGIS";
     rev = "final-${lib.replaceStrings [ "." ] [ "_" ] version}";
-    hash = "sha256-VNgUMEA7VKZXsLG1ZYUIlYvjwRrH8LsliGiVRMnXOM0=";
+    hash = "sha256-pw5XxaGDsyQfeJL582Iic2sg5j8AUPvM+I53YLB4aG4=";
   };
 
   passthru = {
@@ -115,13 +116,13 @@ mkDerivation rec {
       geos
       gsl
       hdf5
+      libpq
       libspatialindex
       libspatialite
       libzip
       netcdf
       openssl
       pdal
-      postgresql
       proj
       protobuf
       qca-qt5
@@ -144,8 +145,7 @@ mkDerivation rec {
     ++ pythonBuildInputs;
 
   patches = [
-    (substituteAll {
-      src = ./set-pyqt-package-dirs-ltr.patch;
+    (replaceVars ./set-pyqt-package-dirs-ltr.patch {
       pyQt5PackageDir = "${py.pkgs.pyqt5}/${py.pkgs.python.sitePackages}";
       qsciPackageDir = "${py.pkgs.qscintilla-qt5}/${py.pkgs.python.sitePackages}";
     })
@@ -160,6 +160,11 @@ mkDerivation rec {
       "-DWITH_3D=True"
       "-DWITH_PDAL=True"
       "-DENABLE_TESTS=False"
+      "-DQT_PLUGINS_DIR=${qtbase}/${qtbase.qtPluginPrefix}"
+
+      # Remove for QGIS 3.42
+      "-DCMAKE_POLICY_DEFAULT_CMP0175=OLD"
+      "-DCMAKE_POLICY_DEFAULT_CMP0177=OLD"
     ]
     ++ lib.optional (!withWebKit) "-DWITH_QTWEBKIT=OFF"
     ++ lib.optional withServer [
@@ -196,7 +201,8 @@ mkDerivation rec {
     description = "Free and Open Source Geographic Information System";
     homepage = "https://www.qgis.org";
     license = licenses.gpl2Plus;
-    maintainers = with maintainers; teams.geospatial.members ++ [ lsix ];
+    maintainers = with maintainers; [ lsix ];
+    teams = [ teams.geospatial ];
     platforms = with platforms; linux;
   };
 }

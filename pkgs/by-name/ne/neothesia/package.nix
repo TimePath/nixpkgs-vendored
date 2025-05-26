@@ -7,7 +7,6 @@
   alsa-lib,
   wayland,
   makeWrapper,
-  llvmPackages,
   libxkbcommon,
   vulkan-loader,
   xorg,
@@ -34,16 +33,12 @@ rustPlatform.buildRustPackage {
 
   nativeBuildInputs = [
     pkg-config
-    llvmPackages.clang
     makeWrapper
+    rustPlatform.bindgenHook
   ];
 
-  cargoLock = {
-    lockFile = ./Cargo.lock;
-    outputHashes = {
-      "mpeg_encoder-0.2.1" = "sha256-+BNZZ1FIr1374n8Zs1mww2w3eWHOH6ENOTYXz9RT2Ck=";
-    };
-  };
+  useFetchCargoVendor = true;
+  cargoHash = "sha256-qIoH+YhyPXXIWFwgcJBly2KBSuVgaRg5kZtBazaTVJ0=";
 
   cargoBuildFlags = [
     "-p neothesia -p neothesia-cli"
@@ -64,10 +59,6 @@ rustPlatform.buildRustPackage {
     install -Dm 644 flatpak/com.github.polymeilex.neothesia.desktop $out/share/applications/com.github.polymeilex.neothesia.desktop
     install -Dm 644 flatpak/com.github.polymeilex.neothesia.png $out/share/icons/hicolor/256x256/apps/com.github.polymeilex.neothesia.png
   '';
-
-  env = {
-    LIBCLANG_PATH = "${lib.getLib llvmPackages.libclang}/lib";
-  };
 
   meta = {
     description = "Flashy Synthesia Like Software For Linux, Windows and macOS";

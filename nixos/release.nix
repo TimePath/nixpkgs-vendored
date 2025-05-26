@@ -4,7 +4,7 @@ with import ../lib;
   nixpkgs ? {
     outPath = cleanSource ./..;
     revCount = 708350;
-    shortRev = "1d95cb5";
+    shortRev = "gfedcba";
   },
   stableBranch ? false,
   supportedSystems ? [
@@ -81,9 +81,7 @@ let
     hydraJob (
       (import lib/eval-config.nix {
         inherit system;
-        modules = makeModules module {
-          isoImage.isoBaseName = "nixos-${type}";
-        };
+        modules = makeModules module { };
       }).config.system.build.isoImage
     );
 
@@ -220,57 +218,17 @@ rec {
   iso_minimal = forAllSystems (
     system:
     makeIso {
-      module = ./modules/installer/cd-dvd/installation-cd-minimal.nix;
+      module = ./modules/installer/cd-dvd/installation-cd-minimal-combined.nix;
       type = "minimal";
       inherit system;
     }
   );
 
-  iso_plasma5 = forMatchingSystems supportedSystems (
+  iso_graphical = forAllSystems (
     system:
     makeIso {
-      module = ./modules/installer/cd-dvd/installation-cd-graphical-calamares-plasma5.nix;
-      type = "plasma5";
-      inherit system;
-    }
-  );
-
-  iso_plasma6 = forMatchingSystems supportedSystems (
-    system:
-    makeIso {
-      module = ./modules/installer/cd-dvd/installation-cd-graphical-calamares-plasma6.nix;
-      type = "plasma6";
-      inherit system;
-    }
-  );
-
-  iso_gnome = forMatchingSystems supportedSystems (
-    system:
-    makeIso {
-      module = ./modules/installer/cd-dvd/installation-cd-graphical-calamares-gnome.nix;
-      type = "gnome";
-      inherit system;
-    }
-  );
-
-  # A variant with a more recent (but possibly less stable) kernel that might support more hardware.
-  # This variant keeps zfs support enabled, hoping it will build and work.
-  iso_minimal_new_kernel = forMatchingSystems [ "x86_64-linux" "aarch64-linux" ] (
-    system:
-    makeIso {
-      module = ./modules/installer/cd-dvd/installation-cd-minimal-new-kernel.nix;
-      type = "minimal-new-kernel";
-      inherit system;
-    }
-  );
-
-  # A variant with a more recent (but possibly less stable) kernel that might support more hardware.
-  # ZFS support disabled since it is unlikely to support the latest kernel.
-  iso_minimal_new_kernel_no_zfs = forMatchingSystems [ "x86_64-linux" "aarch64-linux" ] (
-    system:
-    makeIso {
-      module = ./modules/installer/cd-dvd/installation-cd-minimal-new-kernel-no-zfs.nix;
-      type = "minimal-new-kernel-no-zfs";
+      module = ./modules/installer/cd-dvd/installation-cd-graphical-combined.nix;
+      type = "graphical";
       inherit system;
     }
   );
@@ -375,32 +333,6 @@ rec {
           configuration
           versionModule
           ./maintainers/scripts/ec2/amazon-image-zfs.nix
-        ];
-      }).config.system.build.amazonImage
-    )
-
-  );
-
-  # Test job for https://github.com/NixOS/nixpkgs/issues/121354 to test
-  # automatic sizing without blocking the channel.
-  amazonImageAutomaticSize = forMatchingSystems [ "x86_64-linux" "aarch64-linux" ] (
-    system:
-
-    with import ./.. { inherit system; };
-
-    hydraJob (
-      (import lib/eval-config.nix {
-        inherit system;
-        modules = [
-          configuration
-          versionModule
-          ./maintainers/scripts/ec2/amazon-image.nix
-          (
-            { ... }:
-            {
-              virtualisation.diskSize = "auto";
-            }
-          )
         ];
       }).config.system.build.amazonImage
     )

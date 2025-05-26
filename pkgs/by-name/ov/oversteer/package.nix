@@ -16,7 +16,9 @@
   wrapGAppsHook3,
   gobject-introspection,
   bash,
+  linuxConsoleTools,
 }:
+
 let
   python = python3.withPackages (
     p: with p; [
@@ -31,7 +33,7 @@ let
     ]
   );
 
-  version = "0.8.1";
+  version = "0.8.3";
 in
 stdenv.mkDerivation {
   inherit version;
@@ -41,8 +43,8 @@ stdenv.mkDerivation {
   src = fetchFromGitHub {
     owner = "berarma";
     repo = "oversteer";
-    rev = version;
-    sha256 = "sha256-J23fgEDkfZMjVEYHaSPbU9zh5CQFjPmqMsm09VybBv8=";
+    rev = "v${version}";
+    sha256 = "sha256-X58U7lFH53nCaXnE7uXgV7aea6qntNfH5TIt68xSefY=";
   };
 
   buildInputs = [
@@ -86,7 +88,9 @@ stdenv.mkDerivation {
 
   postInstall = ''
     substituteInPlace $out/lib/udev/rules.d/* \
-      --replace /bin/sh ${bash}/bin/sh
+      --replace-fail /bin/sh ${bash}/bin/sh
+    substituteInPlace $out/lib/udev/rules.d/99-fanatec-wheel-perms.rules \
+      --replace-fail /usr/bin/evdev-joystick ${linuxConsoleTools}/bin/evdev-joystick
   '';
 
   patches = [ ];

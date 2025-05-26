@@ -1,49 +1,48 @@
 {
-  lib,
-  mkDerivation,
-  fetchFromGitHub,
   cmake,
-  pkg-config,
-  curl,
+  fetchFromGitHub,
+  lib,
+  maplibre-native-qt,
   qtbase,
-  qtlocation,
-  maplibre-gl-native,
+  qtpositioning,
+  stdenv,
 }:
 
-mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "mapbox-gl-qml";
-  version = "2.1.1";
+  version = "3.0.0";
 
   src = fetchFromGitHub {
     owner = "rinigus";
     repo = "mapbox-gl-qml";
-    rev = version;
-    hash = "sha256-zZcD85nOZZ067FRvSuzE8lr2gyuVxpcZGp44D4ayc3Q=";
+    tag = finalAttrs.version;
+    hash = "sha256-csk3Uo+AdP1R/T/9gWyWmYFIKuen2jy8wYN3GJznyRE=";
   };
 
   nativeBuildInputs = [
     cmake
-    pkg-config
   ];
+
+  cmakeFlags = [
+    (lib.cmakeFeature "QT_INSTALL_QML" "${placeholder "out"}/${qtbase.qtQmlPrefix}")
+  ];
+
   buildInputs = [
-    curl
-    qtlocation
-    maplibre-gl-native
+    maplibre-native-qt
+    qtpositioning
   ];
 
-  postPatch = ''
-    substituteInPlace src/CMakeLists.txt \
-      --replace ' ''${QT_INSTALL_QML}' " $out/${qtbase.qtQmlPrefix}"
-  '';
+  dontWrapQtApps = true; # library only
 
-  meta = with lib; {
+  meta = {
+    changelog = "https://github.com/rinigus/mapbox-gl-qml/releases/tag/${finalAttrs.version}";
     description = "Unofficial Mapbox GL Native bindings for Qt QML";
     homepage = "https://github.com/rinigus/mapbox-gl-qml";
-    license = licenses.lgpl3Only;
-    maintainers = with maintainers; [
+    license = lib.licenses.lgpl3Only;
+    maintainers = with lib.maintainers; [
       Thra11
       dotlambda
     ];
-    platforms = platforms.linux;
+    platforms = lib.platforms.linux;
   };
-}
+})

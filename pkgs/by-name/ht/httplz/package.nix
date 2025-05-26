@@ -7,8 +7,6 @@
   pkg-config,
   ronn,
   openssl,
-  stdenv,
-  darwin,
 }:
 
 rustPlatform.buildRustPackage rec {
@@ -21,7 +19,8 @@ rustPlatform.buildRustPackage rec {
     hash = "sha256-uxEMgSrcxMZD/3GQuH9S/oYtMUPzgMR61ZzLcb65zXU=";
   };
 
-  cargoHash = "sha256-8cH8QrnkfPF0Di7+Ns/P/8cFe0jej/v7m4fkkfTFdvs=";
+  useFetchCargoVendor = true;
+  cargoHash = "sha256-DXSHaiiIRdyrlX4UYPFD3aTAv65k3x/PU2VW047odH0=";
 
   nativeBuildInputs = [
     installShellFiles
@@ -30,11 +29,7 @@ rustPlatform.buildRustPackage rec {
     ronn
   ];
 
-  buildInputs =
-    [ openssl ]
-    ++ lib.optionals stdenv.hostPlatform.isDarwin [
-      darwin.apple_sdk.frameworks.Security
-    ];
+  buildInputs = [ openssl ];
 
   cargoBuildFlags = [
     "--bin"

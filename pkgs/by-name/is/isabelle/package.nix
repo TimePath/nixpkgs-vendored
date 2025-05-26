@@ -2,6 +2,7 @@
   lib,
   stdenv,
   fetchurl,
+  fetchFromGitHub,
   coreutils,
   nettools,
   java,
@@ -10,7 +11,6 @@
   veriT,
   vampire,
   eprover-ho,
-  naproche,
   rlwrap,
   perl,
   procps,
@@ -21,6 +21,15 @@
 }:
 
 let
+  vampire' = vampire.overrideAttrs (_: {
+    src = fetchFromGitHub {
+      owner = "vprover";
+      repo = "vampire";
+      tag = "v4.8HO4Sledgahammer";
+      hash = "sha256-CmppaGa4M9tkE1b25cY1LSPFygJy5yV4kpHKbPqvcVE=";
+    };
+  });
+
   sha1 = stdenv.mkDerivation {
     pname = "isabelle-sha1";
     version = "2024";
@@ -31,22 +40,12 @@ let
       hash = "sha256-DB/ETVZhbT82IMZA97TmHG6gJcGpFavxDKDTwPzIF80=";
     };
 
-    buildPhase =
-      (
-        if stdenv.hostPlatform.isDarwin then
-          ''
-            LDFLAGS="-dynamic -undefined dynamic_lookup -lSystem"
-          ''
-        else
-          ''
-            LDFLAGS="-fPIC -shared"
-          ''
-      )
-      + ''
-        CFLAGS="-fPIC -I."
-        $CC $CFLAGS -c sha1.c -o sha1.o
-        $LD $LDFLAGS sha1.o -o libsha1.so
-      '';
+    buildPhase = ''
+      CFLAGS="-fPIC -I."
+      LDFLAGS="-fPIC -shared"
+      $CC $CFLAGS -c sha1.c -o sha1.o
+      $CC $LDFLAGS sha1.o -o libsha1.so
+    '';
 
     installPhase = ''
       mkdir -p $out/lib
@@ -56,7 +55,7 @@ let
 in
 stdenv.mkDerivation (finalAttrs: rec {
   pname = "isabelle";
-  version = "2024";
+  version = "2025";
 
   dirname = "Isabelle${version}";
 
@@ -64,33 +63,30 @@ stdenv.mkDerivation (finalAttrs: rec {
     if stdenv.hostPlatform.isDarwin then
       fetchurl {
         url = "https://isabelle.in.tum.de/website-${dirname}/dist/${dirname}_macos.tar.gz";
-        hash = "sha256-IgNfmW9x6h8DBj9vFEGV62oEl01NkW7QdyzXlWmii8c=";
+        hash = "sha256-6ldUwiiFf12dOuJU7JgUeX8kU+opDfILL23LLvDi5/g=";
       }
     else if stdenv.hostPlatform.isx86 then
       fetchurl {
         url = "https://isabelle.in.tum.de/website-${dirname}/dist/${dirname}_linux.tar.gz";
-        hash = "sha256-YDqq+KvqNll687BlHSwWKobAoN1EIHZvR+VyQDljkmc=";
+        hash = "sha256-PR1m3jcYI/4xqormZjj3NXW6wkTwCzGu4dy2LzgUfFY=";
       }
     else
       fetchurl {
         url = "https://isabelle.in.tum.de/website-${dirname}/dist/${dirname}_linux_arm.tar.gz";
-        hash = "sha256-jXWVv18WwrVnqVX1s4Lnyf7DkOzPa3EdLXYxgtKD+YA=";
+        hash = "sha256-p/Hp+7J5gJy5s6BVD5Ma1Mu2OS53I8BS7gKSOYYB0PE=";
       };
 
   nativeBuildInputs = [ java ];
 
-  buildInputs =
-    [
-      polyml
-      veriT
-      vampire
-      eprover-ho
-      nettools
-    ]
-    ++ lib.optionals (!stdenv.hostPlatform.isDarwin) [
-      java
-      procps
-    ];
+  buildInputs = [
+    polyml
+    veriT
+    vampire'
+    eprover-ho
+    nettools
+  ];
+
+  propagatedBuildInputs = lib.optionals stdenv.hostPlatform.isDarwin [ procps ];
 
   sourceRoot = "${dirname}${lib.optionalString stdenv.hostPlatform.isDarwin ".app"}";
 
@@ -116,8 +112,8 @@ stdenv.mkDerivation (finalAttrs: rec {
       EOF
 
       cat >contrib/vampire-*/etc/settings <<EOF
-        VAMPIRE_HOME=${vampire}/bin
-        VAMPIRE_VERSION=${vampire.version}
+        VAMPIRE_HOME=${vampire'}/bin
+        VAMPIRE_VERSION=${vampire'.version}
         VAMPIRE_EXTRA_OPTIONS="--mode casc"
       EOF
 
@@ -136,18 +132,12 @@ stdenv.mkDerivation (finalAttrs: rec {
         ISABELLE_JDK_HOME=${java}
       EOF
 
-    ''
-    + lib.optionalString stdenv.hostPlatform.isx86 ''
-      rm contrib/naproche-*/x86*/Naproche-SAD
-      ln -s ${naproche}/bin/Naproche-SAD contrib/naproche-*/x86*/
-    ''
-    + ''
-
       echo ISABELLE_LINE_EDITOR=${rlwrap}/bin/rlwrap >>etc/settings
 
       for comp in contrib/jdk* contrib/polyml-* contrib/verit-* contrib/vampire-* contrib/e-*; do
         rm -rf $comp/${if stdenv.hostPlatform.isx86 then "x86" else "arm"}*
       done
+      rm -rf contrib/*/src
 
       substituteInPlace lib/Tools/env \
         --replace-fail /usr/bin/env ${coreutils}/bin/env
@@ -257,7 +247,6 @@ stdenv.mkDerivation (finalAttrs: rec {
       maintainers.jvanbruegge
     ];
     platforms = platforms.unix;
-    broken = stdenv.hostPlatform.isDarwin;
   };
 
   passthru.withComponents =

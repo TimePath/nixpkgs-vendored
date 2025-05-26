@@ -4,9 +4,6 @@
   pkgs,
   ...
 }:
-
-with lib;
-
 let
   cfg = config.services.datadog-agent;
 
@@ -17,19 +14,19 @@ let
       additional_checksd = "/etc/datadog-agent/checks.d";
       use_dogstatsd = true;
     }
-    // optionalAttrs (cfg.logLevel != null) { log_level = cfg.logLevel; }
-    // optionalAttrs (cfg.hostname != null) { inherit (cfg) hostname; }
-    // optionalAttrs (cfg.ddUrl != null) { dd_url = cfg.ddUrl; }
-    // optionalAttrs (cfg.site != null) { site = cfg.site; }
-    // optionalAttrs (cfg.tags != null) { tags = concatStringsSep ", " cfg.tags; }
-    // optionalAttrs (cfg.enableLiveProcessCollection) {
+    // lib.optionalAttrs (cfg.logLevel != null) { log_level = cfg.logLevel; }
+    // lib.optionalAttrs (cfg.hostname != null) { inherit (cfg) hostname; }
+    // lib.optionalAttrs (cfg.ddUrl != null) { dd_url = cfg.ddUrl; }
+    // lib.optionalAttrs (cfg.site != null) { site = cfg.site; }
+    // lib.optionalAttrs (cfg.tags != null) { tags = lib.concatStringsSep ", " cfg.tags; }
+    // lib.optionalAttrs (cfg.enableLiveProcessCollection) {
       process_config = {
         dd_agent_bin = "${datadogPkg}/bin/agent";
         process_collection.enabled = "true";
         container_collection.enabled = "true";
       };
     }
-    // optionalAttrs (cfg.enableTraceAgent) {
+    // lib.optionalAttrs (cfg.enableTraceAgent) {
       apm_config = {
         enabled = true;
       };
@@ -41,7 +38,7 @@ let
   # and because JSON is a valid subset of YAML.
   makeCheckConfigs =
     entries:
-    mapAttrs' (name: conf: {
+    lib.mapAttrs' (name: conf: {
       name = "datadog-agent/conf.d/${name}.d/conf.yaml";
       value.source = pkgs.writeText "${name}-check-conf.yaml" (builtins.toJSON conf);
     }) entries;
@@ -72,9 +69,9 @@ let
 in
 {
   options.services.datadog-agent = {
-    enable = mkEnableOption "Datadog-agent v7 monitoring service";
+    enable = lib.mkEnableOption "Datadog-agent v7 monitoring service";
 
-    package = mkPackageOption pkgs "datadog-agent" {
+    package = lib.mkPackageOption pkgs "datadog-agent" {
       extraDescription = ''
         ::: {.note}
         The provided package is expected to have an overridable `pythonPackages`-attribute
@@ -83,16 +80,16 @@ in
       '';
     };
 
-    apiKeyFile = mkOption {
+    apiKeyFile = lib.mkOption {
       description = ''
         Path to a file containing the Datadog API key to associate the
         agent with your account.
       '';
       example = "/run/keys/datadog_api_key";
-      type = types.path;
+      type = lib.types.path;
     };
 
-    ddUrl = mkOption {
+    ddUrl = lib.mkOption {
       description = ''
         Custom dd_url to configure the agent with. Useful if traffic to datadog
         needs to go through a proxy.
@@ -100,41 +97,41 @@ in
       '';
       default = null;
       example = "http://haproxy.example.com:3834";
-      type = types.nullOr types.str;
+      type = lib.types.nullOr lib.types.str;
     };
 
-    site = mkOption {
+    site = lib.mkOption {
       description = ''
         The datadog site to point the agent towards.
         Set to datadoghq.eu to point it to their EU site.
       '';
       default = null;
       example = "datadoghq.eu";
-      type = types.nullOr types.str;
+      type = lib.types.nullOr lib.types.str;
     };
 
-    tags = mkOption {
+    tags = lib.mkOption {
       description = "The tags to mark this Datadog agent";
       example = [
         "test"
         "service"
       ];
       default = null;
-      type = types.nullOr (types.listOf types.str);
+      type = lib.types.nullOr (lib.types.listOf lib.types.str);
     };
 
-    hostname = mkOption {
+    hostname = lib.mkOption {
       description = "The hostname to show in the Datadog dashboard (optional)";
       default = null;
       example = "mymachine.mydomain";
-      type = types.nullOr types.str;
+      type = lib.types.nullOr lib.types.str;
     };
 
-    logLevel = mkOption {
+    logLevel = lib.mkOption {
       description = "Logging verbosity.";
       default = null;
-      type = types.nullOr (
-        types.enum [
+      type = lib.types.nullOr (
+        lib.types.enum [
           "DEBUG"
           "INFO"
           "WARN"
@@ -143,9 +140,9 @@ in
       );
     };
 
-    extraIntegrations = mkOption {
+    extraIntegrations = lib.mkOption {
       default = { };
-      type = types.attrs;
+      type = lib.types.attrs;
 
       description = ''
         Extra integrations from the Datadog core-integrations
@@ -159,51 +156,51 @@ in
         package set must be provided.
       '';
 
-      example = literalExpression ''
+      example = lib.literalExpression ''
         {
           ntp = pythonPackages: [ pythonPackages.ntplib ];
         }
       '';
     };
 
-    extraConfig = mkOption {
+    extraConfig = lib.mkOption {
       default = { };
-      type = types.attrs;
+      type = lib.types.attrs;
       description = ''
         Extra configuration options that will be merged into the
         main config file {file}`datadog.yaml`.
       '';
     };
 
-    enableLiveProcessCollection = mkOption {
+    enableLiveProcessCollection = lib.mkOption {
       description = ''
         Whether to enable the live process collection agent.
       '';
       default = false;
-      type = types.bool;
+      type = lib.types.bool;
     };
 
-    processAgentPackage = mkOption {
+    processAgentPackage = lib.mkOption {
       default = pkgs.datadog-process-agent;
-      defaultText = literalExpression "pkgs.datadog-process-agent";
+      defaultText = lib.literalExpression "pkgs.datadog-process-agent";
       description = ''
         Which DataDog v7 agent package to use. Note that the provided
         package is expected to have an overridable `pythonPackages`-attribute
         which configures the Python environment with the Datadog
         checks.
       '';
-      type = types.package;
+      type = lib.types.package;
     };
 
-    enableTraceAgent = mkOption {
+    enableTraceAgent = lib.mkOption {
       description = ''
         Whether to enable the trace agent.
       '';
       default = false;
-      type = types.bool;
+      type = lib.types.bool;
     };
 
-    checks = mkOption {
+    checks = lib.mkOption {
       description = ''
         Configuration for all Datadog checks. Keys of this attribute
         set will be used as the name of the check to create the
@@ -239,21 +236,21 @@ in
 
       # sic! The structure of the values is up to the check, so we can
       # not usefully constrain the type further.
-      type = with types; attrsOf attrs;
+      type = with lib.types; attrsOf attrs;
     };
 
-    diskCheck = mkOption {
+    diskCheck = lib.mkOption {
       description = "Disk check config";
-      type = types.attrs;
+      type = lib.types.attrs;
       default = {
         init_config = { };
         instances = [ { use_mount = "false"; } ];
       };
     };
 
-    networkCheck = mkOption {
+    networkCheck = lib.mkOption {
       description = "Network check config";
-      type = types.attrs;
+      type = lib.types.attrs;
       default = {
         init_config = { };
         # Network check only supports one configured instance
@@ -269,7 +266,7 @@ in
       };
     };
   };
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     environment.systemPackages = [
       datadogPkg
       pkgs.sysstat
@@ -291,7 +288,7 @@ in
       let
         makeService =
           attrs:
-          recursiveUpdate {
+          lib.recursiveUpdate {
             path = [
               datadogPkg
               pkgs.sysstat
@@ -305,7 +302,7 @@ in
               Restart = "always";
               RestartSec = 2;
             };
-            restartTriggers = [ datadogPkg ] ++ map (x: x.source) (attrValues etcfiles);
+            restartTriggers = [ datadogPkg ] ++ map (x: x.source) (lib.attrValues etcfiles);
           } attrs;
       in
       {

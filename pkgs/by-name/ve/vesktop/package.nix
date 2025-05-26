@@ -2,7 +2,7 @@
   lib,
   stdenv,
   fetchFromGitHub,
-  substituteAll,
+  replaceVars,
   makeBinaryWrapper,
   makeWrapper,
   makeDesktopItem,
@@ -73,10 +73,11 @@ stdenv.mkDerivation (finalAttrs: {
       ./disable_update_checking.patch
       ./fix_read_only_settings.patch
     ]
-    ++ lib.optional withSystemVencord (substituteAll {
-      inherit vencord;
-      src = ./use_system_vencord.patch;
-    });
+    ++ lib.optional withSystemVencord (
+      replaceVars ./use_system_vencord.patch {
+        inherit vencord;
+      }
+    );
 
   env = {
     ELECTRON_SKIP_BINARY_DOWNLOAD = 1;
@@ -138,9 +139,12 @@ stdenv.mkDerivation (finalAttrs: {
     lib.optionalString stdenv.hostPlatform.isLinux ''
       makeWrapper ${electron}/bin/electron $out/bin/vesktop \
         --add-flags $out/opt/Vesktop/resources/app.asar \
-        ${lib.optionalString withTTS "--add-flags \"--enable-speech-dispatcher\""} \
+        ${lib.strings.optionalString withTTS ''
+          --run 'if [[ "''${NIXOS_SPEECH:-default}" != "False" ]]; then NIXOS_SPEECH=True; else unset NIXOS_SPEECH; fi' \
+          --add-flags "\''${NIXOS_SPEECH:+--enable-speech-dispatcher}" \
+        ''} \
         ${lib.optionalString withMiddleClickScroll "--add-flags \"--enable-blink-features=MiddleClickAutoscroll\""} \
-        --add-flags "\''${NIXOS_OZONE_WL:+\''${WAYLAND_DISPLAY:+--ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime}}"
+        --add-flags "\''${NIXOS_OZONE_WL:+\''${WAYLAND_DISPLAY:+--ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime=true}}"
     ''
     + lib.optionalString stdenv.hostPlatform.isDarwin ''
       makeWrapper $out/Applications/Vesktop.app/Contents/MacOS/Vesktop $out/bin/vesktop

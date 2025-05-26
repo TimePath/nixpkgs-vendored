@@ -27,7 +27,8 @@ let
 
 in
 buildFHSEnv {
-  name = "platformio";
+  pname = "platformio";
+  inherit (platformio-core) version;
 
   targetPkgs = pio-pkgs;
   # disabled temporarily because fastdiff no longer support 32bit

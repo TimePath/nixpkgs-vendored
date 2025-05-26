@@ -26,13 +26,13 @@
 
 stdenv.mkDerivation rec {
   pname = "appcenter";
-  version = "8.0.0";
+  version = "8.2.0";
 
   src = fetchFromGitHub {
     owner = "elementary";
     repo = pname;
     rev = version;
-    hash = "sha256-j2S8E/sdtkir3lhN1yg4qOjcvxlriXpapsPuANPqhcc=";
+    hash = "sha256-dginzwQrzcgnVdRO54cGPVh6+yVx0zLsFeeAVhxWFnE=";
   };
 
   nativeBuildInputs = [
@@ -82,7 +82,7 @@ stdenv.mkDerivation rec {
     description = "Open, pay-what-you-want app store for indie developers, designed for elementary OS";
     license = licenses.gpl3Plus;
     platforms = platforms.linux;
-    maintainers = teams.pantheon.members;
+    teams = [ teams.pantheon ];
     mainProgram = "io.elementary.appcenter";
   };
 }

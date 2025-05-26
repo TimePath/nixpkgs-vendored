@@ -1,14 +1,13 @@
 {
   mkKdeDerivation,
   sources,
+  pkg-config,
   rustPlatform,
   cargo,
   rustc,
   discount,
   corrosion,
   alpaka,
-  # provided as callPackage input to enable easier overrides through overlays
-  cargoHash ? "sha256-2t4i7lTJxVNjsU5eO6svadZBIerSyXt6BMScpEl119s=",
 }:
 mkKdeDerivation rec {
   pname = "kdepim-addons";
@@ -17,15 +16,16 @@ mkKdeDerivation rec {
 
   cargoRoot = "plugins/webengineurlinterceptor/adblock";
 
-  cargoDeps = rustPlatform.fetchCargoTarball {
+  cargoDeps = rustPlatform.fetchCargoVendor {
     # include version in the name so we invalidate the FOD
     name = "${pname}-${version}";
     src = sources.${pname};
     sourceRoot = "${pname}-${version}/${cargoRoot}";
-    hash = cargoHash;
+    hash = "sha256-66FqoD3JoPbtg6zc32uaPYaTo4zHxywiN8wPI2jtcjc=";
   };
 
   extraNativeBuildInputs = [
+    pkg-config
     rustPlatform.cargoSetupHook
     cargo
     rustc

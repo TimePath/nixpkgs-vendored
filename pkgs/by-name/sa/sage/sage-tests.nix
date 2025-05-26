@@ -55,6 +55,8 @@ stdenv.mkDerivation {
     LC_ALL = "en_US.UTF-8";
   };
 
+  # allow singular tests to pass in darwin sandbox
+  __darwinAllowLocalNetworking = true;
   doInstallCheck = true;
   installCheckPhase = ''
     export HOME="$TMPDIR/sage-home"

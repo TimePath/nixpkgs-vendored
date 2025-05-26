@@ -46,10 +46,9 @@
   libidn,
   libedit,
   readline,
-  apple_sdk,
   libGL,
   libGLU,
-  mesa,
+  libgbm,
   libintl,
   lcms2,
   libmanette,
@@ -67,7 +66,7 @@
   libbacktrace,
   systemd,
   xdg-dbus-proxy,
-  substituteAll,
+  replaceVars,
   glib,
   unifdef,
   addDriverRunpath,
@@ -81,7 +80,7 @@
 # https://webkitgtk.org/2024/10/04/webkitgtk-2.46.html recommends building with clang.
 clangStdenv.mkDerivation (finalAttrs: {
   pname = "webkitgtk";
-  version = "2.48.0";
+  version = "2.48.2";
   name = "${finalAttrs.pname}-${finalAttrs.version}+abi=${
     if lib.versionAtLeast gtk3.version "4.0" then
       "6.0"
@@ -101,24 +100,15 @@ clangStdenv.mkDerivation (finalAttrs: {
 
   src = fetchurl {
     url = "https://webkitgtk.org/releases/webkitgtk-${finalAttrs.version}.tar.xz";
-    hash = "sha256-lJBKVc8S1EpONs6tr/8C1G2nPXa+m0dp80y/3w7r+I4=";
+    hash = "sha256-7Fj238JdOzYDiOGS+GUGjWmqsJtNffAh+Q4xTS+lTzc=";
   };
 
   patches = lib.optionals clangStdenv.hostPlatform.isLinux [
-    (substituteAll {
-      src = ./fix-bubblewrap-paths.patch;
+    (replaceVars ./fix-bubblewrap-paths.patch {
       inherit (builtins) storeDir;
       inherit (addDriverRunpath) driverLink;
     })
   ];
-
-  preConfigure = lib.optionalString (clangStdenv.hostPlatform != clangStdenv.buildPlatform) ''
-    # Ignore gettext in cmake_prefix_path so that find_program doesn't
-    # pick up the wrong gettext. TODO: Find a better solution for
-    # this, maybe make cmake not look up executables in
-    # CMAKE_PREFIX_PATH.
-    cmakeFlags+=" -DCMAKE_IGNORE_PATH=${lib.getBin gettext}/bin"
-  '';
 
   nativeBuildInputs =
     [
@@ -158,7 +148,7 @@ clangStdenv.mkDerivation (finalAttrs: {
       icu
       libGL
       libGLU
-      mesa # for libEGL headers
+      libgbm
       libgcrypt
       libgpg-error
       libidn
@@ -186,25 +176,6 @@ clangStdenv.mkDerivation (finalAttrs: {
       libedit
       readline
     ]
-    ++
-      lib.optional
-        (
-          clangStdenv.hostPlatform.isDarwin
-          && lib.versionOlder clangStdenv.hostPlatform.darwinSdkVersion "11.0"
-        )
-        (
-          # this can likely be removed as:
-          # "libproc.h is included in the 10.12 SDK Libsystem and should be identical to this one."
-          # but the package is marked broken on darwin so unable to test
-
-          # Pull a header that contains a definition of proc_pid_rusage().
-          # (We pick just that one because using the other headers from `sdk` is not
-          # compatible with our C++ standard library. This header is already in
-          # the standard library on aarch64)
-          runCommand "webkitgtk_headers" { } ''
-            install -Dm444 "${lib.getDev apple_sdk.sdk}"/include/libproc.h "$out"/include/libproc.h
-          ''
-        )
     ++ lib.optionals clangStdenv.hostPlatform.isLinux [
       libseccomp
       libmanette
@@ -290,7 +261,7 @@ clangStdenv.mkDerivation (finalAttrs: {
       "webkit2gtk-web-extension-4.0"
     ];
     platforms = platforms.linux ++ platforms.darwin;
-    maintainers = teams.gnome.members;
+    teams = [ teams.gnome ];
     broken = clangStdenv.hostPlatform.isDarwin;
   };
 })

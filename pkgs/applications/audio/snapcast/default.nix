@@ -7,14 +7,12 @@
   alsa-lib,
   asio,
   avahi,
-  boost179,
+  boost,
   flac,
   libogg,
   libvorbis,
   libopus,
   soxr,
-  IOKit,
-  AudioToolbox,
   aixlog,
   popl,
   pulseaudioSupport ? false,
@@ -42,7 +40,7 @@ stdenv.mkDerivation rec {
   # not needed
   buildInputs =
     [
-      boost179
+      boost
       asio
       avahi
       flac
@@ -55,11 +53,7 @@ stdenv.mkDerivation rec {
       openssl
     ]
     ++ lib.optional pulseaudioSupport libpulseaudio
-    ++ lib.optional stdenv.hostPlatform.isLinux alsa-lib
-    ++ lib.optionals stdenv.hostPlatform.isDarwin [
-      IOKit
-      AudioToolbox
-    ];
+    ++ lib.optional stdenv.hostPlatform.isLinux alsa-lib;
 
   TARGET = lib.optionalString stdenv.hostPlatform.isDarwin "MACOS";
 

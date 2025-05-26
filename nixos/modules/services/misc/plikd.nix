@@ -4,9 +4,6 @@
   lib,
   ...
 }:
-
-with lib;
-
 let
   cfg = config.services.plikd;
 
@@ -16,15 +13,15 @@ in
 {
   options = {
     services.plikd = {
-      enable = mkEnableOption "plikd, a temporary file upload system";
+      enable = lib.mkEnableOption "plikd, a temporary file upload system";
 
-      openFirewall = mkOption {
-        type = types.bool;
+      openFirewall = lib.mkOption {
+        type = lib.types.bool;
         default = false;
         description = "Open ports in the firewall for the plikd.";
       };
 
-      settings = mkOption {
+      settings = lib.mkOption {
         type = format.type;
         default = { };
         description = ''
@@ -35,8 +32,8 @@ in
     };
   };
 
-  config = mkIf cfg.enable {
-    services.plikd.settings = mapAttrs (name: mkDefault) {
+  config = lib.mkIf cfg.enable {
+    services.plikd.settings = lib.mapAttrs (name: lib.mkDefault) {
       ListenPort = 8080;
       ListenAddress = "localhost";
       DataBackend = "file";
@@ -80,7 +77,7 @@ in
       };
     };
 
-    networking.firewall = mkIf cfg.openFirewall {
+    networking.firewall = lib.mkIf cfg.openFirewall {
       allowedTCPPorts = [ cfg.settings.ListenPort ];
     };
   };

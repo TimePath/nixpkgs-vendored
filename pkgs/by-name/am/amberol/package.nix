@@ -18,6 +18,7 @@
   gst_all_1,
   libadwaita,
   dbus,
+  nix-update-script,
 }:
 
 stdenv.mkDerivation rec {
@@ -72,10 +73,15 @@ stdenv.mkDerivation rec {
       gst-libav
     ]);
 
+  passthru = {
+    updateScript = nix-update-script { };
+  };
+
   meta = {
     homepage = "https://gitlab.gnome.org/World/amberol";
     description = "Small and simple sound and music player";
     maintainers = with lib.maintainers; [ linsui ];
+    teams = [ lib.teams.gnome-circle ];
     license = lib.licenses.gpl3Plus;
     platforms = lib.platforms.linux;
     mainProgram = "amberol";

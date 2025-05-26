@@ -4,10 +4,39 @@
   fetchFromGitHub,
   semgrep-core,
   buildPythonPackage,
-  pythonPackages,
 
   pytestCheckHook,
   git,
+
+  # python packages
+  attrs,
+  boltons,
+  click,
+  click-option-group,
+  colorama,
+  defusedxml,
+  flaky,
+  glom,
+  jsonschema,
+  opentelemetry-api,
+  opentelemetry-exporter-otlp-proto-http,
+  opentelemetry-instrumentation-requests,
+  opentelemetry-sdk,
+  packaging,
+  peewee,
+  pytest-freezegun,
+  pytest-mock,
+  pytest-snapshot,
+  python-lsp-jsonrpc,
+  requests,
+  rich,
+  ruamel-yaml,
+  tomli,
+  tqdm,
+  types-freezegun,
+  typing-extensions,
+  urllib3,
+  wcmatch,
 }:
 
 # testing locally post build:
@@ -53,7 +82,7 @@ buildPythonPackage rec {
     "glom"
   ];
 
-  propagatedBuildInputs = with pythonPackages; [
+  dependencies = [
     attrs
     boltons
     colorama
@@ -73,27 +102,28 @@ buildPythonPackage rec {
     typing-extensions
     python-lsp-jsonrpc
     tomli
+    opentelemetry-api
+    opentelemetry-sdk
+    opentelemetry-exporter-otlp-proto-http
+    opentelemetry-instrumentation-requests
   ];
 
   doCheck = true;
 
-  nativeCheckInputs =
-    [
-      git
-      pytestCheckHook
-    ]
-    ++ (with pythonPackages; [
-      flaky
-      pytest-snapshot
-      pytest-mock
-      pytest-freezegun
-      types-freezegun
-    ]);
+  nativeCheckInputs = [
+    git
+    pytestCheckHook
+    flaky
+    pytest-snapshot
+    pytest-mock
+    pytest-freezegun
+    types-freezegun
+  ];
 
   disabledTestPaths = [
     "tests/default/e2e"
-    "tests/default/e2e-pro"
     "tests/default/e2e-pysemgrep"
+    "tests/default/e2e-other"
   ];
 
   disabledTests = [
@@ -105,6 +135,8 @@ buildPythonPackage rec {
     "TestConfigLoaderForProducts"
     # doesn't start flaky plugin correctly
     "test_debug_performance"
+    # requires .git directory
+    "clean_project_url"
   ];
 
   preCheck = ''
@@ -114,11 +146,6 @@ buildPythonPackage rec {
     # tests need access to `semgrep-core`
     export OLD_PATH="$PATH"
     export PATH="$PATH:${semgrepBinPath}"
-
-    # we're in cli
-    # replace old semgrep with wrapped one
-    rm ./bin/semgrep
-    ln -s $out/bin/semgrep ./bin/semgrep
   '';
 
   postCheck = ''

@@ -75,7 +75,11 @@ in
     systemd.services.containerd = {
       description = "containerd - container runtime";
       wantedBy = [ "multi-user.target" ];
-      after = [ "network.target" ];
+      after = [
+        "network.target"
+        "local-fs.target"
+        "dbus.service"
+      ];
       path =
         with pkgs;
         [

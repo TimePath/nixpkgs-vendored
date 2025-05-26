@@ -3,7 +3,6 @@
   stdenv,
   rustPlatform,
   fetchFromGitHub,
-  apple-sdk_11,
   ntpd-rs,
   installShellFiles,
   pandoc,
@@ -25,8 +24,6 @@ rustPlatform.buildRustPackage rec {
 
   useFetchCargoVendor = true;
   cargoHash = "sha256-BiLYKOgmmqOesfl/8y4590Xo2Z4+u/Rn7CglNjQk2bU=";
-
-  buildInputs = lib.optional stdenv.hostPlatform.isDarwin apple-sdk_11;
 
   nativeBuildInputs = [
     pandoc

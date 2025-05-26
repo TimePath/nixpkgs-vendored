@@ -24,16 +24,17 @@
   armTrustedFirmwareAllwinnerH616,
   armTrustedFirmwareRK3328,
   armTrustedFirmwareRK3399,
+  armTrustedFirmwareRK3568,
   armTrustedFirmwareRK3588,
   armTrustedFirmwareS905,
   buildPackages,
-}:
+}@pkgs:
 
 let
-  defaultVersion = "2024.10";
+  defaultVersion = "2025.01";
   defaultSrc = fetchurl {
     url = "https://ftp.denx.de/pub/u-boot/u-boot-${defaultVersion}.tar.bz2";
-    hash = "sha256-so2vSsF+QxVjYweL9RApdYQTf231D87ZsS3zT2GpL7A=";
+    hash = "sha256-ze99UHyT8bvZ8BXqm8IfoHQmhIFAVQGUWrxvhU1baG8=";
   };
 
   # Dependencies for the tools need to be included as either native or cross,
@@ -58,6 +59,7 @@ let
       extraMakeFlags ? [ ],
       extraMeta ? { },
       crossTools ? false,
+      stdenv ? pkgs.stdenv,
       ...
     }@args:
     stdenv.mkDerivation (
@@ -606,6 +608,32 @@ in
     filesToInstall = [ "u-boot.rom" ];
   };
 
+  ubootQemuX86_64 = buildUBoot {
+    defconfig = "qemu-x86_64_defconfig";
+    extraConfig = ''
+      CONFIG_USB_UHCI_HCD=y
+      CONFIG_USB_EHCI_HCD=y
+      CONFIG_USB_EHCI_GENERIC=y
+      CONFIG_USB_XHCI_HCD=y
+    '';
+    extraMeta.platforms = [ "x86_64-linux" ];
+    filesToInstall = [ "u-boot.rom" ];
+  };
+
+  ubootQuartz64B = buildUBoot {
+    defconfig = "quartz64-b-rk3566_defconfig";
+    extraMeta.platforms = [ "aarch64-linux" ];
+    BL31 = "${armTrustedFirmwareRK3568}/bl31.elf";
+    ROCKCHIP_TPL = rkbin.TPL_RK3566;
+    filesToInstall = [
+      "idbloader.img"
+      "idbloader-spi.img"
+      "u-boot.itb"
+      "u-boot-rockchip.bin"
+      "u-boot-rockchip-spi.bin"
+    ];
+  };
+
   ubootRaspberryPi = buildUBoot {
     defconfig = "rpi_defconfig";
     extraMeta.platforms = [ "armv6l-linux" ];
@@ -684,7 +712,7 @@ in
 
   # A special build with much lower memory frequency (666 vs 1600 MT/s) which
   # makes ROCK64 V2 boards stable. This is necessary because the DDR3 routing
-  # on that revision is marginal and not uncoditionally stable at the specified
+  # on that revision is marginal and not unconditionally stable at the specified
   # frequency. If your ROCK64 is unstable you can try this u-boot variant to
   # see if it works better for you. The only disadvantage is lowered memory
   # bandwidth.
@@ -694,6 +722,17 @@ in
         --replace rk3328-sdram-lpddr3-1600.dtsi rk3328-sdram-lpddr3-666.dtsi
     '';
     defconfig = "rock64-rk3328_defconfig";
+    extraMeta.platforms = [ "aarch64-linux" ];
+    BL31 = "${armTrustedFirmwareRK3328}/bl31.elf";
+    filesToInstall = [
+      "u-boot.itb"
+      "idbloader.img"
+      "u-boot-rockchip.bin"
+    ];
+  };
+
+  ubootRockPiE = buildUBoot {
+    defconfig = "rock-pi-e-rk3328_defconfig";
     extraMeta.platforms = [ "aarch64-linux" ];
     BL31 = "${armTrustedFirmwareRK3328}/bl31.elf";
     filesToInstall = [

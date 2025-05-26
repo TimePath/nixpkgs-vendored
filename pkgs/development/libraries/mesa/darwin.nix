@@ -11,7 +11,6 @@
   ninja,
   pkg-config,
   python3Packages,
-  Xplugin,
   xorg,
   zlib,
 }:
@@ -25,10 +24,6 @@ stdenv.mkDerivation {
     src
     meta
     ;
-
-  patches = [
-    ./darwin-build-fix.patch
-  ];
 
   outputs = [
     "out"
@@ -50,7 +45,6 @@ stdenv.mkDerivation {
   buildInputs = [
     libxml2 # should be propagated from libllvm
     llvmPackages.libllvm
-    Xplugin
     xorg.libX11
     xorg.libXext
     xorg.libXfixes
@@ -67,6 +61,11 @@ stdenv.mkDerivation {
     (lib.mesonEnable "llvm" true)
   ];
 
-  # Don't need this on Darwin.
-  passthru.llvmpipeHook = null;
+  passthru = {
+    # needed to pass evaluation of bad platforms
+    driverLink = throw "driverLink not supported on darwin";
+    # Don't need this on Darwin.
+    llvmpipeHook = null;
+  };
+
 }

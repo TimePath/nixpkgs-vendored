@@ -8,13 +8,13 @@
 
 buildGoModule rec {
   pname = "wazero";
-  version = "1.8.1";
+  version = "1.9.0";
 
   src = fetchFromGitHub {
     owner = "tetratelabs";
     repo = "wazero";
     rev = "v${version}";
-    hash = "sha256-swTGkSwkTtogdzuebeD+0C/wSaS/340TAyVc6gavoLw=";
+    hash = "sha256-yxnHLc0PFxh8NRBgK2hvhKaxRM1w3IZ9TnfJM0+uadg=";
   };
 
   vendorHash = null;

@@ -19,7 +19,7 @@ let
     in
     pkgs.writeShellScriptBin "steam-gamescope" ''
       ${builtins.concatStringsSep "\n" exports}
-      gamescope --steam ${builtins.toString cfg.gamescopeSession.args} -- steam -tenfoot -pipewire-dmabuf
+      gamescope --steam ${builtins.toString cfg.gamescopeSession.args} -- steam ${builtins.toString cfg.gamescopeSession.steamArgs}
     '';
 
   gamescopeSessionFile =
@@ -185,6 +185,17 @@ in
               Environmental variables to be passed to GameScope for the session.
             '';
           };
+
+          steamArgs = lib.mkOption {
+            type = lib.types.listOf lib.types.str;
+            default = [
+              "-tenfoot"
+              "-pipewire-dmabuf"
+            ];
+            description = ''
+              Arguments to be passed to Steam for the session.
+            '';
+          };
         };
       };
     };
@@ -225,7 +236,7 @@ in
     ];
 
     # enable 32bit pulseaudio/pipewire support if needed
-    hardware.pulseaudio.support32Bit = config.hardware.pulseaudio.enable;
+    services.pulseaudio.support32Bit = config.services.pulseaudio.enable;
     services.pipewire.alsa.support32Bit = config.services.pipewire.alsa.enable;
 
     hardware.steam-hardware.enable = true;

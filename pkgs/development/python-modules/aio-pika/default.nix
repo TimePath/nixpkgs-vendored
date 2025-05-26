@@ -4,6 +4,7 @@
   aiormq,
   buildPythonPackage,
   docker,
+  exceptiongroup,
   fetchFromGitHub,
   pamqp,
   poetry-core,
@@ -17,7 +18,7 @@
 
 buildPythonPackage rec {
   pname = "aio-pika";
-  version = "9.4.3";
+  version = "9.5.5";
   pyproject = true;
 
   disabled = pythonOlder "3.9";
@@ -26,13 +27,14 @@ buildPythonPackage rec {
     owner = "mosquito";
     repo = "aio-pika";
     tag = version;
-    hash = "sha256-lzBBcfWzhdT2v9RX5C+VWWSxsBCB7EOeCjm6wUrXGtA=";
+    hash = "sha256-Gs01y1VRVgk5i4JI+fqtRo6mOyzBzHM/2hJPVenc+3g=";
   };
 
   build-system = [ poetry-core ];
 
   dependencies = [
     aiormq
+    exceptiongroup
     yarl
   ];
 

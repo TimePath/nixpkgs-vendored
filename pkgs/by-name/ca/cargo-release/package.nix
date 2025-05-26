@@ -7,27 +7,22 @@
   openssl,
   stdenv,
   curl,
-  darwin,
   git,
 }:
 
 rustPlatform.buildRustPackage rec {
   pname = "cargo-release";
-  version = "0.25.10";
+  version = "0.25.18";
 
   src = fetchFromGitHub {
     owner = "crate-ci";
     repo = "cargo-release";
     tag = "v${version}";
-    hash = "sha256-eMPwbcMIjYxM5gJm3HSdwzxN7WYOOtzj/Wf7rwuJfWs=";
+    hash = "sha256-1CHUkXjb8+wOFQWo/04KcLaJcv/dLiDYwPrSnzWucXI=";
   };
 
-  cargoLock = {
-    lockFile = ./Cargo.lock;
-    outputHashes = {
-      "cargo-test-macro-0.1.0" = "sha256-5EHfvuwbI14DBkbLWyXepmn9m4Qn2ah2+9J9FHrSOgU=";
-    };
-  };
+  useFetchCargoVendor = true;
+  cargoHash = "sha256-ESaESon1oJAlvsv6+TIb/lLsOQmjgheQWm82Lr0mJOE=";
 
   nativeBuildInputs = [
     pkg-config
@@ -40,7 +35,6 @@ rustPlatform.buildRustPackage rec {
     ]
     ++ lib.optionals stdenv.hostPlatform.isDarwin [
       curl
-      darwin.apple_sdk.frameworks.SystemConfiguration
     ];
 
   nativeCheckInputs = [

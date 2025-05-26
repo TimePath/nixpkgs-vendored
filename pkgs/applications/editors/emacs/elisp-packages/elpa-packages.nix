@@ -16,7 +16,7 @@
   ./update-from-overlay
 
   It will update both melpa and elpa packages using
-  https://github.com/nix-community/emacs-overlay. It's almost instantenous and
+  https://github.com/nix-community/emacs-overlay. It's almost instantaneous and
   formats commits for you.
 */
 

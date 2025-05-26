@@ -4,7 +4,6 @@
   targetPackages,
   fetchurl,
   fetchpatch,
-  fetchFromGitHub,
   noSysDirs,
   langC ? true,
   langCC ? true,
@@ -36,11 +35,12 @@
   libucontext ? null,
   gnat-bootstrap ? null,
   enableMultilib ? false,
-  enablePlugin ? stdenv.hostPlatform == stdenv.buildPlatform, # Whether to support user-supplied plug-ins
+  enablePlugin ? (lib.systems.equals stdenv.hostPlatform stdenv.buildPlatform), # Whether to support user-supplied plug-ins
   name ? "gcc",
   libcCross ? null,
   threadsCross ? null, # for MinGW
   withoutTargetLibc ? false,
+  flex,
   gnused ? null,
   buildPackages,
   pkgsBuildTarget,
@@ -84,35 +84,45 @@ let
   atLeast12 = versionAtLeast version "12";
   atLeast11 = versionAtLeast version "11";
   atLeast10 = versionAtLeast version "10";
-  atLeast9 = versionAtLeast version "9";
-  atLeast8 = versionAtLeast version "8";
   is14 = majorVersion == "14";
   is13 = majorVersion == "13";
   is12 = majorVersion == "12";
   is11 = majorVersion == "11";
   is10 = majorVersion == "10";
   is9 = majorVersion == "9";
-  is8 = majorVersion == "8";
-  is7 = majorVersion == "7";
+
+  # releases have a form: MAJOR.MINOR.MICRO, like 14.2.1
+  # snapshots have a form like MAJOR.MINOR.MICRO.DATE, like 14.2.1.20250322
+  isSnapshot = lib.length (lib.splitVersion version) == 4;
+  # return snapshot date of gcc's given version:
+  #   "14.2.1.20250322" -> "20250322"
+  #   "14.2.0" -> ""
+  snapDate = lib.concatStrings (lib.drop 3 (lib.splitVersion version));
+  # return base version without a snapshot:
+  #   "14.2.1.20250322" -> "14.2.1"
+  #   "14.2.0" -> "14.2.0"
+  baseVersion = lib.concatStringsSep "." (lib.take 3 (lib.splitVersion version));
 
   disableBootstrap = atLeast11 && !stdenv.hostPlatform.isDarwin && (atLeast12 -> !profiledCompiler);
 
   inherit (stdenv) buildPlatform hostPlatform targetPlatform;
-  targetConfig = if targetPlatform != hostPlatform then targetPlatform.config else null;
+  targetConfig =
+    if (!lib.systems.equals targetPlatform hostPlatform) then targetPlatform.config else null;
 
   patches = callFile ./patches { };
 
   # Cross-gcc settings (build == host != target)
-  crossMingw = targetPlatform != hostPlatform && targetPlatform.isMinGW;
+  crossMingw = (!lib.systems.equals targetPlatform hostPlatform) && targetPlatform.isMinGW;
   stageNameAddon = optionalString withoutTargetLibc "-nolibc";
   crossNameAddon = optionalString (
-    targetPlatform != hostPlatform
+    !lib.systems.equals targetPlatform hostPlatform
   ) "${targetPlatform.config}${stageNameAddon}-";
 
   callFile = callPackageWith {
     # lets
     inherit
       majorVersion
+      isSnapshot
       version
       buildPlatform
       hostPlatform
@@ -139,6 +149,7 @@ let
       enableShared
       fetchpatch
       fetchurl
+      flex
       gettext
       gmp
       gnat-bootstrap
@@ -185,9 +196,9 @@ assert stdenv.buildPlatform.isDarwin -> gnused != null;
 
 # The go frontend is written in c++
 assert langGo -> langCC;
-assert (!is7 && !is8) -> (langAda -> gnat-bootstrap != null);
+assert langAda -> gnat-bootstrap != null;
 
-# TODO: fixup D bootstapping, probably by using gdc11 (and maybe other changes).
+# TODO: fixup D bootstrapping, probably by using gdc11 (and maybe other changes).
 #   error: GDC is required to build d
 assert atLeast12 -> !langD;
 
@@ -202,10 +213,18 @@ pipe
   ((callFile ./common/builder.nix { }) (
     {
       pname = "${crossNameAddon}${name}";
-      inherit version;
+      # retain snapshot date in package version, but not in final version
+      # as the version is frequently used to construct pathnames (at least
+      # in cc-wrapper).
+      name = "${crossNameAddon}${name}-${version}";
+      version = baseVersion;
 
       src = fetchurl {
-        url = "mirror://gcc/releases/gcc-${version}/gcc-${version}.tar.xz";
+        url =
+          if isSnapshot then
+            "mirror://gcc/snapshots/${majorVersion}-${snapDate}/gcc-${majorVersion}-${snapDate}.tar.xz"
+          else
+            "mirror://gcc/releases/gcc-${version}/gcc-${version}.tar.xz";
         ${if is10 || is11 || is13 then "hash" else "sha256"} = gccVersions.srcHashForVersion version;
       };
 
@@ -233,6 +252,16 @@ pipe
           for configureScript in $configureScripts; do
             patchShebangs $configureScript
           done
+
+          # Make sure nixpkgs versioning match upstream one
+          # to ease version-based comparisons.
+          gcc_base_version=$(< gcc/BASE-VER)
+          if [[ ${baseVersion} != $gcc_base_version ]]; then
+            echo "Please update 'version' variable:"
+            echo "  Expected: '$gcc_base_version'"
+            echo "  Actual: '${version}'"
+            exit 1
+          fi
         ''
         # This should kill all the stdinc frameworks that gcc and friends like to
         # insert into default search paths.
@@ -246,7 +275,7 @@ pipe
           substituteInPlace libgfortran/configure \
             --replace "-install_name \\\$rpath/\\\$soname" "-install_name ''${!outputLib}/lib/\\\$soname"
         ''
-        + (optionalString (targetPlatform != hostPlatform || stdenv.cc.libc != null)
+        + (optionalString ((!lib.systems.equals targetPlatform hostPlatform) || stdenv.cc.libc != null)
           # On NixOS, use the right path to the dynamic linker instead of
           # `/lib/ld*.so'.
           (
@@ -308,10 +337,7 @@ pipe
         "target"
       ];
 
-      configureFlags =
-        (callFile ./common/configure-flags.nix { })
-        ++ optional (is7 && targetPlatform.isAarch64) "--enable-fix-cortex-a53-843419"
-        ++ optional (is7 && targetPlatform.isNetBSD) "--disable-libcilkrts";
+      configureFlags = callFile ./common/configure-flags.nix { };
 
       inherit targetConfig;
 
@@ -323,14 +349,16 @@ pipe
             target =
               optionalString (profiledCompiler) "profiled"
               + optionalString (
-                targetPlatform == hostPlatform && hostPlatform == buildPlatform && !disableBootstrap
+                (lib.systems.equals targetPlatform hostPlatform)
+                && (lib.systems.equals hostPlatform buildPlatform)
+                && !disableBootstrap
               ) "bootstrap";
           in
           optional (target != "") target
         else
-          optional (targetPlatform == hostPlatform && hostPlatform == buildPlatform) (
-            if profiledCompiler then "profiledbootstrap" else "bootstrap"
-          );
+          optional (
+            (lib.systems.equals targetPlatform hostPlatform) && (lib.systems.equals hostPlatform buildPlatform)
+          ) (if profiledCompiler then "profiledbootstrap" else "bootstrap");
 
       inherit (callFile ./common/strip-attributes.nix { })
         stripDebugList
@@ -350,7 +378,7 @@ pipe
           ${if hostPlatform.system == "x86_64-solaris" then "CC" else null} = "gcc -m64";
 
           # Setting $CPATH and $LIBRARY_PATH to make sure both `gcc' and `xgcc' find the
-          # library headers and binaries, regarless of the language being compiled.
+          # library headers and binaries, regardless of the language being compiled.
           #
           # The LTO code doesn't find zlib, so we just add it to $CPATH and
           # $LIBRARY_PATH in this case.
@@ -359,11 +387,11 @@ pipe
           # compiler (after the specs for the cross-gcc are created). Having
           # LIBRARY_PATH= makes gcc read the specs from ., and the build breaks.
 
-          CPATH = optionals (targetPlatform == hostPlatform) (
+          CPATH = optionals (lib.systems.equals targetPlatform hostPlatform) (
             makeSearchPathOutput "dev" "include" ([ ] ++ optional (zlib != null) zlib)
           );
 
-          LIBRARY_PATH = optionals (targetPlatform == hostPlatform) (
+          LIBRARY_PATH = optionals (lib.systems.equals targetPlatform hostPlatform) (
             makeLibraryPath (optional (zlib != null) zlib)
           );
 
@@ -374,15 +402,11 @@ pipe
             EXTRA_LDFLAGS_FOR_TARGET
             ;
         }
-        // optionalAttrs is7 {
-          NIX_CFLAGS_COMPILE =
-            optionalString (stdenv.cc.isClang && langFortran) "-Wno-unused-command-line-argument"
-            # Downgrade register storage class specifier errors to warnings when building a cross compiler from a clang stdenv.
-            + optionalString (stdenv.cc.isClang && targetPlatform != hostPlatform) " -Wno-register";
-        }
-        // optionalAttrs (!is7 && !atLeast12 && stdenv.cc.isClang && targetPlatform != hostPlatform) {
-          NIX_CFLAGS_COMPILE = "-Wno-register";
-        }
+        //
+          optionalAttrs (!atLeast12 && stdenv.cc.isClang && (!lib.systems.equals targetPlatform hostPlatform))
+            {
+              NIX_CFLAGS_COMPILE = "-Wno-register";
+            }
       );
 
       passthru = {
@@ -399,16 +423,15 @@ pipe
           ;
         isGNU = true;
         hardeningUnsupportedFlags =
-          optional ((targetPlatform.isAarch64 && !atLeast9) || !atLeast8) "stackclashprotection"
-          ++ optional (!atLeast11) "zerocallusedregs"
+          optional (!atLeast11) "zerocallusedregs"
           ++ optionals (!atLeast12) [
             "fortify3"
             "trivialautovarinit"
           ]
           ++ optional (
-            !(atLeast8 && targetPlatform.isLinux && targetPlatform.isx86_64 && targetPlatform.libc == "glibc")
+            !(targetPlatform.isLinux && targetPlatform.isx86_64 && targetPlatform.libc == "glibc")
           ) "shadowstack"
-          ++ optional (!(atLeast9 && targetPlatform.isLinux && targetPlatform.isAarch64)) "pacret"
+          ++ optional (!(targetPlatform.isLinux && targetPlatform.isAarch64)) "pacret"
           ++ optionals (langFortran) [
             "fortify"
             "format"
@@ -426,16 +449,15 @@ pipe
             description
             longDescription
             platforms
-            maintainers
+            teams
             ;
         }
         // optionalAttrs (!atLeast11) {
-          badPlatforms =
-            # avr-gcc8 is maintained for the `qmk` package
-            if (is8 && targetPlatform.isAvr) then [ ] else [ "aarch64-darwin" ];
+          badPlatforms = [ "aarch64-darwin" ];
         }
         // optionalAttrs is10 {
-          badPlatforms = if targetPlatform != hostPlatform then [ "aarch64-darwin" ] else [ ];
+          badPlatforms =
+            if (!lib.systems.equals targetPlatform hostPlatform) then [ "aarch64-darwin" ] else [ ];
         };
     }
     // optionalAttrs (!atLeast10 && stdenv.targetPlatform.isDarwin) {
@@ -443,9 +465,6 @@ pipe
       preBuild = ''
         makeFlagsArray+=('STRIP=${getBin cctools}/bin/${stdenv.cc.targetPrefix}strip')
       '';
-    }
-    // optionalAttrs (!atLeast8) {
-      doCheck = false; # requires a lot of tools, causes a dependency cycle for stdenv
     }
     // optionalAttrs enableMultilib {
       dontMoveLib64 = true;

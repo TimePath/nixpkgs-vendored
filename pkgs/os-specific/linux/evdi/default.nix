@@ -17,13 +17,13 @@ let
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = "evdi";
-  version = "1.14.8";
+  version = "1.14.10";
 
   src = fetchFromGitHub {
     owner = "DisplayLink";
     repo = "evdi";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-57DP8kKsPEK1C5A6QfoZZDmm76pn4SaUKEKu9cicyKI=";
+    hash = "sha256-xB3AHg9t/X8vw5p7ohFQ+WuMjb1P8DAP3pROiwWkVPs=";
   };
 
   env.NIX_CFLAGS_COMPILE = toString [
@@ -60,16 +60,16 @@ stdenv.mkDerivation (finalAttrs: {
 
   enableParallelBuilding = true;
 
-  meta = with lib; {
+  meta = {
     broken = kernel.kernelOlder "4.19";
     changelog = "https://github.com/DisplayLink/evdi/releases/tag/v${finalAttrs.version}";
     description = "Extensible Virtual Display Interface";
     homepage = "https://www.displaylink.com/";
-    license = with licenses; [
+    license = with lib.licenses; [
       lgpl21Only
       gpl2Only
     ];
-    maintainers = [ ];
-    platforms = platforms.linux;
+    maintainers = with lib.maintainers; [ drupol ];
+    platforms = lib.platforms.linux;
   };
 })

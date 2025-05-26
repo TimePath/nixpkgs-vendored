@@ -17,7 +17,7 @@
 
 buildPythonPackage rec {
   pname = "greatfet";
-  version = "2024.0.3";
+  version = "2024.0.4";
   pyproject = true;
 
   disabled = pythonOlder "3.8";
@@ -26,7 +26,7 @@ buildPythonPackage rec {
     owner = "greatscottgadgets";
     repo = "greatfet";
     tag = "v${version}";
-    hash = "sha256-jdOTEOotLiIxA9TxmFGOjP8IZ/8xo7mzXSJRg3A5Ri4=";
+    hash = "sha256-3ClM4UzVIDEkVBrFwzvLokbxUHXqdQWyNVqcFtiXCOQ=";
   };
 
   sourceRoot = "${src.name}/host";
@@ -38,6 +38,8 @@ buildPythonPackage rec {
   '';
 
   build-system = [ setuptools ];
+
+  pythonRelaxDeps = [ "ipython" ];
 
   dependencies = [
     cmsis-svd

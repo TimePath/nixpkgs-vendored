@@ -8,68 +8,62 @@
   ...
 }:
 let
-  /**
-    Given a list of `options`, concats the result of mapping each options
-    to a menuentry for use in grub.
-
-     * defaults: {name, image, params, initrd}
-     * options: [ option... ]
-     * option: {name, params, class}
-  */
+  # Builds a single menu entry
   menuBuilderGrub2 =
-    defaults: options:
-    lib.concatStrings (
-      map (option: ''
-        menuentry '${defaults.name} ${
-          # Name appended to menuentry defaults to params if no specific name given.
-          option.name or (lib.optionalString (option ? params) "(${option.params})")
-        }' ${lib.optionalString (option ? class) " --class ${option.class}"} {
-          # Fallback to UEFI console for boot, efifb sometimes has difficulties.
-          terminal_output console
+    {
+      name,
+      class,
+      image,
+      params,
+      initrd,
+    }:
+    ''
+      menuentry '${name}' --class ${class} {
+        # Fallback to UEFI console for boot, efifb sometimes has difficulties.
+        terminal_output console
 
-          linux ${defaults.image} \''${isoboot} ${defaults.params} ${option.params or ""}
-          initrd ${defaults.initrd}
-        }
-      '') options
-    );
+        linux ${image} \''${isoboot} ${params}
+        initrd ${initrd}
+      }
+    '';
 
-  /**
-    Builds the default options.
-  */
-  buildMenuGrub2 = buildMenuAdditionalParamsGrub2 "";
+  # Builds all menu entries
+  buildMenuGrub2 =
+    {
+      cfg ? config,
+      params ? [ ],
+    }:
+    let
+      menuConfig = {
+        name = lib.concatStrings [
+          cfg.isoImage.prependToMenuLabel
+          cfg.system.nixos.distroName
+          " "
+          cfg.system.nixos.label
+          cfg.isoImage.appendToMenuLabel
+          (lib.optionalString (cfg.isoImage.configurationName != null) (" " + cfg.isoImage.configurationName))
+        ];
+        params = "init=${cfg.system.build.toplevel}/init ${toString cfg.boot.kernelParams} ${toString params}";
+        image = "/boot/${cfg.boot.kernelPackages.kernel + "/" + cfg.system.boot.loader.kernelFile}";
+        initrd = "/boot/${cfg.system.build.initialRamdisk + "/" + cfg.system.boot.loader.initrdFile}";
+        class = "installer";
+      };
+    in
+    ''
+      ${lib.optionalString cfg.isoImage.showConfiguration (menuBuilderGrub2 menuConfig)}
+      ${lib.concatStringsSep "\n" (
+        lib.mapAttrsToList (
+          specName:
+          { configuration, ... }:
+          buildMenuGrub2 {
+            cfg = configuration;
+            inherit params;
+          }
+        ) cfg.specialisation
+      )}
+    '';
 
   targetArch = if config.boot.loader.grub.forcei686 then "ia32" else pkgs.stdenv.hostPlatform.efiArch;
-
-  /**
-    Given params to add to `params`, build a set of default options.
-    Use this one when creating a variant (e.g. hidpi)
-  */
-  buildMenuAdditionalParamsGrub2 =
-    additional:
-    let
-      finalCfg = {
-        name = "${config.isoImage.prependToMenuLabel}${config.system.nixos.distroName} ${config.system.nixos.label}${config.isoImage.appendToMenuLabel}";
-        params = "init=${config.system.build.toplevel}/init ${additional} ${toString config.boot.kernelParams}";
-        image = "/boot/${config.system.boot.loader.kernelFile}";
-        initrd = "/boot/initrd";
-      };
-
-    in
-    menuBuilderGrub2 finalCfg [
-      { class = "installer"; }
-      {
-        class = "nomodeset";
-        params = "nomodeset";
-      }
-      {
-        class = "copytoram";
-        params = "copytoram";
-      }
-      {
-        class = "debug";
-        params = "debug";
-      }
-    ];
 
   # Timeout in syslinux is in units of 1/10 of a second.
   # null means max timeout (35996, just under 1h in 1/10 seconds)
@@ -81,6 +75,59 @@ let
   # null means max timeout (infinity)
   # 0 means disable timeout
   grubEfiTimeout = if config.boot.loader.timeout == null then -1 else config.boot.loader.timeout;
+
+  optionsSubMenus = [
+    {
+      title = "Copy ISO Files to RAM";
+      class = "copytoram";
+      params = [ "copytoram" ];
+    }
+    {
+      title = "No modesetting";
+      class = "nomodeset";
+      params = [ "nomodeset" ];
+    }
+    {
+      title = "Debug Console Output";
+      class = "debug";
+      params = [ "debug" ];
+    }
+    # If we boot into a graphical environment where X is autoran
+    # and always crashes, it makes the media unusable. Allow the user
+    # to disable this.
+    {
+      title = "Disable display-manager";
+      class = "quirk-disable-displaymanager";
+      params = [
+        "systemd.mask=display-manager.service"
+        "plymouth.enable=0"
+      ];
+    }
+    # Some laptop and convertibles have the panel installed in an
+    # inconvenient way, rotated away from the keyboard.
+    # Those entries makes it easier to use the installer.
+    {
+      title = "Rotate framebuffer Clockwise";
+      class = "rotate-90cw";
+      params = [ "fbcon=rotate:1" ];
+    }
+    {
+      title = "Rotate framebuffer Upside-Down";
+      class = "rotate-180";
+      params = [ "fbcon=rotate:2" ];
+    }
+    {
+      title = "Rotate framebuffer Counter-Clockwise";
+      class = "rotate-90ccw";
+      params = [ "fbcon=rotate:3" ];
+    }
+    # Serial access is a must!
+    {
+      title = "Serial console=ttyS0,115200n8";
+      class = "serial";
+      params = [ "console=ttyS0,115200n8" ];
+    }
+  ];
 
   # The configuration file for syslinux.
 
@@ -95,6 +142,35 @@ let
   #   * COM32 entries (chainload, reboot, poweroff) are not recognized. They
   #     result in incorrect boot entries.
 
+  menuBuilderIsolinux =
+    {
+      cfg ? config,
+      label,
+      params ? [ ],
+    }:
+    ''
+      ${lib.optionalString cfg.isoImage.showConfiguration ''
+        LABEL ${label}
+        MENU LABEL ${cfg.isoImage.prependToMenuLabel}${cfg.system.nixos.distroName} ${cfg.system.nixos.label}${cfg.isoImage.appendToMenuLabel}${
+          lib.optionalString (cfg.isoImage.configurationName != null) (" " + cfg.isoImage.configurationName)
+        }
+        LINUX /boot/${cfg.boot.kernelPackages.kernel + "/" + cfg.system.boot.loader.kernelFile}
+        APPEND init=${cfg.system.build.toplevel}/init ${toString cfg.boot.kernelParams} ${toString params}
+        INITRD /boot/${cfg.system.build.initialRamdisk + "/" + cfg.system.boot.loader.initrdFile}
+      ''}
+
+      ${lib.concatStringsSep "\n\n" (
+        lib.mapAttrsToList (
+          name: specCfg:
+          menuBuilderIsolinux {
+            cfg = specCfg.configuration;
+            label = "${label}-${name}";
+            inherit params;
+          }
+        ) cfg.specialisation
+      )}
+    '';
+
   baseIsolinuxCfg = ''
     SERIAL 0 115200
     TIMEOUT ${builtins.toString syslinuxTimeout}
@@ -105,39 +181,27 @@ let
 
     DEFAULT boot
 
-    LABEL boot
-    MENU LABEL ${config.isoImage.prependToMenuLabel}${config.system.nixos.distroName} ${config.system.nixos.label}${config.isoImage.appendToMenuLabel}
-    LINUX /boot/${config.system.boot.loader.kernelFile}
-    APPEND init=${config.system.build.toplevel}/init ${toString config.boot.kernelParams}
-    INITRD /boot/${config.system.boot.loader.initrdFile}
+    ${menuBuilderIsolinux { label = "boot"; }}
 
-    # A variant to boot with 'nomodeset'
-    LABEL boot-nomodeset
-    MENU LABEL ${config.isoImage.prependToMenuLabel}${config.system.nixos.distroName} ${config.system.nixos.label}${config.isoImage.appendToMenuLabel} (nomodeset)
-    LINUX /boot/${config.system.boot.loader.kernelFile}
-    APPEND init=${config.system.build.toplevel}/init ${toString config.boot.kernelParams} nomodeset
-    INITRD /boot/${config.system.boot.loader.initrdFile}
+    MENU BEGIN Options
 
-    # A variant to boot with 'copytoram'
-    LABEL boot-copytoram
-    MENU LABEL ${config.isoImage.prependToMenuLabel}${config.system.nixos.distroName} ${config.system.nixos.label}${config.isoImage.appendToMenuLabel} (copytoram)
-    LINUX /boot/${config.system.boot.loader.kernelFile}
-    APPEND init=${config.system.build.toplevel}/init ${toString config.boot.kernelParams} copytoram
-    INITRD /boot/${config.system.boot.loader.initrdFile}
+    ${lib.concatMapStringsSep "\n" (
+      {
+        title,
+        class,
+        params,
+      }:
+      ''
+        MENU BEGIN ${title}
+        ${menuBuilderIsolinux {
+          label = "boot-${class}";
+          inherit params;
+        }}
+        MENU END
+      ''
+    ) optionsSubMenus}
 
-    # A variant to boot with verbose logging to the console
-    LABEL boot-debug
-    MENU LABEL ${config.isoImage.prependToMenuLabel}${config.system.nixos.distroName} ${config.system.nixos.label}${config.isoImage.appendToMenuLabel} (debug)
-    LINUX /boot/${config.system.boot.loader.kernelFile}
-    APPEND init=${config.system.build.toplevel}/init ${toString config.boot.kernelParams} loglevel=7
-    INITRD /boot/${config.system.boot.loader.initrdFile}
-
-    # A variant to boot with a serial console enabled
-    LABEL boot-serial
-    MENU LABEL ${config.isoImage.prependToMenuLabel}${config.system.nixos.distroName} ${config.system.nixos.label}${config.isoImage.appendToMenuLabel} (serial console=ttyS0,115200n8)
-    LINUX /boot/${config.system.boot.loader.kernelFile}
-    APPEND init=${config.system.build.toplevel}/init ${toString config.boot.kernelParams} console=ttyS0,115200n8
-    INITRD /boot/${config.system.boot.loader.initrdFile}
+    MENU END
   '';
 
   isolinuxMemtest86Entry = ''
@@ -167,6 +231,8 @@ let
   grubPkgs = if config.boot.loader.grub.forcei686 then pkgs.pkgsi686Linux else pkgs;
 
   grubMenuCfg = ''
+    set textmode=${lib.boolToString (config.isoImage.forceTextMode)}
+
     #
     # Menu configuration
     #
@@ -231,6 +297,20 @@ let
           fi
         ''
     }
+
+    hiddenentry 'Text mode' --hotkey 't' {
+      loadfont (\$root)/EFI/BOOT/unicode.pf2
+      set textmode=true
+      terminal_output console
+    }
+
+    ${lib.optionalString (config.isoImage.grubTheme != null) ''
+      hiddenentry 'GUI mode' --hotkey 'g' {
+        $(find ${config.isoImage.grubTheme} -iname '*.pf2' -printf "loadfont (\$root)/EFI/BOOT/grub-theme/%P\n")
+        set textmode=false
+        terminal_output gfxterm
+      }
+    ''}
   '';
 
   # The EFI boot image.
@@ -326,7 +406,6 @@ let
 
         cat <<EOF > $out/EFI/BOOT/grub.cfg
 
-        set textmode=${lib.boolToString (config.isoImage.forceTextMode)}
         set timeout=${toString grubEfiTimeout}
 
         clear
@@ -339,20 +418,6 @@ let
 
         ${grubMenuCfg}
 
-        hiddenentry 'Text mode' --hotkey 't' {
-          loadfont (\$root)/EFI/BOOT/unicode.pf2
-          set textmode=true
-          terminal_output console
-        }
-
-        ${lib.optionalString (config.isoImage.grubTheme != null) ''
-          hiddenentry 'GUI mode' --hotkey 'g' {
-            $(find ${config.isoImage.grubTheme} -iname '*.pf2' -printf "loadfont (\$root)/EFI/BOOT/grub-theme/%P\n")
-            set textmode=false
-            terminal_output gfxterm
-          }
-        ''}
-
         # If the parameter iso_path is set, append the findiso parameter to the kernel
         # line. We need this to allow the nixos iso to be booted from grub directly.
         if [ \''${iso_path} ] ; then
@@ -363,56 +428,23 @@ let
         # Menu entries
         #
 
-        ${buildMenuGrub2}
-        submenu "HiDPI, Quirks and Accessibility" --class hidpi --class submenu {
+        ${buildMenuGrub2 { }}
+        submenu "Options" --class submenu --class hidpi {
           ${grubMenuCfg}
-          submenu "Suggests resolution @720p" --class hidpi-720p {
-            ${grubMenuCfg}
-            ${buildMenuAdditionalParamsGrub2 "video=1280x720@60"}
-          }
-          submenu "Suggests resolution @1080p" --class hidpi-1080p {
-            ${grubMenuCfg}
-            ${buildMenuAdditionalParamsGrub2 "video=1920x1080@60"}
-          }
 
-          # If we boot into a graphical environment where X is autoran
-          # and always crashes, it makes the media unusable. Allow the user
-          # to disable this.
-          submenu "Disable display-manager" --class quirk-disable-displaymanager {
-            ${grubMenuCfg}
-            ${buildMenuAdditionalParamsGrub2 "systemd.mask=display-manager.service"}
-          }
-
-          # Some laptop and convertibles have the panel installed in an
-          # inconvenient way, rotated away from the keyboard.
-          # Those entries makes it easier to use the installer.
-          submenu "" {return}
-          submenu "Rotate framebuffer Clockwise" --class rotate-90cw {
-            ${grubMenuCfg}
-            ${buildMenuAdditionalParamsGrub2 "fbcon=rotate:1"}
-          }
-          submenu "Rotate framebuffer Upside-Down" --class rotate-180 {
-            ${grubMenuCfg}
-            ${buildMenuAdditionalParamsGrub2 "fbcon=rotate:2"}
-          }
-          submenu "Rotate framebuffer Counter-Clockwise" --class rotate-90ccw {
-            ${grubMenuCfg}
-            ${buildMenuAdditionalParamsGrub2 "fbcon=rotate:3"}
-          }
-
-          # As a proof of concept, mainly. (Not sure it has accessibility merits.)
-          submenu "" {return}
-          submenu "Use black on white" --class accessibility-blakconwhite {
-            ${grubMenuCfg}
-            ${buildMenuAdditionalParamsGrub2 "vt.default_red=0xFF,0xBC,0x4F,0xB4,0x56,0xBC,0x4F,0x00,0xA1,0xCF,0x84,0xCA,0x8D,0xB4,0x84,0x68 vt.default_grn=0xFF,0x55,0xBA,0xBA,0x4D,0x4D,0xB3,0x00,0xA0,0x8F,0xB3,0xCA,0x88,0x93,0xA4,0x68 vt.default_blu=0xFF,0x58,0x5F,0x58,0xC5,0xBD,0xC5,0x00,0xA8,0xBB,0xAB,0x97,0xBD,0xC7,0xC5,0x68"}
-          }
-
-          # Serial access is a must!
-          submenu "" {return}
-          submenu "Serial console=ttyS0,115200n8" --class serial {
-            ${grubMenuCfg}
-            ${buildMenuAdditionalParamsGrub2 "console=ttyS0,115200n8"}
-          }
+          ${lib.concatMapStringsSep "\n" (
+            {
+              title,
+              class,
+              params,
+            }:
+            ''
+              submenu "${title}" --class ${class} {
+                ${grubMenuCfg}
+                ${buildMenuGrub2 { inherit params; }}
+              }
+            ''
+          ) optionsSubMenus}
         }
 
         ${lib.optionalString (refindBinary != null) ''
@@ -491,23 +523,33 @@ let
 in
 
 {
+  imports = [
+    (lib.mkRenamedOptionModuleWith {
+      sinceRelease = 2505;
+      from = [
+        "isoImage"
+        "isoBaseName"
+      ];
+      to = [
+        "image"
+        "baseName"
+      ];
+    })
+    (lib.mkRenamedOptionModuleWith {
+      sinceRelease = 2505;
+      from = [
+        "isoImage"
+        "isoName"
+      ];
+      to = [
+        "image"
+        "fileName"
+      ];
+    })
+    ../../image/file-options.nix
+  ];
+
   options = {
-
-    isoImage.isoName = lib.mkOption {
-      default = "${config.isoImage.isoBaseName}.iso";
-      type = lib.types.str;
-      description = ''
-        Name of the generated ISO image file.
-      '';
-    };
-
-    isoImage.isoBaseName = lib.mkOption {
-      default = config.system.nixos.distroId;
-      type = lib.types.str;
-      description = ''
-        Prefix of the name of the generated ISO image file.
-      '';
-    };
 
     isoImage.compressImage = lib.mkOption {
       default = false;
@@ -702,6 +744,19 @@ in
       '';
     };
 
+    isoImage.configurationName = lib.mkOption {
+      default = null;
+      type = lib.types.nullOr lib.types.str;
+      example = "GNOME";
+      description = ''
+        The name of the configuration in the title of the boot entry.
+      '';
+    };
+
+    isoImage.showConfiguration = lib.mkEnableOption "show this configuration in the menu" // {
+      default = true;
+    };
+
     isoImage.forceTextMode = lib.mkOption {
       default = false;
       type = lib.types.bool;
@@ -787,6 +842,25 @@ in
           in
           "isoImage.volumeID ${config.isoImage.volumeID} is ${howmany} characters. That is ${toomany} characters longer than the limit of 32.";
       }
+      (
+        let
+          badSpecs = lib.filterAttrs (
+            specName: specCfg: specCfg.configuration.isoImage.volumeID != config.isoImage.volumeID
+          ) config.specialisation;
+        in
+        {
+          assertion = badSpecs == { };
+          message = ''
+            All specialisations must use the same 'isoImage.volumeID'.
+
+            Specialisations with different volumeIDs:
+
+            ${lib.concatMapStringsSep "\n" (specName: ''
+              - ${specName}
+            '') (builtins.attrNames badSpecs)}
+          '';
+        }
+      )
     ];
 
     # Don't build the GRUB menu builder script, since we don't need it
@@ -834,31 +908,37 @@ in
     # Individual files to be included on the CD, outside of the Nix
     # store on the CD.
     isoImage.contents =
+      let
+        cfgFiles =
+          cfg:
+          lib.optionals cfg.isoImage.showConfiguration ([
+            {
+              source = cfg.boot.kernelPackages.kernel + "/" + cfg.system.boot.loader.kernelFile;
+              target = "/boot/" + cfg.boot.kernelPackages.kernel + "/" + cfg.system.boot.loader.kernelFile;
+            }
+            {
+              source = cfg.system.build.initialRamdisk + "/" + cfg.system.boot.loader.initrdFile;
+              target = "/boot/" + cfg.system.build.initialRamdisk + "/" + cfg.system.boot.loader.initrdFile;
+            }
+          ])
+          ++ lib.concatLists (
+            lib.mapAttrsToList (_: { configuration, ... }: cfgFiles configuration) cfg.specialisation
+          );
+      in
       [
-        {
-          source = config.boot.kernelPackages.kernel + "/" + config.system.boot.loader.kernelFile;
-          target = "/boot/" + config.system.boot.loader.kernelFile;
-        }
-        {
-          source = config.system.build.initialRamdisk + "/" + config.system.boot.loader.initrdFile;
-          target = "/boot/" + config.system.boot.loader.initrdFile;
-        }
         {
           source = pkgs.writeText "version" config.system.nixos.label;
           target = "/version.txt";
         }
       ]
+      ++ lib.unique (cfgFiles config)
       ++ lib.optionals (config.isoImage.makeBiosBootable) [
         {
           source = config.isoImage.splashImage;
           target = "/isolinux/background.png";
         }
         {
-          source = pkgs.substituteAll {
-            name = "isolinux.cfg";
-            src = pkgs.writeText "isolinux.cfg-in" isolinuxCfg;
-            bootRoot = "/boot";
-          };
+          source = pkgs.writeText "isolinux.cfg" isolinuxCfg;
           target = "/isolinux/isolinux.cfg";
         }
         {
@@ -900,14 +980,16 @@ in
     boot.loader.timeout = 10;
 
     # Create the ISO image.
+    image.extension = if config.isoImage.compressImage then "iso.zst" else "iso";
+    image.filePath = "iso/${config.image.fileName}";
+    image.baseName = "nixos${
+      lib.optionalString (config.isoImage.edition != "") "-${config.isoImage.edition}"
+    }-${config.system.nixos.label}-${pkgs.stdenv.hostPlatform.system}";
+    system.build.image = config.system.build.isoImage;
     system.build.isoImage = pkgs.callPackage ../../../lib/make-iso9660-image.nix (
       {
-        inherit (config.isoImage)
-          isoName
-          compressImage
-          volumeID
-          contents
-          ;
+        inherit (config.isoImage) compressImage volumeID contents;
+        isoName = "${config.image.baseName}.iso";
         bootable = config.isoImage.makeBiosBootable;
         bootImage = "/isolinux/isolinux.bin";
         syslinux = if config.isoImage.makeBiosBootable then pkgs.syslinux else null;

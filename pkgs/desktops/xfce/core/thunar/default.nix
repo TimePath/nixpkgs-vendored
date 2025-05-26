@@ -1,4 +1,5 @@
 {
+  stdenv,
   mkXfceDerivation,
   lib,
   docbook_xsl,
@@ -15,25 +16,30 @@
   pcre2,
   xfce4-panel,
   xfconf,
-  gobject-introspection,
   makeWrapper,
   symlinkJoin,
   thunarPlugins ? [ ],
+  withIntrospection ? false,
+  buildPackages,
+  gobject-introspection,
 }:
 
 let
   unwrapped = mkXfceDerivation {
     category = "xfce";
     pname = "thunar";
-    version = "4.18.11";
+    version = "4.20.3";
 
-    sha256 = "sha256-B417gkrU9EG4ZsEdeuH8P2v4FqYUiTwqgKcO4cSi4SI=";
+    sha256 = "sha256-YOh7tuCja9F2VvzX+QqsKHJfebXWbhLqvcraq6PBOGo=";
 
-    nativeBuildInputs = [
-      docbook_xsl
-      gobject-introspection
-      libxslt
-    ];
+    nativeBuildInputs =
+      [
+        docbook_xsl
+        libxslt
+      ]
+      ++ lib.optionals withIntrospection [
+        gobject-introspection
+      ];
 
     buildInputs = [
       exo
@@ -72,7 +78,7 @@ let
     meta = with lib; {
       description = "Xfce file manager";
       mainProgram = "thunar";
-      maintainers = with maintainers; [ ] ++ teams.xfce.members;
+      teams = [ teams.xfce ];
     };
   };
 

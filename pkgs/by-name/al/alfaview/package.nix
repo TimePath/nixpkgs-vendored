@@ -18,7 +18,7 @@
   libsecret,
   libtiff,
   libxkbcommon,
-  mesa,
+  libgbm,
   openssl,
   systemd,
   xorg,
@@ -26,11 +26,11 @@
 
 stdenv.mkDerivation rec {
   pname = "alfaview";
-  version = "9.17.0";
+  version = "9.21.1";
 
   src = fetchurl {
     url = "https://assets.alfaview.com/stable/linux/deb/${pname}_${version}.deb";
-    hash = "sha256-Rq/5QByaqGd5Cfr4r+Ojv8OC8PvFQ4a+TT8CgeevF28=";
+    hash = "sha256-/Wue2Ag+ofv3z33PfpI7SlZWsGUjY33nOEcx5xPh5CA=";
   };
 
   nativeBuildInputs = [
@@ -55,7 +55,7 @@ stdenv.mkDerivation rec {
     libsecret
     libtiff
     libxkbcommon
-    mesa
+    libgbm
     openssl
     stdenv.cc.cc
     systemd
@@ -70,10 +70,6 @@ stdenv.mkDerivation rec {
 
   dontBuild = true;
   dontConfigure = true;
-
-  unpackPhase = ''
-    dpkg-deb -x ${src} ./
-  '';
 
   installPhase = ''
     runHook preInstall

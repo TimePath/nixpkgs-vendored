@@ -4,15 +4,12 @@
   pkgs,
   ...
 }:
-
-with lib;
-
 let
 
   cfg = config.services.actkbd;
 
   configFile = pkgs.writeText "actkbd.conf" ''
-    ${concatMapStringsSep "\n" (
+    ${lib.concatMapStringsSep "\n" (
       {
         keys,
         events,
@@ -21,8 +18,8 @@ let
         ...
       }:
       ''${
-        concatMapStringsSep "+" toString keys
-      }:${concatStringsSep "," events}:${concatStringsSep "," attributes}:${command}''
+        lib.concatMapStringsSep "+" toString keys
+      }:${lib.concatStringsSep "," events}:${lib.concatStringsSep "," attributes}:${command}''
     ) cfg.bindings}
     ${cfg.extraConfig}
   '';
@@ -32,14 +29,14 @@ let
     {
       options = {
 
-        keys = mkOption {
-          type = types.listOf types.int;
+        keys = lib.mkOption {
+          type = lib.types.listOf lib.types.int;
           description = "List of keycodes to match.";
         };
 
-        events = mkOption {
-          type = types.listOf (
-            types.enum [
+        events = lib.mkOption {
+          type = lib.types.listOf (
+            lib.types.enum [
               "key"
               "rep"
               "rel"
@@ -49,14 +46,14 @@ let
           description = "List of events to match.";
         };
 
-        attributes = mkOption {
-          type = types.listOf types.str;
+        attributes = lib.mkOption {
+          type = lib.types.listOf lib.types.str;
           default = [ "exec" ];
           description = "List of attributes.";
         };
 
-        command = mkOption {
-          type = types.str;
+        command = lib.mkOption {
+          type = lib.types.str;
           default = "";
           description = "What to run.";
         };
@@ -74,8 +71,8 @@ in
 
     services.actkbd = {
 
-      enable = mkOption {
-        type = types.bool;
+      enable = lib.mkOption {
+        type = lib.types.bool;
         default = false;
         description = ''
           Whether to enable the {command}`actkbd` key mapping daemon.
@@ -91,8 +88,8 @@ in
         '';
       };
 
-      bindings = mkOption {
-        type = types.listOf (types.submodule bindingCfg);
+      bindings = lib.mkOption {
+        type = lib.types.listOf (lib.types.submodule bindingCfg);
         default = [ ];
         example = lib.literalExpression ''
           [ { keys = [ 113 ]; events = [ "key" ]; command = "''${pkgs.alsa-utils}/bin/amixer -q set Master toggle"; }
@@ -107,8 +104,8 @@ in
         '';
       };
 
-      extraConfig = mkOption {
-        type = types.lines;
+      extraConfig = lib.mkOption {
+        type = lib.types.lines;
         default = "";
         description = ''
           Literal contents to append to the end of actkbd configuration file.
@@ -121,7 +118,7 @@ in
 
   ###### implementation
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
 
     services.udev.packages = lib.singleton (
       pkgs.writeTextFile {

@@ -82,7 +82,7 @@ runCommand (lib.appendToName "with-packages" emacs).name
             # well :D.
             local varSlice="$var[*]"
             # ''${..-} to hack around old bash empty array problem
-            case "''${!varSlice-}" in
+            case " ''${!varSlice-} " in
                 *" $pkg "*) return 0 ;;
             esac
             unset -v varSlice
@@ -164,6 +164,7 @@ runCommand (lib.appendToName "with-packages" emacs).name
           # buffer.
           rm -f $siteStart $siteStartByteCompiled $subdirs $subdirsByteCompiled
           cat >"$siteStart" <<EOF
+          ;;; -*- lexical-binding: t -*-
           (let ((inhibit-message t))
             (load "$emacs/share/emacs/site-lisp/site-start"))
           ;; "$out/share/emacs/site-lisp" is added to load-path in wrapper.sh
@@ -175,11 +176,14 @@ runCommand (lib.appendToName "with-packages" emacs).name
           EOF
 
           # Generate a subdirs.el that statically adds all subdirectories to load-path.
+          cat >"$subdirs" <<EOF
+          ;;; -*- lexical-binding: t -*-
+          EOF
           $emacs/bin/emacs \
             --batch \
             --load ${./mk-wrapper-subdirs.el} \
             --eval "(prin1 (macroexpand-1 '(mk-subdirs-expr \"$out/share/emacs/site-lisp\")))" \
-            > "$subdirs"
+            >> "$subdirs"
 
           # Byte-compiling improves start-up time only slightly, but costs nothing.
           $emacs/bin/emacs --batch -f batch-byte-compile "$siteStart" "$subdirs"
@@ -205,6 +209,8 @@ runCommand (lib.appendToName "with-packages" emacs).name
         --subst-var-by bash ${emacs.stdenv.shell} \
         --subst-var-by wrapperSiteLisp "$deps/share/emacs/site-lisp" \
         --subst-var-by wrapperSiteLispNative "$deps/share/emacs/native-lisp" \
+        --subst-var-by wrapperInvocationDirectory "$out/bin/" \
+        --subst-var-by wrapperInvocationName "$progname" \
         --subst-var prog
       chmod +x $out/bin/$progname
       # Create a “NOP” binary wrapper for the pure sake of it becoming a
@@ -229,6 +235,8 @@ runCommand (lib.appendToName "with-packages" emacs).name
         --subst-var-by bash ${emacs.stdenv.shell} \
         --subst-var-by wrapperSiteLisp "$deps/share/emacs/site-lisp" \
         --subst-var-by wrapperSiteLispNative "$deps/share/emacs/native-lisp" \
+        --subst-var-by wrapperInvocationDirectory "$out/Applications/Emacs.app/Contents/MacOS/" \
+        --subst-var-by wrapperInvocationName "Emacs" \
         --subst-var-by prog "$emacs/Applications/Emacs.app/Contents/MacOS/Emacs"
       chmod +x $out/Applications/Emacs.app/Contents/MacOS/Emacs
       wrapProgramBinary $out/Applications/Emacs.app/Contents/MacOS/Emacs

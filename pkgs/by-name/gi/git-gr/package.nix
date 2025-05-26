@@ -6,7 +6,6 @@
   rustPlatform,
   installShellFiles,
   libiconv,
-  darwin,
   nix-update-script,
   pkg-config,
   openssl,
@@ -29,7 +28,8 @@ rustPlatform.buildRustPackage {
 
   buildFeatures = [ "clap_mangen" ];
 
-  cargoHash = "sha256-oukVU3YZMI2Z6HqIrEe2npmCj9PtwQUT6VOPkklM0Ig=";
+  useFetchCargoVendor = true;
+  cargoHash = "sha256-5YHE1NVUcZ5NeOl3Z87l3PVsmlkswhnT83Oi9loJjdM=";
 
   OPENSSL_NO_VENDOR = true;
 
@@ -39,8 +39,6 @@ rustPlatform.buildRustPackage {
     lib.optional stdenv.hostPlatform.isLinux openssl
     ++ lib.optionals stdenv.hostPlatform.isDarwin [
       libiconv
-      darwin.apple_sdk.frameworks.CoreServices
-      darwin.apple_sdk.frameworks.SystemConfiguration
     ];
 
   postInstall = lib.optionalString canRunGitGr ''

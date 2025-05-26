@@ -2,24 +2,28 @@
   lib,
   rustPlatform,
   fetchFromGitHub,
-  nix,
+  nixVersions,
   nixosTests,
   boost,
   pkg-config,
   stdenv,
   installShellFiles,
-  darwin,
   crates ? [ "attic-client" ],
 }:
+let
+  # Only the attic-client crate builds against the Nix C++ libs
+  # This derivation is also used to build the server
+  needNixInclude = lib.elem "attic-client" crates;
+in
 rustPlatform.buildRustPackage {
   pname = "attic";
-  version = "0-unstable-2024-10-06";
+  version = "0-unstable-2025-02-02";
 
   src = fetchFromGitHub {
     owner = "zhaofengli";
     repo = "attic";
-    rev = "1b29816235b7573fca7f964709fd201e1a187024";
-    hash = "sha256-icNt2T1obK3hFNgBOgiiyOoiScUfz9blmRbNp3aOUBE=";
+    rev = "ff8a897d1f4408ebbf4d45fa9049c06b3e1e3f4e";
+    hash = "sha256-hPYEJ4juK3ph7kbjbvv7PlU1D9pAkkhl+pwx8fZY53U=";
   };
 
   nativeBuildInputs = [
@@ -27,25 +31,21 @@ rustPlatform.buildRustPackage {
     installShellFiles
   ];
 
-  buildInputs =
-    [
-      nix
-      boost
-    ]
-    ++ lib.optionals stdenv.hostPlatform.isDarwin (
-      with darwin.apple_sdk.frameworks;
-      [
-        SystemConfiguration
-      ]
-    );
+  buildInputs = lib.optional needNixInclude nixVersions.nix_2_24 ++ [
+    boost
+  ];
 
-  cargoLock = {
-    lockFile = ./Cargo.lock;
-  };
   cargoBuildFlags = lib.concatMapStrings (c: "-p ${c} ") crates;
+  cargoHash = "sha256-AbpWnYfBMrR6oOfy2LkQvIPYsClCWE89bJav+iHTtLM=";
+  useFetchCargoVendor = true;
 
-  ATTIC_DISTRIBUTOR = "nixpkgs";
-  NIX_INCLUDE_PATH = "${lib.getDev nix}/include";
+  env =
+    {
+      ATTIC_DISTRIBUTOR = "nixpkgs";
+    }
+    // lib.optionalAttrs needNixInclude {
+      NIX_INCLUDE_PATH = "${lib.getDev nixVersions.nix_2_24}/include";
+    };
 
   # Attic interacts with Nix directly and its tests require trusted-user access
   # to nix-daemon to import NARs, which is not possible in the build sandbox.

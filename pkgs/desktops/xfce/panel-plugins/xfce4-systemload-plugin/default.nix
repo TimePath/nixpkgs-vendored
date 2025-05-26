@@ -2,10 +2,12 @@
   lib,
   stdenv,
   fetchurl,
+  gettext,
   pkg-config,
-  intltool,
   xfce4-panel,
+  libgtop,
   libxfce4ui,
+  upower,
   xfconf,
   gitUpdater,
 }:
@@ -15,20 +17,22 @@ let
 in
 stdenv.mkDerivation rec {
   pname = "xfce4-systemload-plugin";
-  version = "1.3.2";
+  version = "1.3.3";
 
   src = fetchurl {
     url = "mirror://xfce/src/${category}/${pname}/${lib.versions.majorMinor version}/${pname}-${version}.tar.bz2";
-    sha256 = "sha256-uzA/wwIOBTrR+guPy/DXaBxVY7uPZJNX1qlaV3gCsHI=";
+    sha256 = "sha256-aFLV2cmnTQ4NtYLG9f5zkOvkii61aSF3rhLhxMzG78k=";
   };
 
   nativeBuildInputs = [
+    gettext
     pkg-config
-    intltool
   ];
 
   buildInputs = [
+    libgtop
     libxfce4ui
+    upower
     xfce4-panel
     xfconf
   ];
@@ -43,6 +47,6 @@ stdenv.mkDerivation rec {
     description = "System load plugin for Xfce panel";
     license = licenses.bsd2;
     platforms = platforms.linux;
-    maintainers = with maintainers; [ ] ++ teams.xfce.members;
+    teams = [ teams.xfce ];
   };
 }

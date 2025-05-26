@@ -16,6 +16,7 @@
   libadwaita,
   glib-networking,
   webkitgtk_6_0,
+  nix-update-script,
 }:
 
 python3.pkgs.buildPythonApplication rec {
@@ -64,6 +65,7 @@ python3.pkgs.buildPythonApplication rec {
 
   passthru = {
     tests.cross = pkgsCross.aarch64-multiplatform.wike;
+    updateScript = nix-update-script { };
   };
 
   meta = with lib; {
@@ -72,6 +74,7 @@ python3.pkgs.buildPythonApplication rec {
     license = licenses.gpl3Plus;
     platforms = platforms.linux;
     maintainers = with maintainers; [ samalws ];
+    teams = [ teams.gnome-circle ];
     mainProgram = "wike";
   };
 }

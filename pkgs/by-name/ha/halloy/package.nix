@@ -1,12 +1,12 @@
 {
   lib,
   stdenv,
-  darwin,
   fetchFromGitHub,
   copyDesktopItems,
   makeDesktopItem,
   libxkbcommon,
   makeWrapper,
+  nix-update-script,
   openssl,
   pkg-config,
   rustPlatform,
@@ -38,25 +38,17 @@ rustPlatform.buildRustPackage rec {
 
   buildInputs =
     [
+      openssl
+    ]
+    ++ lib.optionals stdenv.hostPlatform.isLinux [
       alsa-lib
       libxkbcommon
-      openssl
       vulkan-loader
+      wayland
       xorg.libX11
       xorg.libXcursor
       xorg.libXi
-    ]
-    ++ lib.optionals stdenv.hostPlatform.isDarwin [
-      darwin.apple_sdk.frameworks.AppKit
-      darwin.apple_sdk.frameworks.CoreFoundation
-      darwin.apple_sdk.frameworks.CoreGraphics
-      darwin.apple_sdk.frameworks.Cocoa
-      darwin.apple_sdk.frameworks.Foundation
-      darwin.apple_sdk.frameworks.Metal
-      darwin.apple_sdk.frameworks.QuartzCore
-      darwin.apple_sdk.frameworks.Security
-    ]
-    ++ lib.optionals stdenv.hostPlatform.isLinux [ wayland ];
+    ];
 
   desktopItems = [
     (makeDesktopItem {
@@ -69,6 +61,7 @@ rustPlatform.buildRustPackage rec {
       mimeTypes = [
         "x-scheme-handler/irc"
         "x-scheme-handler/ircs"
+        "x-scheme-handler/halloy"
       ];
       categories = [
         "Network"
@@ -114,6 +107,8 @@ rustPlatform.buildRustPackage rec {
       makeWrapper "$out/bin/halloy" "$APP_DIR/MacOS/halloy"
     '';
 
+  passthru.updateScript = nix-update-script { };
+
   meta = with lib; {
     description = "IRC application";
     homepage = "https://github.com/squidowl/halloy";
@@ -122,6 +117,7 @@ rustPlatform.buildRustPackage rec {
     maintainers = with maintainers; [
       fab
       iivusly
+      ivyfanchiang
     ];
     mainProgram = "halloy";
   };

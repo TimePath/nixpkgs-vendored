@@ -126,6 +126,7 @@ stdenv.mkDerivation rec {
 
   passthru = {
     updateScript = gnome.updateScript {
+      attrPath = "libsoup_2_4";
       packageName = pname;
       versionPolicy = "odd-unstable";
       freeze = true;
@@ -136,7 +137,7 @@ stdenv.mkDerivation rec {
     description = "HTTP client/server library for GNOME";
     homepage = "https://gitlab.gnome.org/GNOME/libsoup";
     license = lib.licenses.lgpl2Plus;
-    inherit (glib.meta) maintainers platforms;
+    inherit (glib.meta) maintainers platforms teams;
     pkgConfigModules = [
       "libsoup-2.4"
       "libsoup-gnome-2.4"

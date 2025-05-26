@@ -4,6 +4,7 @@
   nixDependencies,
   pkgs,
   maintainers,
+  teams,
   otherSplices,
   version,
   src,
@@ -23,22 +24,17 @@ let
       }
       {
         inherit otherSplices;
-        f =
-          scope:
-          import ./packaging/components.nix {
-            inherit
-              lib
-              maintainers
-              officialRelease
-              pkgs
-              src
-              version
-              ;
-          } scope
-          // {
-            boehmgc = nixDependencies.boehmgc-no-coroutine-patch;
-            libgit2 = nixDependencies.libgit2-thin-packfile;
-          };
+        f = import ./packaging/components.nix {
+          inherit
+            lib
+            maintainers
+            teams
+            officialRelease
+            pkgs
+            src
+            version
+            ;
+        };
       };
 
 in

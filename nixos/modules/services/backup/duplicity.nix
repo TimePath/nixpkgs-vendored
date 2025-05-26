@@ -4,31 +4,29 @@
   pkgs,
   ...
 }:
-
-with lib;
 let
   cfg = config.services.duplicity;
 
   stateDirectory = "/var/lib/duplicity";
 
   localTarget =
-    if hasPrefix "file://" cfg.targetUrl then removePrefix "file://" cfg.targetUrl else null;
+    if lib.hasPrefix "file://" cfg.targetUrl then lib.removePrefix "file://" cfg.targetUrl else null;
 
 in
 {
   options.services.duplicity = {
-    enable = mkEnableOption "backups with duplicity";
+    enable = lib.mkEnableOption "backups with duplicity";
 
-    root = mkOption {
-      type = types.path;
+    root = lib.mkOption {
+      type = lib.types.path;
       default = "/";
       description = ''
         Root directory to backup.
       '';
     };
 
-    include = mkOption {
-      type = types.listOf types.str;
+    include = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
       default = [ ];
       example = [ "/home" ];
       description = ''
@@ -37,8 +35,8 @@ in
       '';
     };
 
-    exclude = mkOption {
-      type = types.listOf types.str;
+    exclude = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
       default = [ ];
       description = ''
         List of paths to exclude from backups. See the FILE SELECTION section in
@@ -46,8 +44,8 @@ in
       '';
     };
 
-    includeFileList = mkOption {
-      type = types.nullOr types.path;
+    includeFileList = lib.mkOption {
+      type = lib.types.nullOr lib.types.path;
       default = null;
       example = /path/to/fileList.txt;
       description = ''
@@ -57,8 +55,8 @@ in
       '';
     };
 
-    excludeFileList = mkOption {
-      type = types.nullOr types.path;
+    excludeFileList = lib.mkOption {
+      type = lib.types.nullOr lib.types.path;
       default = null;
       example = /path/to/fileList.txt;
       description = ''
@@ -68,8 +66,8 @@ in
       '';
     };
 
-    targetUrl = mkOption {
-      type = types.str;
+    targetUrl = lib.mkOption {
+      type = lib.types.str;
       example = "s3://host:port/prefix";
       description = ''
         Target url to backup to. See the URL FORMAT section in
@@ -77,8 +75,8 @@ in
       '';
     };
 
-    secretFile = mkOption {
-      type = types.nullOr types.path;
+    secretFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.path;
       default = null;
       description = ''
         Path of a file containing secrets (gpg passphrase, access key...) in
@@ -92,8 +90,8 @@ in
       '';
     };
 
-    frequency = mkOption {
-      type = types.nullOr types.str;
+    frequency = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
       default = "daily";
       description = ''
         Run duplicity with the given frequency (see
@@ -102,8 +100,8 @@ in
       '';
     };
 
-    extraFlags = mkOption {
-      type = types.listOf types.str;
+    extraFlags = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
       default = [ ];
       example = [
         "--backend-retry-delay"
@@ -115,8 +113,8 @@ in
       '';
     };
 
-    fullIfOlderThan = mkOption {
-      type = types.str;
+    fullIfOlderThan = lib.mkOption {
+      type = lib.types.str;
       default = "never";
       example = "1M";
       description = ''
@@ -130,8 +128,8 @@ in
     };
 
     cleanup = {
-      maxAge = mkOption {
-        type = types.nullOr types.str;
+      maxAge = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
         default = null;
         example = "6M";
         description = ''
@@ -139,8 +137,8 @@ in
           will not be deleted if backup sets newer than time depend on them.
         '';
       };
-      maxFull = mkOption {
-        type = types.nullOr types.int;
+      maxFull = lib.mkOption {
+        type = lib.types.nullOr lib.types.int;
         default = null;
         example = 2;
         description = ''
@@ -149,8 +147,8 @@ in
           associated incremental sets).
         '';
       };
-      maxIncr = mkOption {
-        type = types.nullOr types.int;
+      maxIncr = lib.mkOption {
+        type = lib.types.nullOr lib.types.int;
         default = null;
         example = 1;
         description = ''
@@ -162,7 +160,7 @@ in
     };
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     systemd = {
       services.duplicity =
         {
@@ -172,8 +170,8 @@ in
 
           script =
             let
-              target = escapeShellArg cfg.targetUrl;
-              extra = escapeShellArgs (
+              target = lib.escapeShellArg cfg.targetUrl;
+              extra = lib.escapeShellArgs (
                 [
                   "--archive-dir"
                   stateDirectory
@@ -208,11 +206,11 @@ in
                     "--exclude-filelist"
                     cfg.excludeFileList
                   ]
-                  ++ concatMap (p: [
+                  ++ lib.concatMap (p: [
                     "--include"
                     p
                   ]) cfg.include
-                  ++ concatMap (p: [
+                  ++ lib.concatMap (p: [
                     "--exclude"
                     p
                   ]) cfg.exclude
@@ -230,21 +228,21 @@ in
               ProtectHome = "read-only";
               StateDirectory = baseNameOf stateDirectory;
             }
-            // optionalAttrs (localTarget != null) {
+            // lib.optionalAttrs (localTarget != null) {
               ReadWritePaths = localTarget;
             }
-            // optionalAttrs (cfg.secretFile != null) {
+            // lib.optionalAttrs (cfg.secretFile != null) {
               EnvironmentFile = cfg.secretFile;
             };
         }
-        // optionalAttrs (cfg.frequency != null) {
+        // lib.optionalAttrs (cfg.frequency != null) {
           startAt = cfg.frequency;
         };
 
-      tmpfiles.rules = optional (localTarget != null) "d ${localTarget} 0700 root root -";
+      tmpfiles.rules = lib.optional (localTarget != null) "d ${localTarget} 0700 root root -";
     };
 
-    assertions = singleton {
+    assertions = lib.singleton {
       # Duplicity will fail if the last file selection option is an include. It
       # is not always possible to detect but this simple case can be caught.
       assertion = cfg.include != [ ] -> cfg.exclude != [ ] || cfg.extraFlags != [ ];

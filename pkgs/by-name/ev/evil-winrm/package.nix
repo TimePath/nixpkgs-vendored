@@ -4,6 +4,7 @@
   fetchFromGitHub,
   makeWrapper,
   bundlerEnv,
+  bundlerUpdateScript,
 }:
 
 stdenv.mkDerivation rec {
@@ -36,6 +37,8 @@ stdenv.mkDerivation rec {
     mkdir -p $out/bin
     cp evil-winrm.rb $out/bin/evil-winrm
   '';
+
+  passthru.updateScript = bundlerUpdateScript "evil-winrm";
 
   meta = with lib; {
     description = "WinRM shell for hacking/pentesting";

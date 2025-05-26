@@ -4,8 +4,13 @@
   pythonAtLeast,
   fetchFromGitHub,
 
+  # build-system
+  setuptools,
+
   # propagates
+  distutils,
   pyyaml,
+  standard-pipes,
 
   # optionals
   boto3,
@@ -26,9 +31,7 @@
 buildPythonPackage rec {
   pname = "mrjob";
   version = "0.7.4";
-
-  # https://github.com/Yelp/mrjob/issues/2222
-  disabled = pythonAtLeast "3.12";
+  pyproject = true;
 
   src = fetchFromGitHub {
     owner = "Yelp";
@@ -37,7 +40,15 @@ buildPythonPackage rec {
     hash = "sha256-Yp4yUx6tkyGB622I9y+AWK2AkIDVGKQPMM+LtB/M3uo=";
   };
 
-  propagatedBuildInputs = [ pyyaml ];
+  build-system = [
+    setuptools
+  ];
+
+  dependencies = [
+    distutils
+    pyyaml
+    standard-pipes
+  ];
 
   optional-dependencies = {
     aws = [

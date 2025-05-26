@@ -10,6 +10,7 @@
   lua5_3,
   qt5,
   file,
+  binutils,
   makeDesktopItem,
 }:
 
@@ -50,7 +51,13 @@ stdenv.mkDerivation (finalAttrs: {
 
   postFixup = ''
     wrapProgram $out/bin/libTAS \
-      --suffix PATH : ${lib.makeBinPath [ file ]} \
+      --suffix PATH : ${
+        lib.makeBinPath [
+          file
+          binutils
+          ffmpeg
+        ]
+      } \
       --set-default LIBTAS_SO_PATH $out/lib/libtas.so
   '';
 

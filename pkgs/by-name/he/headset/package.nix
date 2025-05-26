@@ -24,8 +24,6 @@ stdenv.mkDerivation rec {
     dpkg
   ];
 
-  unpackPhase = "dpkg-deb --fsys-tarfile $src | tar -x --no-same-permissions --no-same-owner";
-
   installPhase = ''
     runHook preInstall
 

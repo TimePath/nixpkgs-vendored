@@ -18,17 +18,21 @@
 
 buildPythonPackage rec {
   pname = "spyder-kernels";
-  version = "3.0.1";
+  version = "3.1.0a1";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "spyder-ide";
     repo = "spyder-kernels";
     tag = "v${version}";
-    hash = "sha256-OWdm4ytF9evqMEOOASssMag6QuJq2MwqmIZ+4et5IoI=";
+    hash = "sha256-/Dd+yCLctOC7ao26EU6LrhBD1SKGd84XLepMdDJnFow=";
   };
 
   build-system = [ setuptools ];
+
+  pythonRelaxDeps = [
+    "ipython"
+  ];
 
   dependencies = [
     cloudpickle
@@ -51,6 +55,6 @@ buildPythonPackage rec {
     downloadPage = "https://github.com/spyder-ide/spyder-kernels/releases";
     changelog = "https://github.com/spyder-ide/spyder-kernels/blob/v${version}/CHANGELOG.md";
     license = lib.licenses.mit;
-    maintainers = with lib.maintainers; [ gebner ];
+    maintainers = with lib.maintainers; [ ];
   };
 }

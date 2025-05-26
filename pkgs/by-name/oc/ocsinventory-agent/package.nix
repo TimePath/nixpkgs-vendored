@@ -3,6 +3,7 @@
   stdenv,
   perlPackages,
   fetchFromGitHub,
+  fetchpatch,
   makeWrapper,
   shortenPerlShebang,
   coreutils,
@@ -23,15 +24,24 @@
 }:
 
 perlPackages.buildPerlPackage rec {
-  version = "2.10.1";
   pname = "ocsinventory-agent";
+  version = "2.10.4";
 
   src = fetchFromGitHub {
     owner = "OCSInventory-NG";
     repo = "UnixAgent";
-    tag = "v${version}-MAC";
-    hash = "sha256-aFzBrUsVttUhpYGEYd/yYuXmE90PGCiBmBsVjtHcHLg=";
+    tag = "v${version}";
+    hash = "sha256-MKUYf3k47lHc9dTGo1wYd7r4GrX98dU+04mF0Jm5e9U=";
   };
+
+  patches = [
+    # Fix Getopt-Long warnings
+    # See https://github.com/OCSInventory-NG/UnixAgent/pull/490
+    (fetchpatch {
+      url = "https://github.com/OCSInventory-NG/UnixAgent/commit/c4899cef6b797df471ddf41c427970de47302f80.patch";
+      hash = "sha256-HxcWb9jmHiL0r6VWlsvmKUuybnM9W5471FLBBe3Zrfs=";
+    })
+  ];
 
   nativeBuildInputs = [ makeWrapper ] ++ lib.optional stdenv.hostPlatform.isDarwin shortenPerlShebang;
 
@@ -40,6 +50,7 @@ perlPackages.buildPerlPackage rec {
     [
       perl
       DataUUID
+      GetoptLong
       IOCompress
       IOSocketSSL
       LWP
@@ -97,8 +108,6 @@ perlPackages.buildPerlPackage rec {
       version = testers.testVersion {
         package = ocsinventory-agent;
         command = "ocsinventory-agent --version";
-        # upstream has not updated version in lib/Ocsinventory/Agent/Config.pm
-        version = "2.10.0";
       };
     };
     updateScript = nix-update-script { };

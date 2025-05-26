@@ -5,6 +5,7 @@
   fetchurl,
   cmake,
   nasm,
+  fetchpatch2,
 
   # NUMA support enabled by default on NUMA platforms:
   numaSupport ? (
@@ -25,6 +26,9 @@
   unittestsSupport ? stdenv.hostPlatform.isx86_64, # Unit tests - only testing x64 assembly
   vtuneSupport ? false, # Vtune profiling instrumentation
   werrorSupport ? false, # Warnings as errors
+  # NEON support is always enabled for aarch64
+  # this flag is only needed for armv7.
+  neonSupport ? false, # force enable the NEON fpu support for arm v7 CPUs
 }:
 
 let
@@ -35,7 +39,7 @@ in
 
 stdenv.mkDerivation rec {
   pname = "x265";
-  version = "3.6";
+  version = "4.1";
 
   outputs = [
     "out"
@@ -46,20 +50,29 @@ stdenv.mkDerivation rec {
   # whether we fetch a source tarball or a tag from the git repo
   src = fetchurl {
     url = "https://bitbucket.org/multicoreware/x265_git/downloads/x265_${version}.tar.gz";
-    hash = "sha256-ZjUx80HFOJ9GDXMOYuEKT8yjQoyiyhCWk4Z7xf4uKAc=";
+    hash = "sha256-oxaZxqiYBrdLAVHl5qffZd5LSQUEgv5ev4pDedevjyk=";
   };
 
-  patches = [
-    ./darwin-__rdtsc.patch
-  ];
+  patches =
+    [
+      ./darwin-__rdtsc.patch
+    ]
+    # TODO: remove after update to version 4.2
+    ++ lib.optionals (stdenv.hostPlatform.isAarch32 && stdenv.hostPlatform.isLinux) [
+      (fetchpatch2 {
+        url = "https://bitbucket.org/multicoreware/x265_git/commits/ddb1933598736394b646cb0f78da4a4201ffc656/raw";
+        hash = "sha256-ZH+jbVtfNJ+CwRUEgsnzyPVzajR/+4nDnUDz5RONO6c=";
+        stripLen = 1;
+      })
+    ];
 
   sourceRoot = "x265_${version}/source";
 
   postPatch =
     ''
       substituteInPlace cmake/Version.cmake \
-        --replace "unknown" "${version}" \
-        --replace "0.0" "${version}"
+        --replace-fail "unknown" "${version}" \
+        --replace-fail "0.0" "${version}"
     ''
     # There is broken and complicated logic when setting X265_LATEST_TAG for
     # mingwW64 builds. This bypasses the logic by setting it at the end of the
@@ -75,6 +88,9 @@ stdenv.mkDerivation rec {
 
   cmakeFlags =
     [
+      "-DENABLE_ALPHA=ON"
+      "-DENABLE_MULTIVIEW=ON"
+      "-DENABLE_SCC_EXT=ON"
       "-Wno-dev"
       (mkFlag custatsSupport "DETAILED_CU_STATS")
       (mkFlag debugSupport "CHECKED_BUILD")
@@ -84,8 +100,14 @@ stdenv.mkDerivation rec {
     ]
     # Clang does not support the endfunc directive so use GCC.
     ++ lib.optional (
-      stdenv.cc.isClang && !stdenv.targetPlatform.isDarwin
-    ) "-DCMAKE_ASM_COMPILER=${gccStdenv.cc}/bin/${gccStdenv.cc.targetPrefix}gcc";
+      stdenv.cc.isClang && !stdenv.targetPlatform.isDarwin && !stdenv.targetPlatform.isFreeBSD
+    ) "-DCMAKE_ASM_COMPILER=${gccStdenv.cc}/bin/${gccStdenv.cc.targetPrefix}gcc"
+    # Neon support
+    ++ lib.optionals (neonSupport && stdenv.hostPlatform.isAarch32) [
+      "-DENABLE_NEON=ON"
+      "-DCPU_HAS_NEON=ON"
+      "-DENABLE_ASSEMBLY=ON"
+    ];
 
   cmakeStaticLibFlags =
     [
@@ -134,9 +156,12 @@ stdenv.mkDerivation rec {
   '';
 
   doCheck = unittestsSupport;
+
   checkPhase = ''
     runHook preCheck
+
     ./test/TestBench
+
     runHook postCheck
   '';
 
@@ -149,15 +174,15 @@ stdenv.mkDerivation rec {
       ln -s $out/bin/*.dll $out/lib
     '';
 
-  meta = with lib; {
+  meta = {
     description = "Library for encoding H.265/HEVC video streams";
     mainProgram = "x265";
-    homepage = "https://www.x265.org/";
+    homepage = "https://www.x265.org";
     changelog = "https://x265.readthedocs.io/en/master/releasenotes.html#version-${
       lib.strings.replaceStrings [ "." ] [ "-" ] version
     }";
-    license = licenses.gpl2Plus;
-    maintainers = with maintainers; [ codyopel ];
-    platforms = platforms.all;
+    license = lib.licenses.gpl2Plus;
+    maintainers = with lib.maintainers; [ codyopel ];
+    platforms = lib.platforms.all;
   };
 }

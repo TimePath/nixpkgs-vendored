@@ -3,6 +3,7 @@
   stdenv,
   appimageTools,
   fetchurl,
+  makeWrapper,
   _7zz,
 }:
 
@@ -66,11 +67,15 @@ let
       meta
       ;
 
+    nativeBuildInputs = [ makeWrapper ];
+
     profile = ''
       export LC_ALL=C.UTF-8
     '';
 
     extraInstallCommands = ''
+      wrapProgram $out/bin/notesnook \
+        --add-flags "\''${NIXOS_OZONE_WL:+\''${WAYLAND_DISPLAY:+--ozone-platform-hint=auto --enable-features=WaylandWindowDecorations}}"
       install -Dm444 ${appimageContents}/notesnook.desktop -t $out/share/applications
       install -Dm444 ${appimageContents}/notesnook.png -t $out/share/pixmaps
       substituteInPlace $out/share/applications/notesnook.desktop \

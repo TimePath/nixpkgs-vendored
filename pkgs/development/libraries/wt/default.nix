@@ -12,7 +12,7 @@
   fcgi,
   firebird,
   libmysqlclient,
-  postgresql,
+  libpq,
   graphicsmagick,
   glew,
   openssl,
@@ -48,7 +48,7 @@ let
         fcgi
         firebird
         libmysqlclient
-        postgresql
+        libpq
         graphicsmagick
         glew
         openssl
@@ -80,7 +80,7 @@ let
 in
 {
   wt4 = generic {
-    version = "4.10.4";
-    sha256 = "sha256-O2waUKGTw8kZw+6qBMqG9tNN92aGL+WCrcPOGAG7HO0=";
+    version = "4.11.4";
+    sha256 = "sha256-ynmOUONHo8VTq8nmD+/SpDPR7bHILw8mArvY2DZJ5Hk=";
   };
 }

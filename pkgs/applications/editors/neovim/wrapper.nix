@@ -1,6 +1,5 @@
 {
   stdenv,
-  symlinkJoin,
   lib,
   makeWrapper,
   bundlerEnv,
@@ -25,6 +24,14 @@ let
   wrapper =
     {
       extraName ? "",
+      # certain plugins need a custom configuration (available in passthru.initLua)
+      # to work with nix.
+      # if true, the wrapper automatically appends those snippets when necessary
+      autoconfigure ? true,
+
+      # append to PATH runtime deps of plugins
+      autowrapRuntimeDeps ? true,
+
       # should contain all args but the binary. Can be either a string or list
       wrapperArgs ? [ ],
       withPython2 ? false,
@@ -71,7 +78,7 @@ let
     stdenv.mkDerivation (
       finalAttrs:
       let
-        pluginsNormalized = neovimUtils.normalizePlugins plugins;
+        pluginsNormalized = neovimUtils.normalizePlugins finalAttrs.plugins;
 
         myVimPackage = neovimUtils.normalizedPluginsToVimPackage pluginsNormalized;
 
@@ -88,18 +95,25 @@ let
         ) [ ] pluginsNormalized;
 
         # a limited RC script used only to generate the manifest for remote plugins
-        manifestRc = vimUtils.vimrcContent { customRC = ""; };
+        manifestRc = "";
         # we call vimrcContent without 'packages' to avoid the init.vim generation
-        neovimRcContent' = vimUtils.vimrcContent {
-          beforePlugins = "";
-          customRC = lib.concatStringsSep "\n" (
-            pluginRC ++ lib.optional (neovimRcContent != null) neovimRcContent
-          );
-          packages = null;
-        };
+        neovimRcContent' = lib.concatStringsSep "\n" (
+          pluginRC ++ lib.optional (neovimRcContent != null) neovimRcContent
+        );
 
         packpathDirs.myNeovimPackages = myVimPackage;
         finalPackdir = neovimUtils.packDir packpathDirs;
+
+        luaPluginRC =
+          let
+            op =
+              acc: normalizedPlugin:
+              acc
+              ++ lib.optional (
+                finalAttrs.autoconfigure && normalizedPlugin.plugin.passthru ? initLua
+              ) normalizedPlugin.plugin.passthru.initLua;
+          in
+          lib.foldl' op [ ] pluginsNormalized;
 
         rcContent =
           ''
@@ -107,7 +121,8 @@ let
           ''
           + lib.optionalString (neovimRcContent' != null) ''
             vim.cmd.source "${writeText "init.vim" neovimRcContent'}"
-          '';
+          ''
+          + lib.concatStringsSep "\n" luaPluginRC;
 
         getDeps = attrname: map (plugin: plugin.${attrname} or (_: [ ]));
 
@@ -123,20 +138,17 @@ let
         wrapperArgsStr = if lib.isString wrapperArgs then wrapperArgs else lib.escapeShellArgs wrapperArgs;
 
         generatedWrapperArgs =
-          let
-            binPath = lib.makeBinPath (
-              lib.optional finalAttrs.withRuby rubyEnv ++ lib.optional finalAttrs.withNodeJs nodejs
-            );
-          in
-
-          # vim accepts a limited number of commands so we join them all
           [
+            # vim accepts a limited number of commands so we join all the provider ones
             "--add-flags"
             ''--cmd "lua ${providerLuaRc}"''
           ]
           ++
             lib.optionals
-              (packpathDirs.myNeovimPackages.start != [ ] || packpathDirs.myNeovimPackages.opt != [ ])
+              (
+                finalAttrs.packpathDirs.myNeovimPackages.start != [ ]
+                || finalAttrs.packpathDirs.myNeovimPackages.opt != [ ]
+              )
               [
                 "--add-flags"
                 ''--cmd "set packpath^=${finalPackdir}"''
@@ -148,11 +160,11 @@ let
             "GEM_HOME"
             "${rubyEnv}/${rubyEnv.ruby.gemPath}"
           ]
-          ++ lib.optionals (binPath != "") [
+          ++ lib.optionals (finalAttrs.runtimeDeps != [ ]) [
             "--suffix"
             "PATH"
             ":"
-            binPath
+            (lib.makeBinPath finalAttrs.runtimeDeps)
           ];
 
         providerLuaRc = neovimUtils.generateProviderRc {
@@ -164,10 +176,10 @@ let
             ;
         };
 
-        # If configure != {}, we can't generate the rplugin.vim file with e.g
+        # If `configure` != {}, we can't generate the rplugin.vim file with e.g
         # NVIM_SYSTEM_RPLUGIN_MANIFEST *and* NVIM_RPLUGIN_MANIFEST env vars set in
-        # the wrapper. That's why only when configure != {} (tested both here and
-        # when postBuild is evaluated), we call makeWrapper once to generate a
+        # the wrapper. That's why only when `configure` != {} (tested both here and
+        # when `postBuild` is evaluated), we call makeWrapper once to generate a
         # wrapper with most arguments we need, excluding those that cause problems to
         # generate rplugin.vim, but still required for the final wrapper.
         finalMakeWrapperArgs =
@@ -209,9 +221,25 @@ let
           withPerl
           withRuby
           ;
-        inherit wrapRc providerLuaRc packpathDirs;
+        inherit
+          autoconfigure
+          autowrapRuntimeDeps
+          wrapRc
+          providerLuaRc
+          packpathDirs
+          ;
         inherit python3Env rubyEnv;
         inherit wrapperArgs generatedWrapperArgs;
+
+        runtimeDeps =
+          let
+            op = acc: normalizedPlugin: acc ++ normalizedPlugin.plugin.runtimeDeps or [ ];
+            runtimeDeps = lib.foldl' op [ ] pluginsNormalized;
+          in
+          lib.optional finalAttrs.withRuby rubyEnv
+          ++ lib.optional finalAttrs.withNodeJs nodejs
+          ++ lib.optionals finalAttrs.autowrapRuntimeDeps runtimeDeps;
+
         luaRcContent = rcContent;
         # Remove the symlinks created by symlinkJoin which we need to perform
         # extra actions upon
@@ -313,6 +341,13 @@ let
         # A Vim "package", see ':h packages'
         vimPackage = myVimPackage;
 
+        checkPhase = ''
+          runHook preCheck
+
+          $out/bin/nvim -i NONE -e +quitall!
+          runHook postCheck
+        '';
+
         passthru = {
           inherit providerLuaRc packpathDirs;
           unwrapped = neovim-unwrapped;
@@ -329,7 +364,7 @@ let
             homepage
             mainProgram
             license
-            maintainers
+            teams
             platforms
             ;
 

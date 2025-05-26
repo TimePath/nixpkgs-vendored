@@ -2,6 +2,7 @@
   lib,
   stdenv,
   fetchFromGitLab,
+  fetchpatch,
   meson,
   ninja,
   pkg-config,
@@ -13,10 +14,8 @@
   libxkbcommon,
   pixman,
   libcap,
-  mesa,
+  libgbm,
   xorg,
-  libpng,
-  ffmpeg,
   hwdata,
   seatd,
   vulkan-loader,
@@ -72,16 +71,18 @@ let
         pkg-config
         wayland-scanner
         glslang
+        hwdata
       ] ++ extraNativeBuildInputs;
 
       buildInputs =
         [
+          libliftoff
+          libdisplay-info
           libGL
           libcap
           libinput
-          libpng
           libxkbcommon
-          mesa
+          libgbm
           pixman
           seatd
           vulkan-loader
@@ -149,26 +150,21 @@ rec {
   wlroots_0_17 = generic {
     version = "0.17.4";
     hash = "sha256-AzmXf+HMX/6VAr0LpfHwfmDB9dRrrLQHt7l35K98MVo=";
-    extraNativeBuildInputs = [
-      hwdata
-    ];
-    extraBuildInputs = [
-      ffmpeg
-      libliftoff
-      libdisplay-info
+    patches = [
+      (fetchpatch {
+        # SIGCHLD here isn't fatal: we have other means of notifying that things were
+        # successful or failure, and it causes many compositors to have to do a bunch
+        # of extra work: https://github.com/qtile/qtile/issues/5101
+        url = "https://gitlab.freedesktop.org/wlroots/wlroots/-/commit/631e5be0d7a7e4c7086b9778bc8fac809f96d336.patch";
+        hash = "sha256-3Jnx4ZeKc3+NxraK2T7nZ2ibtWJuTEFmxa976fjAqsM=";
+      })
     ];
   };
 
   wlroots_0_18 = generic {
-    version = "0.18.1";
-    hash = "sha256-BlI3EUoGEHdO6IBh99o/Aadct2dd7Xjc4PG0Sv+flqI=";
-    extraNativeBuildInputs = [
-      hwdata
-    ];
+    version = "0.18.2";
+    hash = "sha256-vKvMWRPPJ4PRKWVjmKKCdNSiqsQm+uQBoBnBUFElLNA=";
     extraBuildInputs = [
-      ffmpeg
-      libliftoff
-      libdisplay-info
       lcms2
     ];
   };

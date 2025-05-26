@@ -8,67 +8,72 @@
   zip,
   wxGTK,
   gtk3,
-  sfml,
+  sfml_2,
   fluidsynth,
   curl,
-  freeimage,
   ftgl,
   glew,
   lua,
   mpg123,
+  wrapGAppsHook3,
   unstableGitUpdater,
+  libwebp,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation {
   pname = "slade";
-  version = "3.2.4-unstable-2023-09-30";
+  version = "3.2.7-unstable-2025-04-22";
 
   src = fetchFromGitHub {
     owner = "sirjuddington";
     repo = "SLADE";
-    rev = "d05af4bd3a9a655dfe17d02760bab3542cc0b909";
-    sha256 = "sha256-lzTSE0WH+4fOad9E/pL3LDc4L151W0hFEmD0zsS0gpQ=";
+    rev = "f8584231353845148c7623990dd90291fcb70f33";
+    hash = "sha256-tP84FfSjfOxFh8S7GuyHB0M13Svx6SLbloo8xt9oORU=";
   };
-
-  postPatch = lib.optionalString (!stdenv.hostPlatform.isx86) ''
-    sed -i '/-msse/d' src/CMakeLists.txt
-  '';
 
   nativeBuildInputs = [
     cmake
     pkg-config
     which
     zip
+    wrapGAppsHook3
   ];
 
   buildInputs = [
     wxGTK
     gtk3
-    sfml
+    sfml_2
     fluidsynth
     curl
-    freeimage
     ftgl
     glew
     lua
     mpg123
+    libwebp
   ];
 
   cmakeFlags = [
     "-DwxWidgets_LIBRARIES=${wxGTK}/lib"
+    (lib.cmakeFeature "CL_WX_CONFIG" (lib.getExe' (lib.getDev wxGTK) "wx-config"))
   ];
 
   env.NIX_CFLAGS_COMPILE = "-Wno-narrowing";
+
+  preFixup = ''
+    gappsWrapperArgs+=(
+      --prefix GDK_BACKEND : x11
+    )
+  '';
 
   passthru.updateScript = unstableGitUpdater {
     url = "https://github.com/sirjuddington/SLADE.git";
   };
 
-  meta = with lib; {
+  meta = {
     description = "Doom editor";
     homepage = "http://slade.mancubus.net/";
-    license = licenses.gpl2Plus;
-    platforms = platforms.linux;
-    maintainers = with maintainers; [ ertes ];
+    license = lib.licenses.gpl2Only; # https://github.com/sirjuddington/SLADE/issues/1754
+    platforms = lib.platforms.linux;
+    maintainers = with lib.maintainers; [ ertes ];
   };
 }

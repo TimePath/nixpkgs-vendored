@@ -23,6 +23,18 @@ let
 
       options = {
 
+        type = mkOption {
+          example = "amneziawg";
+          default = "wireguard";
+          type = types.enum [
+            "wireguard"
+            "amneziawg"
+          ];
+          description = ''
+            The type of the interface. Currently only "wireguard" and "amneziawg" are supported.
+          '';
+        };
+
         ips = mkOption {
           example = [ "192.168.2.1/24" ];
           default = [ ];
@@ -192,6 +204,49 @@ let
             Set the metric of routes related to this Wireguard interface.
           '';
         };
+
+        dynamicEndpointRefreshSeconds = mkOption {
+          default = 0;
+          example = 300;
+          type = with types; int;
+          description = ''
+            Periodically refresh the endpoint hostname or address for all peers.
+            Allows WireGuard to notice DNS and IPv4/IPv6 connectivity changes.
+            This option can be set or overridden for individual peers.
+
+            Setting this to `0` disables periodic refresh.
+
+            ::: {.warning}
+            When {option}`networking.wireguard.useNetworkd` is enabled, this
+            option deletes the Wireguard interface and brings it back up by
+            reconfiguring the network with `networkctl reload` on every refresh.
+            This could have adverse effects on your network and cause brief
+            connectivity blips. See [systemd/systemd#9911](https://github.com/systemd/systemd/issues/9911)
+            for an upstream feature request that can make this less hacky.
+            :::
+          '';
+        };
+
+        extraOptions = mkOption {
+          type =
+            with types;
+            attrsOf (oneOf [
+              str
+              int
+            ]);
+          default = { };
+          example = {
+            Jc = 5;
+            Jmin = 10;
+            Jmax = 42;
+            S1 = 60;
+            S2 = 90;
+            H4 = 12345;
+          };
+          description = ''
+            Extra options to append to the interface section. Can be used to define AmneziaWG-specific options.
+          '';
+        };
       };
 
     };
@@ -281,15 +336,21 @@ let
       };
 
       dynamicEndpointRefreshSeconds = mkOption {
-        default = 0;
+        default = null;
+        defaultText = literalExpression "config.networking.wireguard.interfaces.<name>.dynamicEndpointRefreshSeconds";
         example = 5;
-        type = with types; int;
+        type = with types; nullOr int;
         description = ''
           Periodically re-execute the `wg` utility every
           this many seconds in order to let WireGuard notice DNS / hostname
           changes.
 
           Setting this to `0` disables periodic reexecution.
+
+          ::: {.note}
+          This peer-level setting is not available when {option}`networking.wireguard.useNetworkd`
+          is enabled. The interface-level setting may be used instead.
+          :::
         '';
       };
 
@@ -327,6 +388,16 @@ let
 
   };
 
+  wgBins = {
+    wireguard = "wg";
+    amneziawg = "awg";
+  };
+
+  wgPackages = {
+    wireguard = pkgs.wireguard-tools;
+    amneziawg = pkgs.amneziawg-tools;
+  };
+
   generateKeyServiceUnit =
     name: values:
     assert values.generatePrivateKeyFile;
@@ -335,7 +406,7 @@ let
       wantedBy = [ "wireguard-${name}.service" ];
       requiredBy = [ "wireguard-${name}.service" ];
       before = [ "wireguard-${name}.service" ];
-      path = with pkgs; [ wireguard-tools ];
+      path = [ wgPackages.${values.type} ];
 
       serviceConfig = {
         Type = "oneshot";
@@ -351,7 +422,7 @@ let
 
         if [ ! -f "${values.privateKeyFile}" ]; then
           # Write private key file with atomically-correct permissions.
-          (set -e; umask 077; wg genkey > "${values.privateKeyFile}")
+          (set -e; umask 077; ${wgBins.${values.type}} genkey > "${values.privateKeyFile}")
         fi
       '';
     };
@@ -362,6 +433,13 @@ let
       refreshSuffix = optionalString dynamicRefreshEnabled "-refresh";
     in
     "wireguard-${interfaceName}-peer-${peerName}${refreshSuffix}";
+
+  dynamicRefreshSeconds =
+    interfaceCfg: peer:
+    if peer.dynamicEndpointRefreshSeconds != null then
+      peer.dynamicEndpointRefreshSeconds
+    else
+      interfaceCfg.dynamicEndpointRefreshSeconds;
 
   generatePeerUnit =
     {
@@ -378,8 +456,9 @@ let
       src = interfaceCfg.socketNamespace;
       dst = interfaceCfg.interfaceNamespace;
       ip = nsWrap "ip" src dst;
-      wg = nsWrap "wg" src dst;
-      dynamicRefreshEnabled = peer.dynamicEndpointRefreshSeconds != 0;
+      wg = nsWrap wgBins.${interfaceCfg.type} src dst;
+      dynamicEndpointRefreshSeconds = dynamicRefreshSeconds interfaceCfg peer;
+      dynamicRefreshEnabled = dynamicEndpointRefreshSeconds != 0;
       # We generate a different name (a `-refresh` suffix) when `dynamicEndpointRefreshSeconds`
       # to avoid that the same service switches `Type` (`oneshot` vs `simple`),
       # with the intent to make scripting more obvious.
@@ -400,7 +479,7 @@ let
       environment.WG_ENDPOINT_RESOLUTION_RETRIES = "infinity";
       path = with pkgs; [
         iproute2
-        wireguard-tools
+        wgPackages.${interfaceCfg.type}
       ];
 
       serviceConfig =
@@ -423,7 +502,7 @@ let
               if null != peer.dynamicEndpointRefreshRestartSeconds then
                 peer.dynamicEndpointRefreshRestartSeconds
               else
-                peer.dynamicEndpointRefreshSeconds;
+                dynamicEndpointRefreshSeconds;
           };
       unitConfig = lib.optionalAttrs dynamicRefreshEnabled {
         StartLimitIntervalSec = 0;
@@ -453,13 +532,13 @@ let
           ${wg_setup}
           ${route_setup}
 
-          ${optionalString (peer.dynamicEndpointRefreshSeconds != 0) ''
+          ${optionalString (dynamicEndpointRefreshSeconds != 0) ''
             # Re-execute 'wg' periodically to notice DNS / hostname changes.
             # Note this will not time out on transient DNS failures such as DNS names
             # because we have set 'WG_ENDPOINT_RESOLUTION_RETRIES=infinity'.
             # Also note that 'wg' limits its maximum retry delay to 20 seconds as of writing.
             while ${wg_setup}; do
-              sleep "${toString peer.dynamicEndpointRefreshSeconds}";
+              sleep "${toString dynamicEndpointRefreshSeconds}";
             done
           ''}
         '';
@@ -484,7 +563,7 @@ let
     name: values:
     let
       mkPeerUnit =
-        peer: (peerUnitServiceName name peer.name (peer.dynamicEndpointRefreshSeconds != 0)) + ".service";
+        peer: (peerUnitServiceName name peer.name (dynamicRefreshSeconds values peer != 0)) + ".service";
     in
     nameValuePair "wireguard-${name}" rec {
       description = "WireGuard Tunnel - ${name}";
@@ -507,7 +586,7 @@ let
       dst = values.interfaceNamespace;
       ipPreMove = nsWrap "ip" src null;
       ipPostMove = nsWrap "ip" src dst;
-      wg = nsWrap "wg" src dst;
+      wg = nsWrap wgBins.${values.type} src dst;
       ns = if dst == "init" then "1" else dst;
 
     in
@@ -520,7 +599,7 @@ let
       path = with pkgs; [
         kmod
         iproute2
-        wireguard-tools
+        wgPackages.${values.type}
       ];
 
       serviceConfig = {
@@ -529,10 +608,10 @@ let
       };
 
       script = concatStringsSep "\n" (
-        optional (!config.boot.isContainer) "modprobe wireguard || true"
+        optional (!config.boot.isContainer) "modprobe ${values.type} || true"
         ++ [
           values.preSetup
-          ''${ipPreMove} link add dev "${name}" type wireguard''
+          ''${ipPreMove} link add dev "${name}" type ${values.type}''
         ]
         ++ optional (
           values.interfaceNamespace != null && values.interfaceNamespace != values.socketNamespace
@@ -544,6 +623,7 @@ let
             [ ''${wg} set "${name}" private-key "${privKey}"'' ]
             ++ optional (values.listenPort != null) ''listen-port "${toString values.listenPort}"''
             ++ optional (values.fwMark != null) ''fwmark "${values.fwMark}"''
+            ++ mapAttrsToList (k: v: ''${toLower k} "${toString v}"'') values.extraOptions
           ))
           ''${ipPostMove} link set up dev "${name}"''
           values.postSetup
@@ -567,6 +647,9 @@ let
       ns = last nsList;
     in
     if (length nsList > 0 && ns != "init") then ''ip netns exec "${ns}" "${cmd}"'' else cmd;
+
+  usingWg = any (x: x.type == "wireguard") (attrValues cfg.interfaces);
+  usingAwg = any (x: x.type == "amneziawg") (attrValues cfg.interfaces);
 in
 
 {
@@ -581,9 +664,10 @@ in
         description = ''
           Whether to enable WireGuard.
 
-          Please note that {option}`systemd.network.netdevs` has more features
-          and is better maintained. When building new things, it is advised to
-          use that instead.
+          ::: {.note}
+          By default, this module is powered by a script-based backend. You can
+          enable the networkd backend with {option}`networking.wireguard.useNetworkd`.
+          :::
         '';
         type = types.bool;
         # 2019-05-25: Backwards compatibility.
@@ -595,10 +679,6 @@ in
       interfaces = mkOption {
         description = ''
           WireGuard interfaces.
-
-          Please note that {option}`systemd.network.netdevs` has more features
-          and is better maintained. When building new things, it is advised to
-          use that instead.
         '';
         default = { };
         example = {
@@ -655,18 +735,23 @@ in
           }
         ) all_peers;
 
-      boot.extraModulePackages = optional (versionOlder kernel.kernel.version "5.6") kernel.wireguard;
-      boot.kernelModules = [ "wireguard" ];
-      environment.systemPackages = [ pkgs.wireguard-tools ];
+      boot.extraModulePackages =
+        optional (usingWg && (versionOlder kernel.kernel.version "5.6")) kernel.wireguard
+        ++ optional usingAwg kernel.amneziawg;
+      boot.kernelModules = optional usingWg "wireguard" ++ optional usingAwg "amneziawg";
+      environment.systemPackages =
+        optional usingWg pkgs.wireguard-tools
+        ++ optional usingAwg pkgs.amneziawg-tools;
 
-      systemd.services =
+      systemd.services = mkIf (!cfg.useNetworkd) (
         (mapAttrs' generateInterfaceUnit cfg.interfaces)
         // (listToAttrs (map generatePeerUnit all_peers))
         // (mapAttrs' generateKeyServiceUnit (
           filterAttrs (name: value: value.generatePrivateKeyFile) cfg.interfaces
-        ));
+        ))
+      );
 
-      systemd.targets = mapAttrs' generateInterfaceTarget cfg.interfaces;
+      systemd.targets = mkIf (!cfg.useNetworkd) (mapAttrs' generateInterfaceTarget cfg.interfaces);
     }
   );
 

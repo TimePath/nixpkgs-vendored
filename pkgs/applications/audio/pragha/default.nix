@@ -29,7 +29,7 @@
   withKeybinder ? false,
   libnotify,
   withLibnotify ? false,
-  libsoup,
+  libsoup_2_4,
   withLibsoup ? false,
   libgudev,
   withGudev ? false, # experimental
@@ -95,7 +95,7 @@ mkDerivation rec {
     ++ lib.optional withLibnotify libnotify
     ++ lib.optional withLastfm liblastfmSF
     ++ lib.optional withGlyr glyr
-    ++ lib.optional withLibsoup libsoup
+    ++ lib.optional withLibsoup libsoup_2_4
     ++ lib.optional withMtp libmtp
     ++ lib.optional withXfce4ui xfce.libxfce4ui
     ++ lib.optional withTotemPlParser totem-pl-parser

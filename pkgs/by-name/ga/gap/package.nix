@@ -71,11 +71,11 @@ in
 stdenv.mkDerivation rec {
   pname = "gap";
   # https://www.gap-system.org/Releases/
-  version = "4.13.1";
+  version = "4.14.0";
 
   src = fetchurl {
     url = "https://github.com/gap-system/gap/releases/download/v${version}/gap-${version}.tar.gz";
-    sha256 = "sha256-l5Tb26b7mY4KLQqoziH8iEitPT+cyZk7C44gvn4dvro=";
+    sha256 = "sha256-hF9ScsJv6xuOue8pS/BUXyZMH+WhmwYBu8ZdedlQZIc=";
   };
 
   # remove all non-essential packages (which take up a lot of space)
@@ -141,6 +141,7 @@ stdenv.mkDerivation rec {
     # https://github.com/NixOS/nixpkgs/pull/192548#discussion_r992824942
     rm -r "$out/share/gap/pkg"
     cp -ar pkg tst "$out/share/gap"
+    cp -a etc/Makefile.gappkg "$out/share/gap/etc"
   '';
 
   preFixup = ''
@@ -153,7 +154,7 @@ stdenv.mkDerivation rec {
     # We are also grateful to ChrisJefferson for previous work on the package,
     # and to ChrisJefferson and fingolfin for help with GAP-related questions
     # from the upstream point of view.
-    maintainers = teams.sage.members;
+    teams = [ teams.sage ];
     platforms = platforms.all;
     # keeping all packages increases the package size considerably, which is
     # why a local build is preferable in that situation. The timeframe is

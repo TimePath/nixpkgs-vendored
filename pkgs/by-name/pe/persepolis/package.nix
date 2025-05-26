@@ -3,7 +3,6 @@
   qt5,
   python3,
   fetchFromGitHub,
-  aria2,
   ffmpeg,
   libnotify,
   pulseaudio,
@@ -15,31 +14,19 @@
 
 python3.pkgs.buildPythonApplication rec {
   pname = "persepolis";
-  version = "4.0.1";
+  version = "5.1.0";
   format = "other";
 
   src = fetchFromGitHub {
     owner = "persepolisdm";
     repo = "persepolis";
-    rev = "57dc9d438bb3f126070a17c7a3677c45ea4dd332";
-    hash = "sha256-7OXAITFQJ2/aY0QmqlAo7if7cY7+T3j6PUjfJJV8Z2Q=";
+    tag = version;
+    hash = "sha256-viRRPccw0C1GmZFXWAtg008HfDmnTwEjg2TqVlIiICY=";
   };
-
-  patches = [
-    # Upstream does currently not allow building from source on macOS. These patches can likely
-    # be removed if https://github.com/persepolisdm/persepolis/issues/943 is fixed upstream
-    ./0003-Search-PATH-for-aria2c-on-darwin.patch
-    ./0004-Search-PATH-for-ffmpeg-on-darwin.patch
-  ];
 
   postPatch = ''
     # Ensure dependencies with hard-coded FHS dependencies are properly detected
     substituteInPlace check_dependencies.py --replace-fail "isdir(notifications_path)" "isdir('${sound-theme-freedesktop}/share/sounds/freedesktop')"
-  '';
-
-  postInstall = ''
-    mkdir -p $out/share/applications
-    cp $src/xdg/com.github.persepolisdm.persepolis.desktop $out/share/applications
   '';
 
   # prevent double wrapping
@@ -55,22 +42,11 @@ python3.pkgs.buildPythonApplication rec {
   makeWrapperArgs = [
     "--prefix PATH : ${
       lib.makeBinPath [
-        aria2
         ffmpeg
         libnotify
       ]
     }"
     "\${qtWrapperArgs[@]}"
-  ];
-
-  # The presence of these dependencies is checked during setuptoolsCheckPhase,
-  # but apart from that, they're not required during build, only runtime
-  nativeCheckInputs = [
-    aria2
-    libnotify
-    pulseaudio
-    sound-theme-freedesktop
-    ffmpeg
   ];
 
   propagatedBuildInputs =
@@ -88,7 +64,7 @@ python3.pkgs.buildPythonApplication rec {
     ]);
 
   meta = with lib; {
-    description = "GUI for aria2";
+    description = "Download manager GUI written in Python";
     mainProgram = "persepolis";
     homepage = "https://persepolisdm.github.io/";
     license = licenses.gpl3Plus;

@@ -2,29 +2,24 @@
   lib,
   rustPlatform,
   fetchFromGitHub,
-  stdenv,
-  darwin,
 }:
 
-rustPlatform.buildRustPackage rec {
+rustPlatform.buildRustPackage (finalAttrs: {
   pname = "datafusion-cli";
-  version = "42.0.0";
+  version = "47.0.0";
 
   src = fetchFromGitHub {
     name = "datafusion-cli-source";
     owner = "apache";
     repo = "arrow-datafusion";
-    rev = version;
-    sha256 = "sha256-d8DR9I+6ddl5h8WSYBM3UyLUhZe+ICsTfraQkBouMYY=";
+    tag = finalAttrs.version;
+    hash = "sha256-IKG0sLF5LAS2Tch3hdzsGHwAf2k43aVvMo1a29pxza0=";
   };
 
-  sourceRoot = "${src.name}/datafusion-cli";
+  useFetchCargoVendor = true;
+  cargoHash = "sha256-kl2+cVQhEkRsQWO8w3WEtXAoVIqj3s3IcbRBn175yxg=";
 
-  cargoHash = "sha256-/ofwZI+v0zoszq5zAQRCyqeVrF/ozS8mHHpPdaklhaE=";
-
-  buildInputs = lib.optionals stdenv.hostPlatform.isDarwin [
-    darwin.apple_sdk.frameworks.Security
-  ];
+  buildAndTestSubdir = "datafusion-cli";
 
   checkFlags = [
     # Some tests not found fake path
@@ -40,12 +35,15 @@ rustPlatform.buildRustPackage rec {
     "--skip=tests::test_parquet_metadata_works_with_strings"
   ];
 
-  meta = with lib; {
+  # timeout
+  doCheck = false;
+
+  meta = {
     description = "cli for Apache Arrow DataFusion";
     mainProgram = "datafusion-cli";
     homepage = "https://arrow.apache.org/datafusion";
-    changelog = "https://github.com/apache/arrow-datafusion/blob/${version}/datafusion/CHANGELOG.md";
-    license = licenses.asl20;
-    maintainers = with maintainers; [ happysalada ];
+    changelog = "https://github.com/apache/arrow-datafusion/blob/${finalAttrs.version}/datafusion/CHANGELOG.md";
+    license = lib.licenses.asl20;
+    maintainers = with lib.maintainers; [ happysalada ];
   };
-}
+})

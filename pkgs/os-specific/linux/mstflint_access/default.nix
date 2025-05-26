@@ -14,7 +14,7 @@ stdenv.mkDerivation rec {
 
   src = fetchurl {
     url = "https://github.com/Mellanox/mstflint/releases/download/v${version}/kernel-mstflint-${version}.tar.gz";
-    hash = "sha256-D++AnLUEB8d9WlReY/Ewp8E2cvbapJ3QrvYySKwaszk=";
+    hash = "sha256-kQBv/67miw6lSHIcCVYy66B7OHVofFs2N+evtsQ3Ovk=";
   };
 
   nativeBuildInputs = [ kmod ] ++ kernel.moduleBuildDependencies;

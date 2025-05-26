@@ -1,7 +1,6 @@
 {
   lib,
   stdenv,
-  mkDerivation,
   fetchFromGitHub,
   chromaprint,
   cmake,
@@ -33,16 +32,15 @@
   microsoft-gsl,
   mp4v2,
   opusfile,
-  pcre,
   pkg-config,
   portaudio,
   portmidi,
   protobuf,
+  qt5compat,
   qtbase,
+  qtdeclarative,
   qtkeychain,
-  qtscript,
   qtsvg,
-  qtx11extras,
   rubberband,
   serd,
   sord,
@@ -53,27 +51,25 @@
   upower,
   vamp-plugin-sdk,
   wavpack,
-  wrapGAppsHook3,
+  wrapQtAppsHook,
 }:
 
-mkDerivation rec {
+stdenv.mkDerivation rec {
   pname = "mixxx";
-  version = "2.4.1";
+  version = "2.5.1";
 
   src = fetchFromGitHub {
     owner = "mixxxdj";
     repo = "mixxx";
     rev = version;
-    hash = "sha256-BOdXgA+z3sFE4ngAEhSbp1gDbsti1STJY2Yy6Hp+zTE=";
+    hash = "sha256-s66XrcMGgA8KvBDxljg95nbKW1pIv8rJJ+DyxirHwDo=";
   };
 
   nativeBuildInputs = [
     cmake
     pkg-config
-    wrapGAppsHook3
+    wrapQtAppsHook
   ];
-
-  dontWrapGApps = true;
 
   buildInputs = [
     chromaprint
@@ -105,15 +101,14 @@ mkDerivation rec {
     microsoft-gsl
     mp4v2
     opusfile
-    pcre
     portaudio
     portmidi
     protobuf
+    qt5compat
     qtbase
+    qtdeclarative
     qtkeychain
-    qtscript
     qtsvg
-    qtx11extras
     rubberband
     serd
     sord
@@ -126,15 +121,15 @@ mkDerivation rec {
     wavpack
   ];
 
-  preFixup = ''
-    qtWrapperArgs+=(--set LOCALE_ARCHIVE ${glibcLocales}/lib/locale/locale-archive ''${gappsWrapperArgs[@]})
-  '';
+  qtWrapperArgs = [ "--set LOCALE_ARCHIVE ${glibcLocales}/lib/locale/locale-archive" ];
 
   # mixxx installs udev rules to DATADIR instead of SYSCONFDIR
   # let's disable this and install udev rules manually via postInstall
   # see https://github.com/mixxxdj/mixxx/blob/2.3.5/CMakeLists.txt#L1381-L1392
   cmakeFlags = [
     "-DINSTALL_USER_UDEV_RULES=OFF"
+    # "BUILD_TESTING=OFF" must imply "BUILD_BENCH=OFF"
+    "-DBUILD_BENCH=OFF"
   ];
 
   postInstall = lib.optionalString stdenv.hostPlatform.isLinux ''
@@ -151,10 +146,11 @@ mkDerivation rec {
     homepage = "https://mixxx.org";
     description = "Digital DJ mixing software";
     mainProgram = "mixxx";
-    license = licenses.gpl2Plus;
+    changelog = "https://github.com/mixxxdj/mixxx/blob/${version}/CHANGELOG.md";
+    license = licenses.gpl2;
     maintainers = with maintainers; [
-      bfortz
       benley
+      bfortz
     ];
     platforms = platforms.linux;
   };

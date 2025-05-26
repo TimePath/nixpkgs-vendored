@@ -477,7 +477,7 @@ in
                 );
                 default = "INFO"; # upstream default
                 description = ''
-                  Gives the verbosity level that is used when logging messages from sshd(8). Logging with a DEBUG level
+                  Gives the verbosity level that is used when logging messages from {manpage}`sshd(8)`. Logging with a DEBUG level
                   violates the privacy of users and is not recommended.
                 '';
               };
@@ -490,7 +490,7 @@ in
                 # apply if cfg.useDns then "yes" else "no"
                 default = false;
                 description = ''
-                  Specifies whether sshd(8) should look up the remote host name, and to check that the resolved host name for
+                  Specifies whether {manpage}`sshd(8)` should look up the remote host name, and to check that the resolved host name for
                   the remote IP address maps back to the very same IP address.
                   If this option is set to no (the default) then only addresses and not host names may be used in
                   ~/.ssh/authorized_keys from and sshd_config Match Host directives.
@@ -544,6 +544,8 @@ in
               KexAlgorithms = lib.mkOption {
                 type = lib.types.nullOr (lib.types.listOf lib.types.str);
                 default = [
+                  "mlkem768x25519-sha256"
+                  "sntrup761x25519-sha512"
                   "sntrup761x25519-sha512@openssh.com"
                   "curve25519-sha256"
                   "curve25519-sha256@libssh.org"
@@ -691,102 +693,120 @@ in
         "ssh/sshd_config".source = sshconf;
       };
 
-    systemd =
-      let
-        service = {
-          description = "SSH Daemon";
-          wantedBy = lib.optional (!cfg.startWhenNeeded) "multi-user.target";
-          after = [ "network.target" ];
-          stopIfChanged = false;
-          path = [
-            cfg.package
-            pkgs.gawk
+    systemd.tmpfiles.settings."ssh-root-provision" = {
+      "/root"."d-" = {
+        user = "root";
+        group = ":root";
+        mode = ":700";
+      };
+      "/root/.ssh"."d-" = {
+        user = "root";
+        group = ":root";
+        mode = ":700";
+      };
+      "/root/.ssh/authorized_keys"."f^" = {
+        user = "root";
+        group = ":root";
+        mode = ":600";
+        argument = "ssh.authorized_keys.root";
+      };
+    };
+
+    systemd = {
+      sockets.sshd = lib.mkIf cfg.startWhenNeeded {
+        description = "SSH Socket";
+        wantedBy = [ "sockets.target" ];
+        socketConfig.ListenStream =
+          if cfg.listenAddresses != [ ] then
+            lib.concatMap (
+              { addr, port }:
+              if port != null then [ "${addr}:${toString port}" ] else map (p: "${addr}:${toString p}") cfg.ports
+            ) cfg.listenAddresses
+          else
+            cfg.ports;
+        socketConfig.Accept = true;
+        # Prevent brute-force attacks from shutting down socket
+        socketConfig.TriggerLimitIntervalSec = 0;
+      };
+
+      services."sshd@" = {
+        description = "SSH per-connection Daemon";
+        after = [
+          "network.target"
+          "sshd-keygen.service"
+        ];
+        wants = [ "sshd-keygen.service" ];
+        stopIfChanged = false;
+        path = [ cfg.package ];
+        environment.LD_LIBRARY_PATH = nssModulesPath;
+
+        serviceConfig = {
+          ExecStart = lib.concatStringsSep " " [
+            "-${lib.getExe' cfg.package "sshd"}"
+            "-i"
+            "-D"
+            "-f /etc/ssh/sshd_config"
           ];
-          environment.LD_LIBRARY_PATH = nssModulesPath;
+          KillMode = "process";
+          StandardInput = "socket";
+          StandardError = "journal";
+        };
+      };
 
-          restartTriggers = lib.optionals (!cfg.startWhenNeeded) [
-            config.environment.etc."ssh/sshd_config".source
+      services.sshd = lib.mkIf (!cfg.startWhenNeeded) {
+        description = "SSH Daemon";
+        wantedBy = [ "multi-user.target" ];
+        after = [
+          "network.target"
+          "sshd-keygen.service"
+        ];
+        wants = [ "sshd-keygen.service" ];
+        stopIfChanged = false;
+        path = [ cfg.package ];
+        environment.LD_LIBRARY_PATH = nssModulesPath;
+
+        restartTriggers = [ config.environment.etc."ssh/sshd_config".source ];
+
+        serviceConfig = {
+          Restart = "always";
+          ExecStart = lib.concatStringsSep " " [
+            (lib.getExe' cfg.package "sshd")
+            "-D"
+            "-f"
+            "/etc/ssh/sshd_config"
           ];
+          KillMode = "process";
+        };
+      };
 
-          preStart = ''
-            # Make sure we don't write to stdout, since in case of
-            # socket activation, it goes to the remote side (#19589).
-            exec >&2
-
-            ${lib.flip lib.concatMapStrings cfg.hostKeys (k: ''
-              if ! [ -s "${k.path}" ]; then
-                  if ! [ -h "${k.path}" ]; then
-                      rm -f "${k.path}"
-                  fi
-                  mkdir -p "$(dirname '${k.path}')"
-                  chmod 0755 "$(dirname '${k.path}')"
-                  ssh-keygen \
-                    -t "${k.type}" \
-                    ${lib.optionalString (k ? bits) "-b ${toString k.bits}"} \
-                    ${lib.optionalString (k ? rounds) "-a ${toString k.rounds}"} \
-                    ${lib.optionalString (k ? comment) "-C '${k.comment}'"} \
-                    ${lib.optionalString (k ? openSSHFormat && k.openSSHFormat) "-o"} \
-                    -f "${k.path}" \
-                    -N ""
+      services.sshd-keygen = {
+        description = "SSH Host Keys Generation";
+        unitConfig = {
+          ConditionFileNotEmpty = map (k: "|!${k.path}") cfg.hostKeys;
+        };
+        serviceConfig = {
+          Type = "oneshot";
+        };
+        path = [ cfg.package ];
+        script = lib.flip lib.concatMapStrings cfg.hostKeys (k: ''
+          if ! [ -s "${k.path}" ]; then
+              if ! [ -h "${k.path}" ]; then
+                  rm -f "${k.path}"
               fi
-            '')}
-          '';
-
-          serviceConfig =
-            {
-              ExecStart =
-                (lib.optionalString cfg.startWhenNeeded "-")
-                + "${cfg.package}/bin/sshd "
-                + (lib.optionalString cfg.startWhenNeeded "-i ")
-                + "-D "
-                # don't detach into a daemon process
-                + "-f /etc/ssh/sshd_config";
-              KillMode = "process";
-            }
-            // (
-              if cfg.startWhenNeeded then
-                {
-                  StandardInput = "socket";
-                  StandardError = "journal";
-                }
-              else
-                {
-                  Restart = "always";
-                  Type = "simple";
-                }
-            );
-
-        };
-      in
-
-      if cfg.startWhenNeeded then
-        {
-
-          sockets.sshd = {
-            description = "SSH Socket";
-            wantedBy = [ "sockets.target" ];
-            socketConfig.ListenStream =
-              if cfg.listenAddresses != [ ] then
-                lib.concatMap (
-                  { addr, port }:
-                  if port != null then [ "${addr}:${toString port}" ] else map (p: "${addr}:${toString p}") cfg.ports
-                ) cfg.listenAddresses
-              else
-                cfg.ports;
-            socketConfig.Accept = true;
-            # Prevent brute-force attacks from shutting down socket
-            socketConfig.TriggerLimitIntervalSec = 0;
-          };
-
-          services."sshd@" = service;
-
-        }
-      else
-        {
-
-          services.sshd = service;
-
-        };
+              mkdir -p "$(dirname '${k.path}')"
+              chmod 0755 "$(dirname '${k.path}')"
+              ssh-keygen \
+                -t "${k.type}" \
+                ${lib.optionalString (k ? bits) "-b ${toString k.bits}"} \
+                ${lib.optionalString (k ? rounds) "-a ${toString k.rounds}"} \
+                ${lib.optionalString (k ? comment) "-C '${k.comment}'"} \
+                ${lib.optionalString (k ? openSSHFormat && k.openSSHFormat) "-o"} \
+                -f "${k.path}" \
+                -N ""
+          fi
+        '');
+      };
+    };
 
     networking.firewall.allowedTCPPorts = lib.optionals cfg.openFirewall cfg.ports;
 

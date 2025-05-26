@@ -1,26 +1,23 @@
 {
   lib,
-  stdenv,
   rustPlatform,
   fetchFromGitHub,
   installShellFiles,
-  apple-sdk_11,
 }:
 
 rustPlatform.buildRustPackage rec {
   pname = "tealdeer";
-  version = "1.7.0";
+  version = "1.7.2";
 
   src = fetchFromGitHub {
     owner = "dbrgn";
     repo = "tealdeer";
     rev = "v${version}";
-    hash = "sha256-7Wavhl5irQU9OV7+dslrIQEAcsaqJZ/jWmxaCyTBsEs=";
+    hash = "sha256-GZN7WE12f3MEoBfswag0O04UOCmZeYwt5CbYwddmwHs=";
   };
 
-  cargoHash = "sha256-WCbpwvCXm54/Cv+TscaqseWzTUd8V1DxmS30fUZZTwI=";
-
-  buildInputs = lib.optional stdenv.hostPlatform.isDarwin apple-sdk_11;
+  useFetchCargoVendor = true;
+  cargoHash = "sha256-Zk2L4cq7j9CkSc+cnZRWwhtfWP6y5faiMVGFFNkBwwA=";
 
   nativeBuildInputs = [ installShellFiles ];
 

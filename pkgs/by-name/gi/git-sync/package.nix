@@ -8,17 +8,18 @@
   gnused,
   makeWrapper,
   inotify-tools,
+  nix-update-script,
 }:
 
 stdenv.mkDerivation rec {
   pname = "git-sync";
-  version = "0-unstable-2024-02-15";
+  version = "0-unstable-2024-11-30";
 
   src = fetchFromGitHub {
     owner = "simonthum";
     repo = "git-sync";
-    rev = "493b0155fb974b477b6ea623d6e41e13ddad8500";
-    hash = "sha256-hsq+kpB+akjbFKBeHMsP8ibrtygEG2Yf2QW9vFFIano=";
+    rev = "7242291edf543ecc1bb9de8f47086bb69a5cb9f7";
+    hash = "sha256-t1NVgp+ELmTMK0N1fFFJCoKQd8mSYSMAIDG9+kNs3Ok=";
   };
 
   nativeBuildInputs = [ makeWrapper ];
@@ -50,6 +51,10 @@ stdenv.mkDerivation rec {
     wrapProgram $out/bin/git-sync-on-inotify \
       --prefix PATH : $wrap_path
   '';
+
+  passthru = {
+    updateScript = nix-update-script { };
+  };
 
   meta = {
     description = "Script to automatically synchronize a git repository";

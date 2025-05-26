@@ -1,23 +1,26 @@
 {
   lib,
   aiohttp,
+  aiosqlite,
+  banks,
   buildPythonPackage,
   dataclasses-json,
   deprecated,
   dirtyjson,
   fetchFromGitHub,
+  filetype,
   fsspec,
+  hatchling,
   jsonpath-ng,
   llamaindex-py-client,
   nest-asyncio,
   networkx,
-  nltk,
   nltk-data,
+  nltk,
   numpy,
   openai,
   pandas,
   pillow,
-  poetry-core,
   pytest-asyncio,
   pytest-mock,
   pytestCheckHook,
@@ -35,7 +38,7 @@
 
 buildPythonPackage rec {
   pname = "llama-index-core";
-  version = "0.11.20";
+  version = "0.12.35";
   pyproject = true;
 
   disabled = pythonOlder "3.8";
@@ -44,7 +47,7 @@ buildPythonPackage rec {
     owner = "run-llama";
     repo = "llama_index";
     tag = "v${version}";
-    hash = "sha256-r4xedtxoYv6CcxtDrgwau9LY3kOBg3jXlQm1g59L7x4=";
+    hash = "sha256-qBLCuQjkUNER70wJiWH6pEN4D2J9L8emGQukdlWAAYU=";
   };
 
   sourceRoot = "${src.name}/${pname}";
@@ -65,13 +68,16 @@ buildPythonPackage rec {
 
   pythonRelaxDeps = [ "tenacity" ];
 
-  build-system = [ poetry-core ];
+  build-system = [ hatchling ];
 
   dependencies = [
     aiohttp
+    aiosqlite
+    banks
     dataclasses-json
     deprecated
     dirtyjson
+    filetype
     fsspec
     jsonpath-ng
     llamaindex-py-client
@@ -129,14 +135,22 @@ buildPythonPackage rec {
     # Tests require network access
     "test_from_namespaced_persist_dir"
     "test_from_persist_dir"
+    "test_context_extraction_basic"
+    "test_context_extraction_oversized_document"
+    "test_context_extraction_custom_prompt"
+    "test_multiple_documents_context"
+    "test_mimetype_raw_data"
     # asyncio.exceptions.InvalidStateError: invalid state
     "test_workflow_context_to_dict_mid_run"
+    "test_SimpleDirectoryReader"
+    # RuntimeError
+    "test_str"
   ];
 
   meta = with lib; {
     description = "Data framework for your LLM applications";
     homepage = "https://github.com/run-llama/llama_index/";
-    changelog = "https://github.com/run-llama/llama_index/blob/${version}/CHANGELOG.md";
+    changelog = "https://github.com/run-llama/llama_index/blob/${src.tag}/CHANGELOG.md";
     license = licenses.mit;
     maintainers = with maintainers; [ fab ];
   };

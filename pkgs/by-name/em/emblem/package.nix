@@ -13,12 +13,12 @@
   wrapGAppsHook4,
   libadwaita,
   libxml2,
-  darwin,
+  nix-update-script,
 }:
 
 stdenv.mkDerivation rec {
   pname = "emblem";
-  version = "1.4.0";
+  version = "1.5.0";
 
   src = fetchFromGitLab {
     domain = "gitlab.gnome.org";
@@ -26,13 +26,13 @@ stdenv.mkDerivation rec {
     owner = "design";
     repo = "emblem";
     rev = version;
-    sha256 = "sha256-pW+2kQANZ9M1f0jMoBqCxMjLCu0xAnuEE2EdzDq4ZCE=";
+    sha256 = "sha256-knq8OKoc8Xv7lOr0ub9+2JfeQE84UlTHR1q4SFFF8Ug=";
   };
 
-  cargoDeps = rustPlatform.fetchCargoTarball {
+  cargoDeps = rustPlatform.fetchCargoVendor {
     inherit src;
     name = "${pname}-${version}";
-    hash = "sha256-2mxDXDGQA2YB+gnGwy6VSZP/RRBKg0RiR1GlXIkio9E=";
+    hash = "sha256-CsISaVlRGtVVEna1jyGZo/IdWcJdwHJv6LXcXYha2UE=";
   };
 
   nativeBuildInputs = [
@@ -47,20 +47,20 @@ stdenv.mkDerivation rec {
     rustc
   ];
 
-  buildInputs =
-    [
-      libadwaita
-      libxml2
-    ]
-    ++ lib.optionals stdenv.hostPlatform.isDarwin [
-      darwin.apple_sdk.frameworks.Foundation
-    ];
+  buildInputs = [
+    libadwaita
+    libxml2
+  ];
 
   env.NIX_CFLAGS_COMPILE = toString (
     lib.optionals stdenv.hostPlatform.isDarwin [
       "-Wno-error=incompatible-function-pointer-types"
     ]
   );
+
+  passthru = {
+    updateScript = nix-update-script { };
+  };
 
   meta = {
     description = "Generate project icons and avatars from a symbolic icon";
@@ -71,7 +71,7 @@ stdenv.mkDerivation rec {
     maintainers = with lib.maintainers; [
       figsoda
       foo-dogsquared
-      aleksana
     ];
+    teams = [ lib.teams.gnome-circle ];
   };
 }

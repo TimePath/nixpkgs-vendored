@@ -55,6 +55,13 @@ let
         preferLocalBuild = true;
         allowSubstitutes = false;
         packages = lib.unique (map toString udevPackages);
+
+        nativeBuildInputs = [
+          # We only include the out output here to avoid needing to include all
+          # other outputs in the installer tests as well
+          # We only need the udevadm command anyway
+          pkgs.systemdMinimal.out
+        ];
       }
       ''
         mkdir -p $out
@@ -76,14 +83,15 @@ let
         # Fix some paths in the standard udev rules.  Hacky.
         for i in $out/*.rules; do
           substituteInPlace $i \
-            --replace \"/sbin/modprobe \"${pkgs.kmod}/bin/modprobe \
-            --replace \"/sbin/mdadm \"${pkgs.mdadm}/sbin/mdadm \
-            --replace \"/sbin/blkid \"${pkgs.util-linux}/sbin/blkid \
-            --replace \"/bin/mount \"${pkgs.util-linux}/bin/mount \
-            --replace /usr/bin/readlink ${pkgs.coreutils}/bin/readlink \
-            --replace /usr/bin/basename ${pkgs.coreutils}/bin/basename 2>/dev/null
+            --replace-quiet \"/sbin/modprobe \"${pkgs.kmod}/bin/modprobe \
+            --replace-quiet \"/sbin/mdadm \"${pkgs.mdadm}/sbin/mdadm \
+            --replace-quiet \"/sbin/blkid \"${pkgs.util-linux}/sbin/blkid \
+            --replace-quiet \"/bin/mount \"${pkgs.util-linux}/bin/mount \
+            --replace-quiet /usr/bin/readlink ${pkgs.coreutils}/bin/readlink \
+            --replace-quiet /usr/bin/cat ${pkgs.coreutils}/bin/cat \
+            --replace-quiet /usr/bin/basename ${pkgs.coreutils}/bin/basename 2>/dev/null
         ${lib.optionalString (initrdBin != null) ''
-          substituteInPlace $i --replace '/run/current-system/systemd' "${lib.removeSuffix "/bin" initrdBin}"
+          substituteInPlace $i --replace-quiet '/run/current-system/systemd' "${lib.removeSuffix "/bin" initrdBin}"
         ''}
         done
 
@@ -145,6 +153,11 @@ let
           done
           exit 1
         fi
+
+        # Verify all the udev rules
+        echo "Verifying udev rules using udevadm verify..."
+        udevadm verify --resolve-names=never --no-style $out
+        echo "OK"
 
         # If auto-configuration is disabled, then remove
         # udev's 80-drivers.rules file, which contains rules for
@@ -515,8 +528,9 @@ in
 
     systemd.services.systemd-udevd = {
       restartTriggers = [ config.environment.etc."udev/rules.d".source ];
+      notSocketActivated = true;
+      stopIfChanged = false;
     };
-
   };
 
   imports = [

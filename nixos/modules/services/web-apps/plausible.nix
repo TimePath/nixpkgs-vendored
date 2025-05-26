@@ -17,33 +17,6 @@ in
 
     package = mkPackageOption pkgs "plausible" { };
 
-    adminUser = {
-      name = mkOption {
-        default = "admin";
-        type = types.str;
-        description = ''
-          Name of the admin user that plausible will created on initial startup.
-        '';
-      };
-
-      email = mkOption {
-        type = types.str;
-        example = "admin@localhost";
-        description = ''
-          Email-address of the admin-user.
-        '';
-      };
-
-      passwordFile = mkOption {
-        type = types.either types.str types.path;
-        description = ''
-          Path to the file which contains the password of the admin user.
-        '';
-      };
-
-      activate = mkEnableOption "activating the freshly created admin-user";
-    };
-
     database = {
       clickhouse = {
         setup = mkEnableOption "creating a clickhouse instance" // {
@@ -95,8 +68,7 @@ in
         description = ''
           Path to the secret used by the `phoenix`-framework. Instructions
           how to generate one are documented in the
-          [
-          framework docs](https://hexdocs.pm/phoenix/Mix.Tasks.Phx.Gen.Secret.html#content).
+          [framework docs](https://hexdocs.pm/phoenix/Mix.Tasks.Phx.Gen.Secret.html#content).
         '';
       };
       listenAddress = mkOption {
@@ -119,9 +91,7 @@ in
           Public URL where plausible is available.
 
           Note that `/path` components are currently ignored:
-          [
-            https://github.com/plausible/analytics/issues/1182
-          ](https://github.com/plausible/analytics/issues/1182).
+          <https://github.com/plausible/analytics/issues/1182>.
         '';
       };
     };
@@ -180,19 +150,33 @@ in
     (mkRemovedOptionModule [ "services" "plausible" "releaseCookiePath" ]
       "Plausible uses no distributed Erlang features, so this option is no longer necessary and was removed"
     )
+    (mkRemovedOptionModule [
+      "services"
+      "plausible"
+      "adminUser"
+      "name"
+    ] "Admin user is now created using first start wizard")
+    (mkRemovedOptionModule [
+      "services"
+      "plausible"
+      "adminUser"
+      "email"
+    ] "Admin user is now created using first start wizard")
+    (mkRemovedOptionModule [
+      "services"
+      "plausible"
+      "adminUser"
+      "passwordFile"
+    ] "Admin user is now created using first start wizard")
+    (mkRemovedOptionModule [
+      "services"
+      "plausible"
+      "adminUser"
+      "activate"
+    ] "Admin user is now created using first start wizard")
   ];
 
   config = mkIf cfg.enable {
-    assertions = [
-      {
-        assertion = cfg.adminUser.activate -> cfg.database.postgres.setup;
-        message = ''
-          Unable to automatically activate the admin-user if no locally managed DB for
-          postgres (`services.plausible.database.postgres.setup') is enabled!
-        '';
-      }
-    ];
-
     services.postgresql = mkIf cfg.database.postgres.setup {
       enable = true;
     };
@@ -267,11 +251,7 @@ in
               # Home is needed to connect to the node with iex
               HOME = "/var/lib/plausible";
 
-              ADMIN_USER_NAME = cfg.adminUser.name;
-              ADMIN_USER_EMAIL = cfg.adminUser.email;
-
-              DATABASE_SOCKET_DIR = cfg.database.postgres.socket;
-              DATABASE_NAME = cfg.database.postgres.dbname;
+              DATABASE_URL = "postgresql:///${cfg.database.postgres.dbname}?host=${cfg.database.postgres.socket}";
               CLICKHOUSE_DATABASE_URL = cfg.database.clickhouse.url;
 
               BASE_URL = cfg.server.baseUrl;
@@ -294,7 +274,6 @@ in
             # even though we set `RELEASE_DISTRIBUTION=none` so the cookie should be unused.
             # Thus, make a random one, which should then be ignored.
             export RELEASE_COOKIE=$(tr -dc A-Za-z0-9 < /dev/urandom | head -c 20)
-            export ADMIN_USER_PWD="$(< $CREDENTIALS_DIRECTORY/ADMIN_USER_PWD )"
             export SECRET_KEY_BASE="$(< $CREDENTIALS_DIRECTORY/SECRET_KEY_BASE )"
 
             ${lib.optionalString (
@@ -308,10 +287,6 @@ in
 
             ${cfg.package}/migrate.sh
             export IP_GEOLOCATION_DB=${pkgs.dbip-country-lite}/share/dbip/dbip-country-lite.mmdb
-            ${cfg.package}/bin/plausible eval "(Plausible.Release.prepare() ; Plausible.Auth.create_user(\"$ADMIN_USER_NAME\", \"$ADMIN_USER_EMAIL\", \"$ADMIN_USER_PWD\"))"
-            ${optionalString cfg.adminUser.activate ''
-              psql -d plausible <<< "UPDATE users SET email_verified=true where email = '$ADMIN_USER_EMAIL';"
-            ''}
 
             exec plausible start
           '';
@@ -323,7 +298,6 @@ in
             StateDirectory = "plausible";
             LoadCredential =
               [
-                "ADMIN_USER_PWD:${cfg.adminUser.passwordFile}"
                 "SECRET_KEY_BASE:${cfg.server.secretKeybaseFile}"
               ]
               ++ lib.optionals (cfg.mail.smtp.passwordFile != null) [

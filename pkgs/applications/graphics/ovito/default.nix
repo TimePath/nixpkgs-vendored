@@ -14,54 +14,46 @@
   netcdf,
   openssl,
   python3,
-  qscintilla,
-  qtbase,
-  qtsvg,
-  qttools,
-  VideoDecodeAcceleration,
-  wrapQtAppsHook,
+  qt6Packages,
   copyDesktopItems,
-  # needed to run natively on wayland
-  qtwayland,
 }:
 
 stdenv.mkDerivation rec {
   pname = "ovito";
-  version = "3.11.0";
+  version = "3.12.2";
 
   src = fetchFromGitLab {
     owner = "stuko";
     repo = "ovito";
     rev = "v${version}";
-    hash = "sha256-egiA6z1e8ZS7i4CIVjsCKJP1wQSRpmSKitoVTszu0Mc=";
+    hash = "sha256-qpKQAO2f1TfspqjbCLA/3ERWdMeknKe0a54yd9PZbsA=";
+    fetchSubmodules = true;
   };
+  patches = [ ./zstd.patch ];
 
   nativeBuildInputs = [
     cmake
-    wrapQtAppsHook
+    qt6Packages.wrapQtAppsHook
     copyDesktopItems
   ];
 
-  buildInputs =
-    [
-      boost
-      bzip2
-      ffmpeg
-      fftwSinglePrec
-      hdf5
-      muparser
-      netcdf
-      openssl
-      python3
-      qscintilla
-      qtbase
-      qtsvg
-      qttools
-      qtwayland
-    ]
-    ++ lib.optionals stdenv.hostPlatform.isDarwin [
-      VideoDecodeAcceleration
-    ];
+  buildInputs = [
+    boost
+    bzip2
+    ffmpeg
+    fftwSinglePrec
+    hdf5
+    muparser
+    netcdf
+    openssl
+    python3
+    qt6Packages.qscintilla
+    qt6Packages.qtbase
+    qt6Packages.qtsvg
+    qt6Packages.qttools
+    # needed to run natively on wayland
+    qt6Packages.qtwayland
+  ];
 
   # manually create a desktop file
   desktopItems = [

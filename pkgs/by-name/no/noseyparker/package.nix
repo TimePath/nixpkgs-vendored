@@ -5,23 +5,24 @@
   boost,
   cmake,
   git,
-  hyperscan,
+  vectorscan,
   openssl,
   pkg-config,
 }:
 
 rustPlatform.buildRustPackage rec {
   pname = "noseyparker";
-  version = "0.20.0";
+  version = "0.24.0";
 
   src = fetchFromGitHub {
     owner = "praetorian-inc";
     repo = "noseyparker";
     rev = "v${version}";
-    hash = "sha256-pFAtyvnqCLTY3l7c47rpN1jHjQon0fTPT3KaV9mcs3Q=";
+    hash = "sha256-6GxkIxLEgbIgg4nSHvmRedm8PAPBwVxLQUnQzh3NonA=";
   };
 
-  cargoHash = "sha256-t4tZDww6aySlTBq1BB4OGhi9w6fGY2gi7mPM1SR2mt8=";
+  useFetchCargoVendor = true;
+  cargoHash = "sha256-hVBHIm/12WU6g45QMxxuGk41B0kwThk7A84fOxArvno=";
 
   nativeCheckInputs = [
     git
@@ -45,7 +46,7 @@ rustPlatform.buildRustPackage rec {
   ];
   buildInputs = [
     boost
-    hyperscan
+    vectorscan
     openssl
   ];
 
@@ -58,7 +59,5 @@ rustPlatform.buildRustPackage rec {
     changelog = "https://github.com/praetorian-inc/noseyparker/blob/v${version}/CHANGELOG.md";
     license = licenses.asl20;
     maintainers = with maintainers; [ _0x4A6F ];
-    # limited by hyperscan
-    platforms = [ "x86_64-linux" ];
   };
 }

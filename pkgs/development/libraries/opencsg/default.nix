@@ -10,16 +10,15 @@
   libXext,
   libX11,
   qmake,
-  GLUT,
   fixDarwinDylibNames,
 }:
 
 stdenv.mkDerivation rec {
-  version = "1.6.0";
+  version = "1.7.0";
   pname = "opencsg";
   src = fetchurl {
     url = "http://www.opencsg.org/OpenCSG-${version}.tar.gz";
-    hash = "sha256-v4+4Dj4M4R2H3XjdFaDehy27iXLYf1+Jz/xGHvrUe+g=";
+    hash = "sha256-uJLezIGp5nwsTSXFOZ1XbY93w7DAUmBgZ0MkPIZTnfg=";
   };
 
   nativeBuildInputs = [ qmake ] ++ lib.optional stdenv.hostPlatform.isDarwin fixDarwinDylibNames;
@@ -33,8 +32,7 @@ stdenv.mkDerivation rec {
       libXmu
       libXext
       libX11
-    ]
-    ++ lib.optional stdenv.hostPlatform.isDarwin GLUT;
+    ];
 
   doCheck = false;
 

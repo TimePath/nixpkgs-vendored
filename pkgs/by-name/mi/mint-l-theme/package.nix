@@ -9,13 +9,13 @@
 
 stdenvNoCC.mkDerivation rec {
   pname = "mint-l-theme";
-  version = "1.9.8";
+  version = "1.9.9";
 
   src = fetchFromGitHub {
     owner = "linuxmint";
-    repo = pname;
+    repo = "mint-l-theme";
     rev = version;
-    hash = "sha256-Jql4NJ8jugy0wi5yT+/Mr5fwxLog37w0VvHhxyMvMlk=";
+    hash = "sha256-umY14seqUjNugN6+wzMDIGbCiis/InseDwVR85PqrGs=";
   };
 
   nativeBuildInputs = [
@@ -42,6 +42,6 @@ stdenvNoCC.mkDerivation rec {
     description = "Mint-L theme for the Cinnamon desktop";
     license = licenses.gpl3Plus; # from debian/copyright
     platforms = platforms.linux;
-    maintainers = teams.cinnamon.members;
+    teams = [ teams.cinnamon ];
   };
 }

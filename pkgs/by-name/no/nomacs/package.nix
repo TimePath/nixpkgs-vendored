@@ -5,22 +5,35 @@
   fetchFromGitHub,
   libraw,
   libsForQt5,
+  kdePackages,
   libtiff,
   opencv4,
   pkg-config,
   stdenv,
+  qtVersion ? 5,
 }:
-
+let
+  myQt = if qtVersion == 5 then libsForQt5 else kdePackages;
+  inherit (myQt) wrapQtAppsHook;
+in
 stdenv.mkDerivation (finalAttrs: {
   pname = "nomacs";
-  version = "3.19.1";
+  version = "3.21.1";
+  hash = "sha256-RRa19vj7iTtGzdssdtHVOsDzS4X+p1HeiZKy8EIWxq8=";
 
   src = fetchFromGitHub {
     owner = "nomacs";
     repo = "nomacs";
     rev = finalAttrs.version;
     fetchSubmodules = false; # We'll use our own
-    hash = "sha256-NRwZ/ShJaLCMFv7QdfRoJY5zQFo18cAVWGRpS3ap3Rw=";
+    inherit (finalAttrs) hash;
+  };
+
+  plugins = fetchFromGitHub {
+    owner = "novomesk";
+    repo = "nomacs-plugins";
+    rev = "20101da282f13d3184ece873388e1c234a79b5e7";
+    hash = "sha256-gcRc4KoWJQ5BirhLuk+c+5HwBeyQtlJ3iyX492DXeVk=";
   };
 
   outputs =
@@ -30,9 +43,16 @@ stdenv.mkDerivation (finalAttrs: {
 
   sourceRoot = "${finalAttrs.src.name}/ImageLounge";
 
+  postUnpack = ''
+    rm -rf $sourceRoot/plugins
+    mkdir $sourceRoot/plugins
+    cp -r ${finalAttrs.plugins}/* $sourceRoot/plugins/
+    chmod -R +w $sourceRoot/plugins
+  '';
+
   nativeBuildInputs = [
     cmake
-    libsForQt5.wrapQtAppsHook
+    wrapQtAppsHook
     pkg-config
   ];
 
@@ -46,7 +66,7 @@ stdenv.mkDerivation (finalAttrs: {
       # see: https://github.com/NixOS/nixpkgs/pull/314186#issuecomment-2129974277
       (lib.getOutput "cxxdev" opencv4)
     ]
-    ++ (with libsForQt5; [
+    ++ (with myQt; [
       kimageformats
       qtbase
       qtimageformats
@@ -68,6 +88,13 @@ stdenv.mkDerivation (finalAttrs: {
     mkdir -p $out/{Applications,lib}
     mv $out/nomacs.app $out/Applications/nomacs.app
     mv $out/libnomacsCore.dylib $out/lib/libnomacsCore.dylib
+  '';
+  # FIXME:
+  # why can't we have nomacs look in the "standard" plugin directory???
+  # None of the wrap stuff worked...
+  # Let's just instead move the plugin dir brute force
+  postFixup = ''
+    mv $out/lib/nomacs-plugins $out/bin/plugins
   '';
 
   meta = {
@@ -93,9 +120,9 @@ stdenv.mkDerivation (finalAttrs: {
     license = with lib.licenses; [ gpl3Plus ];
     mainProgram = "nomacs";
     maintainers = with lib.maintainers; [
-      AndersonTorres
       mindavi
+      ppenguin
     ];
-    inherit (libsForQt5.qtbase.meta) platforms;
+    inherit (myQt.qtbase.meta) platforms;
   };
 })

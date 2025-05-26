@@ -205,6 +205,10 @@ let
                       echo "reused"
                       passphrase=$(cat /crypt-ramfs/passphrase)
                       break
+                  elif [ -e /dev/mapper/${dev.name} ]; then
+                      echo "opened externally"
+                      rm -f /crypt-ramfs/device
+                      return
                   else
                       # ask cryptsetup-askpass
                       echo -n "${dev.device}" > /crypt-ramfs/device
@@ -404,13 +408,12 @@ let
                 return
             fi
 
-            if [ ! -z "$k_user" ]; then
-                new_k_luks="$(echo -n $k_user | pbkdf2-sha512 ${toString dev.yubikey.keyLength} $new_iterations $new_response | rbtohex)"
+            if [ -n "$k_user" ]; then
+                echo -n $k_user
             else
-                new_k_luks="$(echo | pbkdf2-sha512 ${toString dev.yubikey.keyLength} $new_iterations $new_response | rbtohex)"
-            fi
+                echo
+            fi | pbkdf2-sha512 ${toString dev.yubikey.keyLength} $new_iterations $new_response > /crypt-ramfs/new_key
 
-            echo -n "$new_k_luks" | hextorb > /crypt-ramfs/new_key
             echo -n "$k_luks" | hextorb | ${cschange} --key-file=- /crypt-ramfs/new_key
 
             if [ $? == 0 ]; then
@@ -571,7 +574,11 @@ let
 
         echo -n "Passphrase for $device: "
         IFS= read -rs passphrase
+        ret=$?
         echo
+        if [ $ret -ne 0 ]; then
+          die "End of file reached. Exiting shell."
+        fi
 
         rm /crypt-ramfs/device
         echo -n "$passphrase" > /crypt-ramfs/passphrase
@@ -1254,10 +1261,10 @@ in
               "initrd-switch-root.target"
               "shutdown.target"
             ];
-            wants = [ "systemd-udev-settle.service" ] ++ optional clevis.useTang "network-online.target";
+            wants = optional clevis.useTang "network-online.target";
             after = [
               "systemd-modules-load.service"
-              "systemd-udev-settle.service"
+              "tpm2.target"
             ] ++ optional clevis.useTang "network-online.target";
             script = ''
               mkdir -p /clevis-${name}

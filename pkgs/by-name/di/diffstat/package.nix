@@ -2,18 +2,26 @@
   fetchurl,
   lib,
   stdenv,
+  zstd,
+  directoryListingUpdater,
 }:
 
 stdenv.mkDerivation rec {
   pname = "diffstat";
-  version = "1.66";
+  version = "1.68";
 
   src = fetchurl {
     urls = [
       "ftp://ftp.invisible-island.net/diffstat/diffstat-${version}.tgz"
       "https://invisible-mirror.net/archives/diffstat/diffstat-${version}.tgz"
     ];
-    sha256 = "sha256-9UUxu+Mujg+kYfAYtB469Ra2MggBcvNh8F5QNn7Ltp4=";
+    hash = "sha256-ifkpSorHT8728bmsQI9D6+340gjj7+C5m0rMFtxlgsc=";
+  };
+
+  buildInputs = [ zstd ];
+
+  passthru.updateScript = directoryListingUpdater {
+    url = "https://invisible-island.net/archives/diffstat/";
   };
 
   meta = with lib; {

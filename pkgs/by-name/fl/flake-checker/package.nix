@@ -2,30 +2,21 @@
   lib,
   rustPlatform,
   fetchFromGitHub,
-  stdenv,
-  darwin,
 }:
 
 rustPlatform.buildRustPackage rec {
   pname = "flake-checker";
-  version = "0.2.4";
+  version = "0.2.5";
 
   src = fetchFromGitHub {
     owner = "DeterminateSystems";
     repo = "flake-checker";
     rev = "v${version}";
-    hash = "sha256-K5E1sarWIUl4QavHBoS8sPr5Cp8ZndWjLYDLm++d7v0=";
+    hash = "sha256-Q1nC7U4SG3VHlqbJDs5NDNmsvnYN+MGpMkOH952WaKg=";
   };
 
-  cargoHash = "sha256-TPF4usEIhgkGUJ16pxq0OhQoJJHLzeRXNQvbP8isWM4=";
-
-  buildInputs = lib.optionals stdenv.hostPlatform.isDarwin (
-    with darwin.apple_sdk.frameworks;
-    [
-      Security
-      SystemConfiguration
-    ]
-  );
+  useFetchCargoVendor = true;
+  cargoHash = "sha256-M+Ftovr1Czk9W904B2Cf9FjItKhxALZj6mT+Yewdf8U=";
 
   meta = with lib; {
     description = "Health checks for your Nix flakes";

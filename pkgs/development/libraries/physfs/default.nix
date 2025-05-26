@@ -5,7 +5,6 @@
   cmake,
   doxygen,
   zlib,
-  Foundation,
 }:
 
 let
@@ -22,12 +21,16 @@ let
         inherit sha256;
       };
 
+      patches = [
+        (./. + "/dont-set-cmake-skip-rpath-${version}.patch")
+      ];
+
       nativeBuildInputs = [
         cmake
         doxygen
       ];
 
-      buildInputs = [ zlib ] ++ lib.optionals stdenv.hostPlatform.isDarwin [ Foundation ];
+      buildInputs = [ zlib ];
 
       doInstallCheck = true;
 

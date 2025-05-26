@@ -29,7 +29,7 @@ let
   clientLibPath = lib.makeLibraryPath [ fluidsynth ];
 
 in
-stdenv.mkDerivation rec {
+stdenv.mkDerivation {
   pname = "zandronum${suffix}";
   version = "3.1.0";
 
@@ -80,7 +80,7 @@ stdenv.mkDerivation rec {
   preConfigure =
     ''
       ln -s ${sqlite}/* sqlite/
-      sed -ie 's| restrict| _restrict|g' dumb/include/dumb.h \
+      sed -i -e 's| restrict| _restrict|g' dumb/include/dumb.h \
                                          dumb/src/it/*.c
     ''
     + lib.optionalString (!serverOnly) ''

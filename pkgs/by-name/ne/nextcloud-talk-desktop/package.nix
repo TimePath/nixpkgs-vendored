@@ -12,7 +12,7 @@
   libxkbcommon,
   alsa-lib,
   at-spi2-core,
-  mesa,
+  libgbm,
   pango,
   libdrm,
   vivaldi-ffmpeg-codecs,
@@ -25,13 +25,13 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "nextcloud-talk-desktop";
-  version = "1.1.5";
+  version = "1.1.8";
 
   # Building from source would require building also building Server and Talk components
   # See https://github.com/nextcloud/talk-desktop?tab=readme-ov-file#%EF%B8%8F-prerequisites
   src = fetchzip {
     url = "https://github.com/nextcloud-releases/talk-desktop/releases/download/v${finalAttrs.version}/Nextcloud.Talk-linux-x64.zip";
-    hash = "sha256-KI6EJxsiIPjk+SBdqAwQNpaMZgVQSra/tqCGufQYSPs=";
+    hash = "sha256-rKUf6BQk/snwI6Sf67+PbNEnoZZY1u+EOEWE11p3dYw=";
     stripRoot = false;
   };
 
@@ -56,7 +56,7 @@ stdenv.mkDerivation (finalAttrs: {
       libxkbcommon
       gtk3
       vivaldi-ffmpeg-codecs
-      mesa
+      libgbm
       libGL
       libglvnd
     ]

@@ -9,7 +9,7 @@
   openjdk,
 }:
 let
-  version = "2201.10.1";
+  version = "2201.10.3";
   codeName = "swan-lake";
 in
 stdenv.mkDerivation {
@@ -18,7 +18,7 @@ stdenv.mkDerivation {
 
   src = fetchzip {
     url = "https://dist.ballerina.io/downloads/${version}/ballerina-${version}-${codeName}.zip";
-    hash = "sha256-gKxJnoNWYE3ozQ0JvMgHgrg/DCkvFnJqZAecgqvJGq8=";
+    hash = "sha256-JVwxWRiOQaUZBkvxoLhKvktyQYnBtbCBZXZa6g6hoRQ=";
   };
 
   nativeBuildInputs = [ makeWrapper ];

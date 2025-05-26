@@ -2,7 +2,7 @@
   lib,
   stdenv,
   fetchFromGitHub,
-  substituteAll,
+  replaceVars,
   appstream-glib,
   gettext,
   pkg-config,
@@ -27,8 +27,7 @@ stdenv.mkDerivation rec {
   };
 
   patches = [
-    (substituteAll {
-      src = ./fix-paths.patch;
+    (replaceVars ./fix-paths.patch {
       libhangul = "${libhangul}/lib/libhangul.so.1";
     })
   ];
@@ -60,7 +59,7 @@ stdenv.mkDerivation rec {
     mainProgram = "ibus-setup-hangul";
     homepage = "https://github.com/libhangul/ibus-hangul";
     license = licenses.gpl2Plus;
-    maintainers = with maintainers; [ ericsagnes ];
+    maintainers = with maintainers; [ ];
     platforms = platforms.linux;
   };
 }

@@ -1,18 +1,37 @@
 import os
 import re
 import signal
+import sys
 import tempfile
 import threading
-from contextlib import contextmanager
+import traceback
+from collections.abc import Callable, Iterator
+from contextlib import AbstractContextManager, contextmanager
 from pathlib import Path
-from typing import Any, Callable, ContextManager, Dict, Iterator, List, Optional, Union
+from typing import Any
+from unittest import TestCase
 
+from colorama import Style
+
+from test_driver.errors import MachineError, RequestedAssertionFailed
 from test_driver.logger import AbstractLogger
 from test_driver.machine import Machine, NixStartScript, retry
 from test_driver.polling_condition import PollingCondition
 from test_driver.vlan import VLan
 
 SENTINEL = object()
+
+
+class AssertionTester(TestCase):
+    """
+    Subclass of `unittest.TestCase` which is used in the
+    `testScript` to perform assertions.
+
+    It throws a custom exception whose parent class
+    gets special treatment in the logs.
+    """
+
+    failureException = RequestedAssertionFailed
 
 
 def get_tmp_dir() -> Path:
@@ -42,17 +61,17 @@ class Driver:
     and runs the tests"""
 
     tests: str
-    vlans: List[VLan]
-    machines: List[Machine]
-    polling_conditions: List[PollingCondition]
+    vlans: list[VLan]
+    machines: list[Machine]
+    polling_conditions: list[PollingCondition]
     global_timeout: int
     race_timer: threading.Timer
     logger: AbstractLogger
 
     def __init__(
         self,
-        start_scripts: List[str],
-        vlans: List[int],
+        start_scripts: list[str],
+        vlans: list[int],
         tests: str,
         out_dir: Path,
         logger: AbstractLogger,
@@ -71,7 +90,7 @@ class Driver:
             vlans = list(set(vlans))
             self.vlans = [VLan(nr, tmp_dir, self.logger) for nr in vlans]
 
-        def cmd(scripts: List[str]) -> Iterator[NixStartScript]:
+        def cmd(scripts: list[str]) -> Iterator[NixStartScript]:
             for s in scripts:
                 yield NixStartScript(s)
 
@@ -114,10 +133,10 @@ class Driver:
             try:
                 yield
             except Exception as e:
-                self.logger.error(f'Test "{name}" failed with error: "{e}"')
+                self.logger.log_test_error(f'Test "{name}" failed with error: "{e}"')
                 raise e
 
-    def test_symbols(self) -> Dict[str, Any]:
+    def test_symbols(self) -> dict[str, Any]:
         @contextmanager
         def subtest(name: str) -> Iterator[None]:
             return self.subtest(name)
@@ -139,6 +158,7 @@ class Driver:
             serial_stdout_on=self.serial_stdout_on,
             polling_condition=self.polling_condition,
             Machine=Machine,  # for typing
+            t=AssertionTester(),
         )
         machine_symbols = {pythonize_name(m.name): m for m in self.machines}
         # If there's exactly one machine, make it available under the name
@@ -158,11 +178,53 @@ class Driver:
         )
         return {**general_symbols, **machine_symbols, **vlan_symbols}
 
+    def dump_machine_ssh(self, offset: int) -> None:
+        print("SSH backdoor enabled, the machines can be accessed like this:")
+        print(
+            f"{Style.BRIGHT}Note:{Style.RESET_ALL} this requires {Style.BRIGHT}systemd-ssh-proxy(1){Style.RESET_ALL} to be enabled (default on NixOS 25.05 and newer)."
+        )
+        names = [machine.name for machine in self.machines]
+        longest_name = len(max(names, key=len))
+        for num, name in enumerate(names, start=offset + 1):
+            spaces = " " * (longest_name - len(name) + 2)
+            print(
+                f"    {name}:{spaces}{Style.BRIGHT}ssh -o User=root vsock/{num}{Style.RESET_ALL}"
+            )
+
     def test_script(self) -> None:
         """Run the test script"""
         with self.logger.nested("run the VM test script"):
             symbols = self.test_symbols()  # call eagerly
-            exec(self.tests, symbols, None)
+            try:
+                exec(self.tests, symbols, None)
+            except MachineError:
+                for line in traceback.format_exc().splitlines():
+                    self.logger.log_test_error(line)
+                sys.exit(1)
+            except RequestedAssertionFailed:
+                exc_type, exc, tb = sys.exc_info()
+                # We manually print the stack frames, keeping only the ones from the test script
+                # (note: because the script is not a real file, the frame filename is `<string>`)
+                filtered = [
+                    frame
+                    for frame in traceback.extract_tb(tb)
+                    if frame.filename == "<string>"
+                ]
+
+                self.logger.log_test_error("Traceback (most recent call last):")
+
+                code = self.tests.splitlines()
+                for frame, line in zip(filtered, traceback.format_list(filtered)):
+                    self.logger.log_test_error(line.rstrip())
+                    if lineno := frame.lineno:
+                        self.logger.log_test_error(f"    {code[lineno - 1].strip()}")
+
+                self.logger.log_test_error("")  # blank line for readability
+                exc_prefix = exc_type.__name__ if exc_type is not None else "Error"
+                for line in f"{exc_prefix}: {exc}".splitlines():
+                    self.logger.log_test_error(line)
+
+                sys.exit(1)
 
     def run_tests(self) -> None:
         """Run the test script (for non-interactive test runs)"""
@@ -205,7 +267,7 @@ class Driver:
         self,
         start_command: str,
         *,
-        name: Optional[str] = None,
+        name: str | None = None,
         keep_vm_state: bool = False,
     ) -> Machine:
         tmp_dir = get_tmp_dir()
@@ -234,11 +296,11 @@ class Driver:
 
     def polling_condition(
         self,
-        fun_: Optional[Callable] = None,
+        fun_: Callable | None = None,
         *,
         seconds_interval: float = 2.0,
-        description: Optional[str] = None,
-    ) -> Union[Callable[[Callable], ContextManager], ContextManager]:
+        description: str | None = None,
+    ) -> Callable[[Callable], AbstractContextManager] | AbstractContextManager:
         driver = self
 
         class Poll:

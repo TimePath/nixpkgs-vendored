@@ -8,20 +8,19 @@
   gumbo,
   ncurses,
   sqlite,
-  yajl,
   nix-update-script,
 }:
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "newsraft";
-  version = "0.27";
+  version = "0.30";
 
   src = fetchFromGitea {
     domain = "codeberg.org";
     owner = "newsraft";
     repo = "newsraft";
     rev = "newsraft-${finalAttrs.version}";
-    hash = "sha256-MtdFnoB6Dc3xvTCc2PMIp5VsZiU5JE58q6WctM3mDZw=";
+    hash = "sha256-h9gjw2EjWWNdyQT2p4wgWlz4TNitDBX5fPbNNH9/th4=";
   };
 
   nativeBuildInputs = [ pkg-config ];
@@ -31,19 +30,25 @@ stdenv.mkDerivation (finalAttrs: {
     gumbo
     ncurses
     sqlite
-    yajl
   ];
 
   makeFlags = [ "PREFIX=$(out)" ];
 
+  postInstall = lib.optionalString (!stdenv.hostPlatform.isDarwin) ''
+    install -Dm444 doc/newsraft.desktop -t $out/share/applications
+  '';
+
   passthru.updateScript = nix-update-script { };
 
-  meta = with lib; {
+  meta = {
     description = "Feed reader for terminal";
     homepage = "https://codeberg.org/grisha/newsraft";
-    license = licenses.isc;
-    maintainers = with maintainers; [ arthsmn ];
+    license = lib.licenses.isc;
+    maintainers = with lib.maintainers; [
+      arthsmn
+      luftmensch-luftmensch
+    ];
     mainProgram = "newsraft";
-    platforms = platforms.all;
+    platforms = lib.platforms.all;
   };
 })

@@ -5,6 +5,7 @@
   SDL2,
   libpng,
   libjpeg,
+  libX11,
   glew,
   openal,
   scons,
@@ -14,13 +15,13 @@
 
 stdenv.mkDerivation rec {
   pname = "endless-sky";
-  version = "0.10.8";
+  version = "0.10.12";
 
   src = fetchFromGitHub {
     owner = "endless-sky";
     repo = "endless-sky";
-    rev = "v${version}";
-    sha256 = "sha256-bqhltxkoqDdmddOBZ1f3I29AxGm5buUXpjjFwefemEM=";
+    tag = "v${version}";
+    hash = "sha256-cT/bklRGQnS9Nm8J0oH1mG20JQOe58FAAHToNDpvPpQ=";
   };
 
   patches = [
@@ -41,13 +42,17 @@ stdenv.mkDerivation rec {
 
   enableParallelBuilding = true;
 
+  nativeBuildInputs = [
+    scons
+  ];
+
   buildInputs = [
     SDL2
     libpng
     libjpeg
+    libX11
     glew
     openal
-    scons
     libmad
     libuuid
   ];

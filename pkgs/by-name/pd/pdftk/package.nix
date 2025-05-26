@@ -2,11 +2,14 @@
   lib,
   stdenv,
   fetchFromGitLab,
-  gradle,
+  gradle_8,
   jre,
   runtimeShell,
 }:
-
+let
+  # "Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0."
+  gradle = gradle_8;
+in
 stdenv.mkDerivation rec {
   pname = "pdftk";
   version = "3.3.3";

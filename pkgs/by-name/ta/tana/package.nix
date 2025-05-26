@@ -20,7 +20,7 @@
   libdrm,
   libglvnd,
   libxkbcommon,
-  mesa,
+  libgbm,
   nspr,
   nss,
   pango,
@@ -32,7 +32,7 @@
 let
   glLibs = [
     libglvnd
-    mesa
+    libgbm
   ];
   libs = [
     alsa-lib
@@ -62,7 +62,7 @@ let
     stdenv.cc.cc
     stdenv.cc.libc
   ];
-  version = "1.0.16";
+  version = "1.0.28";
 in
 stdenv.mkDerivation {
   pname = "tana";
@@ -70,7 +70,7 @@ stdenv.mkDerivation {
 
   src = fetchurl {
     url = "https://github.com/tanainc/tana-desktop-releases/releases/download/v${version}/tana_${version}_amd64.deb";
-    hash = "sha256-XLjzvMai5HyxEGK02DfBAKy5jva9wEGcf5A/38jzu+s=";
+    hash = "sha256-x5U3Kkm8OaToYVoVNARjhto5lGEHhQZ6hcqtWQBie00=";
   };
 
   nativeBuildInputs = [

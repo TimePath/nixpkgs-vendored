@@ -4,6 +4,8 @@ import ./make-test-python.nix (
   let
     passphrase = "supersecret";
     dataDir = "/ran:dom/data";
+    subDir = "not_anything_here";
+    excludedSubDirFile = "not_this_file_either";
     excludeFile = "not_this_file";
     keepFile = "important_file";
     keepFileData = "important_data";
@@ -73,6 +75,11 @@ import ./make-test-python.nix (
                 yearly = 5;
               };
               exclude = [ "*/${excludeFile}" ];
+              extraCreateArgs = [
+                "--exclude-caches"
+                "--exclude-if-present"
+                ".dont backup"
+              ];
               postHook = "echo post";
               startAt = [ ]; # Do not run automatically
             };
@@ -172,8 +179,10 @@ import ./make-test-python.nix (
       )
       client.succeed("chmod 0600 /root/id_ed25519.appendOnly")
 
-      client.succeed("mkdir -p ${dataDir}")
+      client.succeed("mkdir -p ${dataDir}/${subDir}")
       client.succeed("touch ${dataDir}/${excludeFile}")
+      client.succeed("touch '${dataDir}/${subDir}/.dont backup'")
+      client.succeed("touch ${dataDir}/${subDir}/${excludedSubDirFile}")
       client.succeed("echo '${keepFileData}' > ${dataDir}/${keepFile}")
 
       with subtest("local"):
@@ -185,6 +194,10 @@ import ./make-test-python.nix (
           # Make sure excludeFile has been excluded
           client.fail(
               "{} list '${localRepo}::${archiveName}' | grep -qF '${excludeFile}'".format(borg)
+          )
+          # Make sure excludedSubDirFile has been excluded
+          client.fail(
+              "{} list '${localRepo}::${archiveName}' | grep -qF '${subDir}/${excludedSubDirFile}".format(borg)
           )
           # Make sure keepFile has the correct content
           client.succeed("{} extract '${localRepo}::${archiveName}'".format(borg))

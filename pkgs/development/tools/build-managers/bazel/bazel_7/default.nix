@@ -5,7 +5,7 @@
   fetchurl,
   makeWrapper,
   writeTextFile,
-  substituteAll,
+  replaceVars,
   writeShellApplication,
   makeBinaryWrapper,
   autoPatchelfHook,
@@ -34,13 +34,8 @@
   python3,
   # Apple dependencies
   cctools,
-  libcxx,
   libtool,
   sigtool,
-  CoreFoundation,
-  CoreServices,
-  Foundation,
-  IOKit,
   # Allow to independently override the jdks used to build and run respectively
   buildJdk,
   runJdk,
@@ -48,7 +43,7 @@
   # Always assume all markers valid (this is needed because we remove markers; they are non-deterministic).
   # Also, don't clean up environment variables (so that NIX_ environment variables are passed to compilers).
   enableNixHacks ? false,
-  version ? "7.4.1",
+  version ? "7.6.0",
 }:
 
 let
@@ -56,7 +51,7 @@ let
 
   src = fetchurl {
     url = "https://github.com/bazelbuild/bazel/releases/download/${version}/bazel-${version}-dist.zip";
-    hash = "sha256-gzhmGLxIn02jYmbvJiDsZKUmxobPBwQTMsr/fJU6+vU=";
+    hash = "sha256-eQKNB38G8ziDuorzoj5Rne/DZQL22meVLrdK0z7B2FI=";
   };
 
   defaultShellUtils =
@@ -159,7 +154,8 @@ let
   };
 
   bazelFhs = buildFHSEnv {
-    name = "bazel";
+    pname = "bazel";
+    inherit version;
     targetPkgs = _: [ bazelBootstrap ];
     runScript = "bazel";
   };
@@ -380,15 +376,13 @@ stdenv.mkDerivation rec {
       # This is non hermetic on non-nixos systems. On NixOS, bazel cannot find the required binaries.
       # So we are replacing this bazel paths by defaultShellPath,
       # improving hermeticity and making it work in nixos.
-      (substituteAll {
-        src = ../strict_action_env.patch;
+      (replaceVars ../strict_action_env.patch {
         strictActionEnvPatch = defaultShellPath;
       })
 
       # bazel reads its system bazelrc in /etc
       # override this path to a builtin one
-      (substituteAll {
-        src = ../bazel_rc.patch;
+      (replaceVars ../bazel_rc.patch {
         bazelSystemBazelRCPath = bazelRC;
       })
     ]
@@ -409,13 +403,9 @@ stdenv.mkDerivation rec {
         # Explicitly configure gcov since we don't have it on Darwin, so autodetection fails
         export GCOV=${coreutils}/bin/false
 
-        # Framework search paths aren't added by bintools hook
-        # https://github.com/NixOS/nixpkgs/pull/41914
-        export NIX_LDFLAGS+=" -F${CoreFoundation}/Library/Frameworks -F${CoreServices}/Library/Frameworks -F${Foundation}/Library/Frameworks -F${IOKit}/Library/Frameworks"
-
         # libcxx includes aren't added by libcxx hook
         # https://github.com/NixOS/nixpkgs/pull/41589
-        export NIX_CFLAGS_COMPILE="$NIX_CFLAGS_COMPILE -isystem ${lib.getDev libcxx}/include/c++/v1"
+        export NIX_CFLAGS_COMPILE="$NIX_CFLAGS_COMPILE -isystem ${lib.getInclude stdenv.cc.libcxx}/include/c++/v1"
         # for CLang 16 compatibility in external/upb dependency
         export NIX_CFLAGS_COMPILE+=" -Wno-gnu-offsetof-extensions"
 
@@ -536,7 +526,8 @@ stdenv.mkDerivation rec {
       binaryBytecode # source bundles dependencies as jars
     ];
     license = licenses.asl20;
-    maintainers = lib.teams.bazel.members;
+    teams = [ lib.teams.bazel ];
+    mainProgram = "bazel";
     inherit platforms;
   };
 
@@ -562,10 +553,6 @@ stdenv.mkDerivation rec {
     ]
     ++ lib.optionals (stdenv.hostPlatform.isDarwin) [
       cctools
-      libcxx
-      Foundation
-      CoreFoundation
-      CoreServices
     ];
 
   # Bazel makes extensive use of symlinks in the WORKSPACE.
@@ -717,16 +704,8 @@ stdenv.mkDerivation rec {
   dontPatchELF = true;
 
   passthru = {
-    # Additional tests that check bazel’s functionality. Execute
-    #
-    #     nix-build . -A bazel_7.tests
-    #
-    # in the nixpkgs checkout root to exercise them locally.
-    # tests = callPackage ./tests.nix {
-    #   inherit Foundation bazel_self lockfile repoCache;
-    # };
-    # TODO tests have not been updated yet and will likely need a rewrite
-    # tests = callPackage ./tests.nix { inherit Foundation bazelDeps bazel_self; };
+    # TODO add some tests to cover basic functionality, and also tests for enableNixHacks=true (buildBazelPackage tests)
+    # tests = ...
 
     # For ease of debugging
     inherit bazelDeps bazelFhs bazelBootstrap;

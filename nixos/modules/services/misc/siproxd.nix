@@ -4,9 +4,6 @@
   pkgs,
   ...
 }:
-
-with lib;
-
 let
 
   cfg = config.services.siproxd;
@@ -22,16 +19,16 @@ let
     rtp_port_high   = ${toString cfg.rtpPortHigh}
     rtp_dscp        = ${toString cfg.rtpDscp}
     sip_dscp        = ${toString cfg.sipDscp}
-    ${optionalString (
+    ${lib.optionalString (
       cfg.hostsAllowReg != [ ]
-    ) "hosts_allow_reg = ${concatStringsSep "," cfg.hostsAllowReg}"}
-    ${optionalString (
+    ) "hosts_allow_reg = ${lib.concatStringsSep "," cfg.hostsAllowReg}"}
+    ${lib.optionalString (
       cfg.hostsAllowSip != [ ]
-    ) "hosts_allow_sip = ${concatStringsSep "," cfg.hostsAllowSip}"}
-    ${optionalString (
+    ) "hosts_allow_sip = ${lib.concatStringsSep "," cfg.hostsAllowSip}"}
+    ${lib.optionalString (
       cfg.hostsDenySip != [ ]
-    ) "hosts_deny_sip  = ${concatStringsSep "," cfg.hostsDenySip}"}
-    ${optionalString (cfg.passwordFile != "") "proxy_auth_pwfile = ${cfg.passwordFile}"}
+    ) "hosts_deny_sip  = ${lib.concatStringsSep "," cfg.hostsDenySip}"}
+    ${lib.optionalString (cfg.passwordFile != "") "proxy_auth_pwfile = ${cfg.passwordFile}"}
     ${cfg.extraConfig}
   '';
 
@@ -45,8 +42,8 @@ in
 
     services.siproxd = {
 
-      enable = mkOption {
-        type = types.bool;
+      enable = lib.mkOption {
+        type = lib.types.bool;
         default = false;
         description = ''
           Whether to enable the Siproxd SIP
@@ -54,20 +51,20 @@ in
         '';
       };
 
-      ifInbound = mkOption {
-        type = types.str;
+      ifInbound = lib.mkOption {
+        type = lib.types.str;
         example = "eth0";
         description = "Local network interface";
       };
 
-      ifOutbound = mkOption {
-        type = types.str;
+      ifOutbound = lib.mkOption {
+        type = lib.types.str;
         example = "ppp0";
         description = "Public network interface";
       };
 
-      hostsAllowReg = mkOption {
-        type = types.listOf types.str;
+      hostsAllowReg = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
         default = [ ];
         example = [
           "192.168.1.0/24"
@@ -78,8 +75,8 @@ in
         '';
       };
 
-      hostsAllowSip = mkOption {
-        type = types.listOf types.str;
+      hostsAllowSip = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
         default = [ ];
         example = [
           "123.45.0.0/16"
@@ -90,8 +87,8 @@ in
         '';
       };
 
-      hostsDenySip = mkOption {
-        type = types.listOf types.str;
+      hostsDenySip = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
         default = [ ];
         example = [
           "10.0.0.0/8"
@@ -103,32 +100,32 @@ in
         '';
       };
 
-      sipListenPort = mkOption {
-        type = types.int;
+      sipListenPort = lib.mkOption {
+        type = lib.types.int;
         default = 5060;
         description = ''
           Port to listen for incoming SIP messages.
         '';
       };
 
-      rtpPortLow = mkOption {
-        type = types.int;
+      rtpPortLow = lib.mkOption {
+        type = lib.types.int;
         default = 7070;
         description = ''
           Bottom of UDP port range for incoming and outgoing RTP traffic
         '';
       };
 
-      rtpPortHigh = mkOption {
-        type = types.int;
+      rtpPortHigh = lib.mkOption {
+        type = lib.types.int;
         default = 7089;
         description = ''
           Top of UDP port range for incoming and outgoing RTP traffic
         '';
       };
 
-      rtpTimeout = mkOption {
-        type = types.int;
+      rtpTimeout = lib.mkOption {
+        type = lib.types.int;
         default = 300;
         description = ''
           Timeout for an RTP stream. If for the specified
@@ -137,8 +134,8 @@ in
         '';
       };
 
-      rtpDscp = mkOption {
-        type = types.int;
+      rtpDscp = lib.mkOption {
+        type = lib.types.int;
         default = 46;
         description = ''
           DSCP (differentiated services) value to be assigned
@@ -147,8 +144,8 @@ in
         '';
       };
 
-      sipDscp = mkOption {
-        type = types.int;
+      sipDscp = lib.mkOption {
+        type = lib.types.int;
         default = 0;
         description = ''
           DSCP (differentiated services) value to be assigned
@@ -157,16 +154,16 @@ in
         '';
       };
 
-      passwordFile = mkOption {
-        type = types.str;
+      passwordFile = lib.mkOption {
+        type = lib.types.str;
         default = "";
         description = ''
           Path to per-user password file.
         '';
       };
 
-      extraConfig = mkOption {
-        type = types.lines;
+      extraConfig = lib.mkOption {
+        type = lib.types.lines;
         default = "";
         description = ''
           Extra configuration to add to siproxd configuration.
@@ -179,7 +176,7 @@ in
 
   ##### implementation
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
 
     users.users.siproxyd = {
       uid = config.ids.uids.siproxd;

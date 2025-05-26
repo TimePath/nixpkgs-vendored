@@ -8,22 +8,23 @@
   pkg-config,
   openssl,
   stdenv,
-  zig,
+  zig_0_13,
   nix-update-script,
 }:
 
 rustPlatform.buildRustPackage rec {
   pname = "cargo-lambda";
-  version = "1.5.0";
+  version = "1.8.5";
 
   src = fetchFromGitHub {
     owner = "cargo-lambda";
     repo = "cargo-lambda";
     tag = "v${version}";
-    hash = "sha256-58kVtwBZEAlv9eVesqmWMZ+KxAwEiGMm8mCf9X5tPMI=";
+    hash = "sha256-iYfm7/XbLThtEo+zSW8sn7T6XEhzyiVKy6/cisshc+Y=";
   };
 
-  cargoHash = "sha256-DoMIVpYtEHvYSW2THpZFdhoFI0zjC70hYnwnzGwkJ4Q=";
+  useFetchCargoVendor = true;
+  cargoHash = "sha256-mCD3Szbl5BXknTWJhm2xlcIV0aKczsEi8yRDA4erTYc=";
 
   nativeCheckInputs = [ cacert ];
 
@@ -38,11 +39,6 @@ rustPlatform.buildRustPackage rec {
       curl
     ];
 
-  checkFlags = [
-    # Tests disabled because they access the network.
-    "--skip=test_download_example"
-  ];
-
   # Remove files that don't make builds reproducible:
   # - Remove build.rs file that adds the build date to the version.
   # - Remove cargo_lambda.rs that contains tests that reach the network.
@@ -52,10 +48,21 @@ rustPlatform.buildRustPackage rec {
   '';
 
   postInstall = ''
-    wrapProgram $out/bin/cargo-lambda --prefix PATH : ${lib.makeBinPath [ zig ]}
+    wrapProgram $out/bin/cargo-lambda --prefix PATH : ${lib.makeBinPath [ zig_0_13 ]}
   '';
 
   CARGO_LAMBDA_BUILD_INFO = "(nixpkgs)";
+
+  cargoBuildFlags = [ "--features=skip-build-banner" ];
+  cargoCheckFlags = [ "--features=skip-build-banner" ];
+
+  checkFlags = lib.optionals stdenv.hostPlatform.isDarwin [
+    # Fails in darwin sandbox, first because of trying to listen to a port on
+    # localhost. While this would be fixed by `__darwinAllowLocalNetworking = true;`,
+    # they then fail with other I/O issues.
+    "--skip=test::test_download_example"
+    "--skip=test::test_download_example_with_cache"
+  ];
 
   passthru.updateScript = nix-update-script { };
 
@@ -67,6 +74,7 @@ rustPlatform.buildRustPackage rec {
     maintainers = with lib.maintainers; [
       taylor1791
       calavera
+      matthiasbeyer
     ];
   };
 }

@@ -98,4 +98,3 @@ stdenv.mkDerivation (
     args
   ]
 )
-# TODO [ AndersonTorres ]: verify if it allows using hash attribute as an option to sha256

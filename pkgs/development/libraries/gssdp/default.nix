@@ -10,7 +10,7 @@
   vala,
   gi-docgen,
   python3,
-  libsoup,
+  libsoup_2_4,
   glib,
   gnome,
   gssdp-tools,
@@ -63,7 +63,7 @@ stdenv.mkDerivation rec {
     ];
 
   buildInputs = [
-    libsoup
+    libsoup_2_4
   ];
 
   propagatedBuildInputs = [
@@ -104,7 +104,7 @@ stdenv.mkDerivation rec {
     description = "GObject-based API for handling resource discovery and announcement over SSDP";
     homepage = "http://www.gupnp.org/";
     license = licenses.lgpl2Plus;
-    maintainers = teams.gnome.members;
+    teams = [ teams.gnome ];
     platforms = platforms.all;
   };
 }

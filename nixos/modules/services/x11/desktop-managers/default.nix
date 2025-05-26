@@ -42,6 +42,7 @@ in
     ./budgie.nix
     ./deepin.nix
     ../../desktop-managers/lomiri.nix
+    ../../desktop-managers/cosmic.nix
   ];
 
   options = {

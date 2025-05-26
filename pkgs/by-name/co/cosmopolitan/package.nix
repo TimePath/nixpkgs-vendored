@@ -5,7 +5,7 @@
   bintools-unwrapped,
   callPackage,
   coreutils,
-  substituteAll,
+  replaceVars,
   unzip,
 }:
 
@@ -22,8 +22,7 @@ stdenv.mkDerivation (finalAttrs: {
 
   patches = [
     # make sure tests set PATH correctly
-    (substituteAll {
-      src = ./fix-paths.patch;
+    (replaceVars ./fix-paths.patch {
       inherit coreutils;
     })
   ];
@@ -91,7 +90,7 @@ stdenv.mkDerivation (finalAttrs: {
     homepage = "https://justine.lol/cosmopolitan/";
     description = "Your build-once run-anywhere c library";
     license = lib.licenses.isc;
-    maintainers = lib.teams.cosmopolitan.members;
+    teams = [ lib.teams.cosmopolitan ];
     platforms = lib.platforms.x86_64;
     badPlatforms = lib.platforms.darwin;
   };

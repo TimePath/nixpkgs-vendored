@@ -2,7 +2,6 @@
   lib,
   stdenv,
   fetchFromGitHub,
-  fetchpatch,
   cmake,
   ninja,
   pkg-config,
@@ -20,6 +19,7 @@
   icu,
   freetype,
   pugixml,
+  xorg,
   nix-update-script,
 }:
 
@@ -31,32 +31,24 @@ let
     hash = "sha256-1FF658OhKg8a5kKX/7TVmsxZ9amimn4lB6bX9i7pnI4=";
   };
 in
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "organicmaps";
-  version = "2024.11.27-12";
+  version = "2025.05.20-5";
 
   src = fetchFromGitHub {
     owner = "organicmaps";
     repo = "organicmaps";
-    rev = "${version}-android";
-    hash = "sha256-lBEDPqxdnaajMHlf7G/d1TYYL9yPZo8AGekoKmF1ObM=";
+    tag = "${finalAttrs.version}-android";
+    hash = "sha256-cqcFI5cXREOeHusPkXsMwdCopzpea50mZQ/+ogLlemk=";
     fetchSubmodules = true;
   };
-
-  patches = [
-    # Fix for https://github.com/organicmaps/organicmaps/issues/7838
-    (fetchpatch {
-      url = "https://github.com/organicmaps/organicmaps/commit/1caf64e315c988cd8d5196c80be96efec6c74ccc.patch";
-      hash = "sha256-k3VVRgHCFDhviHxduQMVRUUvQDgMwFHIiDZKa4BNTyk=";
-    })
-  ];
 
   postPatch = ''
     # Disable certificate check. It's dependent on time
     echo "exit 0" > tools/unix/check_cert.sh
 
     # crude fix for https://github.com/organicmaps/organicmaps/issues/1862
-    echo "echo ${lib.replaceStrings [ "." "-" ] [ "" "" ] version}" > tools/unix/version.sh
+    echo "echo ${lib.replaceStrings [ "." "-" ] [ "" "" ] finalAttrs.version}" > tools/unix/version.sh
 
     # TODO use system boost instead, see https://github.com/organicmaps/organicmaps/issues/5345
     patchShebangs 3party/boost/tools/build/src/engine/build.sh
@@ -87,6 +79,9 @@ stdenv.mkDerivation rec {
     icu
     freetype
     pugixml
+    xorg.libXrandr
+    xorg.libXinerama
+    xorg.libXcursor
   ];
 
   # Yes, this is PRE configure. The configure phase uses cmake
@@ -103,14 +98,14 @@ stdenv.mkDerivation rec {
     };
   };
 
-  meta = with lib; {
+  meta = {
     # darwin: "invalid application of 'sizeof' to a function type"
     broken = stdenv.hostPlatform.isDarwin;
     homepage = "https://organicmaps.app/";
     description = "Detailed Offline Maps for Travellers, Tourists, Hikers and Cyclists";
-    license = licenses.asl20;
-    maintainers = with maintainers; [ fgaz ];
-    platforms = platforms.all;
+    license = lib.licenses.asl20;
+    maintainers = with lib.maintainers; [ fgaz ];
+    platforms = lib.platforms.all;
     mainProgram = "OMaps";
   };
-}
+})

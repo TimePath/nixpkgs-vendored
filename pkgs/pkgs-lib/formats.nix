@@ -59,6 +59,7 @@ rec {
     float
     str
     path
+    luaInline
     ;
 
   json =
@@ -179,14 +180,10 @@ rec {
           else
             singleIniAtom;
         iniSection =
-          {
-            listsAsDuplicateKeys,
-            listToValue,
-            atomsCoercedToLists,
-          }@args:
-          attrsOf (iniAtom args)
+          atom:
+          attrsOf atom
           // {
-            description = "section of an INI file (attrs of " + (iniAtom args).description + ")";
+            description = "section of an INI file (attrs of " + atom.description + ")";
           };
 
         maybeToList =
@@ -212,13 +209,15 @@ rec {
           assert atomsCoercedToLists != null -> (listsAsDuplicateKeys || listToValue != null);
           let
             atomsCoercedToLists' = if atomsCoercedToLists == null then false else atomsCoercedToLists;
+            atom = iniAtom {
+              inherit listsAsDuplicateKeys listToValue;
+              atomsCoercedToLists = atomsCoercedToLists';
+            };
           in
           {
 
-            type = lib.types.attrsOf (iniSection {
-              inherit listsAsDuplicateKeys listToValue;
-              atomsCoercedToLists = atomsCoercedToLists';
-            });
+            type = lib.types.attrsOf (iniSection atom);
+            lib.types.atom = atom;
 
             generate =
               name: value:
@@ -249,28 +248,27 @@ rec {
           assert atomsCoercedToLists != null -> (listsAsDuplicateKeys || listToValue != null);
           let
             atomsCoercedToLists' = if atomsCoercedToLists == null then false else atomsCoercedToLists;
+            atom = iniAtom {
+              inherit listsAsDuplicateKeys listToValue;
+              atomsCoercedToLists = atomsCoercedToLists';
+            };
           in
           {
             type = lib.types.submodule {
               options = {
                 sections = lib.mkOption rec {
-                  type = lib.types.attrsOf (iniSection {
-                    inherit listsAsDuplicateKeys listToValue;
-                    atomsCoercedToLists = atomsCoercedToLists';
-                  });
+                  type = lib.types.attrsOf (iniSection atom);
                   default = { };
                   description = type.description;
                 };
                 globalSection = lib.mkOption rec {
-                  type = iniSection {
-                    inherit listsAsDuplicateKeys listToValue;
-                    atomsCoercedToLists = atomsCoercedToLists';
-                  };
+                  type = iniSection atom;
                   default = { };
                   description = "global " + type.description;
                 };
               };
             };
+            lib.types.atom = atom;
             generate =
               name:
               {
@@ -296,17 +294,16 @@ rec {
             listsAsDuplicateKeys ? false,
             ...
           }@args:
+          let
+            atom = iniAtom {
+              inherit listsAsDuplicateKeys;
+              listToValue = null;
+              atomsCoercedToLists = false;
+            };
+          in
           {
-            type =
-              let
-                atom = iniAtom {
-                  listsAsDuplicateKeys = listsAsDuplicateKeys;
-                  listToValue = null;
-                  atomsCoercedToLists = false;
-                };
-              in
-              attrsOf (attrsOf (either atom (attrsOf atom)));
-
+            type = attrsOf (attrsOf (either atom (attrsOf atom)));
+            lib.types.atom = atom;
             generate = name: value: pkgs.writeText name (lib.generators.toGitINI value);
           };
 
@@ -427,6 +424,54 @@ rec {
             ''
         ) { };
 
+    };
+
+  /*
+    dzikoysk's CDN format, see https://github.com/dzikoysk/cdn
+
+    The result is almost identical to YAML when there are no nested properties,
+    but differs enough in the other case to warrant a separate format.
+    (see https://github.com/dzikoysk/cdn#supported-formats)
+
+    Currently used by Panda, Reposilite, and FunnyGuilds (as per the repo's readme).
+  */
+  cdn =
+    { }:
+    json { }
+    // {
+      type =
+        let
+          valueType =
+            nullOr (oneOf [
+              bool
+              int
+              float
+              str
+              path
+              (attrsOf valueType)
+              (listOf valueType)
+            ])
+            // {
+              description = "CDN value";
+            };
+        in
+        valueType;
+
+      generate =
+        name: value:
+        pkgs.callPackage (
+          { runCommand, json2cdn }:
+          runCommand name
+            {
+              nativeBuildInputs = [ json2cdn ];
+              value = builtins.toJSON value;
+              passAsFile = [ "value" ];
+              preferLocalBuild = true;
+            }
+            ''
+              json2cdn "$valuePath" > $out
+            ''
+        ) { };
     };
 
   /*
@@ -665,6 +710,66 @@ rec {
           '';
     };
 
+  lua =
+    {
+      asBindings ? false,
+      multiline ? true,
+      columnWidth ? 100,
+      indentWidth ? 2,
+      indentUsingTabs ? false,
+    }:
+    {
+      type =
+        let
+          valueType =
+            nullOr (oneOf [
+              bool
+              float
+              int
+              path
+              str
+              luaInline
+              (attrsOf valueType)
+              (listOf valueType)
+            ])
+            // {
+              description = "lua value";
+              descriptionClass = "noun";
+            };
+        in
+        if asBindings then attrsOf valueType else valueType;
+      generate =
+        name: value:
+        pkgs.callPackage (
+          { runCommand, stylua }:
+          runCommand name
+            {
+              nativeBuildInputs = [ stylua ];
+              inherit columnWidth;
+              inherit indentWidth;
+              indentType = if indentUsingTabs then "Tabs" else "Spaces";
+              value = lib.generators.toLua { inherit asBindings multiline; } value;
+              passAsFile = [ "value" ];
+              preferLocalBuild = true;
+            }
+            ''
+              ${lib.optionalString (!asBindings) ''
+                echo -n 'return ' >> $out
+              ''}
+              cat $valuePath >> $out
+              stylua \
+                --no-editorconfig \
+                --line-endings Unix \
+                --column-width $columnWidth \
+                --indent-width $indentWidth \
+                --indent-type $indentType \
+                $out
+            ''
+        ) { };
+      # Alias for mkLuaInline
+      lib.mkRaw = lib.mkLuaInline;
+    };
+
   # Outputs a succession of Python variable assignments
   # Useful for many Django-based services
   pythonVars =
@@ -723,5 +828,71 @@ rec {
             ''
         ) { };
     };
+
+  xml =
+    {
+      format ? "badgerfish",
+      withHeader ? true,
+    }:
+    if format == "badgerfish" then
+      {
+        type =
+          let
+            valueType =
+              nullOr (oneOf [
+                bool
+                int
+                float
+                str
+                path
+                (attrsOf valueType)
+                (listOf valueType)
+              ])
+              // {
+                description = "XML value";
+              };
+          in
+          valueType;
+
+        generate =
+          name: value:
+          pkgs.callPackage (
+            {
+              runCommand,
+              python3,
+              libxml2Python,
+            }:
+            runCommand name
+              {
+                nativeBuildInputs = [
+                  python3
+                  python3.pkgs.xmltodict
+                  libxml2Python
+                ];
+                value = builtins.toJSON value;
+                pythonGen = ''
+                  import json
+                  import os
+                  import xmltodict
+
+                  with open(os.environ["valuePath"], "r") as f:
+                      print(xmltodict.unparse(json.load(f), full_document=${
+                        if withHeader then "True" else "False"
+                      }, pretty=True, indent=" " * 2))
+                '';
+                passAsFile = [
+                  "value"
+                  "pythonGen"
+                ];
+                preferLocalBuild = true;
+              }
+              ''
+                python3 "$pythonGenPath" > $out
+                xmllint $out > /dev/null
+              ''
+          ) { };
+      }
+    else
+      throw "pkgs.formats.xml: Unknown format: ${format}";
 
 }

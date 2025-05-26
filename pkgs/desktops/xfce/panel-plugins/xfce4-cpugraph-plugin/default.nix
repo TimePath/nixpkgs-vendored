@@ -12,13 +12,13 @@
   xorgproto,
 }:
 
-mkXfceDerivation rec {
+mkXfceDerivation {
   category = "panel-plugins";
   pname = "xfce4-cpugraph-plugin";
-  version = "1.2.10";
+  version = "1.2.11";
   rev-prefix = "xfce4-cpugraph-plugin-";
   odd-unstable = false;
-  sha256 = "sha256-VPelWTtFHmU4ZgWLTzZKbtmQ4LOtVwJvpLG9rHtGoNs=";
+  sha256 = "sha256-Q+H6riGF5sEcyrVFoDfudwVw4QORa2atE6NTb+xde/w=";
 
   buildInputs = [
     exo
@@ -34,6 +34,6 @@ mkXfceDerivation rec {
 
   meta = with lib; {
     description = "CPU graph show for Xfce panel";
-    maintainers = with maintainers; [ ] ++ teams.xfce.members;
+    teams = [ teams.xfce ];
   };
 }

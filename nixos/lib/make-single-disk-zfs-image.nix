@@ -111,10 +111,10 @@ let
   };
 
   modulesTree = pkgs.aggregateModules (
-    with config.boot.kernelPackages;
+    with config.boot;
     [
-      kernel
-      zfs
+      kernelPackages.kernel
+      kernelPackages.${pkgs.zfs.kernelModuleAttribute}
     ]
   );
 
@@ -242,12 +242,13 @@ let
   image =
     (pkgs.vmTools.override {
       rootModules = [
-        "zfs"
         "9p"
         "9pnet_virtio"
-        "virtio_pci"
         "virtio_blk"
-      ] ++ (pkgs.lib.optional pkgs.stdenv.hostPlatform.isx86 "rtc_cmos");
+        "virtio_pci"
+        "virtiofs"
+        "zfs"
+      ];
       kernel = modulesTree;
     }).runInLinuxVM
       (

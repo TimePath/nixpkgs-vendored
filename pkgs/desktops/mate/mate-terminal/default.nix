@@ -24,16 +24,18 @@ stdenv.mkDerivation rec {
     sha256 = "8TXrGp4q4ieY7LLcGRT9tM/XdOa7ZcAVK+N8xslGnpI=";
   };
 
+  strictDeps = true;
+
   nativeBuildInputs = [
     gettext
     itstool
     pkg-config
+    libxml2 # xmllint
     wrapGAppsHook3
   ];
 
   buildInputs = [
     dconf
-    libxml2
     mate-desktop
     pcre2
     vte
@@ -50,6 +52,6 @@ stdenv.mkDerivation rec {
     homepage = "https://mate-desktop.org";
     license = licenses.gpl3Plus;
     platforms = platforms.unix;
-    maintainers = teams.mate.members;
+    teams = [ teams.mate ];
   };
 }

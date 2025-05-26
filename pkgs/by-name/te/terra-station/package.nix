@@ -39,14 +39,11 @@ stdenv.mkDerivation rec {
   nativeBuildInputs = [
     makeWrapper
     asar
+    dpkg
   ];
 
   dontConfigure = true;
   dontBuild = true;
-
-  unpackPhase = ''
-    ${dpkg}/bin/dpkg-deb -x $src .
-  '';
 
   installPhase = ''
     runHook preInstall
@@ -76,7 +73,7 @@ stdenv.mkDerivation rec {
 
   meta = with lib; {
     description = "Terra station is the official wallet of the Terra blockchain";
-    homepage = "https://docs.terra.money/docs/learn/terra-station/README.html";
+    homepage = "https://station.money/";
     license = licenses.isc;
     maintainers = [ maintainers.peterwilli ];
     platforms = [ "x86_64-linux" ];

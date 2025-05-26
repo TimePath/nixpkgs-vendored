@@ -4,24 +4,24 @@
   stdenv,
   fetchFromGitHub,
   versionCheckHook,
+  nix-update-script,
 }:
-buildGoModule rec {
+buildGoModule (finalAttrs: {
   pname = "nezha-agent";
-  version = "0.20.3";
+  version = "1.12.2";
 
   src = fetchFromGitHub {
     owner = "nezhahq";
     repo = "agent";
-    tag = "v${version}";
-    hash = "sha256-cLLiJbAr7TxVUNV31Y9TG8ZL4uqBCOnrOr1FM4+1U5c=";
+    tag = "v${finalAttrs.version}";
+    hash = "sha256-j0GIfte5z7uyhsnWqsRexWZHJxnqf1cFl1Hq4jnONAo=";
   };
 
-  vendorHash = "sha256-q6/265vVg6jCnDvs825nni8QFHkJpQz4xxC9MlJH2do=";
+  vendorHash = "sha256-+0goz1TpHcNd0T45mRc0QornXdHFPy5Y+uH0aOiql+A=";
 
   ldflags = [
     "-s"
-    "-w"
-    "-X main.version=${version}"
+    "-X github.com/nezhahq/agent/pkg/monitor.Version=${finalAttrs.version}"
     "-X main.arch=${stdenv.hostPlatform.system}"
   ];
 
@@ -54,6 +54,10 @@ buildGoModule rec {
     versionCheckHook
   ];
 
+  passthru = {
+    updateScript = nix-update-script { };
+  };
+
   meta = {
     description = "Agent of Nezha Monitoring";
     homepage = "https://github.com/nezhahq/agent";
@@ -61,4 +65,4 @@ buildGoModule rec {
     maintainers = with lib.maintainers; [ moraxyc ];
     mainProgram = "nezha-agent";
   };
-}
+})

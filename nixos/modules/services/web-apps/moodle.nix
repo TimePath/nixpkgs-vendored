@@ -89,7 +89,7 @@ let
   mysqlLocal = cfg.database.createLocally && cfg.database.type == "mysql";
   pgsqlLocal = cfg.database.createLocally && cfg.database.type == "pgsql";
 
-  phpExt = pkgs.php81.buildEnv {
+  phpExt = pkgs.php83.buildEnv {
     extensions =
       { all, ... }:
       with all;

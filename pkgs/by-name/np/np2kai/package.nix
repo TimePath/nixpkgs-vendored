@@ -138,7 +138,7 @@ stdenv.mkDerivation rec {
   pname = "np2kai";
   version = "0.86rev22"; # update src.rev to commit rev accordingly
 
-  src = fetchFromGitHub rec {
+  src = fetchFromGitHub {
     owner = "AZO234";
     repo = "NP2kai";
     rev = "4a317747724669343e4c33ebdd34783fb7043221";
@@ -148,7 +148,9 @@ stdenv.mkDerivation rec {
   configurePhase =
     ''
       export GIT_VERSION=${builtins.substring 0 7 src.rev}
-      buildFlags="$buildFlags ''${enableParallelBuilding:+-j$NIX_BUILD_CORES}"
+    ''
+    + optionalString enableParallelBuilding ''
+      appendToVar buildFlags "-j$NIX_BUILD_CORES"
     ''
     + optionalString enableX11 ''
       cd x11

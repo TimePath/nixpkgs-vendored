@@ -1,5 +1,6 @@
 {
   lib,
+  stdenv,
   buildGoModule,
   fetchFromGitHub,
   installShellFiles,
@@ -7,22 +8,22 @@
   yq-go,
 }:
 
-buildGoModule rec {
+buildGoModule (finalAttrs: {
   pname = "yq-go";
-  version = "4.44.3";
+  version = "4.45.4";
 
   src = fetchFromGitHub {
     owner = "mikefarah";
     repo = "yq";
-    rev = "v${version}";
-    hash = "sha256-bQNa19K4wO2XoSecyfOQKTfHFTxkji1U42bL4k1G7Gg=";
+    rev = "v${finalAttrs.version}";
+    hash = "sha256-qcsm7dB7F7Snul2PbH/7RdK17c5qT+mk+FvfqnFfuak=";
   };
 
-  vendorHash = "sha256-LsunMHKtyAkTAJhqURoAhIIyW//d37ZW4trr+x/Cd8U=";
+  vendorHash = "sha256-cA5Y0/2lvYfVXr4zgtp/U8aBUkHnh9xb9jDHVk/2OME=";
 
   nativeBuildInputs = [ installShellFiles ];
 
-  postInstall = ''
+  postInstall = lib.optionalString (stdenv.buildPlatform.canExecute stdenv.hostPlatform) ''
     installShellCompletion --cmd yq \
       --bash <($out/bin/yq shell-completion bash) \
       --fish <($out/bin/yq shell-completion fish) \
@@ -30,21 +31,22 @@ buildGoModule rec {
   '';
 
   passthru.tests = {
-    simple = runCommand "${pname}-test" { } ''
+    simple = runCommand "${finalAttrs.pname}-test" { } ''
       echo "test: 1" | ${yq-go}/bin/yq eval -j > $out
       [ "$(cat $out | tr -d $'\n ')" = '{"test":1}' ]
     '';
   };
 
-  meta = with lib; {
+  meta = {
     description = "Portable command-line YAML processor";
     homepage = "https://mikefarah.gitbook.io/yq/";
-    changelog = "https://github.com/mikefarah/yq/raw/v${version}/release_notes.txt";
+    changelog = "https://github.com/mikefarah/yq/raw/v${finalAttrs.version}/release_notes.txt";
     mainProgram = "yq";
-    license = [ licenses.mit ];
-    maintainers = with maintainers; [
+    license = [ lib.licenses.mit ];
+    maintainers = with lib.maintainers; [
       lewo
+      prince213
       SuperSandro2000
     ];
   };
-}
+})

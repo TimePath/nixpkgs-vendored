@@ -1,6 +1,6 @@
 {
   lib,
-  gcc12Stdenv,
+  stdenv,
   fetchFromGitHub,
   fetchurl,
   cudaSupport ? opencv.cudaSupport or false,
@@ -28,7 +28,7 @@
   protobuf,
   pugixml,
   snappy,
-  tbb_2021_5,
+  tbb_2022_0,
   cudaPackages,
 }:
 
@@ -36,8 +36,6 @@ let
   inherit (lib)
     cmakeBool
     ;
-
-  stdenv = gcc12Stdenv;
 
   # prevent scons from leaking in the default python version
   scons' = scons.override { inherit python3Packages; };
@@ -63,14 +61,14 @@ in
 
 stdenv.mkDerivation rec {
   pname = "openvino";
-  version = "2024.4.1";
+  version = "2025.1.0";
 
   src = fetchFromGitHub {
     owner = "openvinotoolkit";
     repo = "openvino";
     tag = version;
     fetchSubmodules = true;
-    hash = "sha256-v0PPGFUHCGNWdlTff40Ol2NvaYglb/+L/zZAQujk6lk=";
+    hash = "sha256-KufQjBSzhj1N+T95PjlNU3Tc9V5/X2OLwCbXoI2fdZk=";
   };
 
   outputs = [
@@ -111,7 +109,7 @@ stdenv.mkDerivation rec {
     "-Wno-dev"
     "-DCMAKE_MODULE_PATH:PATH=${placeholder "out"}/lib/cmake"
     "-DCMAKE_PREFIX_PATH:PATH=${placeholder "out"}"
-    "-DOpenCV_DIR=${opencv}/lib/cmake/opencv4/"
+    "-DOpenCV_DIR=${lib.getLib opencv}/lib/cmake/opencv4/"
     "-DProtobuf_LIBRARIES=${protobuf}/lib/libprotobuf${stdenv.hostPlatform.extensions.sharedLibrary}"
     "-DPython_EXECUTABLE=${python.interpreter}"
 
@@ -124,11 +122,13 @@ stdenv.mkDerivation rec {
 
     # features
     (cmakeBool "ENABLE_INTEL_CPU" stdenv.hostPlatform.isx86_64)
-    (cmakeBool "ENABLE_INTEL_NPU" false) # undefined reference to `std::ios_base_library_init()@GLIBCXX_3.4.32'
+    (cmakeBool "ENABLE_INTEL_GPU" true)
+    (cmakeBool "ENABLE_INTEL_NPU" stdenv.hostPlatform.isx86_64)
     (cmakeBool "ENABLE_JS" false)
     (cmakeBool "ENABLE_LTO" true)
     (cmakeBool "ENABLE_ONEDNN_FOR_GPU" false)
     (cmakeBool "ENABLE_OPENCV" true)
+    (cmakeBool "ENABLE_OV_JAX_FRONTEND" false) # auto-patchelf could not satisfy dependency libopenvino_jax_frontend.so.2450
     (cmakeBool "ENABLE_PYTHON" true)
 
     # system libs
@@ -144,6 +144,9 @@ stdenv.mkDerivation rec {
     "libngraph_backend.so"
   ];
 
+  # src/graph/src/plugins/intel_gpu/src/graph/include/reorder_inst.h:24:8: error: type 'struct typed_program_node' violates the C++ One Definition Rule [-Werror=odr]
+  env.NIX_CFLAGS_COMPILE = "-Wno-odr";
+
   buildInputs =
     [
       flatbuffers
@@ -152,10 +155,10 @@ stdenv.mkDerivation rec {
       libusb1
       libxml2
       ocl-icd
-      opencv.cxxdev
+      opencv
       pugixml
       snappy
-      tbb_2021_5
+      tbb_2022_0
     ]
     ++ lib.optionals cudaSupport [
       cudaPackages.cuda_cudart
@@ -177,6 +180,7 @@ stdenv.mkDerivation rec {
   '';
 
   meta = with lib; {
+    changelog = "https://github.com/openvinotoolkit/openvino/releases/tag/${src.tag}";
     description = "OpenVINO™ Toolkit repository";
     longDescription = ''
       This toolkit allows developers to deploy pre-trained deep learning models through a high-level C++ Inference Engine API integrated with application logic.

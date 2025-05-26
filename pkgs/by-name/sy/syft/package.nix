@@ -7,13 +7,13 @@
 
 buildGoModule rec {
   pname = "syft";
-  version = "1.18.0";
+  version = "1.24.0";
 
   src = fetchFromGitHub {
     owner = "anchore";
     repo = "syft";
     tag = "v${version}";
-    hash = "sha256-cxBZs4H557Sc1k3jftbxjv1DcPM9GZb/2QGtuuA/D2I=";
+    hash = "sha256-7Fav9tTcPFpAQnKMXOeD9Ho5rADDwGvLD3f9VzV82NU=";
     # populate values that require us to use git. By doing this in postFetch we
     # can delete .git afterwards and maintain better reproducibility of the src.
     leaveDotGit = true;
@@ -28,7 +28,7 @@ buildGoModule rec {
   # hash mismatch with darwin
   proxyVendor = true;
 
-  vendorHash = "sha256-hilxZidIIwrqd6motWDlicCPepU4gyZvqk/Fzry98UE=";
+  vendorHash = "sha256-+7tqC6I8zFbGVHFulIbeLBdy3br2ifrEEXM5hZZe3/8=";
 
   nativeBuildInputs = [ installShellFiles ];
 

@@ -1,5 +1,3 @@
-# NOTE: Make sure to (re-)format this file on changes with `nixpkgs-fmt`!
-
 {
   stdenv,
   lib,
@@ -8,7 +6,6 @@
   testers,
   fetchFromGitHub,
   fetchzip,
-  fetchpatch2,
   buildPackages,
   makeBinaryWrapper,
   ninja,
@@ -20,6 +17,7 @@
   getent,
   glibcLocales,
   autoPatchelfHook,
+  fetchpatch,
 
   # glib is only used during tests (test-bus-gvariant, test-bus-marshal)
   glib,
@@ -39,6 +37,7 @@
   audit,
   acl,
   lz4,
+  openssl,
   libgcrypt,
   libgpg-error,
   libidn2,
@@ -109,8 +108,8 @@
   withDocumentation ? true,
   withEfi ? stdenv.hostPlatform.isEfi,
   withFido2 ? true,
-  # conflicts with the NixOS /etc management
-  withFirstboot ? false,
+  withFirstboot ? true,
+  withGcrypt ? true,
   withHomed ? !stdenv.hostPlatform.isMusl,
   withHostnamed ? true,
   withHwdb ? true,
@@ -120,7 +119,12 @@
   withLibBPF ?
     lib.versionAtLeast buildPackages.llvmPackages.clang.version "10.0"
     # assumes hard floats
-    && (stdenv.hostPlatform.isAarch -> lib.versionAtLeast stdenv.hostPlatform.parsed.cpu.version "6")
+    && (
+      stdenv.hostPlatform.isAarch
+      ->
+        stdenv.hostPlatform.parsed.cpu ? version
+        && lib.versionAtLeast stdenv.hostPlatform.parsed.cpu.version "6"
+    )
     # see https://github.com/NixOS/nixpkgs/pull/194149#issuecomment-1266642211
     && !stdenv.hostPlatform.isMips64
     # can't find gnu/stubs-32.h
@@ -138,6 +142,7 @@
   withNetworkd ? true,
   withNss ? !stdenv.hostPlatform.isMusl,
   withOomd ? true,
+  withOpenSSL ? true,
   withPam ? true,
   withPasswordQuality ? true,
   withPCRE2 ? true,
@@ -181,21 +186,25 @@ assert withImportd -> withCompression;
 assert withCoredump -> withCompression;
 assert withHomed -> withCryptsetup;
 assert withHomed -> withPam;
+assert withHomed -> withOpenSSL;
+assert withFido2 -> withOpenSSL;
+assert withSysupdate -> withOpenSSL;
+assert withImportd -> (withGcrypt || withOpenSSL);
 assert withUkify -> (withEfi && withBootloader);
 assert withRepart -> withCryptsetup;
 assert withBootloader -> withEfi;
 
 let
   wantCurl = withRemote || withImportd;
-  wantGcrypt = withResolved || withImportd;
-  version = "256.10";
+
+  version = "257.5";
 
   # Use the command below to update `releaseTimestamp` on every (major) version
   # change. More details in the commentary at mesonFlags.
   # command:
   #  $ curl -s https://api.github.com/repos/systemd/systemd/releases/latest | \
   #     jq '.created_at|strptime("%Y-%m-%dT%H:%M:%SZ")|mktime'
-  releaseTimestamp = "1720202583";
+  releaseTimestamp = "1734643670";
 in
 stdenv.mkDerivation (finalAttrs: {
   inherit pname version;
@@ -206,7 +215,7 @@ stdenv.mkDerivation (finalAttrs: {
     owner = "systemd";
     repo = "systemd";
     rev = "v${version}";
-    hash = "sha256-RkdY/KnbQcqSx+Ey7YjAbTwCnHZspBqt6rbclgxW0lE=";
+    hash = "sha256-mn/JB/nrOz2TOobu2d+XBH2dVH3vn/HPvWN4Zz6s+SM=";
   };
 
   # On major changes, or when otherwise required, you *must* :
@@ -236,51 +245,59 @@ stdenv.mkDerivation (finalAttrs: {
       ./0015-tpm2_context_init-fix-driver-name-checking.patch
       ./0016-systemctl-edit-suggest-systemdctl-edit-runtime-on-sy.patch
       ./0017-meson.build-do-not-create-systemdstatedir.patch
-
-      # https://github.com/systemd/systemd/issues/33392
-      (fetchpatch2 {
-        url = "https://github.com/systemd/systemd/commit/f8b02a56febf14adf2474875a1b6625f1f346a6f.patch?full_index=1";
-        hash = "sha256-qRW92gPtACjk+ifptkw5mujhHlkCF56M3azGIjLiMKE=";
-        revert = true;
-      })
+      ./0018-Revert-bootctl-update-list-remove-all-instances-of-s.patch # https://github.com/systemd/systemd/issues/33392
+      # systemd tries to link the systemd-ssh-proxy ssh config snippet with tmpfiles
+      # if the install prefix is not /usr, but that does not work for us
+      # because we include the config snippet manually
+      ./0019-meson-Don-t-link-ssh-dropins.patch
+      ./0020-install-unit_file_exists_full-follow-symlinks.patch
     ]
-    ++ lib.optional (stdenv.hostPlatform.isLinux && stdenv.hostPlatform.isGnu) [
-      ./0018-timesyncd-disable-NSCD-when-DNSSEC-validation-is-dis.patch
+    ++ lib.optionals (stdenv.hostPlatform.isLinux && stdenv.hostPlatform.isGnu) [
+      ./0021-timesyncd-disable-NSCD-when-DNSSEC-validation-is-dis.patch
     ]
-    ++ lib.optional stdenv.hostPlatform.isMusl (
+    ++ lib.optionals stdenv.hostPlatform.isMusl (
       let
+        # NOTE: the master-next branch does not have stable URLs.
+        # If we need patches that aren't in master yet, they'll have to be
+        # vendored.
         oe-core = fetchzip {
-          url = "https://git.openembedded.org/openembedded-core/snapshot/openembedded-core-89b75b46371d5e9172cb496b461824d8551a2af5.tar.gz";
-          hash = "sha256-etdIIdo3FezVafEYP5uAS9pO36Rdea2A+Da1P44cPXg=";
+          url = "https://git.openembedded.org/openembedded-core/snapshot/openembedded-core-4891f47cdaf919033bf1c02cc12e4805e5db99a0.tar.gz";
+          hash = "sha256-YKL/oC+rPZ2EEVNidEV+pJihZgUv7vLb0OASplgktn4=";
         };
-        musl-patches = oe-core + "/meta/recipes-core/systemd/systemd";
       in
-      [
-        (musl-patches + "/0004-missing_type.h-add-comparison_fn_t.patch")
-        (musl-patches + "/0005-add-fallback-parse_printf_format-implementation.patch")
-        (musl-patches + "/0006-don-t-fail-if-GLOB_BRACE-and-GLOB_ALTDIRFUNC-is-not-.patch")
-        (musl-patches + "/0007-add-missing-FTW_-macros-for-musl.patch")
-        (musl-patches + "/0008-Use-uintmax_t-for-handling-rlim_t.patch")
-        (musl-patches + "/0009-don-t-pass-AT_SYMLINK_NOFOLLOW-flag-to-faccessat.patch")
-        (musl-patches + "/0010-Define-glibc-compatible-basename-for-non-glibc-syste.patch")
-        (musl-patches + "/0011-Do-not-disable-buffering-when-writing-to-oom_score_a.patch")
-        (musl-patches + "/0012-distinguish-XSI-compliant-strerror_r-from-GNU-specif.patch")
-        (musl-patches + "/0013-avoid-redefinition-of-prctl_mm_map-structure.patch")
-        (musl-patches + "/0014-do-not-disable-buffer-in-writing-files.patch")
-        (musl-patches + "/0015-Handle-__cpu_mask-usage.patch")
-        (musl-patches + "/0016-Handle-missing-gshadow.patch")
-        (musl-patches + "/0017-missing_syscall.h-Define-MIPS-ABI-defines-for-musl.patch")
-        (musl-patches + "/0018-pass-correct-parameters-to-getdents64.patch")
-        (musl-patches + "/0019-Adjust-for-musl-headers.patch")
-        (musl-patches + "/0020-test-bus-error-strerror-is-assumed-to-be-GNU-specifi.patch")
-        (musl-patches + "/0021-errno-util-Make-STRERROR-portable-for-musl.patch")
-        (musl-patches + "/0022-sd-event-Make-malloc_trim-conditional-on-glibc.patch")
-        (musl-patches + "/0023-shared-Do-not-use-malloc_info-on-musl.patch")
-        (musl-patches + "/0024-avoid-missing-LOCK_EX-declaration.patch")
-        (musl-patches + "/0025-include-signal.h-to-avoid-the-undeclared-error.patch")
-        (musl-patches + "/0026-undef-stdin-for-references-using-stdin-as-a-struct-m.patch")
-        (musl-patches + "/0027-adjust-header-inclusion-order-to-avoid-redeclaration.patch")
-        (musl-patches + "/0028-build-path.c-avoid-boot-time-segfault-for-musl.patch")
+      map (patch: "${oe-core}/meta/recipes-core/systemd/systemd/${patch}") [
+        "0003-missing_type.h-add-comparison_fn_t.patch"
+        "0004-add-fallback-parse_printf_format-implementation.patch"
+        "0005-don-t-fail-if-GLOB_BRACE-and-GLOB_ALTDIRFUNC-is-not-.patch"
+        "0006-add-missing-FTW_-macros-for-musl.patch"
+        "0007-Use-uintmax_t-for-handling-rlim_t.patch"
+        "0008-Define-glibc-compatible-basename-for-non-glibc-syste.patch"
+        "0009-Do-not-disable-buffering-when-writing-to-oom_score_a.patch"
+        "0010-distinguish-XSI-compliant-strerror_r-from-GNU-specif.patch"
+        "0011-avoid-redefinition-of-prctl_mm_map-structure.patch"
+        "0012-do-not-disable-buffer-in-writing-files.patch"
+        "0013-Handle-__cpu_mask-usage.patch"
+        "0014-Handle-missing-gshadow.patch"
+        "0015-missing_syscall.h-Define-MIPS-ABI-defines-for-musl.patch"
+        "0016-pass-correct-parameters-to-getdents64.patch"
+        "0017-Adjust-for-musl-headers.patch"
+        "0018-test-bus-error-strerror-is-assumed-to-be-GNU-specifi.patch"
+        "0019-errno-util-Make-STRERROR-portable-for-musl.patch"
+        "0020-sd-event-Make-malloc_trim-conditional-on-glibc.patch"
+        "0021-shared-Do-not-use-malloc_info-on-musl.patch"
+        "0022-avoid-missing-LOCK_EX-declaration.patch"
+        "0023-include-signal.h-to-avoid-the-undeclared-error.patch"
+        "0024-undef-stdin-for-references-using-stdin-as-a-struct-m.patch"
+        "0025-adjust-header-inclusion-order-to-avoid-redeclaration.patch"
+        "0026-build-path.c-avoid-boot-time-segfault-for-musl.patch"
+      ]
+      ++ [
+        # add a missing include
+        (fetchpatch {
+          url = "https://github.com/systemd/systemd/commit/34fcd3638817060c79e1186b370e46d9b3a7409f.patch";
+          hash = "sha256-Uaewo3jPrZGJttlLcqO6cCj1w3IGZmvbur4+TBdIPxc=";
+          excludes = [ "src/udev/udevd.c" ];
+        })
       ]
     );
 
@@ -319,11 +336,13 @@ stdenv.mkDerivation (finalAttrs: {
     [
       # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=111523
       "trivialautovarinit"
-      # breaks clang -target bpf; should be fixed to filter target?
     ]
     ++ (lib.optionals withLibBPF [
+      # breaks clang -target bpf; should be fixed to not use
+      # a wrapped clang?
       "zerocallusedregs"
       "shadowstack"
+      "pacret"
     ]);
 
   nativeBuildInputs =
@@ -373,10 +392,11 @@ stdenv.mkDerivation (finalAttrs: {
       bashInteractive # for patch shebangs
     ]
 
-    ++ lib.optionals wantGcrypt [
+    ++ lib.optionals withGcrypt [
       libgcrypt
       libgpg-error
     ]
+    ++ lib.optionals withOpenSSL [ openssl ]
     ++ lib.optional withTests glib
     ++ lib.optional withAcl acl
     ++ lib.optional withApparmor libapparmor
@@ -437,6 +457,7 @@ stdenv.mkDerivation (finalAttrs: {
       (lib.mesonOption "tty-gid" "3") # tty in NixOS has gid 3
       (lib.mesonOption "debug-shell" "${bashInteractive}/bin/bash")
       (lib.mesonOption "pamconfdir" "${placeholder "out"}/etc/pam.d")
+      (lib.mesonOption "shellprofiledir" "${placeholder "out"}/etc/profile.d")
       (lib.mesonOption "kmod-path" "${kmod}/bin/kmod")
 
       # Attempts to check /usr/sbin and that fails in macOS sandbox because
@@ -482,8 +503,7 @@ stdenv.mkDerivation (finalAttrs: {
       (lib.mesonOption "umount-path" "${lib.getOutput "mount" util-linux}/bin/umount")
 
       # SSH
-      # Disabled for now until someone makes this work.
-      (lib.mesonOption "sshconfdir" "no")
+      (lib.mesonOption "sshconfdir" "")
       (lib.mesonOption "sshdconfdir" "no")
 
       # Features
@@ -513,7 +533,7 @@ stdenv.mkDerivation (finalAttrs: {
 
       # FIDO2
       (lib.mesonEnable "libfido2" withFido2)
-      (lib.mesonEnable "openssl" (withHomed || withFido2 || withSysupdate))
+      (lib.mesonEnable "openssl" withOpenSSL)
 
       # Password Quality
       (lib.mesonEnable "pwquality" withPasswordQuality)
@@ -527,7 +547,7 @@ stdenv.mkDerivation (finalAttrs: {
       (lib.mesonEnable "acl" withAcl)
       (lib.mesonEnable "audit" withAudit)
       (lib.mesonEnable "apparmor" withApparmor)
-      (lib.mesonEnable "gcrypt" wantGcrypt)
+      (lib.mesonEnable "gcrypt" withGcrypt)
       (lib.mesonEnable "importd" withImportd)
       (lib.mesonEnable "homed" withHomed)
       (lib.mesonEnable "polkit" withPolkit)
@@ -677,6 +697,8 @@ stdenv.mkDerivation (finalAttrs: {
               "src/import/importd.c"
               # runs `tar` but also also creates a temporary directory with the string
               "src/import/pull-tar.c"
+              # tar referenced as file suffix
+              "src/shared/import-util.c"
             ];
           }
         ]
@@ -860,11 +882,13 @@ stdenv.mkDerivation (finalAttrs: {
       withBootloader
       withCryptsetup
       withEfi
+      withFido2
       withHostnamed
       withImportd
       withKmod
       withLocaled
       withMachined
+      withNetworkd
       withPortabled
       withTimedated
       withTpm2Tss
@@ -874,20 +898,112 @@ stdenv.mkDerivation (finalAttrs: {
       kbd
       ;
 
-    tests = {
-      inherit (nixosTests)
-        switchTest
-        systemd-journal
-        systemd-journal-gateway
-        systemd-journal-upload
-        ;
-      cross =
-        let
-          systemString = if stdenv.buildPlatform.isAarch64 then "gnu64" else "aarch64-multiplatform";
-        in
-        pkgsCross.${systemString}.systemd;
-      pkg-config = testers.testMetaPkgConfig finalAttrs.finalPackage;
-    };
+    # Many TPM2-related units are only installed if this trio of features are
+    # enabled. See https://github.com/systemd/systemd/blob/876ee10e0eb4bbb0920bdab7817a9f06cc34910f/units/meson.build#L521
+    withTpm2Units = withTpm2Tss && withBootloader && withOpenSSL;
+
+    tests =
+      let
+        # Some entries in the `nixosTests.systemd-*` set of attributes are collections of tests,
+        # not individual tests themselves. Let's gather them into one set.
+        gatherNixosTestsFromCollection =
+          prefix: collection:
+          lib.mapAttrs' (name: value: {
+            name = "${prefix}-${name}";
+            inherit value;
+          }) collection;
+
+        # Here's all the nixosTests that are collections of tests, rather than individual tests.
+        collectedNixosTests = lib.mergeAttrsList (
+          lib.mapAttrsToList gatherNixosTestsFromCollection {
+            inherit (nixosTests)
+              systemd-binfmt
+              systemd-boot
+              systemd-initrd-networkd
+              systemd-repart
+              installer-systemd-stage-1
+              ;
+          }
+        );
+
+        # ... and here's all the individual tests.
+        individualNixosTests = {
+          inherit (nixosTests)
+            fsck-systemd-stage-1
+            hibernate-systemd-stage-1
+            switchTest
+            systemd
+            systemd-analyze
+            systemd-bpf
+            systemd-confinement
+            systemd-coredump
+            systemd-cryptenroll
+            systemd-credentials-tpm2
+            systemd-escaping
+            systemd-initrd-btrfs-raid
+            systemd-initrd-luks-fido2
+            systemd-initrd-luks-keyfile
+            systemd-initrd-luks-empty-passphrase
+            systemd-initrd-luks-password
+            systemd-initrd-luks-tpm2
+            systemd-initrd-luks-unl0kr
+            systemd-initrd-modprobe
+            systemd-initrd-shutdown
+            systemd-initrd-simple
+            systemd-initrd-swraid
+            systemd-initrd-vconsole
+            systemd-initrd-networkd-ssh
+            systemd-initrd-networkd-openvpn
+            systemd-initrd-vlan
+            systemd-journal
+            systemd-journal-gateway
+            systemd-journal-upload
+            systemd-lock-handler
+            systemd-machinectl
+            systemd-networkd
+            systemd-networkd-bridge
+            systemd-networkd-dhcpserver
+            systemd-networkd-dhcpserver-static-leases
+            systemd-networkd-ipv6-prefix-delegation
+            systemd-networkd-vrf
+            systemd-no-tainted
+            systemd-nspawn
+            systemd-nspawn-configfile
+            systemd-oomd
+            systemd-portabled
+            systemd-resolved
+            systemd-shutdown
+            systemd-sysupdate
+            systemd-sysusers-mutable
+            systemd-sysusers-immutable
+            systemd-sysusers-password-option-override-ordering
+            systemd-timesyncd
+            systemd-timesyncd-nscd-dnssec
+            systemd-user-linger
+            systemd-user-tmpfiles-rules
+            systemd-misc
+            systemd-userdbd
+            systemd-homed
+            ;
+        };
+
+        # Finally, make an attrset we're fairly sure is just tests.
+        relevantNixosTests = lib.mapAttrs (
+          name: value:
+          assert lib.assertMsg (lib.isDerivation value) "${name} is not a derivation";
+          value
+        ) (individualNixosTests // collectedNixosTests);
+      in
+      relevantNixosTests
+      // {
+        cross =
+          let
+            systemString = if stdenv.buildPlatform.isAarch64 then "gnu64" else "aarch64-multiplatform";
+          in
+          pkgsCross.${systemString}.systemd;
+
+        pkg-config = testers.testMetaPkgConfig finalAttrs.finalPackage;
+      };
   };
 
   meta = {

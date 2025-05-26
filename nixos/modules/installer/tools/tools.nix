@@ -5,13 +5,14 @@
   config,
   lib,
   pkgs,
+  options,
   ...
 }:
 
 let
   makeProg =
     args:
-    pkgs.substituteAll (
+    pkgs.replaceVarsWith (
       args
       // {
         dir = "bin";
@@ -28,37 +29,69 @@ let
   nixos-generate-config = makeProg {
     name = "nixos-generate-config";
     src = ./nixos-generate-config.pl;
-    perl = "${pkgs.perl.withPackages (p: [ p.FileSlurp ])}/bin/perl";
-    hostPlatformSystem = pkgs.stdenv.hostPlatform.system;
-    detectvirt = "${config.systemd.package}/bin/systemd-detect-virt";
-    btrfs = "${pkgs.btrfs-progs}/bin/btrfs";
-    inherit (config.system.nixos-generate-config) configuration desktopConfiguration;
-    xserverEnabled = config.services.xserver.enable;
+    replacements = {
+      perl = "${
+        pkgs.perl.withPackages (p: [
+          p.FileSlurp
+          p.ConfigIniFiles
+        ])
+      }/bin/perl";
+      hostPlatformSystem = pkgs.stdenv.hostPlatform.system;
+      detectvirt = "${config.systemd.package}/bin/systemd-detect-virt";
+      btrfs = "${pkgs.btrfs-progs}/bin/btrfs";
+      inherit (config.system.nixos-generate-config) configuration desktopConfiguration flake;
+      xserverEnabled = config.services.xserver.enable;
+    };
     manPage = ./manpages/nixos-generate-config.8;
   };
 
   nixos-version = makeProg {
     name = "nixos-version";
     src = ./nixos-version.sh;
-    inherit (pkgs) runtimeShell;
-    inherit (config.system.nixos) version codeName revision;
-    inherit (config.system) configurationRevision;
-    json = builtins.toJSON (
-      {
-        nixosVersion = config.system.nixos.version;
-      }
-      // lib.optionalAttrs (config.system.nixos.revision != null) {
-        nixpkgsRevision = config.system.nixos.revision;
-      }
-      // lib.optionalAttrs (config.system.configurationRevision != null) {
-        configurationRevision = config.system.configurationRevision;
-      }
-    );
+    replacements = {
+      inherit (pkgs) runtimeShell;
+      inherit (config.system.nixos) version codeName revision;
+      inherit (config.system) configurationRevision;
+      json = builtins.toJSON (
+        {
+          nixosVersion = config.system.nixos.version;
+        }
+        // lib.optionalAttrs (config.system.nixos.revision != null) {
+          nixpkgsRevision = config.system.nixos.revision;
+        }
+        // lib.optionalAttrs (config.system.configurationRevision != null) {
+          configurationRevision = config.system.configurationRevision;
+        }
+      );
+    };
     manPage = ./manpages/nixos-version.8;
   };
 
-  nixos-install = pkgs.nixos-install.override { nix = config.nix.package; };
+  nixos-install = pkgs.nixos-install.override { };
   nixos-rebuild = pkgs.nixos-rebuild.override { nix = config.nix.package; };
+  nixos-rebuild-ng = pkgs.nixos-rebuild-ng.override {
+    nix = config.nix.package;
+    withNgSuffix = false;
+    withReexec = true;
+  };
+
+  defaultFlakeTemplate = ''
+    {
+      inputs = {
+        # This is pointing to an unstable release.
+        # If you prefer a stable release instead, you can this to the latest number shown here: https://nixos.org/download
+        # i.e. nixos-24.11
+        # Use `nix flake update` to update the flake to the latest revision of the chosen release channel.
+        nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+      };
+      outputs = inputs\@{ self, nixpkgs, ... }: {
+        # NOTE: '${options.networking.hostName.default}' is the default hostname
+        nixosConfigurations.${options.networking.hostName.default} = nixpkgs.lib.nixosSystem {
+          modules = [ ./configuration.nix ];
+        };
+      };
+    }
+  '';
 
   defaultConfigTemplate = ''
     # Edit this configuration file to define what should be installed on
@@ -105,7 +138,7 @@ let
       # services.printing.enable = true;
 
       # Enable sound.
-      # hardware.pulseaudio.enable = true;
+      # services.pulseaudio.enable = true;
       # OR
       # services.pipewire = {
       #   enable = true;
@@ -126,8 +159,8 @@ let
 
       # programs.firefox.enable = true;
 
-      # List packages installed in system profile. To search, run:
-      # \$ nix search wget
+      # List packages installed in system profile.
+      # You can use https://search.nixos.org/ to find more packages (and options).
       # environment.systemPackages = with pkgs; [
       #   vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
       #   wget
@@ -181,6 +214,24 @@ let
 in
 {
   options.system.nixos-generate-config = {
+
+    flake = lib.mkOption {
+      internal = true;
+      type = lib.types.str;
+      default = defaultFlakeTemplate;
+      description = ''
+        The NixOS module that `nixos-generate-config`
+        saves to `/etc/nixos/flake.nix` if --flake is set.
+
+        This is an internal option. No backward compatibility is guaranteed.
+        Use at your own risk!
+
+        Note that this string gets spliced into a Perl script. The perl
+        variable `$bootLoaderConfig` can be used to
+        splice in the boot loader configuration.
+      '';
+    };
+
     configuration = lib.mkOption {
       internal = true;
       type = lib.types.str;
@@ -223,8 +274,15 @@ in
     description = ''
       Disable nixos-rebuild, nixos-generate-config, nixos-installer
       and other NixOS tools. This is useful to shrink embedded,
-      read-only systems which are not expected to be rebuild or
+      read-only systems which are not expected to rebuild or
       reconfigure themselves. Use at your own risk!
+    '';
+  };
+
+  options.system.rebuild.enableNg = lib.mkEnableOption "" // {
+    description = ''
+      Whether to use ‘nixos-rebuild-ng’ in place of ‘nixos-rebuild’, the
+      Python-based re-implementation of the original in Bash.
     '';
   };
 
@@ -274,7 +332,8 @@ in
 
     # These may be used in auxiliary scripts (ie not part of toplevel), so they are defined unconditionally.
     system.build = {
-      inherit nixos-generate-config nixos-install nixos-rebuild;
+      inherit nixos-generate-config nixos-install;
+      nixos-rebuild = if config.system.rebuild.enableNg then nixos-rebuild-ng else nixos-rebuild;
       nixos-option = lib.warn "Accessing nixos-option through `config.system.build` is deprecated, use `pkgs.nixos-option` instead." pkgs.nixos-option;
       nixos-enter = lib.warn "Accessing nixos-enter through `config.system.build` is deprecated, use `pkgs.nixos-enter` instead." pkgs.nixos-enter;
     };

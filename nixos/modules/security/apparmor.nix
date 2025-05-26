@@ -4,38 +4,27 @@
   pkgs,
   ...
 }:
-
-with lib;
-
 let
-  inherit (builtins)
-    attrNames
-    head
-    map
-    match
-    readFile
-    ;
   inherit (lib) types;
   inherit (config.environment) etc;
   cfg = config.security.apparmor;
-  mkDisableOption =
-    name:
-    mkEnableOption name
-    // {
-      default = true;
-      example = false;
-    };
-  enabledPolicies = filterAttrs (n: p: p.enable) cfg.policies;
+  enabledPolicies = lib.filterAttrs (n: p: p.state != "disable") cfg.policies;
+  buildPolicyPath = n: p: lib.defaultTo (pkgs.writeText n p.profile) p.path;
+
+  # Accessing submodule options when not defined results in an error thunk rather than a regular option object
+  # We can emulate the behavior of `<option>.isDefined` by attempting to evaluate it instead
+  # This is required because getting isDefined on a submodule is not possible in global module asserts.
+  submoduleOptionIsDefined = value: (builtins.tryEval value).success;
 in
 
 {
   imports = [
-    (mkRemovedOptionModule [
+    (lib.mkRemovedOptionModule [
       "security"
       "apparmor"
       "confineSUIDApplications"
-    ] "Please use the new options: `security.apparmor.policies.<policy>.enable'.")
-    (mkRemovedOptionModule [
+    ] "Please use the new options: `security.apparmor.policies.<policy>.state'.")
+    (lib.mkRemovedOptionModule [
       "security"
       "apparmor"
       "profiles"
@@ -46,7 +35,7 @@ in
 
   options = {
     security.apparmor = {
-      enable = mkEnableOption ''
+      enable = lib.mkEnableOption ''
         the AppArmor Mandatory Access Control system.
 
         If you're enabling this module on a running system,
@@ -63,50 +52,62 @@ in
         Enable [](#opt-security.apparmor.killUnconfinedConfinables)
         if you want this service to do such killing
         by sending a `SIGTERM` to those running processes'';
-      policies = mkOption {
+      policies = lib.mkOption {
         description = ''
           AppArmor policies.
         '';
         type = types.attrsOf (
-          types.submodule (
-            { name, config, ... }:
-            {
-              options = {
-                enable = mkDisableOption "loading of the profile into the kernel";
-                enforce = mkDisableOption "enforcing of the policy or only complain in the logs";
-                profile = mkOption {
-                  description = "The policy of the profile.";
-                  type = types.lines;
-                  apply = pkgs.writeText name;
-                };
+          types.submodule {
+            options = {
+              state = lib.mkOption {
+                description = "How strictly this policy should be enforced";
+                type = types.enum [
+                  "disable"
+                  "complain"
+                  "enforce"
+                ];
+                # should enforce really be the default?
+                # the docs state that this should only be used once one is REALLY sure nothing's gonna break
+                default = "enforce";
               };
-            }
-          )
+
+              profile = lib.mkOption {
+                description = "The profile file contents. Incompatible with path.";
+                type = types.lines;
+              };
+
+              path = lib.mkOption {
+                description = "A path of a profile file to include. Incompatible with profile.";
+                type = types.nullOr types.path;
+                default = null;
+              };
+            };
+          }
         );
         default = { };
       };
-      includes = mkOption {
+      includes = lib.mkOption {
         type = types.attrsOf types.lines;
         default = { };
         description = ''
           List of paths to be added to AppArmor's searched paths
           when resolving `include` directives.
         '';
-        apply = mapAttrs pkgs.writeText;
+        apply = lib.mapAttrs pkgs.writeText;
       };
-      packages = mkOption {
+      packages = lib.mkOption {
         type = types.listOf types.package;
         default = [ ];
         description = "List of packages to be added to AppArmor's include path";
       };
-      enableCache = mkEnableOption ''
+      enableCache = lib.mkEnableOption ''
         caching of AppArmor policies
         in `/var/cache/apparmor/`.
 
         Beware that AppArmor policies almost always contain Nix store paths,
         and thus produce at each change of these paths
         a new cached version accumulating in the cache'';
-      killUnconfinedConfinables = mkEnableOption ''
+      killUnconfinedConfinables = lib.mkEnableOption ''
         killing of processes which have an AppArmor profile enabled
         (in [](#opt-security.apparmor.policies))
         but are not confined (because AppArmor can only confine new processes).
@@ -119,13 +120,21 @@ in
     };
   };
 
-  config = mkIf cfg.enable {
-    assertions = map (policy: {
-      assertion = match ".*/.*" policy == null;
-      message = "`security.apparmor.policies.\"${policy}\"' must not contain a slash.";
-      # Because, for instance, aa-remove-unknown uses profiles_names_list() in rc.apparmor.functions
-      # which does not recurse into sub-directories.
-    }) (attrNames cfg.policies);
+  config = lib.mkIf cfg.enable {
+    assertions = lib.concatLists (
+      lib.mapAttrsToList (policyName: policyCfg: [
+        {
+          assertion = builtins.match ".*/.*" policyName == null;
+          message = "`security.apparmor.policies.\"${policyName}\"' must not contain a slash.";
+          # Because, for instance, aa-remove-unknown uses profiles_names_list() in rc.apparmor.functions
+          # which does not recurse into sub-directories.
+        }
+        {
+          assertion = lib.xor (policyCfg.path != null) (submoduleOptionIsDefined policyCfg.profile);
+          message = "`security.apparmor.policies.\"${policyName}\"` must define exactly one of either path or profile.";
+        }
+      ]) cfg.policies
+    );
 
     environment.systemPackages = [
       pkgs.apparmor-utils
@@ -134,11 +143,11 @@ in
     environment.etc."apparmor.d".source = pkgs.linkFarm "apparmor.d" (
       # It's important to put only enabledPolicies here and not all cfg.policies
       # because aa-remove-unknown reads profiles from all /etc/apparmor.d/*
-      mapAttrsToList (name: p: {
+      lib.mapAttrsToList (name: p: {
         inherit name;
-        path = p.profile;
+        path = buildPolicyPath name p;
       }) enabledPolicies
-      ++ mapAttrsToList (name: path: { inherit name path; }) cfg.includes
+      ++ lib.mapAttrsToList (name: path: { inherit name path; }) cfg.includes
     );
     environment.etc."apparmor/parser.conf".text =
       ''
@@ -146,7 +155,7 @@ in
         cache-loc /var/cache/apparmor
         Include /etc/apparmor.d
       ''
-      + concatMapStrings (p: "Include ${p}/etc/apparmor.d\n") cfg.packages;
+      + lib.concatMapStrings (p: "Include ${p}/etc/apparmor.d\n") cfg.packages;
     # For aa-logprof
     environment.etc."apparmor/apparmor.conf".text = '''';
     # For aa-logprof
@@ -163,7 +172,7 @@ in
               logfiles = /dev/stdin
 
               parser = ${pkgs.apparmor-parser}/bin/apparmor_parser
-              ldd = ${pkgs.glibc.bin}/bin/ldd
+              ldd = ${lib.getExe' pkgs.stdenv.cc.libc "ldd"}
               logger = ${pkgs.util-linux}/bin/logger
 
               # customize how file ownership permissions are presented
@@ -174,7 +183,7 @@ in
               default_owner_prompt = 1
 
               custom_includes = /etc/apparmor.d ${
-                concatMapStringsSep " " (p: "${p}/etc/apparmor.d") cfg.packages
+                lib.concatMapStringsSep " " (p: "${p}/etc/apparmor.d") cfg.packages
               }
 
             [qualifiers]
@@ -191,10 +200,8 @@ in
           sed '1,/\[qualifiers\]/d' $footer >> $out
         '';
 
-    boot.kernelParams = [
-      "apparmor=1"
-      "security=apparmor"
-    ];
+    boot.kernelParams = [ "apparmor=1" ];
+    security.lsm = [ "apparmor" ];
 
     systemd.services.apparmor = {
       after = [
@@ -228,21 +235,25 @@ in
             xargs --verbose --no-run-if-empty --delimiter='\n' \
             kill
           '';
-          commonOpts = p: "--verbose --show-cache ${optionalString (!p.enforce) "--complain "}${p.profile}";
+          commonOpts =
+            n: p:
+            "--verbose --show-cache ${
+              lib.optionalString (p.state == "complain") "--complain "
+            }${buildPolicyPath n p}";
         in
         {
           Type = "oneshot";
           RemainAfterExit = "yes";
           ExecStartPre = "${pkgs.apparmor-utils}/bin/aa-teardown";
-          ExecStart = mapAttrsToList (
-            n: p: "${pkgs.apparmor-parser}/bin/apparmor_parser --add ${commonOpts p}"
+          ExecStart = lib.mapAttrsToList (
+            n: p: "${pkgs.apparmor-parser}/bin/apparmor_parser --add ${commonOpts n p}"
           ) enabledPolicies;
-          ExecStartPost = optional cfg.killUnconfinedConfinables killUnconfinedConfinables;
+          ExecStartPost = lib.optional cfg.killUnconfinedConfinables killUnconfinedConfinables;
           ExecReload =
             # Add or replace into the kernel profiles in enabledPolicies
             # (because AppArmor can do that without stopping the processes already confined).
-            mapAttrsToList (
-              n: p: "${pkgs.apparmor-parser}/bin/apparmor_parser --replace ${commonOpts p}"
+            lib.mapAttrsToList (
+              n: p: "${pkgs.apparmor-parser}/bin/apparmor_parser --replace ${commonOpts n p}"
             ) enabledPolicies
             ++
               # Remove from the kernel any profile whose name is not
@@ -253,7 +264,7 @@ in
             ++
               # Optionally kill the processes which are unconfined but now have a profile loaded
               # (because AppArmor can only start to confine new processes).
-              optional cfg.killUnconfinedConfinables killUnconfinedConfinables;
+              lib.optional cfg.killUnconfinedConfinables killUnconfinedConfinables;
           ExecStop = "${pkgs.apparmor-utils}/bin/aa-teardown";
           CacheDirectory = [
             "apparmor"
@@ -264,5 +275,5 @@ in
     };
   };
 
-  meta.maintainers = with maintainers; [ julm ];
+  meta.maintainers = lib.teams.apparmor.members;
 }

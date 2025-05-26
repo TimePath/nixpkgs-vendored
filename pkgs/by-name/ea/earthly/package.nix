@@ -24,7 +24,7 @@ buildGoModule rec {
     "cmd/debugger"
   ];
 
-  CGO_ENABLED = 0;
+  env.CGO_ENABLED = 0;
 
   ldflags =
     [

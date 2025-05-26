@@ -1,4 +1,5 @@
 {
+  stdenv,
   lib,
   buildGoModule,
   fetchFromGitHub,
@@ -10,13 +11,13 @@
 
 buildGoModule rec {
   pname = "rosa";
-  version = "1.2.46";
+  version = "1.2.53";
 
   src = fetchFromGitHub {
     owner = "openshift";
     repo = "rosa";
     rev = "v${version}";
-    hash = "sha256-XRoHapuH0MJNrtu+Rk/yxJqeqjNIbdGYqDB84q05rdA=";
+    hash = "sha256-t8hJscLk0tRi7CC6maE478CEbOkJtVkbXA0Ag1DxFB4=";
   };
   vendorHash = null;
 
@@ -27,17 +28,18 @@ buildGoModule rec {
 
   __darwinAllowLocalNetworking = true;
 
-  postPatch = ''
-    # e2e tests require network access
-    rm -r tests/e2e
-  '';
+  # skip e2e tests package
+  excludedPackages = [ "tests/e2e" ];
 
-  preCheck = ''
-    # Workaround for cmd/list/rhRegion/cmd_test.go:39
-    #   Failed to get OCM regions: Can't retrieve shards: Get "https://api.stage.openshift.com/static/ocm-shards.json": dial tcp: lookup api.stage.openshift.com on [::1]:53: read udp [::1]:55793->[::1]:53: read: connection refused
-    substituteInPlace "cmd/list/rhRegion/cmd_test.go" \
-      --replace-fail "TestRhRegionCommand" "SkipRhRegionCommand"
-  '';
+  # skip tests that require network access
+  checkFlags =
+    let
+      skippedTests = [
+        "TestCluster"
+        "TestRhRegionCommand"
+      ] ++ lib.optionals stdenv.hostPlatform.isDarwin [ "TestCache" ];
+    in
+    [ "-skip=^${lib.concatStringsSep "$|^" skippedTests}$" ];
 
   nativeBuildInputs = [ installShellFiles ];
   postInstall = ''

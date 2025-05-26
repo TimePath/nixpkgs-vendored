@@ -1,4 +1,9 @@
-{ hostPkgs, ... }:
+{
+  hostPkgs,
+  lib,
+  withNg,
+  ...
+}:
 {
   name = "nixos-rebuild-specialisations";
 
@@ -28,6 +33,7 @@
           pkgs.grub2
         ];
 
+        system.rebuild.enableNg = withNg;
         system.switch.enable = true;
 
         virtualisation = {
@@ -39,48 +45,53 @@
 
   testScript =
     let
-      configFile = hostPkgs.writeText "configuration.nix" ''
-        { lib, pkgs, ... }: {
-          imports = [
-            ./hardware-configuration.nix
-            <nixpkgs/nixos/modules/testing/test-instrumentation.nix>
-          ];
-
-          boot.loader.grub = {
-            enable = true;
-            device = "/dev/vda";
-            forceInstall = true;
-          };
-
-          documentation.enable = false;
-
-          environment.systemPackages = [
-            (pkgs.writeShellScriptBin "parent" "")
-          ];
-
-          specialisation.foo = {
-            inheritParentConfig = true;
-
-            configuration = { ... }: {
-              environment.systemPackages = [
-                (pkgs.writeShellScriptBin "foo" "")
+      configFile =
+        hostPkgs.writeText "configuration.nix" # nix
+          ''
+            { lib, pkgs, ... }: {
+              imports = [
+                ./hardware-configuration.nix
+                <nixpkgs/nixos/modules/testing/test-instrumentation.nix>
               ];
-            };
-          };
 
-          specialisation.bar = {
-            inheritParentConfig = true;
+              boot.loader.grub = {
+                enable = true;
+                device = "/dev/vda";
+                forceInstall = true;
+              };
 
-            configuration = { ... }: {
+              documentation.enable = false;
+
               environment.systemPackages = [
-                (pkgs.writeShellScriptBin "bar" "")
+                (pkgs.writeShellScriptBin "parent" "")
               ];
-            };
-          };
-        }
-      '';
+
+              system.rebuild.enableNg = ${lib.boolToString withNg};
+
+              specialisation.foo = {
+                inheritParentConfig = true;
+
+                configuration = { ... }: {
+                  environment.systemPackages = [
+                    (pkgs.writeShellScriptBin "foo" "")
+                  ];
+                };
+              };
+
+              specialisation.bar = {
+                inheritParentConfig = true;
+
+                configuration = { ... }: {
+                  environment.systemPackages = [
+                    (pkgs.writeShellScriptBin "bar" "")
+                  ];
+                };
+              };
+            }
+          '';
 
     in
+    # python
     ''
       machine.start()
       machine.succeed("udevadm settle")

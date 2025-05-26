@@ -3,7 +3,6 @@
   rustPlatform,
   fetchFromGitHub,
   stdenv,
-  darwin,
   rust-jemalloc-sys,
   nix-update-script,
   versionCheckHook,
@@ -19,11 +18,12 @@ rustPlatform.buildRustPackage rec {
     hash = "sha256-Vlre3D1ydDqFdysf5no2rW2V2U/BimhCeV1vWZ2JPSM=";
   };
 
-  cargoHash = "sha256-WqkHZcA4FBm8zubAnDrJGH+fgLVIxsNNm3B+mdj5Sxw=";
+  useFetchCargoVendor = true;
+  cargoHash = "sha256-sFKq7CxQ7yoPqDQOR9Nr111RCiSA6bK50QvhHkaU5Go=";
 
   buildInputs = [
     rust-jemalloc-sys
-  ] ++ lib.optionals stdenv.isDarwin [ darwin.apple_sdk.frameworks.CoreServices ];
+  ];
 
   # Patch the tests to find the binary
   postPatch = ''
@@ -34,7 +34,7 @@ rustPlatform.buildRustPackage rec {
   '';
 
   nativeCheckInputs = [ versionCheckHook ];
-  versionCheckProgramArg = [ "--version" ];
+  versionCheckProgramArg = "--version";
   doInstallCheck = true;
 
   passthru = {

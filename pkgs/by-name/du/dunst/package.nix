@@ -23,20 +23,21 @@
   pango,
   xorgproto,
   librsvg,
-  testers,
+  versionCheckHook,
+  nix-update-script,
   withX11 ? true,
   withWayland ? true,
 }:
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "dunst";
-  version = "1.11.0";
+  version = "1.12.2";
 
   src = fetchFromGitHub {
     owner = "dunst-project";
     repo = "dunst";
-    rev = "v${finalAttrs.version}";
-    hash = "sha256-eiFvvavXGNcHZnEGwlTLxRqFNdkvEZMwNIkVyDn1V6o=";
+    tag = "v${finalAttrs.version}";
+    hash = "sha256-i5/rRlxs+voEXL3udY+55l2mU54yep8RpmLOZpGtDeM=";
   };
 
   nativeBuildInputs = [
@@ -97,22 +98,34 @@ stdenv.mkDerivation (finalAttrs: {
         ]
       }"
 
-    substituteInPlace $out/share/zsh/site-functions/_dunstctl $out/share/fish/vendor_completions.d/{dunstctl,dunstify} \
+    substituteInPlace \
+      $out/share/zsh/site-functions/_dunstctl \
+      $out/share/bash-completion/completions/dunstctl \
+      $out/share/fish/vendor_completions.d/{dunstctl,dunstify}.fish \
       --replace-fail "jq" "${lib.getExe jq}"
   '';
 
-  passthru.tests.version = testers.testVersion { package = finalAttrs.finalPackage; };
+  nativeInstallCheckInputs = [
+    versionCheckHook
+  ];
+  versionCheckProgramArg = "--version";
+  doInstallCheck = true;
 
-  meta = with lib; {
+  passthru = {
+    updateScript = nix-update-script { };
+  };
+
+  meta = {
     description = "Lightweight and customizable notification daemon";
     homepage = "https://dunst-project.org/";
-    license = licenses.bsd3;
-    # NOTE: 'unix' or even 'all' COULD work too, I'm not sure
-    platforms = platforms.linux;
-    maintainers = with maintainers; [
+    changelog = "https://github.com/dunst-project/dunst/blob/${finalAttrs.src.tag}/CHANGELOG.md";
+    license = lib.licenses.bsd3;
+    mainProgram = "dunst";
+    maintainers = with lib.maintainers; [
       domenkozar
       gepbird
     ];
-    mainProgram = "dunst";
+    # NOTE: 'unix' or even 'all' COULD work too, I'm not sure
+    platforms = lib.platforms.linux;
   };
 })

@@ -1,11 +1,9 @@
 {
   lib,
-  stdenv,
   fetchCrate,
   rustPlatform,
   pkg-config,
   openssl,
-  darwin,
   fetchurl,
 }:
 
@@ -29,16 +27,12 @@ rustPlatform.buildRustPackage rec {
     hash = "sha256-A66KSDYFbByguhnlzzU5nf8pE3lhnYQjI3h73SKB2Zo=";
   };
 
-  cargoHash = "sha256-2mo30xHQ3aCExdI0ITDY9g/C5peN48PdUNFVVxM//+c=";
+  useFetchCargoVendor = true;
+  cargoHash = "sha256-m8NkYqfWRNJn+1Qym1C5ZwKhvXrwFd01TSpVigYwsJ8=";
 
   nativeBuildInputs = [ pkg-config ];
 
-  buildInputs =
-    [ openssl ]
-    ++ lib.optionals stdenv.hostPlatform.isDarwin [
-      darwin.apple_sdk.frameworks.SystemConfiguration
-      darwin.apple_sdk.frameworks.CoreServices
-    ];
+  buildInputs = [ openssl ];
 
   preBuild = "
     export WASI_PREVIEW1_COMMAND_COMPONENT_ADAPTER=${wasiPreviewCommandComponentAdapter}

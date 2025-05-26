@@ -1,12 +1,10 @@
 {
   lib,
-  stdenv,
   buildPythonPackage,
   fetchFromGitHub,
 
   fetchzip,
-  substitute,
-  pytestCheckHook,
+  replaceVars,
 
   setuptools,
   pyclipper,
@@ -17,15 +15,19 @@
   pyyaml,
   pillow,
   onnxruntime,
+  tqdm,
+
+  pytestCheckHook,
+  requests,
 }:
 let
-  version = "1.3.24";
+  version = "1.4.4";
 
   src = fetchFromGitHub {
     owner = "RapidAI";
     repo = "RapidOCR";
     tag = "v${version}";
-    hash = "sha256-+iY+/IdOgsn+LPZQ4Kdzxuh31csQ7dyh5Zf552ne3N0=";
+    hash = "sha256-x0VELDKOffxbV3v0aDFJFuDC4YfsGM548XWgINmRc3M=";
   };
 
   models =
@@ -54,13 +56,8 @@ buildPythonPackage {
   # This is not allowed in the Nix build environment as we do not have internet access,
   # hence we patch that out and get the version from the build environment directly.
   patches = [
-    (substitute {
-      src = ./setup-py-override-version-checking.patch;
-      substitutions = [
-        "--subst-var-by"
-        "version"
-        version
-      ];
+    (replaceVars ./setup-py-override-version-checking.patch {
+      inherit version;
     })
   ];
 
@@ -99,11 +96,15 @@ buildPythonPackage {
     pyyaml
     pillow
     onnxruntime
+    tqdm
   ];
 
   pythonImportsCheck = [ "rapidocr_onnxruntime" ];
 
-  nativeCheckInputs = [ pytestCheckHook ];
+  nativeCheckInputs = [
+    pytestCheckHook
+    requests
+  ];
 
   # These are tests for different backends.
   disabledTestPaths = [
@@ -111,11 +112,16 @@ buildPythonPackage {
     "tests/test_paddle.py"
   ];
 
+  disabledTests = [
+    # Needs Internet access
+    "test_long_img"
+  ];
+
   meta = {
     # This seems to be related to https://github.com/microsoft/onnxruntime/issues/10038
     # Also some related issue: https://github.com/NixOS/nixpkgs/pull/319053#issuecomment-2167713362
-    broken = (stdenv.hostPlatform.isLinux && stdenv.hostPlatform.isAarch64);
-    changelog = "https://github.com/RapidAI/RapidOCR/releases/tag/v${version}";
+    badPlatforms = [ "aarch64-linux" ];
+    changelog = "https://github.com/RapidAI/RapidOCR/releases/tag/${src.tag}";
     description = "Cross platform OCR Library based on OnnxRuntime";
     homepage = "https://github.com/RapidAI/RapidOCR";
     license = with lib.licenses; [ asl20 ];

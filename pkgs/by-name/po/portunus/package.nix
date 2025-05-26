@@ -1,12 +1,12 @@
 {
   lib,
-  buildGo124Module,
+  buildGoModule,
   fetchFromGitHub,
   libxcrypt,
   nixosTests,
 }:
 
-buildGo124Module rec {
+buildGoModule rec {
   pname = "portunus";
   version = "2.1.2";
 
@@ -28,6 +28,7 @@ buildGo124Module rec {
     homepage = "https://github.com/majewsky/portunus";
     license = licenses.gpl3Plus;
     platforms = platforms.linux;
-    maintainers = with maintainers; [ majewsky ] ++ teams.c3d2.members;
+    maintainers = with maintainers; [ majewsky ];
+    teams = [ teams.c3d2 ];
   };
 }

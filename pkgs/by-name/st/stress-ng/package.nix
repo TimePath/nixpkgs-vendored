@@ -13,18 +13,18 @@
   lksctp-tools,
   zlib,
   libglvnd,
-  mesa,
+  libgbm,
 }:
 
 stdenv.mkDerivation rec {
   pname = "stress-ng";
-  version = "0.18.06";
+  version = "0.18.12";
 
   src = fetchFromGitHub {
     owner = "ColinIanKing";
-    repo = pname;
+    repo = "stress-ng";
     rev = "V${version}";
-    hash = "sha256-zQKyVzfqDzarEhb2tlndQ60GuIkL5a2fXh86wIdWLDk=";
+    hash = "sha256-utMX7bKtE2zdbOjzkwF+0Ry8Og4nSc7s4WIPYfUmQ/I=";
   };
 
   postPatch = ''
@@ -47,7 +47,7 @@ stdenv.mkDerivation rec {
       libcap
       lksctp-tools
       libglvnd
-      mesa
+      libgbm
     ];
 
   makeFlags = [

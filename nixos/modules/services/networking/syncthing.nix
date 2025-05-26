@@ -31,7 +31,7 @@ let
     # required.
     then
       "--unix-socket ${cfg.guiAddress} http://.${path}"
-    # no adjustements are needed if cfg.guiAddress is a network address
+    # no adjustments are needed if cfg.guiAddress is a network address
     else
       "${cfg.guiAddress}${path}";
 
@@ -43,6 +43,8 @@ let
     }
   ) cfg.settings.devices;
 
+  anyAutoAccept = builtins.any (dev: dev.autoAcceptFolders) devices;
+
   folders = mapAttrsToList (
     _: folder:
     folder
@@ -53,10 +55,19 @@ let
           were removed. Please use, respectively, {rescanIntervalS,fsWatcherEnabled,fsWatcherDelayS} instead.
         ''
         {
-          devices = map (
-            device:
-            if builtins.isString device then { deviceId = cfg.settings.devices.${device}.id; } else device
-          ) folder.devices;
+          devices =
+            let
+              folderDevices = folder.devices;
+            in
+            map (
+              device:
+              if builtins.isString device then
+                { deviceId = cfg.settings.devices.${device}.id; }
+              else if builtins.isAttrs device then
+                { deviceId = cfg.settings.devices.${device.name}.id; } // device
+              else
+                throw "Invalid type for devices in folder '${folderName}'; expected list or attrset."
+            ) folderDevices;
         }
   ) (filterAttrs (_: folder: folder.enable) cfg.settings.folders);
 
@@ -87,7 +98,7 @@ let
       /*
         Syncthing's rest API for the folders and devices is almost identical.
         Hence we iterate them using lib.pipe and generate shell commands for both at
-        the sime time.
+        the same time.
       */
       (lib.pipe
         {
@@ -126,9 +137,79 @@ let
               # don't exist in the array given. That's why we use here `POST`, and
               # only if s.override == true then we DELETE the relevant folders
               # afterwards.
-              (map (new_cfg: ''
-                curl -d ${lib.escapeShellArg (builtins.toJSON new_cfg)} -X POST ${s.baseAddress}
-              ''))
+              (map (
+                new_cfg:
+                let
+                  jsonPreSecretsFile = pkgs.writeTextFile {
+                    name = "${conf_type}-${new_cfg.id}-conf-pre-secrets.json";
+                    text = builtins.toJSON new_cfg;
+                  };
+                  injectSecretsJqCmd =
+                    {
+                      # There are no secrets in `devs`, so no massaging needed.
+                      "devs" = "${jq} .";
+                      "dirs" =
+                        let
+                          folder = new_cfg;
+                          devicesWithSecrets = lib.pipe folder.devices [
+                            (lib.filter (device: (builtins.isAttrs device) && device ? encryptionPasswordFile))
+                            (map (device: {
+                              deviceId = device.deviceId;
+                              variableName = "secret_${builtins.hashString "sha256" device.encryptionPasswordFile}";
+                              secretPath = device.encryptionPasswordFile;
+                            }))
+                          ];
+                          # At this point, `jsonPreSecretsFile` looks something like this:
+                          #
+                          #   {
+                          #     ...,
+                          #     "devices": [
+                          #       {
+                          #         "deviceId": "id1",
+                          #         "encryptionPasswordFile": "/etc/bar-encryption-password",
+                          #         "name": "..."
+                          #       }
+                          #     ],
+                          #   }
+                          #
+                          # We now generate a `jq` command that can replace those
+                          # `encryptionPasswordFile`s with `encryptionPassword`.
+                          # The `jq` command ends up looking like this:
+                          #
+                          #   jq --rawfile secret_DEADBEEF /etc/bar-encryption-password '
+                          #     .devices[] |= (
+                          #       if .deviceId == "id1" then
+                          #         del(.encryptionPasswordFile) |
+                          #         .encryptionPassword = $secret_DEADBEEF
+                          #       else
+                          #         .
+                          #       end
+                          #     )
+                          #   '
+                          jqUpdates = map (device: ''
+                            .devices[] |= (
+                              if .deviceId == "${device.deviceId}" then
+                                del(.encryptionPasswordFile) |
+                                .encryptionPassword = ''$${device.variableName}
+                              else
+                                .
+                              end
+                            )
+                          '') devicesWithSecrets;
+                          jqRawFiles = map (
+                            device: "--rawfile ${device.variableName} ${lib.escapeShellArg device.secretPath}"
+                          ) devicesWithSecrets;
+                        in
+                        "${jq} ${lib.concatStringsSep " " jqRawFiles} ${
+                          lib.escapeShellArg (lib.concatStringsSep "|" ([ "." ] ++ jqUpdates))
+                        }";
+                    }
+                    .${conf_type};
+                in
+                ''
+                  ${injectSecretsJqCmd} ${jsonPreSecretsFile} | curl --json @- -X POST ${s.baseAddress}
+                ''
+              ))
               (lib.concatStringsSep "\n")
             ]
             /*
@@ -143,6 +224,7 @@ let
                 '[.[].${s.GET_IdAttrName}] - $new_ids | .[]'
               )"
               for id in ''${stale_${conf_type}_ids}; do
+                >&2 echo "Deleting stale device: $id"
                 curl -X DELETE ${s.baseAddress}/$id
               done
             ''
@@ -216,7 +298,12 @@ in
 
       overrideFolders = mkOption {
         type = types.bool;
-        default = true;
+        default = !anyAutoAccept;
+        defaultText = literalMD ''
+          `true` unless any device has the
+          [autoAcceptFolders](#opt-services.syncthing.settings.devices._name_.autoAcceptFolders)
+          option set to `true`.
+        '';
         description = ''
           Whether to delete the folders which are not configured via the
           [folders](#opt-services.syncthing.settings.folders) option.
@@ -430,11 +517,48 @@ in
                       };
 
                       devices = mkOption {
-                        type = types.listOf types.str;
+                        type = types.listOf (
+                          types.oneOf [
+                            types.str
+                            (types.submodule (
+                              { ... }:
+                              {
+                                freeformType = settingsFormat.type;
+                                options = {
+                                  name = mkOption {
+                                    type = types.str;
+                                    default = null;
+                                    description = ''
+                                      The name of a device defined in the
+                                      [devices](#opt-services.syncthing.settings.devices)
+                                      option.
+                                    '';
+                                  };
+                                  encryptionPasswordFile = mkOption {
+                                    type = types.nullOr (
+                                      types.pathWith {
+                                        inStore = false;
+                                        absolute = true;
+                                      }
+                                    );
+                                    default = null;
+                                    description = ''
+                                      Path to encryption password. If set, the file will be read during
+                                      service activation, without being embedded in derivation.
+                                    '';
+                                  };
+                                };
+                              }
+                            ))
+                          ]
+                        );
                         default = [ ];
                         description = ''
                           The devices this folder should be shared with. Each device must
                           be defined in the [devices](#opt-services.syncthing.settings.devices) option.
+
+                          A list of either strings or attribute sets, where values
+                          are device names or device configurations.
                         '';
                       };
 
@@ -705,6 +829,15 @@ in
   ###### implementation
 
   config = mkIf cfg.enable {
+    assertions = [
+      {
+        assertion = !(cfg.overrideFolders && anyAutoAccept);
+        message = ''
+          services.syncthing.overrideFolders will delete auto-accepted folders
+          from the configuration, creating path conflicts.
+        '';
+      }
+    ];
 
     networking.firewall = mkIf cfg.openDefaultPorts {
       allowedTCPPorts = [ 22000 ];

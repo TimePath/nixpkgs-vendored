@@ -14,6 +14,7 @@
   libportal,
   gtk4,
   gtksourceview5,
+  nix-update-script,
 }:
 python3Packages.buildPythonApplication rec {
   pname = "errands";
@@ -59,6 +60,10 @@ python3Packages.buildPythonApplication rec {
     makeWrapperArgs+=("''${gappsWrapperArgs[@]}")
   '';
 
+  passthru = {
+    updateScript = nix-update-script { };
+  };
+
   meta = {
     description = "Manage your tasks";
     changelog = "https://github.com/mrvladus/Errands/releases/tag/${version}";
@@ -69,5 +74,6 @@ python3Packages.buildPythonApplication rec {
       luftmensch-luftmensch
       sund3RRR
     ];
+    teams = [ lib.teams.gnome-circle ];
   };
 }

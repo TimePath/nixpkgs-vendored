@@ -2,7 +2,7 @@
   stdenv,
   lib,
   fetchFromGitHub,
-  nix-update-script,
+  gitUpdater,
   alsaSupport ? stdenv.hostPlatform.isLinux,
   alsa-lib,
   autoreconfHook,
@@ -17,13 +17,13 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "sidplayfp";
-  version = "2.11.0";
+  version = "2.14.0";
 
   src = fetchFromGitHub {
     owner = "libsidplayfp";
     repo = "sidplayfp";
     rev = "v${finalAttrs.version}";
-    hash = "sha256-X2ds7pYglxvwLOHXfCULwSeWAS9l2Y3PUdSxcuugwHs=";
+    hash = "sha256-3xNwmOPROnTPCVSdBYoI+k558WK4B2I66Tvik2mK3es=";
   };
 
   strictDeps = true;
@@ -55,18 +55,19 @@ stdenv.mkDerivation (finalAttrs: {
   enableParallelBuilding = true;
 
   passthru = {
-    updateScript = nix-update-script { };
+    updateScript = gitUpdater { rev-prefix = "v"; };
   };
 
-  meta = with lib; {
+  meta = {
     description = "SID player using libsidplayfp";
     homepage = "https://github.com/libsidplayfp/sidplayfp";
-    license = with licenses; [ gpl2Plus ];
+    changelog = "https://github.com/libsidplayfp/sidplayfp/releases/tag/v${finalAttrs.version}";
+    license = with lib.licenses; [ gpl2Plus ];
     mainProgram = "sidplayfp";
-    maintainers = with maintainers; [
+    maintainers = with lib.maintainers; [
       dezgeg
       OPNA2608
     ];
-    platforms = platforms.all;
+    platforms = lib.platforms.all;
   };
 })

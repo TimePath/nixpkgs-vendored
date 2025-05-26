@@ -1,6 +1,7 @@
 {
   godot3-mono,
   nuget-to-json,
+
 }:
 
 godot3-mono.overrideAttrs (
@@ -21,7 +22,7 @@ godot3-mono.overrideAttrs (
     buildPhase = " ";
     installPhase = ''echo "No output intended. Run make-deps.sh instead." > $out'';
 
-    # This script is used to update the accompanying deps.nix file, a nix expression listing the
+    # This script is used to update the accompanying deps.json file, a JSON file listing the
     # nuget packages that the godot-mono code depends on, along with their sha256 hashes. This
     # file is referenced by the godot-mono derivation and needs to be updated every time the
     # godot version is updated. The way it works is:
@@ -31,8 +32,8 @@ godot3-mono.overrideAttrs (
     # 2) Instead of building at this point, a nuget restore is performed, downloading all the
     # nuget dependencies of godot-mono into a local folder.
     # 3) Once these have been downloaded, the nuget-to-json tool is used to generate a JSON
-    # object listing the locally obtained nuget packages, along with their sha256 hashes.
-    # 4) This JSON object is saved as deps.json in the PWD.
+    # array listing the locally obtained nuget packages, along with their sha256 hashes.
+    # 4) This JSON array is saved as deps.json in the PWD.
     #
     # This process is impure, because it entails downloading files with unknown hashes, so it
     # is run manually by the maintainer within a nix-shell environment. Running the accompanying

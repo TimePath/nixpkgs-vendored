@@ -14,12 +14,12 @@ let
       buildPackages.buildGoModule (
         args
         // rec {
-          version = "0.19.11";
+          version = "0.21.5";
           src = fetchFromGitHub {
             owner = "evanw";
             repo = "esbuild";
             rev = "v${version}";
-            hash = "sha256-NUwjzOpHA0Ijuh0E69KXx8YVS5GTnKmob9HepqugbIU=";
+            hash = "sha256-FpvXWIlt67G8w3pBKZo/mcp57LunxDmRUaCU/Ne89B8=";
           };
           vendorHash = "sha256-+BfxCyg0KkDQpHt/wycy/8CTG6YBA/VJvJFhhzUnSiQ=";
         }
@@ -28,17 +28,17 @@ let
 in
 buildNpmPackage rec {
   pname = "kaufkauflist";
-  version = "4.0.0";
+  version = "4.0.2";
 
   src = fetchFromGitea {
     domain = "codeberg.org";
     owner = "annaaurora";
     repo = "kaufkauflist";
     rev = "v${version}";
-    hash = "sha256-x30K2dYxawfebdq//9OmCCG48w0V04tDTXpvRW7lfJI=";
+    hash = "sha256-tvkicYFQewQdcz3e+ETLiCK/c3eNPlxxZNzt+OpIbN0=";
   };
 
-  npmDepsHash = "sha256-E3AXFwiRvrE2Swt7BfSfAoU5mQplSaSJ4q56pVfoEkQ=";
+  npmDepsHash = "sha256-HDv6sW6FmKZpUjymrUjz/WG9XrKgLmM6qHMAxP6gBtU=";
 
   ESBUILD_BINARY_PATH = lib.getExe esbuild';
 

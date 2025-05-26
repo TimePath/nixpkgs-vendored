@@ -1,6 +1,5 @@
 {
   asciidoctor,
-  darwin,
   fetchgit,
   git,
   installShellFiles,
@@ -28,7 +27,8 @@ rustPlatform.buildRustPackage rec {
     rev = "refs/namespaces/z6MksFqXN3Yhqk8pTJdUGLwATkRfQvwZXPqR2qMEhbS9wzpT/refs/tags/v${version}";
     hash = "sha256-M4oz9tWjI/eqV4Gz1b512MEmvsZ5u3R9y6P9VeeH9CA=";
   };
-  cargoHash = "sha256-QhTolHEzhdIkM5dn1o2CdbFy7JLCLHxd+IwcWl7MLQo=";
+  useFetchCargoVendor = true;
+  cargoHash = "sha256-SzwBQxTqQafHDtH8+OWkAMDnKh3AH0PeSMBWpHprQWM=";
 
   patches = [
     ./61865b5b5ad715e2b812087947281f0add9aa05e.patch
@@ -40,9 +40,6 @@ rustPlatform.buildRustPackage rec {
     makeWrapper
   ];
   nativeCheckInputs = [ git ];
-  buildInputs = lib.optionals stdenv.buildPlatform.isDarwin [
-    darwin.apple_sdk.frameworks.Security
-  ];
 
   # tests regularly time out on aarch64
   doCheck = stdenv.hostPlatform.isLinux && stdenv.hostPlatform.isx86;

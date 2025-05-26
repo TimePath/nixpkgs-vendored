@@ -3,23 +3,26 @@
   buildGoModule,
   fetchFromGitHub,
   installShellFiles,
+  iana-etc,
+  libredirect,
   nixosTests,
+  postgresql,
+  stdenv,
 }:
 buildGoModule rec {
   pname = "headscale";
-  version = "0.23.0";
+  version = "0.25.1";
 
   src = fetchFromGitHub {
     owner = "juanfont";
     repo = "headscale";
-    rev = "v${version}";
-    hash = "sha256-5tlnVNpn+hJayxHjTpbOO3kRInOYOFz0pe9pwjXZlBE=";
+    tag = "v${version}";
+    hash = "sha256-CrdMxRAgrDE1lJ3v9AhCN+cKOVqmIVwjE0x+msSVT+c=";
   };
 
-  # Merged post-v0.23.0, so should be removed with next release.
-  patches = [ ./patches/config-loosen-up-BaseDomain-and-ServerURL-checks.patch ];
+  vendorHash = "sha256-ZQj2A0GdLhHc7JLW7qgpGBveXXNWg9ueSG47OZQQXEw=";
 
-  vendorHash = "sha256-+8dOxPG/Q+wuHgRwwWqdphHOuop0W9dVyClyQuh7aRc=";
+  subPackages = [ "cmd/headscale" ];
 
   ldflags = [
     "-s"
@@ -28,7 +31,17 @@ buildGoModule rec {
   ];
 
   nativeBuildInputs = [ installShellFiles ];
+
+  nativeCheckInputs = [
+    libredirect.hook
+    postgresql
+  ];
+
   checkFlags = [ "-short" ];
+
+  preCheck = lib.optionalString stdenv.hostPlatform.isDarwin ''
+    export NIX_REDIRECTS=/etc/protocols=${iana-etc}/etc/protocols:/etc/services=${iana-etc}/etc/services
+  '';
 
   postInstall = ''
     installShellCompletion --cmd headscale \
@@ -61,11 +74,8 @@ buildGoModule rec {
     license = licenses.bsd3;
     mainProgram = "headscale";
     maintainers = with maintainers; [
-      nkje
-      jk
       kradalby
       misterio77
-      ghuntley
     ];
   };
 }

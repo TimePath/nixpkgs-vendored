@@ -10,15 +10,15 @@
 
 buildGoModule rec {
   pname = "gitsign";
-  version = "0.10.2";
+  version = "0.13.0";
 
   src = fetchFromGitHub {
     owner = "sigstore";
     repo = pname;
     rev = "v${version}";
-    hash = "sha256-JNCz5MVqn8PeTfYUVowIVZwtpfD+Gx9yBckter6PfXA=";
+    hash = "sha256-sxkQOqlCgS/QFfRN5Rtdih2zjiGHY6H9Kjlw0Q74W2A=";
   };
-  vendorHash = "sha256-QW+ZWYEXkhSQR4HvmPLENzY/VEfjEX43mBPhmhsEBMI=";
+  vendorHash = "sha256-CvswCIczi+MyHsluz39CnfVJEcc49wkEby67qHxv+wI=";
 
   subPackages = [
     "."
@@ -26,6 +26,7 @@ buildGoModule rec {
   ];
 
   nativeBuildInputs = [ makeWrapper ];
+  nativeCheckInputs = [ gitMinimal ];
 
   ldflags = [
     "-s"
@@ -55,5 +56,6 @@ buildGoModule rec {
       lesuisse
       developer-guy
     ];
+    mainProgram = "gitsign";
   };
 }

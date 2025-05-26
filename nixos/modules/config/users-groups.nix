@@ -133,6 +133,16 @@ let
 
       options = {
 
+        enable = mkOption {
+          type = types.bool;
+          default = true;
+          example = false;
+          description = ''
+            If set to false, the user account will not be created. This is useful for when you wish to conditionally
+            disable user accounts.
+          '';
+        };
+
         name = mkOption {
           type = types.passwdEntry types.str;
           apply =
@@ -223,7 +233,7 @@ let
         homeMode = mkOption {
           type = types.strMatching "[0-7]{1,5}";
           default = "700";
-          description = "The user's home directory mode in numeric format. See chmod(1). The mode is only applied if {option}`users.users.<name>.createHome` is true.";
+          description = "The user's home directory mode in numeric format. See {manpage}`chmod(1)`. The mode is only applied if {option}`users.users.<name>.createHome` is true.";
         };
 
         cryptHomeLuks = mkOption {
@@ -615,6 +625,7 @@ let
   usersWithoutExistingGroup = lib.filterAttrs (
     n: u: u.group != "" && !lib.elem u.group groupNames
   ) cfg.users;
+  usersWithNullShells = attrNames (filterAttrs (name: cfg: cfg.shell == null) cfg.users);
 
   spec = pkgs.writeText "users-groups.json" (
     builtins.toJSON {
@@ -640,7 +651,7 @@ let
           expires
           ;
         shell = utils.toShellPath u.shell;
-      }) cfg.users;
+      }) (filterAttrs (_: u: u.enable) cfg.users);
       groups = attrValues cfg.groups;
     }
   );
@@ -1042,12 +1053,21 @@ in
               '';
           }
           {
+            assertion = !cfg.mutableUsers -> length usersWithNullShells == 0;
+            message = ''
+              users.mutableUsers = false has been set,
+              but found users that have their shell set to null.
+              If you wish to disable login, set their shell to pkgs.shadow (the default).
+              Misconfigured users: ${lib.concatStringsSep " " usersWithNullShells}
+            '';
+          }
+          {
             # If mutableUsers is false, to prevent users creating a
             # configuration that locks them out of the system, ensure that
             # there is at least one "privileged" account that has a
             # password or an SSH authorized key. Privileged accounts are
             # root and users in the wheel group.
-            # The check does not apply when users.disableLoginPossibilityAssertion
+            # The check does not apply when users.allowNoPasswordLogin
             # The check does not apply when users.mutableUsers
             assertion =
               !cfg.mutableUsers
@@ -1081,6 +1101,21 @@ in
           flip mapAttrsToList cfg.users (
             name: user:
             [
+              (
+                let
+                  # Things fail in various ways with especially non-ascii usernames.
+                  # This regex mirrors the one from shadow's is_valid_name:
+                  # https://github.com/shadow-maint/shadow/blob/bee77ffc291dfed2a133496db465eaa55e2b0fec/lib/chkname.c#L68
+                  # though without the trailing $, because Samba 3 got its last release
+                  # over 10 years ago and is not in Nixpkgs anymore,
+                  # while later versions don't appear to require anything like that.
+                  nameRegex = "[a-zA-Z0-9_.][a-zA-Z0-9_.-]*";
+                in
+                {
+                  assertion = builtins.match nameRegex user.name != null;
+                  message = "The username \"${user.name}\" is not valid, it does not match the regex \"${nameRegex}\".";
+                }
+              )
               {
                 assertion = (user.hashedPassword != null) -> (match ".*:.*" user.hashedPassword == null);
                 message = ''
@@ -1090,9 +1125,19 @@ in
                   Please check the value of option `users.users."${user.name}".hashedPassword`.'';
               }
               {
+                assertion = user.isNormalUser && user.uid != null -> user.uid >= 1000;
+                message = ''
+                  A user cannot have a users.users.${user.name}.uid set below 1000 and set users.users.${user.name}.isNormalUser.
+                  Either users.users.${user.name}.isSystemUser must be set to true instead of users.users.${user.name}.isNormalUser
+                  or users.users.${user.name}.uid must be changed to 1000 or above.
+                '';
+              }
+              {
                 assertion =
                   let
-                    isEffectivelySystemUser = user.isSystemUser || (user.uid != null && user.uid < 1000);
+                    # we do an extra check on isNormalUser here, to not trigger this assertion when isNormalUser is set and uid to < 1000
+                    isEffectivelySystemUser =
+                      user.isSystemUser || (user.uid != null && user.uid < 1000 && !user.isNormalUser);
                   in
                   xor isEffectivelySystemUser user.isNormalUser;
                 message = ''

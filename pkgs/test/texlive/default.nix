@@ -438,6 +438,9 @@ rec {
     let
       # TODO known broken binaries
       broken = [
+        # do not know how to test without a valid build.lua
+        "ppmcheckpdf"
+
         # *.inc files in source container rather than run
         "texaccents"
 
@@ -468,6 +471,7 @@ rec {
         "latex-git-log"
         "ltxfileinfo"
         "mendex"
+        "pdflatexpicscale"
         "perltex"
         "pn2pdf"
         "psbook"
@@ -490,6 +494,8 @@ rec {
         "bibmradd"
         "biburl2doi"
         "bibzbladd"
+        "bookshelf-listallfonts"
+        "bookshelf-mkfontsel"
         "ctanupload"
         "disdvi"
         "dvibook"
@@ -502,6 +508,8 @@ rec {
       # (2) binaries that return non-zero exit code even if correctly asked for help
       ignoreExitCode = [
         "authorindex"
+        "bookshelf-listallfonts"
+        "bookshelf-mkfontsel"
         "dvibook"
         "dviconcat"
         "dvipos"
@@ -655,6 +663,8 @@ rec {
         "allcm"
         "allec"
         "chkweb"
+        "explcheck"
+        "extractbb"
         "fontinst"
         "ht*"
         "installfont-tl"

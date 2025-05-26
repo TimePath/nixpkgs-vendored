@@ -37,7 +37,7 @@
   libXScrnSaver,
   libxkbcommon,
   libdrm,
-  mesa,
+  libgbm,
   # It's unknown which version of openssl that postman expects but it seems that
   # OpenSSL 3+ seems to work fine (cf.
   # https://github.com/NixOS/nixpkgs/issues/254325). If postman breaks apparently
@@ -56,12 +56,12 @@ let
     {
       aarch64-linux = {
         arch = "arm64";
-        sha256 = "sha256-yq2J5KRv/NJDaQG7e7RKyzbJqKWRolSU9X6khHxlrNo=";
+        sha256 = "sha256-/Qfd/xn+FwYLPSWssP5JFfjMdICz6HDg30edl/Fme5A=";
       };
 
       x86_64-linux = {
         arch = "64";
-        sha256 = "sha256-fAaxrLZSXGBYr4Vu0Cz2pZwXivSTkaIF5wL217cB9qM=";
+        sha256 = "sha256-BbTYT0GHU+BmWFXG2TU8PL90eTpLcyLgnwSw9YyWT0g=";
       };
     }
     .${stdenv.hostPlatform.system} or (throw "Unsupported system: ${stdenv.hostPlatform.system}");
@@ -105,7 +105,7 @@ stdenv.mkDerivation rec {
     gtk3
     freetype
     fontconfig
-    mesa
+    libgbm
     nss
     nspr
     pango
@@ -145,7 +145,7 @@ stdenv.mkDerivation rec {
 
     source "${makeWrapper}/nix-support/setup-hook"
     wrapProgram $out/bin/${pname} \
-        --add-flags "\''${NIXOS_OZONE_WL:+\''${WAYLAND_DISPLAY:+--enable-features=UseOzonePlatform --ozone-platform=wayland}}"
+        --add-flags "\''${NIXOS_OZONE_WL:+\''${WAYLAND_DISPLAY:+--enable-features=UseOzonePlatform --ozone-platform=wayland --enable-wayland-ime=true}}"
 
     mkdir -p $out/share/icons/hicolor/128x128/apps
     ln -s $out/share/postman/resources/app/assets/icon.png $out/share/icons/postman.png

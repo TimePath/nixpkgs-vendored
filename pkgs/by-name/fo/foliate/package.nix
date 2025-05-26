@@ -20,13 +20,13 @@
 
 stdenv.mkDerivation rec {
   pname = "foliate";
-  version = "3.2.0";
+  version = "3.3.0";
 
   src = fetchFromGitHub {
     owner = "johnfactotum";
     repo = "foliate";
     tag = version;
-    hash = "sha256-y4c/nlFk0hlr773/O2yvW7VzUx0NZWpcDtk8b9wlL2s=";
+    hash = "sha256-QpWJDwatT4zOAPF+dn+Sm5xivk9SIZOvexj0M/Nyu24=";
     fetchSubmodules = true;
   };
 
@@ -55,7 +55,10 @@ stdenv.mkDerivation rec {
     homepage = "https://johnfactotum.github.io/foliate";
     changelog = "https://github.com/johnfactotum/foliate/releases/tag/${version}";
     license = licenses.gpl3Only;
-    maintainers = with maintainers; [ onny ];
+    maintainers = with maintainers; [
+      onny
+      aleksana
+    ];
     mainProgram = "foliate";
   };
 }

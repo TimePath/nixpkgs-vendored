@@ -15,7 +15,7 @@
 }:
 stdenv.mkDerivation rec {
   pname = "libgnt";
-  version = "2.14.3";
+  version = "2.14.4-dev";
 
   outputs = [
     "out"
@@ -24,7 +24,7 @@ stdenv.mkDerivation rec {
 
   src = fetchurl {
     url = "mirror://sourceforge/pidgin/${pname}-${version}.tar.xz";
-    hash = "sha256-V/VFf3KZnQuxoTmjfydG7BtaAsCU8nEKM52LzqQjYSM=";
+    hash = "sha256-GVkzqacx01dXkbiBulzArSpxXh6cTCPMqqKhfhZMluw=";
   };
 
   nativeBuildInputs =
@@ -49,7 +49,7 @@ stdenv.mkDerivation rec {
   ];
 
   postPatch = ''
-    substituteInPlace meson.build --replace \
+    substituteInPlace meson.build --replace-fail \
       "ncurses_sys_prefix = '/usr'" \
       "ncurses_sys_prefix = '${lib.getDev ncurses}'"
   '';

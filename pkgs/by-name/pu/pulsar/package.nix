@@ -15,7 +15,7 @@
   gdk-pixbuf,
   glib,
   gtk3,
-  mesa,
+  libgbm,
   nss,
   nspr,
   xorg,
@@ -36,14 +36,14 @@
 
 let
   pname = "pulsar";
-  version = "1.122.0";
+  version = "1.128.0";
 
   sourcesPath =
     {
       x86_64-linux.tarname = "Linux.${pname}-${version}.tar.gz";
-      x86_64-linux.hash = "sha256-Sx60cEQ2UAXqMujTaLkgN0Y3tIySg0TmaM0YroaX7nA=";
+      x86_64-linux.hash = "sha256-LDr5H2VchlTzHtwcDo0za9GWfKZTpXx6LZVwtgKWxxY=";
       aarch64-linux.tarname = "ARM.Linux.${pname}-${version}-arm64.tar.gz";
-      aarch64-linux.hash = "sha256-Bhk1WZm9N771CC7j+TQsQCRSPwHOVTXCpleuhXC48K8=";
+      aarch64-linux.hash = "sha256-tT55J2TDRiEcsh5vNVl2dapRdYj3yZsn0ZrfjO5qnqE=";
     }
     .${stdenv.hostPlatform.system} or (throw "Unsupported system: ${stdenv.hostPlatform.system}");
 
@@ -58,7 +58,7 @@ let
     glib
     gtk3
     libsecret
-    mesa
+    libgbm
     nss
     nspr
     libdrm

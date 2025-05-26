@@ -4,9 +4,6 @@
   pkgs,
   ...
 }:
-
-with lib;
-
 let
   settingsFormat = {
     type =
@@ -28,28 +25,28 @@ in
 {
   options = {
 
-    services.uhub = mkOption {
+    services.uhub = lib.mkOption {
       default = { };
       description = "Uhub ADC hub instances";
-      type = types.attrsOf (
-        types.submodule {
+      type = lib.types.attrsOf (
+        lib.types.submodule {
           options = {
 
-            enable = mkEnableOption "hub instance" // {
+            enable = lib.mkEnableOption "hub instance" // {
               default = true;
             };
 
-            enableTLS = mkOption {
-              type = types.bool;
+            enableTLS = lib.mkOption {
+              type = lib.types.bool;
               default = false;
               description = "Whether to enable TLS support.";
             };
 
-            settings = mkOption {
+            settings = lib.mkOption {
               inherit (settingsFormat) type;
               description = ''
                 Configuration of uhub.
-                See https://www.uhub.org/doc/config.php for a list of options.
+                See <https://www.uhub.org/doc/config.php> for a list of options.
               '';
               default = { };
               example = {
@@ -61,18 +58,18 @@ in
               };
             };
 
-            plugins = mkOption {
+            plugins = lib.mkOption {
               description = "Uhub plugin configuration.";
               type =
-                with types;
+                with lib.types;
                 listOf (submodule {
                   options = {
-                    plugin = mkOption {
+                    plugin = lib.mkOption {
                       type = path;
-                      example = literalExpression "$${pkgs.uhub}/plugins/mod_auth_sqlite.so";
+                      example = lib.literalExpression "$${pkgs.uhub}/plugins/mod_auth_sqlite.so";
                       description = "Path to plugin file.";
                     };
-                    settings = mkOption {
+                    settings = lib.mkOption {
                       description = "Settings specific to this plugin.";
                       type = with types; attrsOf str;
                       example = {

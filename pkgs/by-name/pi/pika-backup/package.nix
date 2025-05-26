@@ -3,7 +3,7 @@
   stdenv,
   fetchFromGitLab,
   rustPlatform,
-  substituteAll,
+  replaceVars,
   cargo,
   desktop-file-utils,
   git,
@@ -18,6 +18,7 @@
   gtk4,
   libadwaita,
   libsecret,
+  nix-update-script,
 }:
 
 stdenv.mkDerivation rec {
@@ -38,8 +39,7 @@ stdenv.mkDerivation rec {
   };
 
   patches = [
-    (substituteAll {
-      src = ./borg-path.patch;
+    (replaceVars ./borg-path.patch {
       borg = lib.getExe borgbackup;
     })
   ];
@@ -68,12 +68,17 @@ stdenv.mkDerivation rec {
     libsecret
   ];
 
+  passthru = {
+    updateScript = nix-update-script { };
+  };
+
   meta = with lib; {
     description = "Simple backups based on borg";
     homepage = "https://apps.gnome.org/app/org.gnome.World.PikaBackup";
     changelog = "https://gitlab.gnome.org/World/pika-backup/-/blob/v${version}/CHANGELOG.md";
     license = licenses.gpl3Plus;
     maintainers = with maintainers; [ dotlambda ];
+    teams = [ teams.gnome-circle ];
     platforms = platforms.linux;
   };
 }

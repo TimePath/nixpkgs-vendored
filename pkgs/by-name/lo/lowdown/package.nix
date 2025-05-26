@@ -16,7 +16,7 @@ stdenv.mkDerivation rec {
   pname = "lowdown${
     lib.optionalString (stdenv.hostPlatform.isDarwin && !enableDarwinSandbox) "-unsandboxed"
   }";
-  version = "1.2.0";
+  version = "1.3.2";
 
   outputs = [
     "out"
@@ -27,7 +27,7 @@ stdenv.mkDerivation rec {
 
   src = fetchurl {
     url = "https://kristaps.bsd.lv/lowdown/snapshots/lowdown-${version}.tar.gz";
-    hash = "sha512-D50eoU95ref2Q6jfRCktgiL8j7143Kuv3RxUWbzBZl9aWjyh0nKnjgl709dMM/YQwCl9PDnmYHhYH6J3ULsnXg==";
+    hash = "sha512-IQmgPm2zE+B82Zdg+ldjtU/XI+qab9YRAzwzRMYv32KKjql0YLDEgc/m6DbgyCiNBkulD0dVExCtrTM+nBFHzw==";
   };
 
   nativeBuildInputs = [

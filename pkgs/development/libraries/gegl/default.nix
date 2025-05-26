@@ -30,14 +30,14 @@
   libwebp,
   luajit,
   openexr,
-  OpenCL,
   suitesparse,
   withLuaJIT ? lib.meta.availableOn stdenv.hostPlatform luajit,
+  gimp,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "gegl";
-  version = "0.4.48";
+  version = "0.4.62";
 
   outputs = [
     "out"
@@ -47,8 +47,8 @@ stdenv.mkDerivation rec {
   outputBin = "dev";
 
   src = fetchurl {
-    url = "https://download.gimp.org/pub/gegl/${lib.versions.majorMinor version}/gegl-${version}.tar.xz";
-    hash = "sha256-QYwm2UvogF19mPbeDGglyia9dPystsGI2kdTPZ7igkc=";
+    url = "https://download.gimp.org/pub/gegl/${lib.versions.majorMinor finalAttrs.version}/gegl-${finalAttrs.version}.tar.xz";
+    hash = "sha256-WIdXY3Hr8dnpB5fRDkuafxZYIo1IJ1g+eeHbPZRQXGw=";
   };
 
   nativeBuildInputs = [
@@ -80,9 +80,6 @@ stdenv.mkDerivation rec {
       gexiv2
       openexr
       suitesparse
-    ]
-    ++ lib.optionals stdenv.hostPlatform.isDarwin [
-      OpenCL
     ]
     ++ lib.optionals stdenv.cc.isClang [
       llvmPackages.openmp
@@ -127,6 +124,12 @@ stdenv.mkDerivation rec {
   # tests fail to connect to the com.apple.fonts daemon in sandboxed mode
   doCheck = !stdenv.hostPlatform.isDarwin;
 
+  passthru = {
+    tests = {
+      inherit gimp;
+    };
+  };
+
   meta = with lib; {
     description = "Graph-based image processing framework";
     homepage = "https://www.gegl.org";
@@ -134,4 +137,4 @@ stdenv.mkDerivation rec {
     maintainers = with maintainers; [ jtojnar ];
     platforms = platforms.unix;
   };
-}
+})

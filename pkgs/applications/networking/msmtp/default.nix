@@ -15,24 +15,26 @@
   netcat-gnu,
   texinfo,
   which,
-  Security,
   withKeyring ? true,
   libsecret,
   withSystemd ? lib.meta.availableOn stdenv.hostPlatform systemd,
   systemd,
   withScripts ? true,
+  gitUpdater,
+  binlore,
+  msmtp,
 }:
 
 let
   inherit (lib) getBin getExe optionals;
 
-  version = "1.8.25";
+  version = "1.8.26";
 
   src = fetchFromGitHub {
     owner = "marlam";
     repo = "msmtp";
     rev = "msmtp-${version}";
-    hash = "sha256-UZKUpF/ZwYPM2rPDudL1O8e8LguKJh9sTcJRT3vgsf4=";
+    hash = "sha256-MV3fzjjyr7qZw/BbKgsSObX+cxDDivI+0ZlulrPFiWM=";
   };
 
   meta = with lib; {
@@ -53,14 +55,11 @@ let
       "--with-libgsasl"
     ] ++ optionals stdenv.hostPlatform.isDarwin [ "--with-macosx-keyring" ];
 
-    buildInputs =
-      [
-        gnutls
-        gsasl
-        libidn2
-      ]
-      ++ optionals stdenv.hostPlatform.isDarwin [ Security ]
-      ++ optionals withKeyring [ libsecret ];
+    buildInputs = [
+      gnutls
+      gsasl
+      libidn2
+    ] ++ optionals withKeyring [ libsecret ];
 
     nativeBuildInputs = [
       autoreconfHook
@@ -130,6 +129,7 @@ let
           ];
         fix."$MSMTP" = [ "msmtp" ];
         fake.external = [ "ping" ] ++ optionals (!withSystemd) [ "systemd-cat" ];
+        keep.source = [ "~/.msmtpqrc" ];
       };
 
       msmtp-queue = {
@@ -150,7 +150,16 @@ if withScripts then
       binaries
       scripts
     ];
-    passthru = { inherit binaries scripts; };
+    passthru = {
+      inherit binaries scripts src;
+      # msmtpq forwards most of its arguments to msmtp [1].
+      #
+      # [1]: <https://github.com/marlam/msmtp/blob/msmtp-1.8.26/scripts/msmtpq/msmtpq#L301>
+      binlore.out = binlore.synthesize msmtp ''
+        wrapper bin/msmtpq bin/msmtp
+      '';
+      updateScript = gitUpdater { rev-prefix = "msmtp-"; };
+    };
   }
 else
   binaries

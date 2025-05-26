@@ -45,7 +45,7 @@
   at-spi2-core,
   qt5,
   libdrm,
-  mesa,
+  libgbm,
   vulkan-loader,
   nss,
   nspr,
@@ -71,7 +71,7 @@ let
 in
 stdenv.mkDerivation rec {
   pname = "vivaldi";
-  version = "7.3.3635.7";
+  version = "7.3.3635.11";
 
   suffix =
     {
@@ -84,8 +84,8 @@ stdenv.mkDerivation rec {
     url = "https://downloads.vivaldi.com/${branch}/vivaldi-${branch}_${version}-1_${suffix}.deb";
     hash =
       {
-        aarch64-linux = "sha256-E/tvarNTUm0VZMxFM/FcZKM3U/psTyq4bJl2r6orpeY=";
-        x86_64-linux = "sha256-8Jy7L5BSWZVIFizW11pOfXhgeT9rP1Z2T0aDmC79fbQ=";
+        aarch64-linux = "sha256-w1/wWP3lZUQ5tBvv6XOCkoR1OCoByURBEvaaemsY19U=";
+        x86_64-linux = "sha256-kJNFPXiZekjofGtKFbGc85c8yQymhntkCBuhylwQBpE=";
       }
       .${stdenv.hostPlatform.system} or (throw "Unsupported system: ${stdenv.hostPlatform.system}");
   };
@@ -98,6 +98,7 @@ stdenv.mkDerivation rec {
   nativeBuildInputs = [
     patchelf
     makeWrapper
+    qt5.wrapQtAppsHook
   ];
 
   dontWrapQtApps = true;
@@ -137,6 +138,7 @@ stdenv.mkDerivation rec {
       systemd
       libva
       qt5.qtbase
+      qt5.qtwayland
       freetype
       fontconfig
       libXrender
@@ -150,7 +152,7 @@ stdenv.mkDerivation rec {
       pango
       cairo
       libdrm
-      mesa
+      libgbm
       vulkan-loader
       wayland
       pipewire
@@ -214,11 +216,12 @@ stdenv.mkDerivation rec {
       done
       wrapProgram "$out/bin/vivaldi" \
         --add-flags ${lib.escapeShellArg commandLineArgs} \
-        --add-flags "\''${NIXOS_OZONE_WL:+\''${WAYLAND_DISPLAY:+--ozone-platform-hint=auto --enable-features=WaylandWindowDecorations}}" \
+        --add-flags "\''${NIXOS_OZONE_WL:+\''${WAYLAND_DISPLAY:+--ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime=true}}" \
         --set-default FONTCONFIG_FILE "${fontconfig.out}/etc/fonts/fonts.conf" \
         --set-default FONTCONFIG_PATH "${fontconfig.out}/etc/fonts" \
         --suffix XDG_DATA_DIRS : ${gtk3}/share/gsettings-schemas/${gtk3.name}/ \
         --prefix PATH : ${coreutils}/bin \
+        ''${qtWrapperArgs[@]} \
         ${lib.optionalString enableWidevine "--suffix LD_LIBRARY_PATH : ${libPath}"}
     ''
     + lib.optionalString enableWidevine ''

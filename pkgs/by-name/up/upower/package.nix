@@ -19,6 +19,7 @@
   libusb1,
   glib,
   gettext,
+  polkit,
   nixosTests,
   useIMobileDevice ? true,
   libimobiledevice,
@@ -37,7 +38,7 @@ assert withDocs -> withIntrospection;
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "upower";
-  version = "1.90.4";
+  version = "1.90.6";
 
   outputs =
     [
@@ -52,7 +53,7 @@ stdenv.mkDerivation (finalAttrs: {
     owner = "upower";
     repo = "upower";
     rev = "v${finalAttrs.version}";
-    hash = "sha256-5twHuDLisVF07Y5KYwlqWMi12+p6UpARJvoBN/+tX2o=";
+    hash = "sha256-Y3MIB6a11P00B/6E3UyoyjLLP8TIT3vM2FDO7zlBz/w=";
   };
 
   patches =
@@ -69,6 +70,11 @@ stdenv.mkDerivation (finalAttrs: {
       (fetchpatch {
         url = "https://gitlab.freedesktop.org/upower/upower/-/commit/9ee76826bd41a5d3a377dfd6f5835f42ec50be9a.patch";
         hash = "sha256-E56iz/iHn+VM7Opo0a13A5nhnB9nf6C7Y1kyWzk4ZnU=";
+      })
+      # Fix style issues in the udev rules file
+      (fetchpatch {
+        url = "https://gitlab.freedesktop.org/upower/upower/-/commit/6f9d84694da56b317989b8c34250b60d833a4b29.patch";
+        hash = "sha256-xBUbf4qz9Llmw7CuKKMp/uPk7JqwjB4+p7z9kMOVRuE=";
       })
     ];
 
@@ -140,6 +146,7 @@ stdenv.mkDerivation (finalAttrs: {
 
   propagatedBuildInputs = [
     glib
+    polkit
   ];
 
   mesonFlags = [
@@ -161,7 +168,7 @@ stdenv.mkDerivation (finalAttrs: {
     patchShebangs src/linux/unittest_inspector.py
 
     substituteInPlace src/linux/integration-test.py \
-      --replace "/usr/share/dbus-1" "$out/share/dbus-1"
+      --replace-fail "/usr/share/dbus-1" "$out/share/dbus-1"
   '';
 
   preCheck = ''
@@ -248,7 +255,7 @@ stdenv.mkDerivation (finalAttrs: {
     changelog = "https://gitlab.freedesktop.org/upower/upower/-/blob/v${finalAttrs.version}/NEWS";
     description = "D-Bus service for power management";
     mainProgram = "upower";
-    maintainers = teams.freedesktop.members;
+    teams = [ teams.freedesktop ];
     platforms = platforms.linux;
     license = licenses.gpl2Plus;
   };

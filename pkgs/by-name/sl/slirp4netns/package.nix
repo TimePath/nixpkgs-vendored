@@ -13,13 +13,13 @@
 
 stdenv.mkDerivation rec {
   pname = "slirp4netns";
-  version = "1.3.1";
+  version = "1.3.2";
 
   src = fetchFromGitHub {
     owner = "rootless-containers";
     repo = "slirp4netns";
     rev = "v${version}";
-    sha256 = "sha256-dXz5gNALrVjaFGUgEFp0k47c7aWDzwLMflphe6R6GaM=";
+    sha256 = "sha256-1OiomraQ4wfrBPihGrf9sq8hPJUB45gvf7Y5j7iN8/E=";
   };
 
   nativeBuildInputs = [
@@ -43,7 +43,8 @@ stdenv.mkDerivation rec {
     homepage = "https://github.com/rootless-containers/slirp4netns";
     description = "User-mode networking for unprivileged network namespaces";
     license = licenses.gpl2Only;
-    maintainers = with maintainers; [ orivej ] ++ teams.podman.members;
+    maintainers = with maintainers; [ orivej ];
+    teams = [ teams.podman ];
     platforms = platforms.linux;
     mainProgram = "slirp4netns";
   };

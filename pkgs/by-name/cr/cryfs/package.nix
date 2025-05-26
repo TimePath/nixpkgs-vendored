@@ -21,8 +21,8 @@ stdenv.mkDerivation rec {
   version = "0.11.4";
 
   src = fetchFromGitHub {
-    owner = pname;
-    repo = pname;
+    owner = "cryfs";
+    repo = "cryfs";
     rev = version;
     hash = "sha256-OkJhLg+YzS3kDhlpUQe9A+OiVBPG/iKs6OU7aKFJ5wY=";
   };
@@ -98,6 +98,7 @@ stdenv.mkDerivation rec {
     maintainers = with maintainers; [
       peterhoeg
       c0bw3b
+      sigmasquadron
     ];
     platforms = platforms.unix;
   };

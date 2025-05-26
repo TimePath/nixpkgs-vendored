@@ -1,4 +1,5 @@
 {
+  dri-pkgconfig-stub,
   egl-wayland,
   bash,
   libepoxy,
@@ -6,6 +7,7 @@
   fontutil,
   lib,
   libdecor,
+  libgbm,
   libei,
   libGL,
   libGLU,
@@ -23,13 +25,14 @@
   libXt,
   libdrm,
   libtirpc,
-  withLibunwind ? true,
+  # Disable withLibunwind as LLVM's libunwind will conflict and does not support the right symbols.
+  withLibunwind ? !(stdenv.hostPlatform.useLLVM or false),
   libunwind,
   libxcb,
   libxkbfile,
   libxshmfence,
   libxcvt,
-  mesa,
+  mesa-gl-headers,
   meson,
   ninja,
   openssl,
@@ -74,8 +77,10 @@ stdenv.mkDerivation rec {
   ];
   buildInputs =
     [
+      dri-pkgconfig-stub
       egl-wayland
       libdecor
+      libgbm
       libepoxy
       libei
       fontutil
@@ -99,7 +104,7 @@ stdenv.mkDerivation rec {
       libxkbfile
       libxshmfence
       libxcvt
-      mesa
+      mesa-gl-headers
       openssl
       pixman
       systemd

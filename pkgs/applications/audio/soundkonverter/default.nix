@@ -19,7 +19,7 @@
   kxmlgui,
   qtbase,
   phonon,
-  taglib,
+  taglib_1,
   # optional backends
   withCD ? true,
   cdparanoia,
@@ -52,7 +52,7 @@
   withTwolame ? false,
   twolame,
   withApe ? false,
-  mac,
+  monkeysAudio,
   withWavpack ? false,
   wavpack,
 }:
@@ -71,7 +71,7 @@ let
     ++ lib.optional withSox sox
     ++ lib.optional withOpus opusTools
     ++ lib.optional withTwolame twolame
-    ++ lib.optional withApe mac
+    ++ lib.optional withApe monkeysAudio
     ++ lib.optional withWavpack wavpack
     ++ lib.optional withUnfreeAac faac
     ++ lib.optionals withMidi [
@@ -131,7 +131,7 @@ mkDerivation rec {
     qtbase
     phonon
   ];
-  buildInputs = [ taglib ] ++ runtimeDeps;
+  buildInputs = [ taglib_1 ] ++ runtimeDeps;
   # encoder plugins go to ${out}/lib so they're found by kbuildsycoca5
   cmakeFlags = [ "-DCMAKE_INSTALL_PREFIX=$out" ];
   sourceRoot = "${src.name}/src";

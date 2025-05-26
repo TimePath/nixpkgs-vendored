@@ -2,21 +2,23 @@
   lib,
   stdenv,
   fetchurl,
+
   gettext,
   pkg-config,
   perlPackages,
   libidn2,
   zlib,
-  pcre,
+  pcre2,
   libuuid,
   libiconv,
   libintl,
   nukeReferences,
   python3,
   lzip,
-  darwin,
+
   withLibpsl ? false,
   libpsl,
+
   withOpenssl ? true,
   openssl,
 }:
@@ -39,23 +41,24 @@ stdenv.mkDerivation rec {
     pkg-config
     perlPackages.perl
     lzip
-    libiconv
-    libintl
     nukeReferences
   ];
   buildInputs =
     [
       libidn2
       zlib
-      pcre
+      pcre2
       libuuid
+      libiconv
+      libintl
     ]
     ++ lib.optional withOpenssl openssl
     ++ lib.optional withLibpsl libpsl
     ++ lib.optionals stdenv.hostPlatform.isDarwin [
-      darwin.apple_sdk.frameworks.CoreServices
       perlPackages.perl
     ];
+
+  strictDeps = true;
 
   configureFlags =
     [
@@ -100,7 +103,8 @@ stdenv.mkDerivation rec {
         sed -i 's/^exit/exit 77 #/' $f
       done
     '';
-  checkInputs =
+
+  nativeCheckInputs =
     [
       perlPackages.HTTPDaemon
       python3
@@ -109,18 +113,18 @@ stdenv.mkDerivation rec {
       perlPackages.IOSocketSSL
     ];
 
-  meta = with lib; {
+  meta = {
     description = "Tool for retrieving files using HTTP, HTTPS, and FTP";
     homepage = "https://www.gnu.org/software/wget/";
-    license = licenses.gpl3Plus;
+    license = lib.licenses.gpl3Plus;
     longDescription = ''
       GNU Wget is a free software package for retrieving files using HTTP,
-       HTTPS and FTP, the most widely-used Internet protocols.  It is a
-       non-interactive commandline tool, so it may easily be called from
-       scripts, cron jobs, terminals without X-Windows support, etc.
+      HTTPS and FTP, the most widely-used Internet protocols.  It is a
+      non-interactive commandline tool, so it may easily be called from
+      scripts, cron jobs, terminals without X-Windows support, etc.
     '';
     mainProgram = "wget";
-    maintainers = with maintainers; [ fpletz ];
-    platforms = platforms.all;
+    maintainers = with lib.maintainers; [ fpletz ];
+    platforms = lib.platforms.all;
   };
 }

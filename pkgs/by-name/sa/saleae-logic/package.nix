@@ -63,8 +63,6 @@ let
 
 in
 
-assert stdenv.hostPlatform.system == "x86_64-linux";
-
 stdenv.mkDerivation rec {
   pname = "saleae-logic";
   version = "1.2.18";
@@ -133,7 +131,7 @@ stdenv.mkDerivation rec {
     homepage = "https://www.saleae.com/";
     sourceProvenance = with sourceTypes; [ binaryNativeCode ];
     license = licenses.unfree;
-    platforms = platforms.linux;
+    platforms = intersectLists platforms.x86_64 platforms.linux;
     maintainers = [ maintainers.bjornfor ];
   };
 }

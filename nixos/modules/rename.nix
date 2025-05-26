@@ -40,6 +40,10 @@ in
       systemd-logind API). Instead of using the module you can now
       simply add the brightnessctl package to environment.systemPackages.
     '')
+    (mkRemovedOptionModule [ "hardware" "gkraken" "enable" ] ''
+      gkraken was deprecated by coolercontrol and thus removed from nixpkgs.
+      Consider using programs.coolercontrol instead.
+    '')
     (mkRemovedOptionModule [ "hardware" "u2f" ] ''
       The U2F modules module was removed, as all it did was adding the
       udev rules from libu2f-host to the system. Udev gained native support
@@ -74,6 +78,10 @@ in
     (mkRemovedOptionModule [ "services" "antennas" ]
       "The antennas package and the corresponding module have been removed as they only work with tvheadend, which nobody was willing to maintain and was stuck on an unmaintained version that required FFmpeg 4; please see https://github.com/NixOS/nixpkgs/pull/332259 if you are interested in maintaining a newer version."
     )
+    (mkRemovedOptionModule [
+      "services"
+      "anbox"
+    ] "The corresponding package was removed from nixpkgs as it is not maintained upstream anymore.")
     (mkRemovedOptionModule [
       "services"
       "ankisyncd"
@@ -135,6 +143,13 @@ in
     ] "The fourStoreEndpoint module has been removed")
     (mkRemovedOptionModule [ "services" "fprot" ] "The corresponding package was removed from nixpkgs.")
     (mkRemovedOptionModule [ "services" "frab" ] "The frab module has been removed")
+    (mkRemovedOptionModule
+      [
+        "services"
+        "grafana-agent"
+      ]
+      "The grafana-agent module has been removed. Consider migrating to `grafana-alloy` (`services.alloy.enable`). See <https://grafana.com/docs/alloy/latest/set-up/migrate/>"
+    )
     (mkRemovedOptionModule [ "services" "homeassistant-satellite" ]
       "The `services.homeassistant-satellite` module has been replaced by `services.wyoming-satellite`."
     )
@@ -162,7 +177,7 @@ in
     ] "The corresponding package was removed from nixpkgs.")
     (mkRemovedOptionModule [ "services" "mathics" ] "The Mathics module has been removed")
     (mkRemovedOptionModule [ "services" "matrix-sliding-sync" ]
-      "The matrix-sliding-sync package has been removed, since matrix-synapse incorporated its functionality"
+      "The matrix-sliding-sync package has been removed, since matrix-synapse incorporated its functionality. Remove `services.sliding-sync` from your NixOS Configuration, and the `.well-known` record for `org.matrix.msc3575.proxy` from your webserver"
     )
     (mkRemovedOptionModule [ "services" "meguca" ] "Use meguca has been removed from nixpkgs")
     (mkRemovedOptionModule [ "services" "mesos" ] "The corresponding package was removed from nixpkgs.")
@@ -284,8 +299,28 @@ in
       See https://www.isc.org/blogs/isc-dhcp-eol/ for details.
       Please switch to a different implementation like kea or dnsmasq.
     '')
+    (mkRemovedOptionModule [ "services" "gsignond" ] ''
+      The corresponding package was unmaintained, abandoned upstream, used outdated library and thus removed from nixpkgs.
+    '')
+    (mkRemovedOptionModule [ "services" "haka" ] ''
+      The corresponding package was broken and removed from nixpkgs.
+    '')
     (mkRemovedOptionModule [ "services" "tedicross" ] ''
       The corresponding package was broken and removed from nixpkgs.
+    '')
+    (mkRemovedOptionModule [ "services" "rippled" ] ''
+      The corresponding package was broken, abandoned upstream and thus removed from nixpkgs.
+    '')
+    (mkRemovedOptionModule [ "services" "rippleDataApi" ] ''
+      The corresponding package was broken, abandoned upstream and thus removed from nixpkgs.
+    '')
+    (mkRemovedOptionModule [ "services" "conduwuit" ] ''
+      The conduwuit project has been discontinued by upstream.
+      See https://github.com/NixOS/nixpkgs/pull/397902 for more information.
+    '')
+    (mkRemovedOptionModule [ "services" "signald" ] ''
+      The signald project is unmaintained and has long been incompatible with the
+      official Signal servers.
     '')
 
     # Do NOT add any option renames here, see top of the file

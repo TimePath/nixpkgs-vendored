@@ -8,7 +8,6 @@
   validatePkgConfig,
   rust,
   libiconv,
-  darwin,
   curl,
   apacheHttpd,
   testers,
@@ -16,24 +15,23 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "rustls-ffi";
-  version = "0.13.0";
+  version = "0.15.0";
 
   src = fetchFromGitHub {
     owner = "rustls";
     repo = "rustls-ffi";
-    rev = "v${finalAttrs.version}";
-    hash = "sha256-Bc9bVZ2pDsG118l/SlElZpgh9F1JEgPF8LzBX7d4mhE=";
+    tag = "v${finalAttrs.version}";
+    hash = "sha256-m92kWH+J8wuGmI0msrp2aginY1K51iqgi3+u4ncmfts=";
   };
 
-  cargoDeps = rustPlatform.fetchCargoTarball {
+  cargoDeps = rustPlatform.fetchCargoVendor {
     src = finalAttrs.src;
     name = "${finalAttrs.pname}-${finalAttrs.version}";
-    hash = "sha256-gDQ9AFrJuV7SrzKCAHQBkKj6clXuPLO0DHhnvcBqRLs=";
+    hash = "sha256-gqc6en59QQpD14hOgRuGEPWLvrkyGn9tPR9vQmRAxIg=";
   };
 
   propagatedBuildInputs = lib.optionals stdenv.hostPlatform.isDarwin [
     libiconv
-    darwin.apple_sdk.frameworks.Security
   ];
 
   nativeBuildInputs = [
@@ -65,10 +63,6 @@ stdenv.mkDerivation (finalAttrs: {
     curl = curl.override {
       opensslSupport = false;
       rustlsSupport = true;
-      rustls-ffi = finalAttrs.finalPackage;
-    };
-    apacheHttpd = apacheHttpd.override {
-      modTlsSupport = true;
       rustls-ffi = finalAttrs.finalPackage;
     };
     pkg-config = testers.testMetaPkgConfig finalAttrs.finalPackage;

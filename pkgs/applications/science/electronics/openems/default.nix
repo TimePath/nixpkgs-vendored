@@ -67,6 +67,5 @@ stdenv.mkDerivation rec {
     license = licenses.gpl3;
     maintainers = with maintainers; [ matthuszagh ];
     platforms = platforms.linux;
-    badPlatforms = platforms.aarch64;
   };
 }

@@ -4,9 +4,6 @@
   pkgs,
   ...
 }:
-
-with lib;
-
 let
   cfg = config.services.telegraf;
 
@@ -17,12 +14,12 @@ in
   ###### interface
   options = {
     services.telegraf = {
-      enable = mkEnableOption "telegraf server";
+      enable = lib.mkEnableOption "telegraf server";
 
-      package = mkPackageOption pkgs "telegraf" { };
+      package = lib.mkPackageOption pkgs "telegraf" { };
 
-      environmentFiles = mkOption {
-        type = types.listOf types.path;
+      environmentFiles = lib.mkOption {
+        type = lib.types.listOf lib.types.path;
         default = [ ];
         example = [ "/run/keys/telegraf.env" ];
         description = ''
@@ -33,7 +30,7 @@ in
         '';
       };
 
-      extraConfig = mkOption {
+      extraConfig = lib.mkOption {
         default = { };
         description = "Extra configuration options for telegraf";
         type = settingsFormat.type;
@@ -52,7 +49,7 @@ in
   };
 
   ###### implementation
-  config = mkIf config.services.telegraf.enable {
+  config = lib.mkIf config.services.telegraf.enable {
     services.telegraf.extraConfig = {
       inputs = { };
       outputs = { };

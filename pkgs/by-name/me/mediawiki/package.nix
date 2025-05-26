@@ -8,11 +8,11 @@
 
 stdenvNoCC.mkDerivation rec {
   pname = "mediawiki";
-  version = "1.42.6";
+  version = "1.43.1";
 
   src = fetchurl {
     url = "https://releases.wikimedia.org/mediawiki/${lib.versions.majorMinor version}/mediawiki-${version}.tar.gz";
-    hash = "sha256-NqoZRCoGhfqqXqOKeoVZ+MjpkovPH3XQioY9kGYRW2A=";
+    hash = "sha256-PIWqnEzWw1PGeASjpY57eWFdQUHD1msQHl8660BlPWw=";
   };
 
   postPatch = ''
@@ -44,6 +44,6 @@ stdenvNoCC.mkDerivation rec {
     license = licenses.gpl2Plus;
     homepage = "https://www.mediawiki.org/";
     platforms = platforms.all;
-    maintainers = with maintainers; [ ] ++ teams.c3d2.members;
+    teams = [ teams.c3d2 ];
   };
 }

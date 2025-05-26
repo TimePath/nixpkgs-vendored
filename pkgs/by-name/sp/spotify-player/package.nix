@@ -15,14 +15,12 @@
   dbus,
   fontconfig,
   libsixel,
-  apple-sdk_11,
 
   # build options
   withStreaming ? true,
   withDaemon ? true,
   withAudioBackend ? "rodio", # alsa, pulseaudio, rodio, portaudio, jackaudio, rodiojack, sdl
   withMediaControl ? true,
-  withLyrics ? true,
   withImage ? true,
   withNotify ? true,
   withSixel ? true,
@@ -48,16 +46,17 @@ assert lib.assertOneOf "withAudioBackend" withAudioBackend [
 
 rustPlatform.buildRustPackage rec {
   pname = "spotify-player";
-  version = "0.20.1";
+  version = "0.20.5";
 
   src = fetchFromGitHub {
     owner = "aome510";
-    repo = pname;
+    repo = "spotify-player";
     tag = "v${version}";
-    hash = "sha256-SKlESIw8eAyAqR1HVW004yyL2nNVEnb4/xmf0ch3ZMo=";
+    hash = "sha256-NlMQgVkMVCVrMv4IyFtPmRkAmf2k4F0dp6e8s63aBHg=";
   };
 
-  cargoHash = "sha256-VlJ8Bz4EY2rERyOn6ifC7JAL5Mvjt0ZOzlPBOwiH6WA=";
+  useFetchCargoVendor = true;
+  cargoHash = "sha256-glQh6PzwJp5o35aXRW4+Pq2iSeGg9vjR5fJQomPpSOc=";
 
   nativeBuildInputs =
     [
@@ -74,9 +73,6 @@ rustPlatform.buildRustPackage rec {
       openssl
       dbus
       fontconfig
-    ]
-    ++ lib.optionals stdenv.hostPlatform.isDarwin [
-      apple-sdk_11 # can be removed once x86_64-darwin defaults to a newer SDK
     ]
     ++ lib.optionals withSixel [ libsixel ]
     ++ lib.optionals (withAudioBackend == "alsa") [ alsa-lib ]
@@ -103,12 +99,16 @@ rustPlatform.buildRustPackage rec {
     ++ lib.optionals (withAudioBackend != "") [ "${withAudioBackend}-backend" ]
     ++ lib.optionals withMediaControl [ "media-control" ]
     ++ lib.optionals withImage [ "image" ]
-    ++ lib.optionals withLyrics [ "lyric-finder" ]
     ++ lib.optionals withDaemon [ "daemon" ]
     ++ lib.optionals withNotify [ "notify" ]
     ++ lib.optionals withStreaming [ "streaming" ]
     ++ lib.optionals withSixel [ "sixel" ]
     ++ lib.optionals withFuzzy [ "fzf" ];
+
+  # tries to access HOME only in aarch64-darwin environment when building mac-notification-sys
+  preBuild = lib.optionalString (stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isAarch64) ''
+    export HOME=$TMPDIR
+  '';
 
   # sixel-sys is dynamically linked to libsixel
   postInstall = lib.optionals (stdenv.hostPlatform.isDarwin && withSixel) ''

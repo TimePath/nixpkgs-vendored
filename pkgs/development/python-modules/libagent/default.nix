@@ -1,6 +1,7 @@
 {
   lib,
   fetchFromGitHub,
+  backports-shutil-which,
   bech32,
   buildPythonPackage,
   setuptools,
@@ -13,7 +14,6 @@
   unidecode,
   mock,
   pytestCheckHook,
-  backports-shutil-which,
   configargparse,
   python-daemon,
   pymsgbox,
@@ -43,9 +43,12 @@ buildPythonPackage rec {
 
   build-system = [ setuptools ];
 
+  # https://github.com/romanz/trezor-agent/pull/481
+  pythonRemoveDeps = [ "backports.shutil-which" ];
+
   dependencies = [
-    unidecode
     backports-shutil-which
+    unidecode
     configargparse
     python-daemon
     pymsgbox

@@ -4,20 +4,19 @@
   pkgs,
   ...
 }:
-
-with lib;
-
 let
   top = config.services.kubernetes;
   cfg = top.addonManager;
 
-  isRBACEnabled = elem "RBAC" top.apiserver.authorizationMode;
+  isRBACEnabled = lib.elem "RBAC" top.apiserver.authorizationMode;
 
   addons = pkgs.runCommand "kubernetes-addons" { } ''
     mkdir -p $out
     # since we are mounting the addons to the addon manager, they need to be copied
-    ${concatMapStringsSep ";" (a: "cp -v ${a}/* $out/") (
-      mapAttrsToList (name: addon: pkgs.writeTextDir "${name}.json" (builtins.toJSON addon)) (cfg.addons)
+    ${lib.concatMapStringsSep ";" (a: "cp -v ${a}/* $out/") (
+      lib.mapAttrsToList (name: addon: pkgs.writeTextDir "${name}.json" (builtins.toJSON addon)) (
+        cfg.addons
+      )
     )}
   '';
 in
@@ -25,14 +24,14 @@ in
   ###### interface
   options.services.kubernetes.addonManager = with lib.types; {
 
-    bootstrapAddons = mkOption {
+    bootstrapAddons = lib.mkOption {
       description = ''
         Bootstrap addons are like regular addons, but they are applied with cluster-admin rights.
         They are applied at addon-manager startup only.
       '';
       default = { };
       type = attrsOf attrs;
-      example = literalExpression ''
+      example = lib.literalExpression ''
         {
           "my-service" = {
             "apiVersion" = "v1";
@@ -47,11 +46,11 @@ in
       '';
     };
 
-    addons = mkOption {
+    addons = lib.mkOption {
       description = "Kubernetes addons (any kind of Kubernetes resource can be an addon).";
       default = { };
       type = attrsOf (either attrs (listOf attrs));
-      example = literalExpression ''
+      example = lib.literalExpression ''
         {
           "my-service" = {
             "apiVersion" = "v1";
@@ -67,11 +66,11 @@ in
       '';
     };
 
-    enable = mkEnableOption "Kubernetes addon manager";
+    enable = lib.mkEnableOption "Kubernetes addon manager";
   };
 
   ###### implementation
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     environment.etc."kubernetes/addons".source = "${addons}/";
 
     systemd.services.kube-addon-manager = {
@@ -94,7 +93,7 @@ in
       };
     };
 
-    services.kubernetes.addonManager.bootstrapAddons = mkIf isRBACEnabled (
+    services.kubernetes.addonManager.bootstrapAddons = lib.mkIf isRBACEnabled (
       let
         name = "system:kube-addon-manager";
         namespace = "kube-system";

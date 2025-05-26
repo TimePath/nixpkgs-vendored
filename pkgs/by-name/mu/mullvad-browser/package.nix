@@ -26,7 +26,7 @@
   libXrender,
   libXt,
   libXtst,
-  mesa,
+  libgbm,
   pango,
   pciutils,
   zlib,
@@ -78,7 +78,7 @@ let
       libXrender
       libXt
       libXtst
-      mesa # for libgbm
+      libgbm
       pango
       pciutils
       stdenv.cc.cc
@@ -97,7 +97,7 @@ let
     ++ lib.optionals mediaSupport [ ffmpeg ]
   );
 
-  version = "14.5";
+  version = "14.5.2";
 
   sources = {
     x86_64-linux = fetchurl {
@@ -109,7 +109,7 @@ let
         "https://tor.eff.org/dist/mullvadbrowser/${version}/mullvad-browser-linux-x86_64-${version}.tar.xz"
         "https://tor.calyxinstitute.org/dist/mullvadbrowser/${version}/mullvad-browser-linux-x86_64-${version}.tar.xz"
       ];
-      hash = "sha256-uqwsDXbS8tfG/bgTQKvdiaPzchVhssoQccQStncNWOk=";
+      hash = "sha256-LyvrlsL/dLgoa94+JEuzbxeEl0n61ry2BcD5BlGV0sE=";
     };
   };
 
@@ -304,6 +304,7 @@ stdenv.mkDerivation rec {
     maintainers = with maintainers; [
       felschr
       panicgh
+      sigmasquadron
     ];
     # MPL2.0+, GPL+, &c.  While it's not entirely clear whether
     # the compound is "libre" in a strict sense (some components place certain

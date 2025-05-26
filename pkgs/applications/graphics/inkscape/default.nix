@@ -7,6 +7,7 @@
   callPackage,
   cmake,
   desktopToDarwinBundle,
+  fetchpatch,
   fetchurl,
   fd,
   gettext,
@@ -41,7 +42,7 @@
   potrace,
   python3,
   runCommand,
-  substituteAll,
+  replaceVars,
   wrapGAppsHook3,
   libepoxy,
   zlib,
@@ -73,11 +74,11 @@ let
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = "inkscape";
-  version = "1.4";
+  version = "1.4.2";
 
   src = fetchurl {
     url = "https://inkscape.org/release/inkscape-${finalAttrs.version}/source/archive/xz/dl/inkscape-${finalAttrs.version}.tar.xz";
-    sha256 = "sha256-xZqFRTtpmt3rzVHB3AdoTdlqEMiuxxaxlVHbUFYuE/U=";
+    sha256 = "sha256-IABTDHkX5SYMnoV1pxVP9pJmQ9IAZIfXFOMEqWPwx4I=";
   };
 
   # Inkscape hits the ARGMAX when linking on macOS. It appears to be
@@ -87,15 +88,13 @@ stdenv.mkDerivation (finalAttrs: {
   strictDeps = true;
 
   patches = [
-    (substituteAll {
-      src = ./fix-python-paths.patch;
+    (replaceVars ./fix-python-paths.patch {
       # Python is used at run-time to execute scripts,
       # e.g., those from the "Effects" menu.
       python3 = lib.getExe python3Env;
     })
-    (substituteAll {
+    (replaceVars ./fix-ps2pdf-path.patch {
       # Fix path to ps2pdf binary
-      src = ./fix-ps2pdf-path.patch;
       inherit ghostscript;
     })
   ];
@@ -108,6 +107,13 @@ stdenv.mkDerivation (finalAttrs: {
     # double-conversion is a dependency of 2geom
     substituteInPlace CMakeScripts/DefineDependsandFlags.cmake \
       --replace-fail 'find_package(DoubleConversion REQUIRED)' ""
+    # use native Python when cross-compiling
+    shopt -s globstar
+    for f in **/CMakeLists.txt; do
+      substituteInPlace $f \
+        --replace-quiet "COMMAND python3" "COMMAND ${lib.getExe python3Env.pythonOnBuildForHost}"
+    done
+    shopt -u globstar
   '';
 
   nativeBuildInputs =

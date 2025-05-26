@@ -95,7 +95,7 @@ let
               )
 
           ${
-            if builtins.isFunction test-helpers.extraTests then
+            if pkgs.lib.isFunction test-helpers.extraTests then
               test-helpers.extraTests args
             else
               test-helpers.extraTests
@@ -139,8 +139,6 @@ let
 in
 listToAttrs (
   concatMap genTests [
-    28
-    29
     30
     31
   ]

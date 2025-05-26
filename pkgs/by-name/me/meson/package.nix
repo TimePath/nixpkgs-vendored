@@ -4,37 +4,24 @@
   fetchFromGitHub,
   installShellFiles,
   coreutils,
-  darwin,
   libblocksruntime,
   llvmPackages,
-  libxcrypt,
-  openldap,
   ninja,
   pkg-config,
   python3,
-  substituteAll,
+  replaceVars,
   zlib,
 }:
 
-let
-  inherit (darwin.apple_sdk.frameworks)
-    AppKit
-    Cocoa
-    Foundation
-    LDAP
-    OpenAL
-    OpenGL
-    ;
-in
 python3.pkgs.buildPythonApplication rec {
   pname = "meson";
-  version = "1.6.0";
+  version = "1.7.2";
 
   src = fetchFromGitHub {
     owner = "mesonbuild";
     repo = "meson";
     tag = version;
-    hash = "sha256-st0dbb+GfF0KEyF+Qn/PIE2462ZrrXy8YcnrulHTI8M=";
+    hash = "sha256-On67RM3u1/XhdwgtAHve1GAJwKGCnk8IOCjNZcyDfyg=";
   };
 
   patches = [
@@ -46,8 +33,7 @@ python3.pkgs.buildPythonApplication rec {
     # are not as predictable, therefore we need to keep them in the RPATH.
     # At the moment we are keeping the paths starting with /nix/store.
     # https://github.com/NixOS/nixpkgs/issues/31222#issuecomment-365811634
-    (substituteAll {
-      src = ./001-fix-rpath.patch;
+    (replaceVars ./001-fix-rpath.patch {
       inherit (builtins) storeDir;
     })
 
@@ -76,15 +62,8 @@ python3.pkgs.buildPythonApplication rec {
     # https://github.com/NixOS/nixpkgs/issues/86131#issuecomment-711051774
     ./005-boost-Do-not-add-system-paths-on-nix.patch
 
-    # Nixpkgs cctools does not have bitcode support.
-    ./006-disable-bitcode.patch
-
     # This edge case is explicitly part of meson but is wrong for nix
     ./007-freebsd-pkgconfig-path.patch
-  ];
-
-  buildInputs = lib.optionals (python3.pythonOlder "3.9") [
-    libxcrypt
   ];
 
   nativeBuildInputs = [ installShellFiles ];
@@ -97,15 +76,6 @@ python3.pkgs.buildPythonApplication rec {
   checkInputs =
     [
       zlib
-    ]
-    ++ lib.optionals stdenv.hostPlatform.isDarwin [
-      AppKit
-      Cocoa
-      Foundation
-      LDAP
-      OpenAL
-      OpenGL
-      openldap
     ]
     ++ lib.optionals (stdenv.cc.isClang && !stdenv.hostPlatform.isDarwin) [
       # https://github.com/mesonbuild/meson/blob/bd3f1b2e0e70ef16dfa4f441686003212440a09b/test%20cases/common/184%20openmp/meson.build
@@ -174,6 +144,7 @@ python3.pkgs.buildPythonApplication rec {
   '';
 
   setupHook = ./setup-hook.sh;
+  env.hostPlatform = stdenv.targetPlatform.system;
 
   meta = {
     homepage = "https://mesonbuild.com";
@@ -189,10 +160,7 @@ python3.pkgs.buildPythonApplication rec {
       code.
     '';
     license = lib.licenses.asl20;
-    maintainers = with lib.maintainers; [
-      AndersonTorres
-      qyliss
-    ];
+    maintainers = with lib.maintainers; [ qyliss ];
     inherit (python3.meta) platforms;
   };
 }

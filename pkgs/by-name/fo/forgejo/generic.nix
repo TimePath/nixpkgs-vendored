@@ -128,7 +128,7 @@ buildGoModule rec {
     in
     [ "-skip=^${builtins.concatStringsSep "$|^" skippedTests}$" ];
 
-  preInstall = lib.optionalString (lib.versionAtLeast version "11") ''
+  preInstall = ''
     mv "$GOPATH/bin/forgejo.org" "$GOPATH/bin/gitea"
   '';
 
@@ -178,14 +178,20 @@ buildGoModule rec {
         '';
 
     tests = if lts then nixosTests.forgejo-lts else nixosTests.forgejo;
-    updateScript = nix-update-script { extraArgs = nixUpdateExtraArgs; };
+
+    updateScript = nix-update-script {
+      extraArgs = nixUpdateExtraArgs ++ [
+        "--version-regex"
+        "v(${lib.versions.major version}\\.[0-9.]+)"
+      ];
+    };
   };
 
   meta = {
     description = "Self-hosted lightweight software forge";
     homepage = "https://forgejo.org";
     changelog = "https://codeberg.org/forgejo/forgejo/releases/tag/v${version}";
-    license = if lib.versionAtLeast version "9.0.0" then lib.licenses.gpl3Plus else lib.licenses.mit;
+    license = lib.licenses.gpl3Plus;
     maintainers = with lib.maintainers; [
       emilylange
       urandom

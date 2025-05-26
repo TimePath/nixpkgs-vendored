@@ -7,14 +7,14 @@
 }:
 stdenv.mkDerivation (finalAttrs: {
   pname = "librecast";
-  version = "0.8.0";
+  version = "0.10.0";
 
   src = fetchFromGitea {
     domain = "codeberg.org";
     owner = "librecast";
     repo = "librecast";
     rev = "v${finalAttrs.version}";
-    hash = "sha256-8Qit1KFazVG+2TEmSGXiBNawvpc7Ihr/0mx4KCzBoAY=";
+    hash = "sha256-uM7S7EBoLd49+JFZjX/Pq8WbTPN25alLY5slCeqHBxI=";
   };
   buildInputs = [
     lcrq

@@ -54,10 +54,15 @@ in
 
   # `stdenv` without a C compiler. Passing in this helps avoid infinite
   # recursions, and may eventually replace passing in the full stdenv.
-  stdenvNoCC ? stdenv.override {
-    cc = null;
-    hasCC = false;
-  },
+  stdenvNoCC ? (
+    stdenv.override {
+      cc = null;
+      hasCC = false;
+    }
+    # Darwin doesn’t need an SDK in `stdenvNoCC`.  Dropping it shrinks the closure
+    # size down from ~1 GiB to ~83 MiB, which is a considerable reduction.
+    // lib.optionalAttrs stdenv.hostPlatform.isDarwin { extraBuildInputs = [ ]; }
+  ),
 
   # This is used because stdenv replacement and the stdenvCross do benefit from
   # the overridden configuration provided by the user, as opposed to the normal
@@ -226,7 +231,7 @@ let
       # Bootstrap a cross stdenv using the LLVM toolchain.
       # This is currently not possible when compiling natively,
       # so we don't need to check hostPlatform != buildPlatform.
-      crossSystem = stdenv.targetPlatform // {
+      crossSystem = stdenv.hostPlatform // {
         useLLVM = true;
         linker = "lld";
       };
@@ -274,7 +279,7 @@ let
             })
           ] ++ overlays;
           ${if stdenv.hostPlatform == stdenv.buildPlatform then "localSystem" else "crossSystem"} = {
-            parsed = makeMuslParsedPlatform stdenv.hostPlatform.parsed;
+            config = lib.systems.parse.tripleFromSystem (makeMuslParsedPlatform stdenv.hostPlatform.parsed);
           };
         }
       else
@@ -291,9 +296,12 @@ let
             })
           ] ++ overlays;
           ${if stdenv.hostPlatform == stdenv.buildPlatform then "localSystem" else "crossSystem"} = {
-            parsed = stdenv.hostPlatform.parsed // {
-              cpu = lib.systems.parse.cpuTypes.i686;
-            };
+            config = lib.systems.parse.tripleFromSystem (
+              stdenv.hostPlatform.parsed
+              // {
+                cpu = lib.systems.parse.cpuTypes.i686;
+              }
+            );
           };
         }
       else
@@ -309,9 +317,12 @@ let
             })
           ] ++ overlays;
           localSystem = {
-            parsed = stdenv.hostPlatform.parsed // {
-              cpu = lib.systems.parse.cpuTypes.x86_64;
-            };
+            config = lib.systems.parse.tripleFromSystem (
+              stdenv.hostPlatform.parsed
+              // {
+                cpu = lib.systems.parse.cpuTypes.x86_64;
+              }
+            );
           };
         }
       else
@@ -354,14 +365,24 @@ let
       ] ++ overlays;
       crossSystem = {
         isStatic = true;
-        parsed =
+        config = lib.systems.parse.tripleFromSystem (
           if stdenv.hostPlatform.isLinux then
             makeMuslParsedPlatform stdenv.hostPlatform.parsed
           else
-            stdenv.hostPlatform.parsed;
+            stdenv.hostPlatform.parsed
+        );
         gcc =
           lib.optionalAttrs (stdenv.hostPlatform.system == "powerpc64-linux") { abi = "elfv2"; }
           // stdenv.hostPlatform.gcc or { };
+      };
+    });
+
+    # Full package set with rocm on cuda off
+    # Mostly useful for asserting pkgs.pkgsRocm.torchWithRocm == pkgs.torchWithRocm and similar
+    pkgsRocm = nixpkgsFun ({
+      config = super.config // {
+        cudaSupport = false;
+        rocmSupport = true;
       };
     });
 
@@ -375,8 +396,8 @@ let
               super'.stdenv.cc.defaultHardeningFlags
               ++ [
                 "shadowstack"
+                "nostrictaliasing"
                 "pacret"
-                "stackclashprotection"
                 "trivialautovarinit"
               ]
             ) super'.stdenv;

@@ -6,10 +6,10 @@
   openssl,
   ncurses,
   libidn,
-  pcre,
+  pcre2,
   libssh,
   libmysqlclient,
-  postgresql,
+  libpq,
   samba,
   withGUI ? false,
   makeWrapper,
@@ -43,8 +43,6 @@ stdenv.mkDerivation rec {
         --replace-fail "-lcurses" "-lncurses"
     '';
 
-  env.NIX_CFLAGS_COMPILE = lib.optionalString stdenv.hostPlatform.isDarwin "-Wno-undef-prefix";
-
   nativeBuildInputs = lib.optionals withGUI [
     pkg-config
     makeWrapper
@@ -55,10 +53,10 @@ stdenv.mkDerivation rec {
     openssl
     ncurses
     libidn
-    pcre
+    pcre2
     libssh
     libmysqlclient
-    postgresql
+    libpq
     samba
   ] ++ lib.optional withGUI gtk2;
 

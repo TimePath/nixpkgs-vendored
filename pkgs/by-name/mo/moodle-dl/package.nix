@@ -7,13 +7,13 @@
 
 python3Packages.buildPythonApplication rec {
   pname = "moodle-dl";
-  version = "2.3.12";
+  version = "2.3.13";
 
   src = fetchFromGitHub {
     owner = "C0D3D3V";
     repo = "Moodle-DL";
     tag = version;
-    hash = "sha256-gf8s0+WhPQwLhS4eg3wzcDPvmhrNEgDx5yiBadpf4kI=";
+    hash = "sha256-6arwc72gu7XyT6HokSEs2TkvE2FG7mIvy4F+/i/0eJg=";
   };
 
   propagatedBuildInputs = with python3Packages; [

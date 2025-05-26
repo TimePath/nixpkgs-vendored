@@ -39,13 +39,13 @@ let
       rec {
 
         pname = "arm-trusted-firmware${lib.optionalString (platform != null) "-${platform}"}";
-        version = "2.10.0";
+        version = "2.12.1";
 
         src = fetchFromGitHub {
           owner = "ARM-software";
           repo = "arm-trusted-firmware";
-          rev = "v${version}";
-          hash = "sha256-CAuftVST9Fje/DWaaoX0K2SfWwlGMaUFG4huuwsTOSU=";
+          tag = "lts-v${version}";
+          hash = "sha256-yPWygW1swSwL3DrHPNIlTeTeV7XG4C9ALFA/+OTiz+4=";
         };
 
         patches = lib.optionals deleteHDCPBlobBeforeBuild [
@@ -61,6 +61,9 @@ let
 
         # For Cortex-M0 firmware in RK3399
         nativeBuildInputs = [ pkgsCross.arm-embedded.stdenv.cc ];
+        # Make the new toolchain guessing (from 2.11+) happy
+        # https://github.com/ARM-software/arm-trusted-firmware/blob/4ec2948fe3f65dba2f19e691e702f7de2949179c/make_helpers/toolchains/rk3399-m0.mk#L21-L22
+        rk3399-m0-oc = "${pkgsCross.arm-embedded.stdenv.cc.targetPrefix}objcopy";
 
         buildInputs = [ openssl ];
 
@@ -69,10 +72,14 @@ let
             "HOSTCC=$(CC_FOR_BUILD)"
             "M0_CROSS_COMPILE=${pkgsCross.arm-embedded.stdenv.cc.targetPrefix}"
             "CROSS_COMPILE=${stdenv.cc.targetPrefix}"
-            # binutils 2.39 regression
-            # `warning: /build/source/build/rk3399/release/bl31/bl31.elf has a LOAD segment with RWX permissions`
-            # See also: https://developer.trustedfirmware.org/T996
-            "LDFLAGS=-no-warn-rwx-segments"
+            # Make the new toolchain guessing (from 2.11+) happy
+            "CC=${stdenv.cc.targetPrefix}cc"
+            "LD=${stdenv.cc.targetPrefix}cc"
+            "AS=${stdenv.cc.targetPrefix}cc"
+            "OC=${stdenv.cc.targetPrefix}objcopy"
+            "OD=${stdenv.cc.targetPrefix}objdump"
+            # Passing OpenSSL path according to docs/design/trusted-board-boot-build.rst
+            "OPENSSL_DIR=${openssl}"
           ]
           ++ (lib.optional (platform != null) "PLAT=${platform}")
           ++ extraMakeFlags;
@@ -88,9 +95,6 @@ let
 
         hardeningDisable = [ "all" ];
         dontStrip = true;
-
-        # Fatal error: can't create build/sun50iw1p1/release/bl31/sunxi_clocks.o: No such file or directory
-        enableParallelBuilding = false;
 
         meta =
           with lib;
@@ -111,7 +115,7 @@ in
 {
   inherit buildArmTrustedFirmware;
 
-  armTrustedFirmwareTools = buildArmTrustedFirmware rec {
+  armTrustedFirmwareTools = buildArmTrustedFirmware {
     # Normally, arm-trusted-firmware builds the build tools for buildPlatform
     # using CC_FOR_BUILD (or as it calls it HOSTCC). Since want to build them
     # for the hostPlatform here, we trick it by overriding the HOSTCC setting
@@ -175,22 +179,18 @@ in
     platformCanUseHDCPBlob = true;
   };
 
+  armTrustedFirmwareRK3568 = buildArmTrustedFirmware rec {
+    extraMakeFlags = [ "bl31" ];
+    platform = "rk3568";
+    extraMeta.platforms = [ "aarch64-linux" ];
+    filesToInstall = [ "build/${platform}/release/bl31/bl31.elf" ];
+  };
+
   armTrustedFirmwareRK3588 = buildArmTrustedFirmware rec {
     extraMakeFlags = [ "bl31" ];
     platform = "rk3588";
     extraMeta.platforms = [ "aarch64-linux" ];
     filesToInstall = [ "build/${platform}/release/bl31/bl31.elf" ];
-
-    # TODO: remove this once the following get merged:
-    # 1: https://review.trustedfirmware.org/c/TF-A/trusted-firmware-a/+/21840
-    # 2: https://review.trustedfirmware.org/c/ci/tf-a-ci-scripts/+/21833
-    src = fetchFromGitLab {
-      domain = "gitlab.collabora.com";
-      owner = "hardware-enablement/rockchip-3588";
-      repo = "trusted-firmware-a";
-      rev = "002d8e85ce5f4f06ebc2c2c52b4923a514bfa701";
-      hash = "sha256-1XOG7ILIgWa3uXUmAh9WTfSGLD/76OsmWrUhIxm/zTg=";
-    };
   };
 
   armTrustedFirmwareS905 = buildArmTrustedFirmware rec {

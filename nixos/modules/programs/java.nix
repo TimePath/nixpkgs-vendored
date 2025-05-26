@@ -33,9 +33,7 @@ in
         '';
       };
 
-      package = lib.mkPackageOption pkgs "jdk" {
-        example = "jre";
-      };
+      package = lib.mkPackageOption pkgs "jdk" { example = "jre"; };
 
       binfmt = lib.mkEnableOption "binfmt to execute java jar's and classes";
 

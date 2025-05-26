@@ -4,12 +4,15 @@
   fetchFromGitHub,
   cmake,
   kwindowsystem,
+  layer-shell-qt,
   liblxqt,
   libqtxdg,
   lxqt-build-tools,
+  lxqt-session,
   pkg-config,
   qtsvg,
   qttools,
+  qtxdg-tools,
   xdg-user-dirs,
   xkeyboard_config,
   gitUpdater,
@@ -17,13 +20,13 @@
 
 stdenv.mkDerivation rec {
   pname = "lxqt-wayland-session";
-  version = "0.1.0";
+  version = "0.2.0";
 
   src = fetchFromGitHub {
     owner = "lxqt";
     repo = "lxqt-wayland-session";
     rev = version;
-    hash = "sha256-5WdfwJ89HWlXL6y9Lpgs7H3mbN/wbf+9VbP9ERPasBM=";
+    hash = "sha256-VjOLw6ByS0se9jy1VY4xhBSs26yvoffFVAc1v0gMyYk=";
   };
 
   nativeBuildInputs = [
@@ -35,15 +38,19 @@ stdenv.mkDerivation rec {
 
   buildInputs = [
     kwindowsystem
+    layer-shell-qt # for applications that need layer-shell-qt (ex: lxqt-panel)
     liblxqt
     libqtxdg
+    lxqt-session
     qtsvg
-    xdg-user-dirs
+    qtxdg-tools # allow to use xdg-utils under LXQt, similar to https://github.com/lxqt/lxqt-session/blob/2.0.0/CHANGELOG#L27
+    xdg-user-dirs # startlxqtwayland sets XDG_CURRENT_DESKTOP
   ];
 
   postPatch = ''
     substituteInPlace startlxqtwayland.in \
-      --replace-fail /usr/share/X11/xkb/rules ${xkeyboard_config}/share/X11/xkb/rules
+      --replace-fail /usr/share/X11/xkb/rules ${xkeyboard_config}/share/X11/xkb/rules \
+      --replace-fail "cp -av " "cp -av --no-preserve=mode "
 
     substituteInPlace configurations/{labwc/autostart,lxqt-hyprland.conf,lxqt-wayfire.ini} \
       --replace-fail /usr/share/lxqt/wallpapers $out/share/lxqt/wallpapers
@@ -65,6 +72,6 @@ stdenv.mkDerivation rec {
       mit
     ];
     platforms = lib.platforms.linux;
-    maintainers = lib.teams.lxqt.members;
+    teams = [ lib.teams.lxqt ];
   };
 }

@@ -6,18 +6,18 @@
 
 buildGoModule rec {
   pname = "azure-storage-azcopy";
-  version = "10.27.0";
+  version = "10.29.2";
 
   src = fetchFromGitHub {
     owner = "Azure";
     repo = "azure-storage-azcopy";
     tag = "v${version}";
-    hash = "sha256-TF0vChuM3OF/YbCsP8Vg4x609Q1QgqwBNmKUdWCHHUc=";
+    hash = "sha256-wLErYkiN5V6aZx6Vztr3Gk5XB+aOo9de5QjEbwDLBXg=";
   };
 
   subPackages = [ "." ];
 
-  vendorHash = "sha256-dYIZb8sSh1Y8yllWOSsWEpiaIwcwZL2wCet3Terl0Ro=";
+  vendorHash = "sha256-Aq38kpgQ1NQQVkF0hjMLzvK8HvxfzYARbeWmsc54Ldg=";
 
   doCheck = false;
 
@@ -30,9 +30,6 @@ buildGoModule rec {
     homepage = "https://github.com/Azure/azure-storage-azcopy";
     changelog = "https://github.com/Azure/azure-storage-azcopy/releases/tag/v${version}";
     license = licenses.mit;
-    maintainers = with maintainers; [
-      colemickens
-      kashw2
-    ];
+    maintainers = with maintainers; [ kashw2 ];
   };
 }

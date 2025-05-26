@@ -30,11 +30,11 @@
 
 stdenv.mkDerivation rec {
   pname = "qtractor";
-  version = "1.3.0";
+  version = "1.5.4";
 
   src = fetchurl {
     url = "mirror://sourceforge/qtractor/qtractor-${version}.tar.gz";
-    hash = "sha256-ufQUNQvmxxAMIAWusclPzE1zkjz93guvygi6EfAEgH4=";
+    hash = "sha256-gV6IgFA7GeneabRCk6HLZVMfnS94qbdgyJQGwwRO904=";
   };
 
   nativeBuildInputs = [
@@ -71,17 +71,13 @@ stdenv.mkDerivation rec {
     suil
   ];
 
-  meta = with lib; {
+  meta = {
     description = "Audio/MIDI multi-track sequencer";
     homepage = "https://qtractor.sourceforge.io";
-    changelog =
-      let
-        version' = builtins.replaceStrings [ "." ] [ "_" ] version;
-      in
-      "https://github.com/rncbc/qtractor/blob/qtractor_${version'}/ChangeLog";
-    license = licenses.gpl2Plus;
+    changelog = "https://github.com/rncbc/qtractor/blob/v${version}/ChangeLog";
+    license = lib.licenses.gpl2Plus;
     mainProgram = "qtractor";
     maintainers = [ ];
-    platforms = platforms.linux;
+    platforms = lib.platforms.linux;
   };
 }

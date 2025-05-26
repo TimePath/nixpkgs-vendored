@@ -1,46 +1,28 @@
 {
   lib,
-  stdenv,
   callPackage,
   fetchFromGitHub,
-  fetchpatch,
   makeWrapper,
   nixosTests,
   python3Packages,
+  nltk-data,
   writeShellScript,
+  nix-update-script,
 }:
 
 let
-  version = "1.12.0";
+  version = "2.8.0";
   src = fetchFromGitHub {
     owner = "mealie-recipes";
     repo = "mealie";
-    rev = "v${version}";
-    hash = "sha256-Lwd0P1ssAITLH256uMXNb5b1OcFAy8OVjjpnmfNVUvQ=";
+    tag = "v${version}";
+    hash = "sha256-0LUT7OdYoOZTdR/UXJO2eL2Afo2Y7GjBPIrjWUt205E=";
   };
 
   frontend = callPackage (import ./mealie-frontend.nix src version) { };
 
   pythonpkgs = python3Packages;
   python = pythonpkgs.python;
-
-  crfpp = stdenv.mkDerivation {
-    pname = "mealie-crfpp";
-    version = "unstable-2024-02-12";
-    src = fetchFromGitHub {
-      owner = "mealie-recipes";
-      repo = "crfpp";
-      rev = "c56dd9f29469c8a9f34456b8c0d6ae0476110516";
-      hash = "sha256-XNps3ZApU8m07bfPEnvip1w+3hLajdn9+L5+IpEaP0c=";
-    };
-
-    # Can remove once the `register` keyword is removed from source files
-    # Configure overwrites CXXFLAGS so patch it in the Makefile
-    postConfigure = lib.optionalString stdenv.cc.isClang ''
-      substituteInPlace Makefile \
-        --replace-fail "CXXFLAGS = " "CXXFLAGS = -std=c++14 "
-    '';
-  };
 in
 
 pythonpkgs.buildPythonApplication rec {
@@ -69,6 +51,8 @@ pythonpkgs.buildPythonApplication rec {
     gunicorn
     html2text
     httpx
+    ingredient-parser-nlp
+    itsdangerous
     jinja2
     lxml
     openai
@@ -97,15 +81,6 @@ pythonpkgs.buildPythonApplication rec {
 
     substituteInPlace mealie/__init__.py \
       --replace-fail '__version__ = ' '__version__ = "v${version}" #'
-
-    substituteInPlace mealie/services/backups_v2/alchemy_exporter.py \
-      --replace-fail 'PROJECT_DIR = ' "PROJECT_DIR = Path('$out') #"
-
-    substituteInPlace mealie/db/init_db.py \
-      --replace-fail 'PROJECT_DIR = ' "PROJECT_DIR = Path('$out') #"
-
-    substituteInPlace mealie/services/backups_v2/alchemy_exporter.py \
-      --replace-fail '"script_location", path.join(PROJECT_DIR, "alembic")' '"script_location", "${src}/alembic"'
   '';
 
   postInstall =
@@ -114,7 +89,6 @@ pythonpkgs.buildPythonApplication rec {
         ${lib.getExe pythonpkgs.gunicorn} "$@" -k uvicorn.workers.UvicornWorker mealie.app:app;
       '';
       init_db = writeShellScript "init-mealie-db" ''
-        ${python.interpreter} $OUT/${python.sitePackages}/mealie/scripts/install_model.py
         ${python.interpreter} $OUT/${python.sitePackages}/mealie/db/init_db.py
       '';
     in
@@ -122,14 +96,9 @@ pythonpkgs.buildPythonApplication rec {
       mkdir -p $out/bin $out/libexec
       rm -f $out/bin/*
 
-      substitute ${src}/alembic.ini $out/alembic.ini \
-        --replace-fail 'script_location = alembic' 'script_location = ${src}/alembic'
-
       makeWrapper ${start_script} $out/bin/mealie \
         --set PYTHONPATH "$out/${python.sitePackages}:${pythonpkgs.makePythonPath dependencies}" \
-        --set LD_LIBRARY_PATH "${crfpp}/lib" \
-        --set STATIC_FILES "${frontend}" \
-        --set PATH "${lib.makeBinPath [ crfpp ]}"
+        --set STATIC_FILES "${frontend}"
 
       makeWrapper ${init_db} $out/libexec/init_db \
         --set PYTHONPATH "$out/${python.sitePackages}:${pythonpkgs.makePythonPath dependencies}" \
@@ -137,6 +106,11 @@ pythonpkgs.buildPythonApplication rec {
     '';
 
   nativeCheckInputs = with pythonpkgs; [ pytestCheckHook ];
+
+  # Needed for tests
+  preCheck = ''
+    export NLTK_DATA=${nltk-data.averaged_perceptron_tagger_eng}
+  '';
 
   disabledTestPaths = [
     # KeyError: 'alembic_version'
@@ -148,8 +122,11 @@ pythonpkgs.buildPythonApplication rec {
     "tests/unit_tests/test_security.py"
   ];
 
-  passthru.tests = {
-    inherit (nixosTests) mealie;
+  passthru = {
+    updateScript = nix-update-script { };
+    tests = {
+      inherit (nixosTests) mealie;
+    };
   };
 
   meta = with lib; {

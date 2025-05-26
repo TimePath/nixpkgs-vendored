@@ -12,6 +12,9 @@
   pkg-config,
   texinfo,
   buildPackages,
+  grpc,
+  protobuf,
+  which,
 
   # runtime
   c-ares,
@@ -34,15 +37,8 @@
   nettools,
   nixosTests,
 
-  # FRR's configure.ac gets SNMP options by executing net-snmp-config on the build host
-  # This leads to compilation errors when cross compiling.
-  # E.g. net-snmp-config for x86_64 does not return the ARM64 paths.
-  #
-  #   SNMP_LIBS="`${NETSNMP_CONFIG} --agent-libs`"
-  #   SNMP_CFLAGS="`${NETSNMP_CONFIG} --base-cflags`"
-  snmpSupport ? stdenv.buildPlatform.canExecute stdenv.hostPlatform,
-
-  # other general options besides snmp support
+  # general options
+  snmpSupport ? true,
   rpkiSupport ? true,
   numMultipath ? 64,
   watchfrrSupport ? true,
@@ -51,6 +47,8 @@
   irdpSupport ? true,
   routeReplacementSupport ? true,
   mgmtdSupport ? true,
+  # Experimental as of 10.1, reconsider if upstream changes defaults
+  grpcSupport ? false,
 
   # routing daemon options
   bgpdSupport ? true,
@@ -82,78 +80,79 @@
   ospfApi ? true,
 }:
 
-lib.warnIf (!(stdenv.buildPlatform.canExecute stdenv.hostPlatform))
-  "cannot enable SNMP support due to cross-compilation issues with net-snmp-config"
+stdenv.mkDerivation (finalAttrs: {
+  pname = "frr";
+  version = "10.3";
 
-  stdenv.mkDerivation
-  (finalAttrs: {
-    pname = "frr";
-    version = "10.1";
+  src = fetchFromGitHub {
+    owner = "FRRouting";
+    repo = "frr";
+    rev = "frr-${finalAttrs.version}";
+    hash = "sha256-o/BG12FVypIaInXDeOj2Ymdgv1mxof9Sl0ZQA8o3YLs=";
+  };
 
-    src = fetchFromGitHub {
-      owner = "FRRouting";
-      repo = finalAttrs.pname;
-      rev = "${finalAttrs.pname}-${finalAttrs.version}";
-      hash = "sha256-pmFdxL8QpyXvpX2YiSOZ+KIoNaj1OOH6/qnVAWZLE9s=";
-    };
+  # Without the std explicitly set, we may run into abseil-cpp
+  # compilation errors.
+  CXXFLAGS = "-std=gnu++23";
 
-    patches = [
-      (fetchpatch {
-        name = "CVE-2024-44070.patch";
-        url = "https://github.com/FRRouting/frr/commit/fea4ed5043b4a523921f970a39a565d2c1ca381f.patch";
-        hash = "sha256-X9FjQeOvo92+mL1z3u5W0LBhhePDAyhFAqh8sAtNNm8=";
-      })
-    ];
-
-    nativeBuildInputs = [
+  nativeBuildInputs =
+    [
       autoreconfHook
       bison
       flex
       perl
       pkg-config
+      protobufc
       python3.pkgs.sphinx
       texinfo
+    ]
+    ++ lib.optionals grpcSupport [
+      which
+    ];
+
+  buildInputs =
+    [
+      c-ares
+      json_c
+      libunwind
+      libyang
+      openssl
+      pam
+      pcre2
       protobufc
+      python3
+      readline
+      rtrlib
+      zeromq
+    ]
+    ++ lib.optionals stdenv.hostPlatform.isLinux [
+      libcap
+    ]
+    ++ lib.optionals snmpSupport [
+      net-snmp
+    ]
+    ++ lib.optionals (lib.meta.availableOn stdenv.hostPlatform elfutils) [
+      elfutils
+    ]
+    ++ lib.optionals grpcSupport [
+      grpc
+      protobuf
     ];
 
-    buildInputs =
-      [
-        c-ares
-        json_c
-        libunwind
-        libyang
-        openssl
-        pam
-        pcre2
-        protobufc
-        python3
-        readline
-        rtrlib
-        zeromq
-      ]
-      ++ lib.optionals stdenv.hostPlatform.isLinux [
-        libcap
-      ]
-      ++ lib.optionals snmpSupport [
-        net-snmp
-      ]
-      ++ lib.optionals (lib.meta.availableOn stdenv.hostPlatform elfutils) [
-        elfutils
-      ];
+  # otherwise in cross-compilation: "configure: error: no working python version found"
+  depsBuildBuild = [
+    buildPackages.python3
+  ];
 
-    # otherwise in cross-compilation: "configure: error: no working python version found"
-    depsBuildBuild = [
-      buildPackages.python3
-    ];
+  # cross-compiling: clippy is compiled with the build host toolchain, split it out to ease
+  # navigation in dependency hell
+  clippy-helper = buildPackages.callPackage ./clippy-helper.nix {
+    frrVersion = finalAttrs.version;
+    frrSource = finalAttrs.src;
+  };
 
-    # cross-compiling: clippy is compiled with the build host toolchain, split it out to ease
-    # navigation in dependency hell
-    clippy-helper = buildPackages.callPackage ./clippy-helper.nix {
-      frrVersion = finalAttrs.version;
-      frrSource = finalAttrs.src;
-    };
-
-    configureFlags = [
+  configureFlags =
+    [
       "--disable-silent-rules"
       "--disable-exampledir"
       "--enable-configfile-mask=0640"
@@ -174,6 +173,7 @@ lib.warnIf (!(stdenv.buildPlatform.canExecute stdenv.hostPlatform))
       (lib.strings.enableFeature irdpSupport "irdp")
       (lib.strings.enableFeature routeReplacementSupport "rr-semantics")
       (lib.strings.enableFeature mgmtdSupport "mgmtd")
+      (lib.strings.enableFeature grpcSupport "grpc")
 
       # routing protocols
       (lib.strings.enableFeature bgpdSupport "bgpd")
@@ -203,59 +203,63 @@ lib.warnIf (!(stdenv.buildPlatform.canExecute stdenv.hostPlatform))
       (lib.strings.enableFeature ospfApi "ospfapi")
       # Cumulus options
       (lib.strings.enableFeature cumulusSupport "cumulus")
+    ]
+    ++ lib.optionals snmpSupport [
+      # Used during build for paths, `dev` has build shebangs so can be run during build.
+      "NETSNMP_CONFIG=${lib.getDev net-snmp}/bin/net-snmp-config"
     ];
 
-    postPatch = ''
-      substituteInPlace tools/frr-reload \
-        --replace-quiet /usr/lib/frr/ $out/libexec/frr/
-      sed -i '/^PATH=/ d' tools/frr.in tools/frrcommon.sh.in
+  postPatch = ''
+    substituteInPlace tools/frr-reload \
+      --replace-quiet /usr/lib/frr/ $out/libexec/frr/
+    sed -i '/^PATH=/ d' tools/frr.in tools/frrcommon.sh.in
+  '';
+
+  doCheck = true;
+
+  nativeCheckInputs = [
+    nettools
+    python3.pkgs.pytest
+  ];
+
+  enableParallelBuilding = true;
+
+  meta = with lib; {
+    homepage = "https://frrouting.org/";
+    description = "FRR BGP/OSPF/ISIS/RIP/RIPNG routing daemon suite";
+    longDescription = ''
+      FRRouting (FRR) is a free and open source Internet routing protocol suite
+      for Linux and Unix platforms. It implements BGP, OSPF, RIP, IS-IS, PIM,
+      LDP, BFD, Babel, PBR, OpenFabric and VRRP, with alpha support for EIGRP
+      and NHRP.
+
+      FRR’s seamless integration with native Linux/Unix IP networking stacks
+      makes it a general purpose routing stack applicable to a wide variety of
+      use cases including connecting hosts/VMs/containers to the network,
+      advertising network services, LAN switching and routing, Internet access
+      routers, and Internet peering.
+
+      FRR has its roots in the Quagga project. In fact, it was started by many
+      long-time Quagga developers who combined their efforts to improve on
+      Quagga’s well-established foundation in order to create the best routing
+      protocol stack available. We invite you to participate in the FRRouting
+      community and help shape the future of networking.
+
+      Join the ranks of network architects using FRR for ISPs, SaaS
+      infrastructure, web 2.0 businesses, hyperscale services, and Fortune 500
+      private clouds.
     '';
-
-    doCheck = true;
-
-    nativeCheckInputs = [
-      nettools
-      python3.pkgs.pytest
+    license = with licenses; [
+      gpl2Plus
+      lgpl21Plus
     ];
+    maintainers = with maintainers; [
+      woffs
+      thillux
+    ];
+    # adapt to platforms stated in http://docs.frrouting.org/en/latest/overview.html#supported-platforms
+    platforms = (platforms.linux ++ platforms.freebsd ++ platforms.netbsd ++ platforms.openbsd);
+  };
 
-    enableParallelBuilding = true;
-
-    meta = with lib; {
-      homepage = "https://frrouting.org/";
-      description = "FRR BGP/OSPF/ISIS/RIP/RIPNG routing daemon suite";
-      longDescription = ''
-        FRRouting (FRR) is a free and open source Internet routing protocol suite
-        for Linux and Unix platforms. It implements BGP, OSPF, RIP, IS-IS, PIM,
-        LDP, BFD, Babel, PBR, OpenFabric and VRRP, with alpha support for EIGRP
-        and NHRP.
-
-        FRR’s seamless integration with native Linux/Unix IP networking stacks
-        makes it a general purpose routing stack applicable to a wide variety of
-        use cases including connecting hosts/VMs/containers to the network,
-        advertising network services, LAN switching and routing, Internet access
-        routers, and Internet peering.
-
-        FRR has its roots in the Quagga project. In fact, it was started by many
-        long-time Quagga developers who combined their efforts to improve on
-        Quagga’s well-established foundation in order to create the best routing
-        protocol stack available. We invite you to participate in the FRRouting
-        community and help shape the future of networking.
-
-        Join the ranks of network architects using FRR for ISPs, SaaS
-        infrastructure, web 2.0 businesses, hyperscale services, and Fortune 500
-        private clouds.
-      '';
-      license = with licenses; [
-        gpl2Plus
-        lgpl21Plus
-      ];
-      maintainers = with maintainers; [
-        woffs
-        thillux
-      ];
-      # adapt to platforms stated in http://docs.frrouting.org/en/latest/overview.html#supported-platforms
-      platforms = (platforms.linux ++ platforms.freebsd ++ platforms.netbsd ++ platforms.openbsd);
-    };
-
-    passthru.tests = { inherit (nixosTests) frr; };
-  })
+  passthru.tests = { inherit (nixosTests) frr; };
+})

@@ -189,6 +189,8 @@ rec {
 
         runHook postBuild
       '';
+
+      dontCheckForBrokenSymlinks = true;
     };
 
   # This can be used as a shellHook in mkYarnPackage. It brings the built node_modules into
@@ -452,6 +454,8 @@ rec {
 
             runHook postInstall
           '';
+
+        dontCheckForBrokenSymlinks = true;
 
         doDist = attrs.doDist or true;
 

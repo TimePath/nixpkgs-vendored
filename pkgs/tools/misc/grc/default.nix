@@ -50,7 +50,6 @@ buildPythonApplication rec {
     maintainers = with maintainers; [
       azahi
       lovek323
-      AndersonTorres
       peterhoeg
     ];
     platforms = platforms.unix;

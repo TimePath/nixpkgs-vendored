@@ -36,6 +36,17 @@ let
       };
     } extraConfig;
   testCases = {
+    startup = {
+      name = "startup";
+      nodes.client = {
+        networking.useDHCP = false;
+        networking.networkmanager.enable = true;
+      };
+      testScript = ''
+        with subtest("NetworkManager is started automatically at boot"):
+          client.wait_for_unit("NetworkManager.service")
+      '';
+    };
     static = {
       name = "static";
       nodes = {

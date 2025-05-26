@@ -17,7 +17,7 @@
 
 buildPythonPackage rec {
   pname = "bc-detect-secrets";
-  version = "1.5.18";
+  version = "1.5.42";
   pyproject = true;
 
   disabled = pythonOlder "3.8";
@@ -26,7 +26,7 @@ buildPythonPackage rec {
     owner = "bridgecrewio";
     repo = "detect-secrets";
     tag = version;
-    hash = "sha256-5PGEpdCMS9AerX9GZDFen7nhwPY393g1zo9Th9lUOE0=";
+    hash = "sha256-ADK9zopoO7rOslJx3imxiKbziVK6oInfYHytgTVbq/w=";
   };
 
   build-system = [ setuptools ];

@@ -15,13 +15,13 @@
 
 stdenv.mkDerivation rec {
   pname = "tgt";
-  version = "1.0.93";
+  version = "1.0.95";
 
   src = fetchFromGitHub {
     owner = "fujita";
-    repo = pname;
+    repo = "tgt";
     rev = "v${version}";
-    hash = "sha256-0Yfah8VxmbBe1J1OMhG6kyHlGBBAed8F9uStjMs6S2E=";
+    hash = "sha256-e7rI8/WQl1L78l2Nk9ajomRucPwsSqZ7fLSHSw11jeY=";
   };
 
   nativeBuildInputs = [

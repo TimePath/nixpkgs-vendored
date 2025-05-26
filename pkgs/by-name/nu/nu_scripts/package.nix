@@ -5,15 +5,15 @@
   unstableGitUpdater,
 }:
 
-stdenvNoCC.mkDerivation rec {
+stdenvNoCC.mkDerivation {
   pname = "nu_scripts";
-  version = "0-unstable-2024-10-03";
+  version = "0-unstable-2025-05-05";
 
   src = fetchFromGitHub {
     owner = "nushell";
-    repo = pname;
-    rev = "743ccc08ee9b46703b1afaf4d77b59bf723a6d41";
-    hash = "sha256-4vGUZtDkywHIc1sgu5jU+95rQfl9B2eoGWzfH7xSMac=";
+    repo = "nu_scripts";
+    rev = "4ecbb0e04e0a944145c86ec8bf3e4fc7ca3958a5";
+    hash = "sha256-ssqSZnc8YnCB/62eN9KQzf+cm686/NFKcj4M2sd0XxM=";
   };
 
   installPhase = ''
@@ -30,7 +30,7 @@ stdenvNoCC.mkDerivation rec {
   meta = {
     description = "Place to share Nushell scripts with each other";
     homepage = "https://github.com/nushell/nu_scripts";
-    license = lib.licenses.free;
+    license = lib.licenses.mit;
 
     platforms = lib.platforms.unix;
     maintainers = [ lib.maintainers.CardboardTurkey ];

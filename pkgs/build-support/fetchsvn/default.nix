@@ -2,6 +2,7 @@
   lib,
   stdenvNoCC,
   buildPackages,
+  cacert,
   subversion,
   glibcLocales,
   sshSupport ? true,
@@ -55,6 +56,7 @@ else
     name = name_;
     builder = ./builder.sh;
     nativeBuildInputs = [
+      cacert
       subversion
       glibcLocales
     ] ++ lib.optional sshSupport openssh;

@@ -12,11 +12,10 @@
   libGL,
   libX11,
   pkg-config,
-  OpenGL,
   runtimeShell,
   withXorg ? true,
   testers,
-  mesa,
+  libgbm,
 }:
 
 stdenv.mkDerivation (finalAttrs: {
@@ -52,8 +51,7 @@ stdenv.mkDerivation (finalAttrs: {
     ++ lib.optionals withXorg [
       libX11
       libGL
-    ]
-    ++ lib.optionals stdenv.hostPlatform.isDarwin [ OpenGL ];
+    ];
 
   configureFlags = [
     "--enable-ILU"
@@ -87,7 +85,7 @@ stdenv.mkDerivation (finalAttrs: {
     mainProgram = "ilur";
     license = licenses.lgpl2;
     pkgConfigModules = [ "IL" ];
-    inherit (mesa.meta) platforms;
+    inherit (libgbm.meta) platforms;
     maintainers = [ ];
   };
 })

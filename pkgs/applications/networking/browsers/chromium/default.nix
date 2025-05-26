@@ -39,11 +39,7 @@
 }:
 
 let
-  stdenv =
-    if lib.versionAtLeast upstream-info.version "132" then
-      pkgs.rustPackages_1_83.rustc.llvmPackages.stdenv
-    else
-      pkgs.rustc.llvmPackages.stdenv;
+  stdenv = pkgs.rustc.llvmPackages.stdenv;
 
   # Helper functions for changes that depend on specific versions:
   warnObsoleteVersionConditional =
@@ -75,42 +71,32 @@ let
   chromium = rec {
     inherit stdenv upstream-info;
 
-    mkChromiumDerivation = callPackage ./common.nix (
-      {
-        inherit chromiumVersionAtLeast versionRange;
-        inherit
-          proprietaryCodecs
-          cupsSupport
-          pulseSupport
-          ungoogled
-          ;
-        gnChromium = buildPackages.gn.overrideAttrs (oldAttrs: {
-          version = if (upstream-info.deps.gn ? "version") then upstream-info.deps.gn.version else "0";
-          src = fetchgit {
-            url = "https://gn.googlesource.com/gn";
-            inherit (upstream-info.deps.gn) rev hash;
-          };
-
-          # Relax hardening as otherwise gn unstable 2024-06-06 and later fail with:
-          # cc1plus: error: '-Wformat-security' ignored without '-Wformat' [-Werror=format-security]
-          hardeningDisable = [ "format" ];
-
-          # At the time of writing, gn is at v2024-05-13 and has a backported patch.
-          # This patch appears to be already present in v2024-09-09 (from M130), which
-          # results in the patch not applying and thus failing the build.
-          # As a work around until gn is updated again, we filter specifically that patch out.
-          patches = lib.filter (e: lib.getName e != "LFS64.patch") oldAttrs.patches;
-        });
-      }
-      // lib.optionalAttrs (lib.versionAtLeast upstream-info.version "132") {
-        buildPackages = buildPackages // {
-          rustc = buildPackages.rustPackages_1_83.rustc;
+    mkChromiumDerivation = callPackage ./common.nix ({
+      inherit chromiumVersionAtLeast versionRange;
+      inherit
+        proprietaryCodecs
+        cupsSupport
+        pulseSupport
+        ungoogled
+        ;
+      gnChromium = buildPackages.gn.overrideAttrs (oldAttrs: {
+        version = if (upstream-info.deps.gn ? "version") then upstream-info.deps.gn.version else "0";
+        src = fetchgit {
+          url = "https://gn.googlesource.com/gn";
+          inherit (upstream-info.deps.gn) rev hash;
         };
-        pkgsBuildBuild = pkgsBuildBuild // {
-          rustc = pkgsBuildBuild.rustPackages_1_83.rustc;
-        };
-      }
-    );
+
+        # Relax hardening as otherwise gn unstable 2024-06-06 and later fail with:
+        # cc1plus: error: '-Wformat-security' ignored without '-Wformat' [-Werror=format-security]
+        hardeningDisable = [ "format" ];
+
+        # At the time of writing, gn is at v2024-05-13 and has a backported patch.
+        # This patch appears to be already present in v2024-09-09 (from M130), which
+        # results in the patch not applying and thus failing the build.
+        # As a work around until gn is updated again, we filter specifically that patch out.
+        patches = lib.filter (e: lib.getName e != "LFS64.patch") oldAttrs.patches;
+      });
+    });
 
     browser = callPackage ./browser.nix {
       inherit chromiumVersionAtLeast enableWideVine ungoogled;
@@ -189,7 +175,7 @@ stdenv.mkDerivation {
       mkdir -p "$out/bin"
 
       makeWrapper "${browserBinary}" "$out/bin/chromium" \
-        --add-flags "\''${NIXOS_OZONE_WL:+\''${WAYLAND_DISPLAY:+--ozone-platform-hint=auto --enable-features=WaylandWindowDecorations}}" \
+        --add-flags "\''${NIXOS_OZONE_WL:+\''${WAYLAND_DISPLAY:+--ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime=true}}" \
         --add-flags ${lib.escapeShellArg commandLineArgs}
 
       ed -v -s "$out/bin/chromium" << EOF

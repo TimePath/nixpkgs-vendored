@@ -8,11 +8,13 @@
   which,
   rustPlatform,
   emscripten,
-  Security,
+  openssl,
+  pkg-config,
   callPackage,
   linkFarm,
   substitute,
-  CoreServices,
+  installShellFiles,
+  buildPackages,
   enableShared ? !stdenv.hostPlatform.isStatic,
   enableStatic ? stdenv.hostPlatform.isStatic,
   webUISupport ? false,
@@ -26,10 +28,10 @@ let
   # to update:
   # 1) change all these hashes
   # 2) nix-build -A tree-sitter.updater.update-all-grammars
-  # 3) Set GITHUB_TOKEN env variable to avoid api rate limit (Use a Personal Access Token from https://github.com/settings/tokens It does not need any permissions)
+  # 3) Set NIXPKGS_GITHUB_TOKEN env variable to avoid api rate limit (Use a Personal Access Token from https://github.com/settings/tokens It does not need any permissions)
   # 4) run the ./result script that is output by that (it updates ./grammars)
-  version = "0.24.6";
-  hash = "sha256-L7F2/S22knqEdB2hxfqLe5Tcgk0WQqBdFQ7BvHFl4EI=";
+  version = "0.25.3";
+  hash = "sha256-xafeni6Z6QgPiKzvhCT2SyfPn0agLHo47y+6ExQXkzE=";
 
   src = fetchFromGitHub {
     owner = "tree-sitter";
@@ -170,34 +172,30 @@ rustPlatform.buildRustPackage {
   pname = "tree-sitter";
   inherit src version;
 
-  cargoHash = "sha256-mk3aw1aFu7N+b4AQL5kiaHuIAuJv24KonFeGKid427Q=";
+  useFetchCargoVendor = true;
+  cargoHash = "sha256-rjUn8F6WSxLQGrFzK23q4ClLePSpcMN2+i7rC02Fisk=";
 
-  buildInputs = lib.optionals stdenv.hostPlatform.isDarwin [
-    Security
-    CoreServices
-  ];
-  nativeBuildInputs = [ which ] ++ lib.optionals webUISupport [ emscripten ];
+  buildInputs =
+    [ installShellFiles ]
+    ++ lib.optionals webUISupport [
+      openssl
+    ];
+  nativeBuildInputs =
+    [ which ]
+    ++ lib.optionals webUISupport [
+      emscripten
+      pkg-config
+    ];
 
-  patches = lib.optionals webUISupport [
+  patches = lib.optionals (!webUISupport) [
     (substitute {
-      src = ./fix-paths.patch;
-      substitutions = [
-        "--subst-var-by"
-        "emcc"
-        "${emscripten}/bin/emcc"
-      ];
+      src = ./remove-web-interface.patch;
     })
   ];
 
-  postPatch = lib.optionalString (!webUISupport) ''
-    # remove web interface
-    sed -e '/pub mod playground/d' \
-        -i cli/src/lib.rs
-    sed -e 's/playground,//' \
-        -e 's/playground::serve(&grammar_path.*$/println!("ERROR: web-ui is not available in this nixpkgs build; enable the webUISupport"); std::process::exit(1);/' \
-        -i cli/src/main.rs
-    sed -e 's/playground::serve(.*$/println!("ERROR: web-ui is not available in this nixpkgs build; enable the webUISupport"); std::process::exit(1);/' \
-        -i cli/src/main.rs
+  postPatch = lib.optionalString webUISupport ''
+    substituteInPlace cli/loader/src/lib.rs \
+        --replace-fail 'let emcc_name = if cfg!(windows) { "emcc.bat" } else { "emcc" };' 'let emcc_name = "${lib.getExe' emscripten "emcc"}";'
   '';
 
   # Compile web assembly with emscripten. The --debug flag prevents us from
@@ -206,14 +204,27 @@ rustPlatform.buildRustPackage {
   preBuild = lib.optionalString webUISupport ''
     mkdir -p .emscriptencache
     export EM_CACHE=$(pwd)/.emscriptencache
-    bash ./script/build-wasm --debug
+    cargo run --package xtask -- build-wasm --debug
   '';
 
-  postInstall = ''
-    PREFIX=$out make install
-    ${lib.optionalString (!enableShared) "rm $out/lib/*.so{,.*}"}
-    ${lib.optionalString (!enableStatic) "rm $out/lib/*.a"}
-  '';
+  postInstall =
+    ''
+      PREFIX=$out make install
+      ${lib.optionalString (!enableShared) "rm $out/lib/*.so{,.*}"}
+      ${lib.optionalString (!enableStatic) "rm $out/lib/*.a"}
+    ''
+    + lib.optionalString (stdenv.buildPlatform.canExecute stdenv.hostPlatform) ''
+      installShellCompletion --cmd tree-sitter \
+        --bash <("$out/bin/tree-sitter" complete --shell bash) \
+        --zsh <("$out/bin/tree-sitter" complete --shell zsh) \
+        --fish <("$out/bin/tree-sitter" complete --shell fish)
+    ''
+    + lib.optionalString (!stdenv.buildPlatform.canExecute stdenv.hostPlatform) ''
+      installShellCompletion --cmd tree-sitter \
+        --bash "${buildPackages.tree-sitter}"/share/bash-completion/completions/*.bash \
+        --zsh "${buildPackages.tree-sitter}"/share/zsh/site-functions/* \
+        --fish "${buildPackages.tree-sitter}"/share/fish/*/*
+    '';
 
   # test result: FAILED. 120 passed; 13 failed; 0 ignored; 0 measured; 0 filtered out
   doCheck = false;
@@ -257,6 +268,9 @@ rustPlatform.buildRustPackage {
       * Dependency-free so that the runtime library (which is written in pure C) can be embedded in any application
     '';
     license = lib.licenses.mit;
-    maintainers = with lib.maintainers; [ Profpatsch ];
+    maintainers = with lib.maintainers; [
+      Profpatsch
+      uncenter
+    ];
   };
 }

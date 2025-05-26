@@ -20,7 +20,7 @@
   libgit2-glib,
   libhandy,
   libpeas,
-  libsoup,
+  libsoup_2_4,
   vte,
   ctags,
 }:
@@ -57,7 +57,7 @@ stdenv.mkDerivation rec {
     libgit2-glib
     libhandy
     libpeas
-    libsoup
+    libsoup_2_4
     vte
   ];
 
@@ -77,7 +77,7 @@ stdenv.mkDerivation rec {
     homepage = "https://github.com/elementary/code";
     license = licenses.gpl3Plus;
     platforms = platforms.linux;
-    maintainers = teams.pantheon.members;
+    teams = [ teams.pantheon ];
     mainProgram = "io.elementary.code";
   };
 }

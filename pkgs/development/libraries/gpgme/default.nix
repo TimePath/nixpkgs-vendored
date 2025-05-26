@@ -21,7 +21,7 @@
 
 stdenv.mkDerivation rec {
   pname = "gpgme";
-  version = "1.24.0";
+  version = "1.24.2";
   pyproject = true;
 
   outputs = [
@@ -34,7 +34,7 @@ stdenv.mkDerivation rec {
 
   src = fetchurl {
     url = "mirror://gnupg/gpgme/gpgme-${version}.tar.bz2";
-    hash = "sha256-YeOmrYkyP+z6/xdrwXKPuMMxLy+qg0JNnVB3uiD199o=";
+    hash = "sha256-4RsaDjYXd+nlX0igPYkJbiq/CMY9hLcBfP4dzgZjlYE=";
   };
 
   patches = [
@@ -104,6 +104,8 @@ stdenv.mkDerivation rec {
   };
 
   meta = with lib; {
+    # fatal error: 'QtCore/qcompare.h' file not found
+    broken = qtbase != null && stdenv.hostPlatform.isDarwin;
     homepage = "https://gnupg.org/software/gpgme/index.html";
     changelog = "https://git.gnupg.org/cgi-bin/gitweb.cgi?p=gpgme.git;f=NEWS;hb=gpgme-${version}";
     description = "Library for making GnuPG easier to use";

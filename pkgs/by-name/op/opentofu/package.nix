@@ -15,16 +15,16 @@
 let
   package = buildGoModule rec {
     pname = "opentofu";
-    version = "1.8.7";
+    version = "1.9.1";
 
     src = fetchFromGitHub {
       owner = "opentofu";
       repo = "opentofu";
-      rev = "v${version}";
-      hash = "sha256-OLXR9aA94KcIsZxk8gOZxZsljMKuymScuYcoj9W5Hj4=";
+      tag = "v${version}";
+      hash = "sha256-YZMv17fnvzgzm35MXFkvMc5JAuPnyapa41H8Ob4t88c=";
     };
 
-    vendorHash = "sha256-6M/uqwhNruIPx5srbimKuDJaFiZkyosoZQXWjxa6GxY=";
+    vendorHash = "sha256-avfyMwYv8nKLCUHSExsPvYQrt9sMKZNPHFB/YFGQs2s=";
     ldflags = [
       "-s"
       "-w"
@@ -81,7 +81,7 @@ let
         terraform {
           required_providers {
             random = {
-              source  = "registry.terraform.io/hashicorp/random"
+              source  = "hashicorp/random"
             }
           }
         }
@@ -162,13 +162,16 @@ let
           passthru = package.passthru // passthru;
 
           buildCommand = ''
-            # Create wrappers for terraform plugins because Terraform only
+            # Create wrappers for terraform plugins because OpenTofu only
             # walks inside of a tree of files.
+            # Also replace registry.terraform.io dir with registry.opentofu.org,
+            # so OpenTofu can find the plugins.
             for providerDir in ${toString actualPlugins}
             do
               for file in $(find $providerDir/libexec/terraform-providers -type f)
               do
                 relFile=''${file#$providerDir/}
+                relFile=''${relFile/registry.terraform.io/registry.opentofu.org}
                 mkdir -p $out/$(dirname $relFile)
                 cat <<WRAPPER > $out/$relFile
             #!${runtimeShell}

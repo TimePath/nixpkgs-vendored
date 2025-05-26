@@ -51,6 +51,7 @@ let
       cfg.provision.idmAdminPasswordFile
       cfg.provision.adminPasswordFile
     ]
+    ++ optional (cfg.provision.extraJsonFile != null) cfg.provision.extraJsonFile
     ++ mapAttrsToList (_: x: x.basicSecretFile) cfg.provision.systems.oauth2
   );
   secretDirectories = unique (
@@ -182,6 +183,12 @@ let
         fi
       '';
 
+  finalJson =
+    if cfg.provision.extraJsonFile != null then
+      "<(${lib.getExe pkgs.jq} -s '.[0] * .[1]' ${provisionStateJson} ${cfg.provision.extraJsonFile})"
+    else
+      provisionStateJson;
+
   postStartScript = pkgs.writeShellScript "post-start" ''
     set -euo pipefail
 
@@ -207,7 +214,7 @@ let
         ${optionalString (!cfg.provision.autoRemove) "--no-auto-remove"} \
         ${optionalString cfg.provision.acceptInvalidCerts "--accept-invalid-certs"} \
         --url "${cfg.provision.instanceUrl}" \
-        --state ${provisionStateJson}
+        --state ${finalJson}
   '';
 
   serverPort =
@@ -231,7 +238,10 @@ in
     enableServer = mkEnableOption "the Kanidm server";
     enablePam = mkEnableOption "the Kanidm PAM and NSS integration";
 
-    package = mkPackageOption pkgs "kanidm" { };
+    package = mkPackageOption pkgs "kanidm" {
+      example = "kanidm_1_4";
+      extraDescription = "If not set will receive a specific version based on stateVersion. Set to `pkgs.kanidm` to always receive the latest version, with the understanding that this could introduce breaking changes.";
+    };
 
     serverSettings = mkOption {
       type = types.submodule {
@@ -428,6 +438,19 @@ in
         default = true;
       };
 
+      extraJsonFile = mkOption {
+        description = ''
+          A JSON file for provisioning persons, groups & systems.
+          Options set in this file take precedence over values set using the other options.
+          In the case of duplicates, `jq` will remove all but the last one
+          when merging this file with the options.
+          The accepted JSON schema can be found at <https://github.com/oddlama/kanidm-provision#json-schema>.
+          Note: theoretically `jq` cannot merge nested types, but this does not pose an issue as kanidm-provision's JSON scheme does not use nested types.
+        '';
+        type = types.nullOr types.path;
+        default = null;
+      };
+
       groups = mkOption {
         description = "Provisioning of kanidm groups";
         default = { };
@@ -537,6 +560,16 @@ in
                 '';
                 type = types.nullOr types.path;
                 example = "/run/secrets/some-oauth2-basic-secret";
+                default = null;
+              };
+
+              imageFile = mkOption {
+                description = ''
+                  Application image to display in the WebUI.
+                  Kanidm supports "image/jpeg", "image/png", "image/gif", "image/svg+xml", and "image/webp".
+                  The image will be uploaded each time kanidm-provision is run.
+                '';
+                type = types.nullOr types.path;
                 default = null;
               };
 
@@ -734,7 +767,7 @@ in
             -> cfg.package.enableSecretProvisioning;
           message = ''
             Specifying an admin account password or oauth2 basicSecretFile requires kanidm to be built with the secret provisioning patches.
-            You may want to set `services.kanidm.package = pkgs.kanidm.withSecretProvisioning;`.
+            You may want to set `services.kanidm.package = pkgs.kanidmWithSecretProvisioning;`.
           '';
         }
         # Entity names must be globally unique:
@@ -753,38 +786,46 @@ in
           }
         )
       ]
-      ++ flip mapAttrsToList (filterPresent cfg.provision.persons) (
-        person: personCfg:
-        assertGroupsKnown "services.kanidm.provision.persons.${person}.groups" personCfg.groups
-      )
-      ++ flip mapAttrsToList (filterPresent cfg.provision.groups) (
-        group: groupCfg:
-        assertEntitiesKnown "services.kanidm.provision.groups.${group}.members" groupCfg.members
-      )
+      ++ (optionals (cfg.provision.extraJsonFile == null) (
+        flip mapAttrsToList (filterPresent cfg.provision.persons) (
+          person: personCfg:
+          assertGroupsKnown "services.kanidm.provision.persons.${person}.groups" personCfg.groups
+        )
+      ))
+      ++ (optionals (cfg.provision.extraJsonFile == null) (
+        flip mapAttrsToList (filterPresent cfg.provision.groups) (
+          group: groupCfg:
+          assertEntitiesKnown "services.kanidm.provision.groups.${group}.members" groupCfg.members
+        )
+      ))
       ++ concatLists (
         flip mapAttrsToList (filterPresent cfg.provision.systems.oauth2) (
           oauth2: oauth2Cfg:
-          [
-            (assertGroupsKnown "services.kanidm.provision.systems.oauth2.${oauth2}.scopeMaps" (
+          (optional (cfg.provision.extraJsonFile == null) (
+            assertGroupsKnown "services.kanidm.provision.systems.oauth2.${oauth2}.scopeMaps" (
               attrNames oauth2Cfg.scopeMaps
-            ))
-            (assertGroupsKnown "services.kanidm.provision.systems.oauth2.${oauth2}.supplementaryScopeMaps" (
+            )
+          ))
+          ++ (optional (cfg.provision.extraJsonFile == null) (
+            assertGroupsKnown "services.kanidm.provision.systems.oauth2.${oauth2}.supplementaryScopeMaps" (
               attrNames oauth2Cfg.supplementaryScopeMaps
-            ))
-          ]
+            )
+          ))
           ++ concatLists (
             flip mapAttrsToList oauth2Cfg.claimMaps (
               claim: claimCfg: [
-                (assertGroupsKnown "services.kanidm.provision.systems.oauth2.${oauth2}.claimMaps.${claim}.valuesByGroup" (
-                  attrNames claimCfg.valuesByGroup
+                (mkIf (cfg.provision.extraJsonFile == null) (
+                  assertGroupsKnown "services.kanidm.provision.systems.oauth2.${oauth2}.claimMaps.${claim}.valuesByGroup" (
+                    attrNames claimCfg.valuesByGroup
+                  )
                 ))
                 # At least one group must map to a value in each claim map
-                {
+                (mkIf (cfg.provision.extraJsonFile == null) {
                   assertion =
                     (cfg.provision.enable && cfg.enableServer)
                     -> any (xs: xs != [ ]) (attrValues claimCfg.valuesByGroup);
                   message = "services.kanidm.provision.systems.oauth2.${oauth2}.claimMaps.${claim} does not specify any values for any group";
-                }
+                })
                 # Public clients cannot define a basic secret
                 {
                   assertion =
@@ -810,6 +851,16 @@ in
           )
         )
       );
+
+    services.kanidm.package =
+      let
+        pkg =
+          if lib.versionAtLeast config.system.stateVersion "24.11" then
+            pkgs.kanidm_1_4
+          else
+            lib.warn "No default kanidm package found for stateVersion = '${config.system.stateVersion}'. Using unpinned version. Consider setting `services.kanidm.package = pkgs.kanidm_1_x` to avoid upgrades introducing breaking changes." pkgs.kanidm;
+      in
+      lib.mkDefault pkg;
 
     environment.systemPackages = mkIf cfg.enableClient [ cfg.package ];
 
@@ -867,7 +918,6 @@ in
           TemporaryFileSystem = "/:ro";
         }
       ];
-      environment.RUST_LOG = "info";
     };
 
     systemd.services.kanidm-unixd = mkIf cfg.enablePam {

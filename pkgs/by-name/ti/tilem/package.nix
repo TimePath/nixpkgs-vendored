@@ -27,6 +27,7 @@ stdenv.mkDerivation rec {
     libticables2
     libticalcs2
   ];
+  patches = [ ./gcc14-fix.patch ];
   env.NIX_CFLAGS_COMPILE = toString [ "-lm" ];
   meta = with lib; {
     homepage = "http://lpg.ticalc.org/prj_tilem/";
@@ -34,7 +35,7 @@ stdenv.mkDerivation rec {
     license = licenses.gpl3Plus;
     maintainers = with maintainers; [
       siraben
-      luc65r
+      clevor
     ];
     platforms = platforms.linux ++ platforms.darwin;
     mainProgram = "tilem2";

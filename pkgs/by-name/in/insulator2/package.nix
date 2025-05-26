@@ -7,7 +7,7 @@
   openssl,
   pkg-config,
   freetype,
-  libsoup,
+  libsoup_2_4,
   gtk3,
   webkitgtk_4_0,
   perl,
@@ -21,7 +21,6 @@
   rustc,
   jq,
   moreutils,
-  fetchpatch,
 }:
 
 stdenv.mkDerivation rec {
@@ -30,7 +29,7 @@ stdenv.mkDerivation rec {
 
   src = fetchFromGitHub {
     owner = "andrewinci";
-    repo = pname;
+    repo = "insulator2";
     rev = "v${version}";
     hash = "sha256-34JRIB7/x7miReWOxR/m+atjfUiE3XGyh9OBSbMg3m4=";
   };
@@ -86,7 +85,7 @@ stdenv.mkDerivation rec {
     dbus
     openssl.out
     freetype
-    libsoup
+    libsoup_2_4
     gtk3
     webkitgtk_4_0
   ];

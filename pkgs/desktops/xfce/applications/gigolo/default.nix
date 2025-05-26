@@ -8,10 +8,10 @@
 mkXfceDerivation {
   category = "apps";
   pname = "gigolo";
-  version = "0.5.3";
+  version = "0.5.4";
   odd-unstable = false;
 
-  sha256 = "sha256-dxaFuKbSqhj/l5JV31cI+XzgdghfbcVwVtwmRiZeff8=";
+  sha256 = "sha256-gRv1ZQLgwwzFERnco2Dm2PkT/BNDIZU6fX+HdhiRCJk=";
 
   buildInputs = [
     gtk3
@@ -22,6 +22,6 @@ mkXfceDerivation {
     description = "Frontend to easily manage connections to remote filesystems";
     mainProgram = "gigolo";
     license = with licenses; [ gpl2Only ];
-    maintainers = with maintainers; [ ] ++ teams.xfce.members;
+    teams = [ teams.xfce ];
   };
 }

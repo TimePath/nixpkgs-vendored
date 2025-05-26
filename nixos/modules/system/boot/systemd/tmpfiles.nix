@@ -12,6 +12,20 @@ let
   initrdCfg = config.boot.initrd.systemd.tmpfiles;
   systemd = config.systemd.package;
 
+  attrsWith' =
+    placeholder: elemType:
+    types.attrsWith {
+      inherit elemType placeholder;
+    };
+
+  escapeArgument = lib.strings.escapeC [
+    "\t"
+    "\n"
+    "\r"
+    " "
+    "\\"
+  ];
+
   settingsOption = {
     description = ''
       Declare systemd-tmpfiles rules to create, delete, and clean up volatile
@@ -30,15 +44,16 @@ let
       };
     };
     default = { };
-    type = types.attrsOf (
-      types.attrsOf (
-        types.attrsOf (
+    type = attrsWith' "config-name" (
+      attrsWith' "path" (
+        attrsWith' "tmpfiles-type" (
           types.submodule (
             { name, config, ... }:
             {
               options.type = mkOption {
                 type = types.str;
                 default = name;
+                defaultText = "‹tmpfiles-type›";
                 example = "d";
                 description = ''
                   The type of operation to perform on the file.
@@ -48,7 +63,7 @@ let
 
                   Please see the upstream documentation for the available types and
                   more details:
-                  <https://www.freedesktop.org/software/systemd/man/tmpfiles.d>
+                  {manpage}`tmpfiles.d(5)`
                 '';
               };
               options.mode = mkOption {
@@ -107,7 +122,7 @@ let
 
                   Please see the upstream documentation for the meaning of this
                   parameter in different situations:
-                  <https://www.freedesktop.org/software/systemd/man/tmpfiles.d>
+                  {manpage}`tmpfiles.d(5)`
                 '';
               };
             }
@@ -119,7 +134,7 @@ let
 
   # generates a single entry for a tmpfiles.d rule
   settingsEntryToRule = path: entry: ''
-    '${entry.type}' '${path}' '${entry.mode}' '${entry.user}' '${entry.group}' '${entry.age}' ${entry.argument}
+    '${entry.type}' '${path}' '${entry.mode}' '${entry.user}' '${entry.group}' '${entry.age}' ${escapeArgument entry.argument}
   '';
 
   # generates a list of tmpfiles.d rules from the attrs (paths) under tmpfiles.settings.<name>
@@ -192,7 +207,25 @@ in
           "boot.initrd.systemd.storePaths will lead to errors in the future."
           "Found these problematic files: ${lib.concatStringsSep ", " paths}"
         ]
-      );
+      )
+      ++ (lib.flatten (
+        lib.mapAttrsToList (
+          name: paths:
+          lib.mapAttrsToList (
+            path: entries:
+            lib.mapAttrsToList (
+              type': entry:
+              lib.optional (lib.match ''.*\\([nrt]|x[0-9A-Fa-f]{2}).*'' entry.argument != null) (
+                lib.concatStringsSep " " [
+                  "The argument option of ${name}.${type'}.${path} appears to"
+                  "contain escape sequences, which will be escaped again."
+                  "Unescape them if this is not intended: \"${entry.argument}\""
+                ]
+              )
+            ) entries
+          ) paths
+        ) cfg.settings
+      ));
 
     systemd.additionalUpstreamSystemUnits = [
       "systemd-tmpfiles-clean.service"
@@ -354,7 +387,7 @@ in
         description = "Create Volatile Files and Directories in the Real Root";
         after = [ "initrd-fs.target" ];
         before = [
-          "initrd-nixos-activation.service"
+          "initrd.target"
           "shutdown.target"
           "initrd-switch-root.target"
         ];

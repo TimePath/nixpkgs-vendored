@@ -9,20 +9,21 @@
   pkg-config,
   makeWrapper,
   nixosTests,
+  pkgsCross,
   gitUpdater,
   enableDecLocator ? true,
 }:
 
 stdenv.mkDerivation rec {
   pname = "xterm";
-  version = "395";
+  version = "397";
 
   src = fetchurl {
     urls = [
       "ftp://ftp.invisible-island.net/xterm/${pname}-${version}.tgz"
       "https://invisible-mirror.net/archives/xterm/${pname}-${version}.tgz"
     ];
-    hash = "sha256-KG48qlk46uOOICgnYhVnYp3+quaJ6AcLQTyhE5gJPcg=";
+    hash = "sha256-Lpt0K5y6ROzsWAdOUTI39s1tWSPxc3yzak5WJfSuhmI=";
   };
 
   patches = [ ./sixel-256.support.patch ];
@@ -95,6 +96,7 @@ stdenv.mkDerivation rec {
     tests = {
       customTest = nixosTests.xterm;
       standardTest = nixosTests.terminal-emulators.xterm;
+      musl = pkgsCross.musl64.xterm;
     };
 
     updateScript = gitUpdater {

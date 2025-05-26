@@ -5,7 +5,8 @@ let
       {
         imports = [ ./common/wayland-cage.nix ];
 
-        services.cage.program = "${pkgs.vscodium}/bin/codium";
+        # We scale vscodium to help OCR find the small "Untitled" text.
+        services.cage.program = "${pkgs.vscodium}/bin/codium --force-device-scale-factor=2";
 
         environment.variables.NIXOS_OZONE_WL = "1";
         environment.variables.DISPLAY = "do not use";
@@ -23,7 +24,7 @@ let
         virtualisation.memorySize = 2047;
         services.xserver.enable = true;
         services.xserver.displayManager.sessionCommands = ''
-          ${pkgs.vscodium}/bin/codium
+          ${pkgs.vscodium}/bin/codium --force-device-scale-factor=2
         '';
         test-support.displayManager.auto.user = "alice";
       };
@@ -61,14 +62,14 @@ let
           codium_running.wait() # type: ignore[union-attr]
           with codium_running: # type: ignore[union-attr]
               # Wait until vscodium is visible. "File" is in the menu bar.
-              machine.wait_for_text('Welcome')
+              machine.wait_for_text('(Get|Started|with|Customize|theme)')
               machine.screenshot('start_screen')
 
               test_string = 'testfile'
 
               # Create a new file
               machine.send_key('ctrl-n')
-              machine.wait_for_text('Untitled')
+              machine.wait_for_text('(Untitled|Select|language|template|dismiss)')
               machine.screenshot('empty_editor')
 
               # Type a string

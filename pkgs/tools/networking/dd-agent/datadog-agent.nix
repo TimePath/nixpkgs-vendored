@@ -2,7 +2,7 @@
   lib,
   stdenv,
   cmake,
-  buildGo122Module,
+  buildGoModule,
   makeWrapper,
   fetchFromGitHub,
   pythonPackages,
@@ -43,14 +43,14 @@ let
   };
 
 in
-buildGo122Module rec {
+buildGoModule rec {
   pname = "datadog-agent";
   inherit src version;
 
   doCheck = false;
 
   vendorHash =
-    if stdenv.isDarwin then
+    if stdenv.hostPlatform.isDarwin then
       "sha256-3Piq5DPMTZUEjqNkw5HZY25An2kATX6Jac9unQfZnZc="
     else
       "sha256-FR0Et3DvjJhbYUPy9mpN0QCJ7QDU4VRZFUTL0J1FSXw=";

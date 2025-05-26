@@ -4,18 +4,13 @@
   fetchurl,
   pkg-config,
   gtk-doc,
-  gobject-introspection,
-  gjs,
   nixosTests,
   pkgsCross,
   curl,
   glib,
-  systemd,
   xz,
   e2fsprogs,
-  libsoup,
-  glib-networking,
-  wrapGAppsNoGuiHook,
+  libsoup_3,
   gpgme,
   which,
   makeWrapper,
@@ -34,6 +29,20 @@
   docbook-xsl-nons,
   docbook_xml_dtd_42,
   python3,
+  buildPackages,
+  withComposefs ? false,
+  composefs,
+  withGjs ? lib.meta.availableOn stdenv.hostPlatform gjs,
+  gjs,
+  withIntrospection ?
+    lib.meta.availableOn stdenv.hostPlatform gobject-introspection
+    && stdenv.hostPlatform.emulatorAvailable buildPackages,
+  gobject-introspection,
+  withSystemd ? lib.meta.availableOn stdenv.hostPlatform systemd,
+  systemd,
+  replaceVars,
+  openssl,
+  ostree-full,
 }:
 
 let
@@ -43,9 +52,9 @@ let
     ]
   );
 in
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "ostree";
-  version = "2024.8";
+  version = "2025.2";
 
   outputs = [
     "out"
@@ -55,57 +64,83 @@ stdenv.mkDerivation rec {
   ];
 
   src = fetchurl {
-    url = "https://github.com/ostreedev/ostree/releases/download/v${version}/libostree-${version}.tar.xz";
-    sha256 = "sha256-4hNuEWZp8RT/c0nxLimfY8C+znM0UWSUFKjc2FuGPD8=";
+    url = "https://github.com/ostreedev/ostree/releases/download/v${finalAttrs.version}/libostree-${finalAttrs.version}.tar.xz";
+    hash = "sha256-8kSkCMkJmYp3jhJ/zCLBtQK00BPxXyaUj0fMcv/i7vQ=";
   };
 
-  nativeBuildInputs = [
-    autoconf
-    automake
-    libtool
-    pkg-config
-    gtk-doc
-    gobject-introspection
-    which
-    makeWrapper
-    bison
-    libxslt
-    docbook-xsl-nons
-    docbook_xml_dtd_42
-    wrapGAppsNoGuiHook
+  patches = [
+    # Workarounds for installed tests failing in pseudoterminal
+    # https://github.com/ostreedev/ostree/issues/1592
+    ./fix-1592.patch
+
+    # Hard-code paths in installed tests
+    (replaceVars ./fix-test-paths.patch {
+      python3 = testPython.interpreter;
+      openssl = "${openssl}/bin/openssl";
+    })
   ];
 
-  buildInputs = [
-    curl
-    glib
-    systemd
-    e2fsprogs
-    libsoup
-    glib-networking
-    gpgme
-    fuse3
-    libselinux
-    libsodium
-    libcap
-    libarchive
-    bzip2
-    xz
-    util-linuxMinimal # for libmount
+  nativeBuildInputs =
+    [
+      autoconf
+      automake
+      libtool
+      pkg-config
+      glib
+      gtk-doc
+      which
+      makeWrapper
+      bison
+      libxslt
+      docbook-xsl-nons
+      docbook_xml_dtd_42
+    ]
+    ++ lib.optionals withIntrospection [
+      gobject-introspection
+    ];
 
-    # for installed tests
-    testPython
-    gjs
-  ];
+  buildInputs =
+    [
+      curl
+      glib
+      e2fsprogs
+      libsoup_3 # for trivial-httpd for tests
+      gpgme
+      fuse3
+      libselinux
+      libsodium
+      libcap
+      libarchive
+      bzip2
+      xz
+      util-linuxMinimal # for libmount
+
+      # for installed tests
+      testPython
+    ]
+    ++ lib.optionals withComposefs [
+      (lib.getDev composefs)
+    ]
+    ++ lib.optionals withGjs [
+      gjs
+    ]
+    ++ lib.optionals withSystemd [
+      systemd
+    ];
 
   enableParallelBuilding = true;
 
-  configureFlags = [
-    "--with-curl"
-    "--with-systemdsystemunitdir=${placeholder "out"}/lib/systemd/system"
-    "--with-systemdsystemgeneratordir=${placeholder "out"}/lib/systemd/system-generators"
-    "--enable-installed-tests"
-    "--with-ed25519-libsodium"
-  ];
+  configureFlags =
+    [
+      "--with-curl"
+      "--with-systemdsystemunitdir=${placeholder "out"}/lib/systemd/system"
+      "--with-systemdsystemgeneratordir=${placeholder "out"}/lib/systemd/system-generators"
+      "--enable-installed-tests"
+      "--with-ed25519-libsodium"
+    ]
+    ++ lib.optionals withComposefs [
+      "--with-composefs"
+    ];
 
   makeFlags = [
     "installed_testdir=${placeholder "installedTests"}/libexec/installed-tests/libostree"
@@ -124,10 +159,10 @@ stdenv.mkDerivation rec {
     let
       typelibPath = lib.makeSearchPath "/lib/girepository-1.0" [
         (placeholder "out")
-        gobject-introspection
+        glib.out
       ];
     in
-    ''
+    lib.optionalString withIntrospection ''
       for test in $installedTests/libexec/installed-tests/libostree/*.js; do
         wrapProgram "$test" --prefix GI_TYPELIB_PATH : "${typelibPath}"
       done
@@ -137,6 +172,7 @@ stdenv.mkDerivation rec {
     tests = {
       musl = pkgsCross.musl64.ostree;
       installedTests = nixosTests.installed-tests.ostree;
+      inherit ostree-full;
     };
   };
 
@@ -145,6 +181,6 @@ stdenv.mkDerivation rec {
     homepage = "https://ostreedev.github.io/ostree/";
     license = licenses.lgpl2Plus;
     platforms = platforms.linux;
-    maintainers = with maintainers; [ copumpkin ];
+    maintainers = [ ];
   };
-}
+})

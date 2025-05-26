@@ -22,6 +22,7 @@
   wayland,
   zbar,
   glycin-loaders,
+  nix-update-script,
 }:
 
 stdenv.mkDerivation (finalAttrs: {
@@ -82,12 +83,17 @@ stdenv.mkDerivation (finalAttrs: {
     )
   '';
 
+  passthru = {
+    updateScript = nix-update-script { };
+  };
+
   meta = {
     description = "Two-factor authentication code generator for GNOME";
     mainProgram = "authenticator";
     homepage = "https://gitlab.gnome.org/World/Authenticator";
     license = lib.licenses.gpl3Plus;
     maintainers = with lib.maintainers; [ austinbutler ];
+    teams = [ lib.teams.gnome-circle ];
     platforms = lib.platforms.linux;
   };
 })

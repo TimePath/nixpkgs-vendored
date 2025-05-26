@@ -4,7 +4,7 @@
   fetchFromGitHub,
   cmake,
   curl,
-  darwin,
+  apple-sdk,
   fftwSinglePrec,
   netcdf,
   pcre,
@@ -30,12 +30,11 @@ stdenv.mkDerivation (finalAttrs: {
   nativeBuildInputs = [ cmake ];
 
   env = {
-    NIX_LDFLAGS = "-lxml2 -L${lib.getLib (libxml2.override { enableHttp = true; })}/lib";
+    NIX_LDFLAGS = "-lxml2 -L${lib.getLib libxml2}/lib";
     NIX_CFLAGS_COMPILE =
       lib.optionalString stdenv.cc.isClang "-Wno-implicit-function-declaration "
       + lib.optionalString (
-        stdenv.isDarwin
-        && lib.versionOlder (darwin.apple_sdk.MacOSX-SDK.version or darwin.apple_sdk.sdk.version) "13.3"
+        stdenv.hostPlatform.isDarwin && lib.versionOlder apple-sdk.version "13.3"
       ) "-D__LAPACK_int=int";
   };
 
@@ -48,21 +47,11 @@ stdenv.mkDerivation (finalAttrs: {
       dcw-gmt
       gshhg-gmt
     ]
-    ++ (
-      if stdenv.isDarwin then
-        with darwin.apple_sdk.frameworks;
-        [
-          Accelerate
-          CoreGraphics
-          CoreVideo
-        ]
-      else
-        [
-          fftwSinglePrec
-          blas
-          lapack
-        ]
-    );
+    ++ lib.optionals (!stdenv.hostPlatform.isDarwin) [
+      fftwSinglePrec
+      blas
+      lapack
+    ];
 
   propagatedBuildInputs = [ ghostscript ];
 
@@ -83,7 +72,7 @@ stdenv.mkDerivation (finalAttrs: {
       (lib.cmakeBool "GMT_INSTALL_MODULE_LINKS" false)
       (lib.cmakeFeature "LICENSE_RESTRICTED" "LGPL")
     ]
-    ++ (lib.optionals (!stdenv.isDarwin) [
+    ++ (lib.optionals (!stdenv.hostPlatform.isDarwin) [
       (lib.cmakeFeature "FFTW3_ROOT" "${fftwSinglePrec.dev}")
       (lib.cmakeFeature "LAPACK_LIBRARY" "${lib.getLib lapack}/lib/liblapack.so")
       (lib.cmakeFeature "BLAS_LIBRARY" "${lib.getLib blas}/lib/libblas.so")

@@ -16,6 +16,7 @@
   bzip2,
   expat,
   libffi,
+  libuuid,
   libxcrypt,
   mpdecimal,
   ncurses,
@@ -25,9 +26,7 @@
   zlib,
 
   # platform-specific dependencies
-  bash,
-  apple-sdk_11,
-  darwin,
+  bashNonInteractive,
   windows,
 
   # optional dependencies
@@ -55,6 +54,7 @@
   pkgsBuildTarget,
   pkgsHostHost,
   pkgsTargetTarget,
+  __splices ? { },
 
   # build customization
   sourceVersion,
@@ -145,10 +145,28 @@ let
       # When we override the interpreter we also need to override the spliced versions of the interpreter
       # bluez is excluded manually to break an infinite recursion.
       inputs' = lib.filterAttrs (n: v: n != "bluez" && n != "passthruFun" && !lib.isDerivation v) inputs;
+      # Memoization of the splices to avoid re-evaluating this function for all combinations of splices e.g.
+      # python3.pythonOnBuildForHost.pythonOnBuildForTarget == python3.pythonOnBuildForTarget by consuming
+      # __splices as an arg and using the cache if populated.
+      splices = {
+        pythonOnBuildForBuild = override pkgsBuildBuild.${pythonAttr};
+        pythonOnBuildForHost = override pkgsBuildHost.${pythonAttr};
+        pythonOnBuildForTarget = override pkgsBuildTarget.${pythonAttr};
+        pythonOnHostForHost = override pkgsHostHost.${pythonAttr};
+        pythonOnTargetForTarget = lib.optionalAttrs (lib.hasAttr pythonAttr pkgsTargetTarget) (
+          override pkgsTargetTarget.${pythonAttr}
+        );
+      } // __splices;
       override =
         attr:
         let
-          python = attr.override (inputs' // { self = python; });
+          python = attr.override (
+            inputs'
+            // {
+              self = python;
+              __splices = splices;
+            }
+          );
         in
         python;
     in
@@ -160,13 +178,13 @@ let
       pythonVersion = with sourceVersion; "${major}.${minor}";
       sitePackages = "lib/${libPrefix}/site-packages";
       inherit hasDistutilsCxxPatch pythonAttr;
-      pythonOnBuildForBuild = override pkgsBuildBuild.${pythonAttr};
-      pythonOnBuildForHost = override pkgsBuildHost.${pythonAttr};
-      pythonOnBuildForTarget = override pkgsBuildTarget.${pythonAttr};
-      pythonOnHostForHost = override pkgsHostHost.${pythonAttr};
-      pythonOnTargetForTarget = lib.optionalAttrs (lib.hasAttr pythonAttr pkgsTargetTarget) (
-        override pkgsTargetTarget.${pythonAttr}
-      );
+      inherit (splices)
+        pythonOnBuildForBuild
+        pythonOnBuildForHost
+        pythonOnBuildForTarget
+        pythonOnHostForHost
+        pythonOnTargetForTarget
+        ;
     };
 
   version = with sourceVersion; "${major}.${minor}.${patch}${suffix}";
@@ -200,6 +218,7 @@ let
       bzip2
       expat
       libffi
+      libuuid
       libxcrypt
       mpdecimal
       ncurses
@@ -210,13 +229,6 @@ let
     ]
     ++ optionals bluezSupport [
       bluez
-    ]
-    ++ optionals enableFramework [
-      darwin.apple_sdk.frameworks.Cocoa
-    ]
-    ++ optionals stdenv.hostPlatform.isDarwin [
-      # Work around for ld64 crashes on x86_64-darwin. Remove once 11.0 becomes the default.
-      apple-sdk_11
     ]
     ++ optionals stdenv.hostPlatform.isMinGW [
       windows.dlfcn
@@ -289,18 +301,13 @@ stdenv.mkDerivation (finalAttrs: {
   inherit nativeBuildInputs;
   buildInputs =
     lib.optionals (!stdenv.hostPlatform.isWindows) [
-      bash # only required for patchShebangs
+      bashNonInteractive # only required for patchShebangs
     ]
     ++ buildInputs;
 
-  prePatch =
-    optionalString stdenv.hostPlatform.isDarwin ''
-      substituteInPlace configure --replace-fail '`/usr/bin/arch`' '"i386"'
-    ''
-    + optionalString (pythonOlder "3.9" && stdenv.hostPlatform.isDarwin && x11Support) ''
-      # Broken on >= 3.9; replaced with ./3.9/darwin-tcl-tk.patch
-      substituteInPlace setup.py --replace-fail /Library/Frameworks /no-such-path
-    '';
+  prePatch = optionalString stdenv.hostPlatform.isDarwin ''
+    substituteInPlace configure --replace-fail '`/usr/bin/arch`' '"i386"'
+  '';
 
   patches =
     [
@@ -310,8 +317,6 @@ stdenv.mkDerivation (finalAttrs: {
       # (since it will do a futile invocation of gcc (!) to find
       # libuuid, slowing down program startup a lot).
       noldconfigPatch
-      # https://www.cve.org/CVERecord?id=CVE-2025-0938
-      ./CVE-2025-0938.patch
     ]
     ++ optionals (stdenv.hostPlatform != stdenv.buildPlatform && stdenv.hostPlatform.isFreeBSD) [
       # Cross compilation only supports a limited number of "known good"
@@ -362,9 +367,8 @@ stdenv.mkDerivation (finalAttrs: {
     ++ optionals (pythonOlder "3.12") [
       # https://github.com/python/cpython/issues/90656
       ./loongarch-support.patch
-    ]
-    ++ optionals (pythonAtLeast "3.12" && pythonOlder "3.14") [
-      ./3.12/CVE-2024-12254.patch
+      # fix failing tests with openssl >= 3.4
+      # https://github.com/python/cpython/pull/127361
     ]
     ++ optionals (pythonAtLeast "3.11" && pythonOlder "3.13") [
       # backport fix for https://github.com/python/cpython/issues/95855
@@ -376,19 +380,32 @@ stdenv.mkDerivation (finalAttrs: {
         mingw-patch = fetchgit {
           name = "mingw-python-patches";
           url = "https://src.fedoraproject.org/rpms/mingw-python3.git";
-          rev = "45c45833ab9e5480ad0ae00778a05ebf35812ed4"; # for python 3.11.5 at the time of writing.
-          sha256 = "sha256-KIyNvO6MlYTrmSy9V/DbzXm5OsIuyT/BEpuo7Umm9DI=";
+          rev = "3edecdbfb4bbf1276d09cd5e80e9fb3dd88c9511"; # for python 3.11.9 at the time of writing.
+          hash = "sha256-kpXoIHlz53+0FAm/fK99ZBdNUg0u13erOr1XP2FSkQY=";
         };
       in
-      [
-        "${mingw-patch}/*.patch"
-      ]
+      (builtins.map (f: "${mingw-patch}/${f}") [
+        # The other patches in that repo are already applied to 3.11.10
+        "mingw-python3_distutils.patch"
+        "mingw-python3_frozenmain.patch"
+        "mingw-python3_make-sysconfigdata.py-relocatable.patch"
+        "mingw-python3_mods-failed.patch"
+        "mingw-python3_module-select.patch"
+        "mingw-python3_module-socket.patch"
+        "mingw-python3_modules.patch"
+        "mingw-python3_platform-mingw.patch"
+        "mingw-python3_posix-layout.patch"
+        "mingw-python3_pthread_threadid.patch"
+        "mingw-python3_pythonw.patch"
+        "mingw-python3_setenv.patch"
+        "mingw-python3_win-modules.patch"
+      ])
     );
 
   postPatch =
     optionalString (!stdenv.hostPlatform.isWindows) ''
       substituteInPlace Lib/subprocess.py \
-        --replace-fail "'/bin/sh'" "'${bash}/bin/sh'"
+        --replace-fail "'/bin/sh'" "'${bashNonInteractive}/bin/sh'"
     ''
     + optionalString mimetypesSupport ''
       substituteInPlace Lib/mimetypes.py \
@@ -505,6 +522,10 @@ stdenv.mkDerivation (finalAttrs: {
         substituteInPlace ./setup.py --replace-warn $path /no-such-path
       done
     ''
+    + optionalString (stdenv.hostPlatform.isDarwin && pythonOlder "3.12") ''
+      # Fix _ctypes module compilation
+      export NIX_CFLAGS_COMPILE+=" -DUSING_APPLE_OS_LIBFFI=1"
+    ''
     + optionalString stdenv.hostPlatform.isDarwin ''
       # Override the auto-detection in setup.py, which assumes a universal build
       export PYTHON_DECIMAL_WITH_MACHINE=${if stdenv.hostPlatform.isAarch64 then "uint128" else "x64"}
@@ -521,6 +542,9 @@ stdenv.mkDerivation (finalAttrs: {
     + optionalString (stdenv.hostPlatform.isDarwin && x11Support && pythonAtLeast "3.11") ''
       export TCLTK_LIBS="-L${tcl}/lib -L${tk}/lib -l${tcl.libPrefix} -l${tk.libPrefix}"
       export TCLTK_CFLAGS="-I${tcl}/include -I${tk}/include"
+    ''
+    + optionalString stdenv.hostPlatform.isWindows ''
+      export NIX_CFLAGS_COMPILE+=" -Wno-error=incompatible-pointer-types"
     ''
     + optionalString stdenv.hostPlatform.isMusl ''
       export NIX_CFLAGS_COMPILE+=" -DTHREAD_STACK_SIZE=0x100000"
@@ -716,7 +740,7 @@ stdenv.mkDerivation (finalAttrs: {
       # Ensure we don't have references to build-time packages.
       # These typically end up in shebangs.
       pythonOnBuildForHost
-      buildPackages.bash
+      buildPackages.bashNonInteractive
     ];
 
   separateDebugInfo = true;
@@ -726,13 +750,10 @@ stdenv.mkDerivation (finalAttrs: {
       inherit src;
       name = "python${pythonVersion}-${version}-doc";
 
-      patches = optionals (pythonAtLeast "3.9" && pythonOlder "3.10") [
-        # https://github.com/python/cpython/issues/98366
-        (fetchpatch {
-          url = "https://github.com/python/cpython/commit/5612471501b05518287ed61c1abcb9ed38c03942.patch";
-          hash = "sha256-p41hJwAiyRgyVjCVQokMSpSFg/VDDrqkCSxsodVb6vY=";
-        })
-      ];
+      postPatch = lib.optionalString (pythonAtLeast "3.9" && pythonOlder "3.11") ''
+        substituteInPlace Doc/tools/extensions/pyspecific.py \
+          --replace-fail "from sphinx.util import status_iterator" "from sphinx.util.display import status_iterator"
+      '';
 
       dontConfigure = true;
 
@@ -782,6 +803,13 @@ stdenv.mkDerivation (finalAttrs: {
     pkgConfigModules = [ "python3" ];
     platforms = platforms.linux ++ platforms.darwin ++ platforms.windows ++ platforms.freebsd;
     mainProgram = executable;
-    maintainers = lib.teams.python.members;
+    teams = [ lib.teams.python ];
+    # static build on x86_64-darwin/aarch64-darwin breaks with:
+    # configure: error: C compiler cannot create executables
+
+    # mingw patches only apply to Python 3.11 currently
+    broken =
+      (lib.versions.minor version != "11" && stdenv.hostPlatform.isWindows)
+      || (stdenv.hostPlatform.isStatic && stdenv.hostPlatform.isDarwin);
   };
 })

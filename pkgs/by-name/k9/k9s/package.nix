@@ -7,17 +7,18 @@
   testers,
   nix-update-script,
   k9s,
+  writableTmpDirAsHomeHook,
 }:
 
 buildGoModule rec {
   pname = "k9s";
-  version = "0.32.7";
+  version = "0.50.5";
 
   src = fetchFromGitHub {
     owner = "derailed";
     repo = "k9s";
     rev = "v${version}";
-    hash = "sha256-0S6FomP1WVqYl5nP0FcaElgghMcZmE0V8iLhghERF6A=";
+    hash = "sha256-hh00R0PCqhAUlwFps40CQ+hc6p2634WEGqNjX1mi/J8=";
   };
 
   ldflags = [
@@ -32,12 +33,11 @@ buildGoModule rec {
 
   proxyVendor = true;
 
-  vendorHash = "sha256-ENn2BpGFEpiTNZbnNVt4hv4R6NTT3GivFd3rTy3xEH8=";
+  vendorHash = "sha256-g2tS1EpmG+Wba3kF9cH83JAG6EhKK4LrASGUSFtYYY8=";
 
   # TODO investigate why some config tests are failing
   doCheck = !(stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isAarch64);
-  # Required to workaround test check error:
-  preCheck = "export HOME=$(mktemp -d)";
+
   # For arch != x86
   # {"level":"fatal","error":"could not create any of the following paths: /homeless-shelter/.config, /etc/xdg","time":"2022-06-28T15:52:36Z","message":"Unable to create configuration directory for k9s"}
   passthru = {
@@ -61,6 +61,8 @@ buildGoModule rec {
       --fish <($out/bin/k9s completion fish) \
       --zsh <($out/bin/k9s completion zsh)
   '';
+
+  nativeCheckInputs = [ writableTmpDirAsHomeHook ];
 
   meta = with lib; {
     description = "Kubernetes CLI To Manage Your Clusters In Style";

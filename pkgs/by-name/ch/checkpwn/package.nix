@@ -2,8 +2,6 @@
   lib,
   rustPlatform,
   fetchCrate,
-  stdenv,
-  darwin,
 }:
 
 rustPlatform.buildRustPackage rec {
@@ -15,11 +13,8 @@ rustPlatform.buildRustPackage rec {
     hash = "sha256-M0Jb+8rKn4KVuumNSsM6JEbSOoBOFy9mmXiCnUnDgak=";
   };
 
-  cargoHash = "sha256-G+QWnGf+Zp94EHVnYM3Q/iEhEQMU2O/c4i5ya/dY7K4=";
-
-  buildInputs = lib.optionals stdenv.hostPlatform.isDarwin [
-    darwin.apple_sdk.frameworks.Security
-  ];
+  useFetchCargoVendor = true;
+  cargoHash = "sha256-8ALu1Ij4o2fdsRWhlWu6rOIfHZjIIC+fHJ07XIbH66s=";
 
   # requires internet access
   checkFlags = [

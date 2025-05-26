@@ -17,6 +17,7 @@
   hicolor-icon-theme,
   meson,
   ninja,
+  nix-update-script,
   pkg-config,
   python3,
   webkitgtk_6_0,
@@ -83,6 +84,10 @@ stdenv.mkDerivation rec {
       -i $out/bin/re.sonny.Tangram
   '';
 
+  passthru = {
+    updateScript = nix-update-script { };
+  };
+
   meta = with lib; {
     description = "Run web apps on your desktop";
     mainProgram = "re.sonny.Tangram";
@@ -93,5 +98,6 @@ stdenv.mkDerivation rec {
       austinbutler
       chuangzhu
     ];
+    teams = [ lib.teams.gnome-circle ];
   };
 }

@@ -140,7 +140,7 @@ in
     (mkIf cfg.audio.enable {
       environment.systemPackages = [ cfg.audio.package ]; # needed for autostart
 
-      hardware.pulseaudio.extraModules = [ cfg.audio.package ];
+      services.pulseaudio.extraModules = [ cfg.audio.package ];
     })
 
     (mkIf cfg.enable {

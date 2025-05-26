@@ -40,6 +40,13 @@ in
         description = "Log level";
       };
 
+      nextcloudUrl = lib.mkOption {
+        type = lib.types.str;
+        default = "http${lib.optionalString cfgN.https "s"}://${cfgN.hostName}";
+        defaultText = lib.literalExpression ''"http''${lib.optionalString config.services.nextcloud.https "s"}://''${config.services.nextcloud.hostName}"'';
+        description = "Configure the nextcloud URL notify_push tries to connect to.";
+      };
+
       bendDomainToLocalhost = lib.mkOption {
         type = lib.types.bool;
         default = false;
@@ -71,27 +78,25 @@ in
     );
 
   config = lib.mkIf cfg.enable {
-    systemd.services.nextcloud-notify_push =
-      let
-        nextcloudUrl = "http${lib.optionalString cfgN.https "s"}://${cfgN.hostName}";
-      in
-      {
+    systemd.services = {
+      nextcloud-notify_push = {
         description = "Push daemon for Nextcloud clients";
         documentation = [ "https://github.com/nextcloud/notify_push" ];
         after = [
+          "nextcloud-setup.service"
           "phpfpm-nextcloud.service"
           "redis-nextcloud.service"
         ];
+        requires = [
+          "nextcloud-setup.service"
+        ];
         wantedBy = [ "multi-user.target" ];
         environment = {
-          NEXTCLOUD_URL = nextcloudUrl;
+          NEXTCLOUD_URL = cfg.nextcloudUrl;
           SOCKET_PATH = cfg.socketPath;
           DATABASE_PREFIX = cfg.dbtableprefix;
           LOG = cfg.logLevel;
         };
-        postStart = ''
-          ${cfgN.occ}/bin/nextcloud-occ notify_push:setup ${nextcloudUrl}/push
-        '';
         script =
           let
             dbType = if cfg.dbtype == "pgsql" then "postgresql" else cfg.dbtype;
@@ -115,8 +120,8 @@ in
             dbName = lib.optionalString (cfg.dbname != null) "/${cfg.dbname}";
             dbUrl = "${dbType}://${dbUser}${dbPass}${dbHost}${dbName}${dbOpts}";
           in
-          lib.optionalString (dbPass != "") ''
-            export DATABASE_PASSWORD="$(<"${cfg.dbpassFile}")"
+          lib.optionalString (cfg.dbpassFile != null) ''
+            export DATABASE_PASSWORD="$(<"$CREDENTIALS_DIRECTORY/dbpass")"
           ''
           + ''
             export DATABASE_URL="${dbUrl}"
@@ -129,8 +134,25 @@ in
           Restart = "on-failure";
           RestartSec = "5s";
           Type = "notify";
+          LoadCredential = lib.optional (cfg.dbpassFile != null) "dbpass:${cfg.dbpassFile}";
         };
       };
+
+      nextcloud-notify_push_setup = {
+        wantedBy = [ "multi-user.target" ];
+        requiredBy = [ "nextcloud-notify_push.service" ];
+        after = [ "nextcloud-notify_push.service" ];
+        serviceConfig = {
+          Type = "oneshot";
+          User = "nextcloud";
+          Group = "nextcloud";
+          ExecStart = "${lib.getExe cfgN.occ} notify_push:setup ${cfg.nextcloudUrl}/push";
+          LoadCredential = config.systemd.services.nextcloud-cron.serviceConfig.LoadCredential;
+          RestartMode = "direct";
+          Restart = "on-failure";
+        };
+      };
+    };
 
     networking.hosts = lib.mkIf cfg.bendDomainToLocalhost {
       "127.0.0.1" = [ cfgN.hostName ];
@@ -143,6 +165,12 @@ in
           proxyPass = "http://unix:${cfg.socketPath}";
           proxyWebsockets = true;
           recommendedProxySettings = true;
+          extraConfig = # nginx
+            ''
+              # disable in case it was configured on a higher level
+              keepalive_timeout 0;
+              proxy_buffering off;
+            '';
         };
       }
 

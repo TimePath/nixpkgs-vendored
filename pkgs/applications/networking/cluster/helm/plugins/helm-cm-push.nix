@@ -24,7 +24,7 @@ buildGoModule rec {
     sed -e '/^hooks:/,+2 d' -i plugin.yaml
   '';
 
-  CGO_ENABLED = 0;
+  env.CGO_ENABLED = 0;
 
   ldflags = [
     "-s"
@@ -43,6 +43,6 @@ buildGoModule rec {
     description = "Helm plugin to push chart package to ChartMuseum";
     homepage = "https://github.com/chartmuseum/helm-push";
     license = licenses.asl20;
-    maintainers = with maintainers; [ azahi ];
+    maintainers = [ ];
   };
 }

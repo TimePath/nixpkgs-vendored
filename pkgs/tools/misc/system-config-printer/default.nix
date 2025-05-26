@@ -20,7 +20,7 @@
   gobject-introspection,
   libsecret,
   packagekit,
-  cups-filters,
+  libcupsfilters,
   gettext,
   libtool,
   autoconf-archive,
@@ -124,7 +124,7 @@ stdenv.mkDerivation rec {
     buildPythonPath "$out $pythonPath"
     gappsWrapperArgs+=(
       --prefix PATH : "$program_PATH"
-      --set CUPS_DATADIR "${cups-filters}/share/cups"
+      --set CUPS_DATADIR "${libcupsfilters}/share/cups"
     )
 
     find $out/share/system-config-printer -name \*.py -type f -perm -0100 -print0 | while read -d "" f; do

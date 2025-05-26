@@ -1,20 +1,21 @@
 {
   lib,
-  buildPythonPackage,
-  pythonOlder,
-  fetchFromGitHub,
   aiohttp,
-  yarl,
   aresponses,
+  buildPythonPackage,
+  fetchFromGitHub,
   poetry-core,
   pytest-asyncio,
+  pytest-cov-stub,
   pytestCheckHook,
+  pythonOlder,
+  yarl,
 }:
 
 buildPythonPackage rec {
   pname = "twentemilieu";
-  version = "2.0.1";
-  format = "pyproject";
+  version = "2.2.1";
+  pyproject = true;
 
   disabled = pythonOlder "3.11";
 
@@ -22,18 +23,18 @@ buildPythonPackage rec {
     owner = "frenck";
     repo = "python-twentemilieu";
     tag = "v${version}";
-    hash = "sha256-0rs+nBJfyXRj/3n/G2JzUDXaiIYZmWsoIcgLoWKhlV4=";
+    hash = "sha256-N6XSf212orMf3vqIjBzu+4fpKX7kFinH180lCWXtjzc=";
   };
 
   postPatch = ''
+    # Upstream is creating GitHub releases without version
     substituteInPlace pyproject.toml \
-      --replace "--cov" "" \
       --replace '"0.0.0"' '"${version}"'
   '';
 
-  nativeBuildInputs = [ poetry-core ];
+  build-system = [ poetry-core ];
 
-  propagatedBuildInputs = [
+  dependencies = [
     aiohttp
     yarl
   ];
@@ -41,6 +42,7 @@ buildPythonPackage rec {
   nativeCheckInputs = [
     aresponses
     pytest-asyncio
+    pytest-cov-stub
     pytestCheckHook
   ];
 
@@ -50,7 +52,7 @@ buildPythonPackage rec {
     description = "Python client for Twente Milieu";
     homepage = "https://github.com/frenck/python-twentemilieu";
     changelog = "https://github.com/frenck/python-twentemilieu/releases/tag/v${version}";
-    license = with licenses; [ mit ];
+    license = licenses.mit;
     maintainers = with maintainers; [ fab ];
   };
 }

@@ -10,7 +10,7 @@ rustPlatform.buildRustPackage {
   inherit (libdeltachat)
     version
     src
-    cargoLock
+    cargoDeps
     buildInputs
     ;
 

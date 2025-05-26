@@ -1,10 +1,12 @@
 {
   lib,
   config,
+  nixosTests,
   fetchFromGitHub,
   fetchFromGitLab,
   fetchhg,
   runCommand,
+  stdenv,
 
   arpa2common,
   brotli,
@@ -524,11 +526,11 @@ let
 
     njs = rec {
       name = "njs";
-      src = fetchhg {
-        url = "https://hg.nginx.org/njs";
-        rev = "0.8.4";
-        sha256 = "sha256-SooPFx4WNEezPD+W/wmMLY+FdkGRoojLNUFbhn3Riyg=";
-        name = "nginx-njs";
+      src = fetchFromGitHub {
+        owner = "nginx";
+        repo = "njs";
+        rev = "0.8.9";
+        hash = "sha256-TalS9EJP+vB1o3BKaTvXXnudjKhNOcob3kDAyeKej3c=";
       };
 
       # njs module sources have to be writable during nginx build, so we copy them
@@ -538,17 +540,22 @@ let
         mkdir -p "$(dirname "$NJS_SOURCE_DIR")"
         cp --recursive "${src}" "$NJS_SOURCE_DIR"
         chmod -R u+rwX,go+rX "$NJS_SOURCE_DIR"
-        export configureFlags="''${configureFlags/"${src}"/"$NJS_SOURCE_DIR/nginx"}"
+        export configureFlags="''${configureFlags/"${src}"/"$NJS_SOURCE_DIR/nginx"} --with-ld-opt='-lz'"
         unset NJS_SOURCE_DIR
       '';
 
-      inputs = [ which ];
+      inputs = [
+        which
+        zlib
+      ];
+
+      passthru.tests = nixosTests.nginx-njs;
 
       meta = with lib; {
         description = "Subset of the JavaScript language that allows extending nginx functionality";
         homepage = "https://nginx.org/en/docs/njs/";
         license = with licenses; [ bsd2 ];
-        maintainers = [ ];
+        maintainers = with maintainers; [ jvanbruegge ];
       };
     };
 
@@ -817,7 +824,7 @@ let
         description = "SPNEGO HTTP Authentication Module";
         homepage = "https://github.com/stnoonan/spnego-http-auth-nginx-module";
         license = with licenses; [ bsd2 ];
-        maintainers = teams.deshaw.members;
+        teams = [ teams.deshaw ];
       };
     };
 
@@ -1057,6 +1064,25 @@ let
         homepage = "https://github.com/vozlt/nginx-module-vts";
         license = with licenses; [ bsd2 ];
         maintainers = with maintainers; [ SuperSandro2000 ];
+      };
+    };
+
+    zip = {
+      name = "zip";
+      src = fetchFromGitHub {
+        name = "zip";
+        owner = "evanmiller";
+        repo = "mod_zip";
+        rev = "8e65b82c82c7890f67a6107271c127e9881b6313";
+        hash = "sha256-2bUyGsLSaomzaijnAcHQV9TNSuV7Z3G9EUbrZzLG+mk=";
+      };
+
+      meta = with lib; {
+        description = "Streaming ZIP archiver for nginx";
+        homepage = "https://github.com/evanmiller/mod_zip";
+        license = with licenses; [ bsd3 ];
+        broken = stdenv.hostPlatform.isDarwin;
+        teams = [ teams.apm ];
       };
     };
 

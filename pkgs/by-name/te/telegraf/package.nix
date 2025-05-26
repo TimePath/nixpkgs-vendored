@@ -1,6 +1,6 @@
 {
   lib,
-  buildGo123Module,
+  buildGoModule,
   fetchFromGitHub,
   nixosTests,
   stdenv,
@@ -8,9 +8,9 @@
   telegraf,
 }:
 
-buildGo123Module rec {
+buildGoModule rec {
   pname = "telegraf";
-  version = "1.32.2";
+  version = "1.34.3";
 
   subPackages = [ "cmd/telegraf" ];
 
@@ -18,10 +18,10 @@ buildGo123Module rec {
     owner = "influxdata";
     repo = "telegraf";
     rev = "v${version}";
-    hash = "sha256-hqYBoaklrdCkTwnkwqkZAvGLyWkUB3CVu4cg3Ujbyto=";
+    hash = "sha256-uG2u1WY63vp2jZPQl1Hfv6wvl4CYm9qkIhhi5qV6oz4=";
   };
 
-  vendorHash = "sha256-KRZ5Rrdp69DTHtNu8vXuD7QKy2n6Sx7myNpB5TSZpRk=";
+  vendorHash = "sha256-WOnFFUmXCjdaSbykXLya0TNOqgnYL33qUq5fAho17TE=";
   proxyVendor = true;
 
   ldflags = [

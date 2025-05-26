@@ -10,14 +10,14 @@
   wrapGAppsHook3,
   gtk3,
   glib,
-  webkitgtk_4_0,
+  webkitgtk_4_1,
   glib-networking,
   override_xmx ? "1024m",
 }:
 
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "dbeaver-bin";
-  version = "24.2.3";
+  version = "25.0.4";
 
   src =
     let
@@ -30,10 +30,10 @@ stdenvNoCC.mkDerivation (finalAttrs: {
         aarch64-darwin = "macos-aarch64.dmg";
       };
       hash = selectSystem {
-        x86_64-linux = "sha256-TvDpoEcnZBS8ORggFwLM80FXsJ8EXKvRSPUn+VtNTk8=";
-        aarch64-linux = "sha256-59khU3VQzpNeZv69pbeeE4ZAFajyI5gUUw9baOWPIFM=";
-        x86_64-darwin = "sha256-/YyN5daeoxq0oii6qYRpZ8cb43u6n8HuVc2JqVOhrxs=";
-        aarch64-darwin = "sha256-Stb76QpLnpmpBYDm+6fgkcx+TlY8hVkNtvGgdMWbaHg=";
+        x86_64-linux = "sha256-ALtJIld7gT4pj+jGRkwMloq6B/ZBOMYZxws9N7xNNZg=";
+        aarch64-linux = "sha256-Ka+jEI6y1BRqV83yDvu1yDzJfpUIxKKD+zehVHcNQ/o=";
+        x86_64-darwin = "sha256-P8f0NlMjh/46RChQy8JIm71msqX023K2QaFEic2Br9M=";
+        aarch64-darwin = "sha256-a9H9M1j6iPcrVcfDxCZHeZj6e55QH3XochXaL2OStlI=";
       };
     in
     fetchurl {
@@ -60,6 +60,14 @@ stdenvNoCC.mkDerivation (finalAttrs: {
       --replace-fail '-Xmx1024m' '-Xmx${override_xmx}'
   '';
 
+  preInstall = ''
+    # most directories are for different architectures, only keep what we need
+    shopt -s extglob
+    pushd ${lib.optionalString stdenvNoCC.hostPlatform.isDarwin "Contents/Eclipse/"}plugins/com.sun.jna_*/com/sun/jna/
+    rm -r !(ptr|internal|linux-x86-64|linux-aarch64|darwin-x86-64|darwin-aarch64)/
+    popd
+  '';
+
   installPhase =
     if !stdenvNoCC.hostPlatform.isDarwin then
       ''
@@ -75,7 +83,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
             lib.makeLibraryPath [
               gtk3
               glib
-              webkitgtk_4_0
+              webkitgtk_4_1
               glib-networking
             ]
           }"
@@ -109,8 +117,9 @@ stdenvNoCC.mkDerivation (finalAttrs: {
 
   passthru.updateScript = ./update.sh;
 
-  meta = with lib; {
+  meta = {
     homepage = "https://dbeaver.io/";
+    changelog = "https://github.com/dbeaver/dbeaver/releases/tag/${finalAttrs.version}";
     description = "Universal SQL Client for developers, DBA and analysts. Supports MySQL, PostgreSQL, MariaDB, SQLite, and more";
     longDescription = ''
       Free multi-platform database tool for developers, SQL programmers, database
@@ -118,10 +127,10 @@ stdenvNoCC.mkDerivation (finalAttrs: {
       PostgreSQL, MariaDB, SQLite, Oracle, DB2, SQL Server, Sybase, MS Access,
       Teradata, Firebird, Derby, etc.
     '';
-    sourceProvenance = with sourceTypes; [ binaryNativeCode ];
-    license = licenses.asl20;
-    platforms = platforms.linux ++ platforms.darwin;
-    maintainers = with maintainers; [
+    sourceProvenance = with lib.sourceTypes; [ binaryNativeCode ];
+    license = lib.licenses.asl20;
+    platforms = with lib.platforms; linux ++ darwin;
+    maintainers = with lib.maintainers; [
       gepbird
       mkg20001
       yzx9

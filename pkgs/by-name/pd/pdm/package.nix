@@ -24,7 +24,7 @@ let
 in
 python.pkgs.buildPythonApplication rec {
   pname = "pdm";
-  version = "2.22.1";
+  version = "2.24.1";
   pyproject = true;
 
   disabled = python.pkgs.pythonOlder "3.8";
@@ -33,8 +33,10 @@ python.pkgs.buildPythonApplication rec {
     owner = "pdm-project";
     repo = "pdm";
     tag = version;
-    hash = "sha256-khAS/OpuvZTJGh9/lIGtKONajIonCwc/M9D9lSwzFvw=";
+    hash = "sha256-YChgPJmHWJ4tftosa24SKB0J7uV/zR6VWX18poEEsLY=";
   };
+
+  pythonRelaxDeps = [ "hishel" ];
 
   nativeBuildInputs = [ installShellFiles ];
 
@@ -65,6 +67,7 @@ python.pkgs.buildPythonApplication rec {
       tomlkit
       truststore
       unearth
+      id
       virtualenv
     ]
     ++ httpx.optional-dependencies.socks;
@@ -99,7 +102,7 @@ python.pkgs.buildPythonApplication rec {
   preCheck = ''
     export HOME=$TMPDIR
     substituteInPlace tests/cli/test_run.py \
-      --replace-warn "/bin/bash" "${runtimeShell}"
+      --replace-fail "/bin/bash" "${runtimeShell}"
   '';
 
   disabledTests = [
@@ -115,6 +118,10 @@ python.pkgs.buildPythonApplication rec {
     "test_lock_all_with_excluded_groups"
     "test_find_interpreters_with_PDM_IGNORE_ACTIVE_VENV"
     "test_build_distributions"
+    "test_init_project_respect"
+    "test_use_python_write_file_multiple_versions"
+    "test_repository_get_token_from_oidc"
+    "test_repository_get_token_misconfigured_github"
   ];
 
   __darwinAllowLocalNetworking = true;
@@ -129,6 +136,7 @@ python.pkgs.buildPythonApplication rec {
     maintainers = with maintainers; [
       cpcloud
       natsukium
+      misilelab
     ];
     mainProgram = "pdm";
   };

@@ -85,8 +85,8 @@ with lib;
     # installation device for head-less systems i.e. arm boards by manually
     # mounting the storage in a different system.
     services.openssh = {
-      enable = true;
-      settings.PermitRootLogin = "yes";
+      enable = mkDefault true;
+      settings.PermitRootLogin = mkDefault "yes";
     };
 
     # Enable wpa_supplicant, but don't start it by default.
@@ -108,14 +108,16 @@ with lib;
 
     # To speed up installation a little bit, include the complete
     # stdenv in the Nix store on the CD.
-    system.extraDependencies = with pkgs; [
-      stdenv
-      stdenvNoCC # for runCommand
-      busybox
-      jq # for closureInfo
-      # For boot.initrd.systemd
-      makeInitrdNGTool
-    ];
+    system.extraDependencies =
+      with pkgs;
+      [
+        stdenv
+        stdenvNoCC # for runCommand
+        busybox
+        # For boot.initrd.systemd
+        makeInitrdNGTool
+      ]
+      ++ jq.all; # for closureInfo
 
     boot.swraid.enable = true;
     # remove warning about unset mail

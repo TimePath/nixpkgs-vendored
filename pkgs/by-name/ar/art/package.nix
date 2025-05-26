@@ -32,7 +32,7 @@
   exiv2,
   exiftool,
   mimalloc,
-  openexr_3,
+  openexr,
   ilmbase,
   opencolorio,
   color-transformation-language,
@@ -40,13 +40,13 @@
 
 stdenv.mkDerivation rec {
   pname = "art";
-  version = "1.24.1";
+  version = "1.24.2";
 
   src = fetchFromBitbucket {
     owner = "agriggio";
     repo = "art";
     rev = version;
-    hash = "sha256-uvdqU509ri6CKCEGA8Ln5tMp0pe3r/bcJefbeZGjocE=";
+    hash = "sha256-TpjmmDeXuxnlvCimsq6mZZk15VOVU3WGrPd3vmcIClI=";
   };
 
   nativeBuildInputs = [
@@ -83,7 +83,7 @@ stdenv.mkDerivation rec {
     exiftool
     libcanberra-gtk3
     mimalloc
-    openexr_3
+    openexr
     ilmbase
     opencolorio
     color-transformation-language

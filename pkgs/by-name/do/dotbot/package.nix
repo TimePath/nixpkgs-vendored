@@ -6,28 +6,23 @@
 
 python3Packages.buildPythonApplication rec {
   pname = "dotbot";
-  version = "1.20.1";
+  version = "1.21.0";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "anishathalye";
     repo = "dotbot";
-    rev = "v${version}";
-    hash = "sha256-Gy+LVGG/BAqXoM6GDuKBkGKxxAkmoYtBRA33y/ihdRE=";
+    tag = "v${version}";
+    hash = "sha256-f+ykGXcQ1hLptGElQ5ZTt8z0SXnlTbdcf922AVF78bU=";
   };
 
   preCheck = ''
     patchShebangs bin/dotbot
   '';
 
-  patches = [
-    # ignore pytest-cache because it was not at /tmp/nix-shell and it was used by pytest itself not our program
-    ./0001-fix-build.patch
-  ];
+  build-system = with python3Packages; [ hatchling ];
 
-  nativeBuildInputs = with python3Packages; [ setuptools ];
-
-  propagatedBuildInputs = with python3Packages; [ pyyaml ];
+  dependencies = with python3Packages; [ pyyaml ];
 
   nativeCheckInputs = with python3Packages; [ pytestCheckHook ];
 

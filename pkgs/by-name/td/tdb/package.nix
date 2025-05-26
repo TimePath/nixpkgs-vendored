@@ -9,18 +9,17 @@
   readline,
   libxslt,
   libxcrypt,
-  apple-sdk_11,
   docbook-xsl-nons,
   docbook_xml_dtd_45,
 }:
 
 stdenv.mkDerivation rec {
   pname = "tdb";
-  version = "1.4.11";
+  version = "1.4.13";
 
   src = fetchurl {
     url = "mirror://samba/tdb/${pname}-${version}.tar.gz";
-    hash = "sha256-Toum2T84NWW70GG+Te7hUxgjLRu8ynIS8Y4X9Wu5dag=";
+    hash = "sha256-XuJ252RNcT4Z5LatwAtECvtYUf8h5lgh/67YnhWl4Wc=";
   };
 
   nativeBuildInputs = [
@@ -32,15 +31,11 @@ stdenv.mkDerivation rec {
     docbook_xml_dtd_45
   ];
 
-  buildInputs =
-    [
-      python3
-      readline # required to build python
-      libxcrypt
-    ]
-    ++ lib.optionals stdenv.hostPlatform.isDarwin [
-      apple-sdk_11
-    ];
+  buildInputs = [
+    python3
+    readline # required to build python
+    libxcrypt
+  ];
 
   # otherwise the configure script fails with
   # PYTHONHASHSEED=1 missing! Don't use waf directly, use ./configure and make!
@@ -71,6 +66,11 @@ stdenv.mkDerivation rec {
   # If python-config is not found, the build falls back to using the sysconfig
   # module, which works correctly in all cases.
   PYTHON_CONFIG = "/invalid";
+
+  # https://reviews.llvm.org/D135402
+  NIX_LDFLAGS = lib.optional (
+    stdenv.cc.bintools.isLLVM && lib.versionAtLeast stdenv.cc.bintools.version "17"
+  ) "--undefined-version";
 
   meta = with lib; {
     description = "Trivial database";

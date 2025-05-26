@@ -11,7 +11,6 @@
   orc,
   boost,
   spdlog,
-  swig,
   mpir,
   doxygen,
   python,
@@ -22,7 +21,6 @@
   libjack2,
   libiio,
   libad9361,
-  CoreAudio,
   uhd,
   SDL,
   gsl,
@@ -47,11 +45,11 @@
   # If one wishes to use a different src or name for a very custom build
   overrideSrc ? { },
   pname ? "gnuradio",
-  version ? "3.10.11.0",
+  version ? "3.10.12.0",
 }:
 
 let
-  sourceSha256 = "sha256-QOZXUj+ZmfpazsrHEs8Gx3WSmoHG/zO43NEpyhIjpN8=";
+  sourceSha256 = "sha256-489Pc6z6Ha7jkTzZSEArDQJGkWdWRDIn1uhfFyLLiCo=";
   featuresInfo = {
     # Needed always
     basic = {
@@ -178,8 +176,7 @@ let
         ++ lib.optionals stdenv.hostPlatform.isLinux [
           alsa-lib
           libjack2
-        ]
-        ++ lib.optionals stdenv.hostPlatform.isDarwin [ CoreAudio ];
+        ];
       cmakeEnableFlag = "GR_AUDIO";
     };
     gr-channels = {

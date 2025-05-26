@@ -14,7 +14,7 @@ stdenv.mkDerivation rec {
 
   src = fetchFromGitHub {
     owner = "keystone-engine";
-    repo = pname;
+    repo = "keystone";
     rev = version;
     sha256 = "020d1l1aqb82g36l8lyfn2j8c660mm6sh1nl4haiykwgdl9xnxfa";
   };
@@ -39,7 +39,7 @@ stdenv.mkDerivation rec {
     description = "Lightweight multi-platform, multi-architecture assembler framework";
     homepage = "https://www.keystone-engine.org";
     license = licenses.gpl2Only;
-    maintainers = with maintainers; [ luc65r ];
+    maintainers = with maintainers; [ ];
     mainProgram = "kstool";
     platforms = platforms.unix;
   };

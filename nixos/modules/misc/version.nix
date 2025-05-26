@@ -16,6 +16,7 @@ let
     toLower
     optionalString
     literalExpression
+    match
     mkRenamedOptionModule
     mkDefault
     mkOption
@@ -51,14 +52,15 @@ let
       DOCUMENTATION_URL = optionalString isNixos "https://nixos.org/learn.html";
       SUPPORT_URL = optionalString isNixos "https://nixos.org/community.html";
       BUG_REPORT_URL = optionalString isNixos "https://github.com/NixOS/nixpkgs/issues";
-      ANSI_COLOR = optionalString isNixos "1;34";
+      ANSI_COLOR = optionalString isNixos "0;38;2;126;186;228";
       IMAGE_ID = optionalString (config.system.image.id != null) config.system.image.id;
       IMAGE_VERSION = optionalString (config.system.image.version != null) config.system.image.version;
       VARIANT = optionalString (cfg.variantName != null) cfg.variantName;
       VARIANT_ID = optionalString (cfg.variant_id != null) cfg.variant_id;
       DEFAULT_HOSTNAME = config.system.nixos.distroId;
-      SUPPORT_END = "2025-06-30";
-    };
+      SUPPORT_END = "2025-12-31";
+    }
+    // cfg.extraOSReleaseArgs;
 
   initrdReleaseContents = (removeAttrs osReleaseContents [ "BUILD_ID" ]) // {
     PRETTY_NAME = "${osReleaseContents.PRETTY_NAME} (Initrd)";
@@ -158,6 +160,26 @@ in
         default = "NixOS";
         description = "The name of the operating system vendor";
       };
+
+      extraOSReleaseArgs = mkOption {
+        internal = true;
+        type = types.attrsOf types.str;
+        default = { };
+        description = "Additional attributes to be merged with the /etc/os-release generator.";
+        example = {
+          ANSI_COLOR = "1;31";
+        };
+      };
+
+      extraLSBReleaseArgs = mkOption {
+        internal = true;
+        type = types.attrsOf types.str;
+        default = { };
+        description = "Additional attributes to be merged with the /etc/lsb-release generator.";
+        example = {
+          LSB_VERSION = "1.0";
+        };
+      };
     };
 
     image = {
@@ -168,9 +190,9 @@ in
         description = ''
           Image identifier.
 
-          This corresponds to the IMAGE_ID field in os-release. See the
+          This corresponds to the `IMAGE_ID` field in {manpage}`os-release(5)`. See the
           upstream docs for more details on valid characters for this field:
-          https://www.freedesktop.org/software/systemd/man/latest/os-release.html#IMAGE_ID=
+          <https://www.freedesktop.org/software/systemd/man/latest/os-release.html#IMAGE_ID=>
 
           You would only want to set this option if you're build NixOS appliance images.
         '';
@@ -182,9 +204,9 @@ in
         description = ''
           Image version.
 
-          This corresponds to the IMAGE_VERSION field in os-release. See the
+          This corresponds to the `IMAGE_VERSION` field in {manpage}`os-release(5)`. See the
           upstream docs for more details on valid characters for this field:
-          https://www.freedesktop.org/software/systemd/man/latest/os-release.html#IMAGE_VERSION=
+          <https://www.freedesktop.org/software/systemd/man/latest/os-release.html#IMAGE_VERSION=>
 
           You would only want to set this option if you're build NixOS appliance images.
         '';
@@ -243,6 +265,27 @@ in
 
   config = {
 
+    assertions = [
+      {
+        assertion = match "[0-9]{2}\\.[0-9]{2}" config.system.stateVersion != null;
+        message = ''
+          ${config.system.stateVersion} is an invalid value for 'system.stateVersion'; it must be in the format "YY.MM",
+          which corresponds to a prior release of NixOS.
+
+          If you want to switch releases or switch to unstable, you should change your channel and/or flake input URLs only.
+          *DO NOT* touch the 'system.stateVersion' option, as it will not help you upgrade.
+          Leave it exactly on the previous value, which is likely the value you had for it when you installed your system.
+
+          If you're unsure which value to set it to, use "${
+            if match "[0-9]{2}\\.[0-9]{2}" options.system.stateVersion.default != null then
+              options.system.stateVersion.default
+            else
+              options.system.nixos.release.default
+          }" as a default.
+        '';
+      }
+    ];
+
     system.nixos = {
       # These defaults are set here rather than up there so that
       # changing them would not rebuild the manual
@@ -253,13 +296,16 @@ in
     # https://www.freedesktop.org/software/systemd/man/os-release.html for the
     # format.
     environment.etc = {
-      "lsb-release".text = attrsToText {
-        LSB_VERSION = "${cfg.release} (${cfg.codeName})";
-        DISTRIB_ID = "${cfg.distroId}";
-        DISTRIB_RELEASE = cfg.release;
-        DISTRIB_CODENAME = toLower cfg.codeName;
-        DISTRIB_DESCRIPTION = "${cfg.distroName} ${cfg.release} (${cfg.codeName})";
-      };
+      "lsb-release".text = attrsToText (
+        {
+          LSB_VERSION = "${cfg.release} (${cfg.codeName})";
+          DISTRIB_ID = "${cfg.distroId}";
+          DISTRIB_RELEASE = cfg.release;
+          DISTRIB_CODENAME = toLower cfg.codeName;
+          DISTRIB_DESCRIPTION = "${cfg.distroName} ${cfg.release} (${cfg.codeName})";
+        }
+        // cfg.extraLSBReleaseArgs
+      );
 
       "os-release".text = attrsToText osReleaseContents;
     };

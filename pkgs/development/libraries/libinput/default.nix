@@ -49,7 +49,7 @@ in
 
 stdenv.mkDerivation rec {
   pname = "libinput";
-  version = "1.26.2";
+  version = "1.27.1";
 
   outputs = [
     "bin"
@@ -62,7 +62,7 @@ stdenv.mkDerivation rec {
     owner = "libinput";
     repo = "libinput";
     rev = version;
-    hash = "sha256-Ly832W2U38JuXiqvt6e7u3APynrmwi4Ns98bBdTBnP8=";
+    hash = "sha256-3U+2a/uSoSj1t34uz7xO2QQtJExygKOhBL7BUGP0Fbo=";
   };
 
   patches = [
@@ -147,7 +147,8 @@ stdenv.mkDerivation rec {
     homepage = "https://www.freedesktop.org/wiki/Software/libinput/";
     license = licenses.mit;
     platforms = platforms.linux;
-    maintainers = with maintainers; [ codyopel ] ++ teams.freedesktop.members;
+    maintainers = with maintainers; [ codyopel ];
+    teams = [ teams.freedesktop ];
     changelog = "https://gitlab.freedesktop.org/libinput/libinput/-/releases/${version}";
   };
 }

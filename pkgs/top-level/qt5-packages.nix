@@ -6,6 +6,7 @@
 
 {
   lib,
+  config,
   __splicedPackages,
   makeScopeWithSplicing',
   generateSplicesForMkScope,
@@ -53,7 +54,7 @@ makeScopeWithSplicing' {
         let
           mkGear = import ../applications/kde;
           attrs = {
-            inherit libsForQt5;
+            inherit config libsForQt5;
             inherit (pkgs) lib fetchurl;
           };
         in
@@ -185,30 +186,21 @@ makeScopeWithSplicing' {
 
         libdbusmenu = callPackage ../development/libraries/libdbusmenu-qt/qt-5.5.nix { };
 
+        libiodata = callPackage ../development/libraries/libiodata { };
+
         liblastfm = callPackage ../development/libraries/liblastfm { };
 
-        libopenshot = callPackage ../development/libraries/libopenshot {
-          stdenv =
-            if pkgs.stdenv.hostPlatform.isDarwin then pkgs.overrideSDK pkgs.stdenv "11.0" else pkgs.stdenv;
-          python3 = pkgs.python311;
-        };
+        libopenshot = callPackage ../development/libraries/libopenshot { };
 
         packagekit-qt = callPackage ../tools/package-management/packagekit/qt.nix { };
 
-        libopenshot-audio = callPackage ../development/libraries/libopenshot-audio {
-          inherit (pkgs.darwin.apple_sdk.frameworks)
-            Accelerate
-            AGL
-            Cocoa
-            Foundation
-            ;
-        };
+        libopenshot-audio = callPackage ../development/libraries/libopenshot-audio { };
 
-        libqglviewer = callPackage ../development/libraries/libqglviewer {
-          inherit (pkgs.darwin.apple_sdk.frameworks) AGL;
-        };
+        libqglviewer = callPackage ../development/libraries/libqglviewer { };
 
         libqofono = callPackage ../development/libraries/libqofono { };
+
+        libqtpas = callPackage ../development/compilers/fpc/libqtpas.nix { };
 
         libquotient = callPackage ../development/libraries/libquotient { };
 
@@ -219,6 +211,8 @@ makeScopeWithSplicing' {
         mapbox-gl-qml = libsForQt5.callPackage ../development/libraries/mapbox-gl-qml { };
 
         maplibre-gl-native = callPackage ../development/libraries/maplibre-gl-native { };
+
+        maplibre-native-qt = callPackage ../development/libraries/maplibre-native-qt { };
 
         maui-core = libsForQt5.callPackage ../development/libraries/maui-core { };
 
@@ -245,8 +239,6 @@ makeScopeWithSplicing' {
         pulseaudio-qt = callPackage ../development/libraries/pulseaudio-qt { };
 
         qca = callPackage ../development/libraries/qca {
-          stdenv =
-            if pkgs.stdenv.hostPlatform.isDarwin then pkgs.overrideSDK pkgs.stdenv "11.0" else pkgs.stdenv;
           inherit (libsForQt5) qtbase;
         };
         qca-qt5 = self.qca;
@@ -255,11 +247,11 @@ makeScopeWithSplicing' {
 
         qcsxcad = callPackage ../development/libraries/science/electronics/qcsxcad { };
 
+        qcustomplot = callPackage ../development/libraries/qcustomplot { };
+
         qjson = callPackage ../development/libraries/qjson { };
 
-        qmltermwidget = callPackage ../development/libraries/qmltermwidget {
-          inherit (pkgs.darwin.apple_sdk.libs) utmp;
-        };
+        qmltermwidget = callPackage ../development/libraries/qmltermwidget { };
 
         qmlbox2d = callPackage ../development/libraries/qmlbox2d { };
 
@@ -277,11 +269,7 @@ makeScopeWithSplicing' {
 
         qtinstaller = callPackage ../development/libraries/qtinstaller { };
 
-        qtkeychain = callPackage ../development/libraries/qtkeychain {
-          stdenv =
-            if pkgs.stdenv.hostPlatform.isDarwin then pkgs.overrideSDK pkgs.stdenv "11.0" else pkgs.stdenv;
-          inherit (pkgs.darwin.apple_sdk.frameworks) CoreFoundation Security;
-        };
+        qtkeychain = callPackage ../development/libraries/qtkeychain { };
 
         qtmpris = callPackage ../development/libraries/qtmpris { };
 
@@ -309,6 +297,10 @@ makeScopeWithSplicing' {
 
         rlottie-qml = callPackage ../development/libraries/rlottie-qml { };
 
+        sailfish-access-control-plugin =
+          callPackage ../development/libraries/sailfish-access-control-plugin
+            { };
+
         sierra-breeze-enhanced = callPackage ../data/themes/kwin-decorations/sierra-breeze-enhanced {
           useQt5 = true;
         };
@@ -326,6 +318,8 @@ makeScopeWithSplicing' {
         signond = callPackage ../development/libraries/signond { };
 
         soundkonverter = callPackage ../applications/audio/soundkonverter { };
+
+        timed = callPackage ../applications/system/timed { };
 
         xp-pen-deco-01-v2-driver = callPackage ../os-specific/linux/xp-pen-drivers/deco-01-v2 { };
 

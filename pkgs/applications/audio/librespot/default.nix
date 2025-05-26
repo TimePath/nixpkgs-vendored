@@ -14,20 +14,23 @@
   withPulseAudio ? false,
   libpulseaudio,
   withRodio ? true,
+  withAvahi ? false,
+  avahi-compat,
 }:
 
 rustPlatform.buildRustPackage rec {
   pname = "librespot";
-  version = "0.5.0";
+  version = "0.6.0";
 
   src = fetchFromGitHub {
     owner = "librespot-org";
     repo = "librespot";
     rev = "v${version}";
-    sha256 = "sha256-/YMICsrUMYqiL5jMlb5BbZPlHfL9btbWiv/Kt2xhRW4=";
+    sha256 = "sha256-dGQDRb7fgIkXelZKa+PdodIs9DxbgEMlVGJjK/hU3Mo=";
   };
 
-  cargoHash = "sha256-UOvGvseWaEqqjuvTewDfkBeR730cKMQCq55weYmu15Y=";
+  useFetchCargoVendor = true;
+  cargoHash = "sha256-SqvJSHkyd1IicT6c4pE96dBJNNodULhpyG14HRGVWCk=";
 
   nativeBuildInputs =
     [
@@ -41,6 +44,7 @@ rustPlatform.buildRustPackage rec {
   buildInputs =
     [ openssl ]
     ++ lib.optional withALSA alsa-lib
+    ++ lib.optional withAvahi avahi-compat
     ++ lib.optional withPortAudio portaudio
     ++ lib.optional withPulseAudio libpulseaudio;
 
@@ -48,6 +52,7 @@ rustPlatform.buildRustPackage rec {
   buildFeatures =
     lib.optional withRodio "rodio-backend"
     ++ lib.optional withALSA "alsa-backend"
+    ++ lib.optional withAvahi "with-avahi"
     ++ lib.optional withPortAudio "portaudio-backend"
     ++ lib.optional withPulseAudio "pulseaudio-backend";
 

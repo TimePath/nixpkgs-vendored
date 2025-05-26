@@ -14,10 +14,7 @@
   docbook_xsl,
   libxslt,
   docbook_xml_dtd_412,
-  darwin,
-  buildPackages,
   nix-update-script,
-  withApplePCSC ? stdenv.hostPlatform.isDarwin,
 }:
 
 stdenv.mkDerivation rec {
@@ -34,51 +31,35 @@ stdenv.mkDerivation rec {
   nativeBuildInputs = [
     pkg-config
     autoreconfHook
+    libxslt # xsltproc
   ];
-  buildInputs =
-    [
-      zlib
-      readline
-      openssl
-      libassuan
-      libXt
-      libxslt
-      libiconv
-      docbook_xml_dtd_412
-    ]
-    ++ lib.optional stdenv.hostPlatform.isDarwin darwin.apple_sdk.frameworks.Carbon
-    ++ (if withApplePCSC then [ darwin.apple_sdk.frameworks.PCSC ] else [ pcsclite ]);
+  buildInputs = [
+    zlib
+    readline
+    openssl
+    libassuan
+    libXt
+    libiconv
+    docbook_xml_dtd_412
+  ] ++ lib.optional (!stdenv.hostPlatform.isDarwin) pcsclite;
 
   env.NIX_CFLAGS_COMPILE = "-Wno-error";
 
-  configureFlags = [
-    "--enable-zlib"
-    "--enable-readline"
-    "--enable-openssl"
-    "--enable-pcsc"
-    "--enable-sm"
-    "--enable-man"
-    "--enable-doc"
-    "--localstatedir=/var"
-    "--sysconfdir=/etc"
-    "--with-xsl-stylesheetsdir=${docbook_xsl}/xml/xsl/docbook"
-    "--with-pcsc-provider=${
-      if withApplePCSC then
-        "${darwin.apple_sdk.frameworks.PCSC}/Library/Frameworks/PCSC.framework/PCSC"
-      else
-        "${lib.getLib pcsclite}/lib/libpcsclite${stdenv.hostPlatform.extensions.sharedLibrary}"
-    }"
-    (lib.optionalString (
-      stdenv.hostPlatform != stdenv.buildPlatform
-    ) "XSLTPROC=${buildPackages.libxslt}/bin/xsltproc")
-  ];
-
-  PCSC_CFLAGS = lib.concatStringsSep " " (
-    lib.optionals withApplePCSC [
-      "-I${darwin.apple_sdk.frameworks.PCSC}/Library/Frameworks/PCSC.framework/Headers"
-      "-I${lib.getDev pcsclite}/include/PCSC"
+  configureFlags =
+    [
+      "--enable-zlib"
+      "--enable-readline"
+      "--enable-openssl"
+      "--enable-pcsc"
+      "--enable-sm"
+      "--enable-man"
+      "--enable-doc"
+      "--localstatedir=/var"
+      "--sysconfdir=/etc"
+      "--with-xsl-stylesheetsdir=${docbook_xsl}/xml/xsl/docbook"
     ]
-  );
+    ++ lib.optional (!stdenv.hostPlatform.isDarwin)
+      "--with-pcsc-provider=${lib.getLib pcsclite}/lib/libpcsclite${stdenv.hostPlatform.extensions.sharedLibrary}";
 
   installFlags = [
     "sysconfdir=$(out)/etc"

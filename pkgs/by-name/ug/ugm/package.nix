@@ -8,16 +8,16 @@
 
 buildGoModule rec {
   pname = "ugm";
-  version = "1.5.0";
+  version = "1.7.0";
 
   src = fetchFromGitHub {
     owner = "ariasmn";
     repo = "ugm";
     rev = "v${version}";
-    hash = "sha256-Ui/JYU/ZbMP8E20vWHah1GFFVu5E4xf0RaVv9X0QnR4=";
+    hash = "sha256-JgdOoMH8TAUc+23AhU3tZe4SH8GKFeyjSeKm8U7qvpo=";
   };
 
-  vendorHash = "sha256-34D9fQnmKnOyUqshduLmFiVgcVKi7mDKBs3X5ZQxsuw=";
+  vendorHash = "sha256-Dgnh+4bUNyqD8/bj+iUITPB/SBtQPYrB5XC6/M6Zs6k=";
 
   nativeBuildInputs = [ makeWrapper ];
 

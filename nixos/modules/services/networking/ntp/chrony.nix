@@ -89,8 +89,10 @@ in
 
       enableMemoryLocking = mkOption {
         type = types.bool;
-        default = config.environment.memoryAllocator.provider != "graphene-hardened";
-        defaultText = ''config.environment.memoryAllocator.provider != "graphene-hardened"'';
+        default =
+          config.environment.memoryAllocator.provider != "graphene-hardened"
+          && config.environment.memoryAllocator.provider != "graphene-hardened-light";
+        defaultText = ''config.environment.memoryAllocator.provider != "graphene-hardened" && config.environment.memoryAllocator.provider != "graphene-hardened-light"'';
         description = ''
           Whether to add the `-m` flag to lock memory.
         '';
@@ -178,12 +180,12 @@ in
     };
   };
 
-  config = mkIf cfg.enable {
-    meta.maintainers = with lib.maintainers; [
-      thoughtpolice
-      vifino
-    ];
+  meta.maintainers = with lib.maintainers; [
+    thoughtpolice
+    vifino
+  ];
 
+  config = mkIf cfg.enable {
     environment.systemPackages = [ chronyPkg ];
 
     users.groups.chrony.gid = config.ids.gids.chrony;

@@ -3,12 +3,11 @@
   fetchzip,
   fetchFromGitHub,
   imagemagick,
-  mesa,
+  libgbm,
   libdrm,
-  flutter324,
+  flutter327,
   pulseaudio,
   makeDesktopItem,
-  zenity,
   olm,
 
   targetFlutterPlatform ? "linux",
@@ -16,28 +15,28 @@
 
 let
   libwebrtcRpath = lib.makeLibraryPath [
-    mesa
+    libgbm
     libdrm
   ];
   pubspecLock = lib.importJSON ./pubspec.lock.json;
 in
-flutter324.buildFlutterApplication (
+flutter327.buildFlutterApplication (
   rec {
     pname = "fluffychat-${targetFlutterPlatform}";
-    version = "1.22.1";
+    version = "1.26.1";
 
     src = fetchFromGitHub {
       owner = "krille-chan";
       repo = "fluffychat";
       tag = "v${version}";
-      hash = "sha256-biFoRcMss3JVrMoilc8BzJ+R6f+e4RYpZ5dbxDpnfTk=";
+      hash = "sha256-c7vSrJ8IYBMQ9JwyLFJGamlvKK7DVzh5y/sybDaibgI=";
     };
 
     inherit pubspecLock;
 
     gitHashes = {
-      flutter_shortcuts = "sha256-4nptZ7/tM2W/zylk3rfQzxXgQ6AipFH36gcIb/0RbHo=";
-      keyboard_shortcuts = "sha256-U74kRujftHPvpMOIqVT0Ph+wi1ocnxNxIFA1krft4Os=";
+      flutter_web_auth_2 = "sha256-3aci73SP8eXg6++IQTQoyS+erUUuSiuXymvR32sxHFw=";
+      flutter_typeahead = "sha256-ZGXbbEeSddrdZOHcXE47h3Yu3w6oV7q+ZnO6GyW7Zg8=";
     };
 
     inherit targetFlutterPlatform;
@@ -49,7 +48,8 @@ flutter324.buildFlutterApplication (
       mainProgram = "fluffychat";
       maintainers = with maintainers; [
         mkg20001
-        gilice
+        tebriel
+        aleksana
       ];
       platforms = [
         "x86_64-linux"
@@ -63,8 +63,6 @@ flutter324.buildFlutterApplication (
     nativeBuildInputs = [ imagemagick ];
 
     runtimeDependencies = [ pulseaudio ];
-
-    extraWrapProgramArgs = "--prefix PATH : ${zenity}/bin";
 
     env.NIX_LDFLAGS = "-rpath-link ${libwebrtcRpath}";
 

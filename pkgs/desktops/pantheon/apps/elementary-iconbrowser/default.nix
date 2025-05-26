@@ -18,13 +18,13 @@
 
 stdenv.mkDerivation rec {
   pname = "elementary-iconbrowser";
-  version = "2.2.0";
+  version = "8.0.0";
 
   src = fetchFromGitHub {
     owner = "elementary";
     repo = "iconbrowser";
     rev = version;
-    sha256 = "sha256-F0HxwyXAMAQyGRMhtsuKdmyyrCweM+ImJokN/KN3Kiw=";
+    sha256 = "sha256-T0VCpk3pdq+2gr/UblLu8mRX7TKJrAtyyFk4i+tAVfI=";
   };
 
   nativeBuildInputs = [
@@ -61,7 +61,7 @@ stdenv.mkDerivation rec {
     description = "Browse and find system icons";
     license = licenses.gpl3Plus;
     platforms = platforms.linux;
-    maintainers = teams.pantheon.members;
+    teams = [ teams.pantheon ];
     mainProgram = "io.elementary.iconbrowser";
   };
 }

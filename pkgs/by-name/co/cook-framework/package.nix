@@ -2,6 +2,7 @@
   lib,
   buildGoModule,
   fetchFromGitHub,
+  gitUpdater,
 }:
 
 buildGoModule rec {
@@ -20,6 +21,8 @@ buildGoModule rec {
   vendorHash = "sha256-VpNr06IiVKpMsJXzcKCuNfJ+T+zeA9dMBMp6jeCRgn8=";
 
   doCheck = false; # uses network to fetch data sources
+
+  passthru.updateScript = gitUpdater { rev-prefix = "v"; };
 
   meta = {
     description = "Wordlist generator, splitter, merger, finder, saver for security researchers, bug bounty and hackers";

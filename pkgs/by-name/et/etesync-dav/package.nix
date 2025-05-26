@@ -2,37 +2,34 @@
   lib,
   stdenv,
   nixosTests,
-  python3,
+  python3Packages,
   fetchFromGitHub,
   radicale,
 }:
-
-python3.pkgs.buildPythonApplication {
+python3Packages.buildPythonApplication rec {
   pname = "etesync-dav";
-  version = "0.32.1-unstable-2024-09-02";
+  version = "0.34.0";
 
   src = fetchFromGitHub {
     owner = "etesync";
     repo = "etesync-dav";
-    rev = "b9b23bf6fba60d42012008ba06023bccd9109c08";
-    hash = "sha256-wWhwnOlwE1rFgROTSj90hlSw4k48fIEdk5CJOXoecuQ=";
+    tag = "v${version}";
+    hash = "sha256-+rNqyksOmDUh0OuvgEDWv6tuZQkn1gizz35Ptr6izos=";
   };
 
-  propagatedBuildInputs =
-    with python3.pkgs;
-    [
-      appdirs
-      etebase
-      etesync
-      flask
-      flask-wtf
-      msgpack
-      setuptools
-      (python.pkgs.toPythonModule (radicale.override { python3 = python; }))
-      requests
-      types-setuptools
-    ]
-    ++ requests.optional-dependencies.socks;
+  dependencies = with python3Packages; [
+    appdirs
+    etebase
+    etesync
+    flask
+    flask-wtf
+    msgpack
+    setuptools
+    (python3Packages.toPythonModule (radicale.override { python3 = python; }))
+    requests
+    types-setuptools
+    requests.optional-dependencies.socks
+  ];
 
   doCheck = false;
 
@@ -40,12 +37,12 @@ python3.pkgs.buildPythonApplication {
     inherit (nixosTests) etesync-dav;
   };
 
-  meta = with lib; {
-    homepage = "https://www.etesync.com/";
+  meta = {
+    homepage = "https://www.etesync.com";
     description = "Secure, end-to-end encrypted, and privacy respecting sync for contacts, calendars and tasks";
     mainProgram = "etesync-dav";
-    license = licenses.gpl3;
-    maintainers = with maintainers; [
+    license = lib.licenses.gpl3Only;
+    maintainers = with lib.maintainers; [
       thyol
       valodim
     ];

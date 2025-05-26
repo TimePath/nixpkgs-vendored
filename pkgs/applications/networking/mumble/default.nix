@@ -21,6 +21,7 @@
   flac,
   libogg,
   libvorbis,
+  stdenv_32bit,
   iceSupport ? true,
   zeroc-ice,
   jackSupport ? false,
@@ -36,7 +37,7 @@
 let
   generic =
     overrides: source:
-    stdenv.mkDerivation (
+    (overrides.stdenv or stdenv).mkDerivation (
       source
       // overrides
       // {
@@ -61,6 +62,7 @@ let
         cmakeFlags = [
           "-D g15=OFF"
           "-D CMAKE_CXX_STANDARD=17" # protobuf >22 requires C++ 17
+          "-D BUILD_NUMBER=${lib.versions.patch source.version}"
         ] ++ (overrides.configureFlags or [ ]);
 
         preConfigure = ''
@@ -153,28 +155,34 @@ let
       buildInputs = [ libcap ] ++ lib.optional iceSupport zeroc-ice;
     } source;
 
+  overlay =
+    source:
+    generic {
+      stdenv = stdenv_32bit;
+      type = "mumble-overlay";
+
+      configureFlags = [
+        "-D server=OFF"
+        "-D client=OFF"
+        "-D overlay=ON"
+      ];
+    } source;
+
   source = rec {
-    version = "1.5.634";
+    version = "1.5.735";
 
     # Needs submodules
     src = fetchFromGitHub {
       owner = "mumble-voip";
       repo = "mumble";
       rev = "v${version}";
-      hash = "sha256-d9XmXHq264rTT80zphYcKLxS+AyUhjb19D3DuBJvMI4=";
+      hash = "sha256-JRnGgxkf5ct6P71bYgLbCEUmotDLS2Evy6t8R7ac7D4=";
       fetchSubmodules = true;
     };
-
-    patches = [
-      (fetchpatch {
-        name = "GCC14.patch";
-        url = "https://github.com/mumble-voip/mumble/commit/56945a9dfb62d29dccfe561572ebf64500deaed1.patch";
-        hash = "sha256-Frct9XJ/ZuHPglx+GB9h3vVycR8YY039dStIbfkPPDk=";
-      })
-    ];
   };
 in
 {
   mumble = lib.recursiveUpdate (client source) { meta.mainProgram = "mumble"; };
   murmur = lib.recursiveUpdate (server source) { meta.mainProgram = "mumble-server"; };
+  overlay = overlay source;
 }

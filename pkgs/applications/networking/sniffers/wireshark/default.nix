@@ -3,7 +3,6 @@
   stdenv,
   fetchFromGitLab,
 
-  ApplicationServices,
   asciidoctor,
   bcg729,
   bison,
@@ -26,7 +25,7 @@
   libpcap,
   libsmi,
   libssh,
-  lua5,
+  lua5_4,
   lz4,
   makeWrapper,
   minizip,
@@ -43,9 +42,8 @@
   snappy,
   spandsp3,
   speexdsp,
-  SystemConfiguration,
   wrapGAppsHook3,
-  zlib,
+  zlib-ng,
   zstd,
 
   withQt ? true,
@@ -58,7 +56,7 @@ assert withQt -> qt6 != null;
 
 stdenv.mkDerivation rec {
   pname = "wireshark-${if withQt then "qt" else "cli"}";
-  version = "4.2.9";
+  version = "4.4.6";
 
   outputs = [
     "out"
@@ -69,7 +67,7 @@ stdenv.mkDerivation rec {
     repo = "wireshark";
     owner = "wireshark";
     rev = "v${version}";
-    hash = "sha256-4GnDHGfd2FUOhel8/ZCzAH1iuUz1nTPdAAUCTcY0R5E=";
+    hash = "sha256-dzVlHxrXVCSMP4ZfyUq4N9UvL941C50Zto6Mb78LnfQ=";
   };
 
   patches = [
@@ -115,7 +113,7 @@ stdenv.mkDerivation rec {
       libpcap
       libsmi
       libssh
-      lua5
+      lua5_4
       lz4
       minizip
       nghttp2
@@ -126,7 +124,7 @@ stdenv.mkDerivation rec {
       snappy
       spandsp3
       speexdsp
-      zlib
+      zlib-ng
       zstd
     ]
     ++ lib.optionals withQt (
@@ -148,9 +146,7 @@ stdenv.mkDerivation rec {
       sbc
     ]
     ++ lib.optionals stdenv.hostPlatform.isDarwin [
-      ApplicationServices
       gmp
-      SystemConfiguration
     ];
 
   strictDeps = true;
@@ -213,8 +209,8 @@ stdenv.mkDerivation rec {
   # Copying because unfortunately pointing Wireshark (when built as an appbundle) at $out/lib instead is nontrivial.
   postFixup = lib.optionalString isAppBundle ''
     rm -rf $out/Applications/Wireshark.app/Contents/MacOS/extcap $out/Applications/Wireshark.app/Contents/PlugIns
-    mkdir -p $out/Applications/Wireshark.app/Contents/PlugIns/wireshark
-    cp -r $out/lib/wireshark/plugins/4-2 $out/Applications/Wireshark.app/Contents/PlugIns/wireshark/4-2
+    mkdir -p $out/Applications/Wireshark.app/Contents/PlugIns
+    cp -r $out/lib/wireshark/plugins $out/Applications/Wireshark.app/Contents/PlugIns/wireshark
     cp -r $out/lib/wireshark/extcap $out/Applications/Wireshark.app/Contents/MacOS/extcap
   '';
 

@@ -11,7 +11,7 @@
   nss,
   libXdamage,
   libdrm,
-  mesa,
+  libgbm,
   libxshmfence,
   makeDesktopItem,
   makeWrapper,
@@ -63,12 +63,10 @@ stdenv.mkDerivation rec {
     nss
     libXdamage
     libdrm
-    mesa
+    libgbm
     libxshmfence
     udev
   ];
-
-  unpackCmd = "${dpkg}/bin/dpkg-deb -x $src debcontents";
 
   dontBuild = true;
   dontStrip = true;

@@ -16,7 +16,7 @@
   gtk3,
   json-glib,
   libappindicator,
-  libsoup,
+  libsoup_2_4,
   webkitgtk_4_0,
 }:
 
@@ -48,7 +48,7 @@ stdenv.mkDerivation rec {
     gtk3
     json-glib
     libappindicator
-    libsoup
+    libsoup_2_4
     webkitgtk_4_0
   ];
 

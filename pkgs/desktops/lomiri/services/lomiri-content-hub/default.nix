@@ -130,7 +130,7 @@ stdenv.mkDerivation (finalAttrs: {
   enableParallelChecking = false;
 
   preFixup = ''
-    for exampleExe in content-hub-test-{importer,exporter,sharer}; do
+    for exampleExe in lomiri-content-hub-test-{importer,exporter,sharer}; do
       moveToOutput bin/$exampleExe $examples
       moveToOutput share/applications/$exampleExe.desktop $examples
     done
@@ -162,7 +162,7 @@ stdenv.mkDerivation (finalAttrs: {
       lgpl3Only
     ];
     mainProgram = "lomiri-content-hub-service";
-    maintainers = lib.teams.lomiri.members;
+    teams = [ lib.teams.lomiri ];
     platforms = lib.platforms.linux;
     pkgConfigModules = [
       "liblomiri-content-hub"

@@ -22,9 +22,12 @@ stdenv.mkDerivation rec {
     sha256 = "gEsSXR4oZLHnSvgW2psquLGUcrmvl0Q37nNVraXmKPU=";
   };
 
+  strictDeps = true;
+
   nativeBuildInputs = [
     gettext
     itstool
+    libxml2 # xmllint
     pkg-config
     wrapGAppsHook3
   ];
@@ -45,6 +48,6 @@ stdenv.mkDerivation rec {
     homepage = "https://mate-desktop.org";
     license = [ licenses.gpl2Plus ];
     platforms = platforms.linux;
-    maintainers = teams.mate.members;
+    teams = [ teams.mate ];
   };
 }

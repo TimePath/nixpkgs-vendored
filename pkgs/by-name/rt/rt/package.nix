@@ -16,8 +16,8 @@ stdenv.mkDerivation rec {
   version = "5.0.5";
 
   src = fetchFromGitHub {
-    repo = pname;
-    rev = "${pname}-${version}";
+    repo = "rt";
+    rev = "rt-${version}";
     owner = "bestpractical";
     hash = "sha256-4E6xEk1sIiNBKJT4jD+SNK8Fs+hX8EuTv+jD1U1g6qY=";
   };
@@ -136,12 +136,12 @@ stdenv.mkDerivation rec {
     echo rt-${version} > .tag
   '';
   preConfigure = ''
-    configureFlags="$configureFlags --with-web-user=$UID"
-    configureFlags="$configureFlags --with-web-group=$(id -g)"
-    configureFlags="$configureFlags --with-rt-group=$(id -g)"
-    configureFlags="$configureFlags --with-bin-owner=$UID"
-    configureFlags="$configureFlags --with-libs-owner=$UID"
-    configureFlags="$configureFlags --with-libs-group=$(id -g)"
+    appendToVar configureFlags "--with-web-user=$UID"
+    appendToVar configureFlags "--with-web-group=$(id -g)"
+    appendToVar configureFlags "--with-rt-group=$(id -g)"
+    appendToVar configureFlags "--with-bin-owner=$UID"
+    appendToVar configureFlags "--with-libs-owner=$UID"
+    appendToVar configureFlags "--with-libs-group=$(id -g)"
   '';
   configureFlags = [
     "--enable-graphviz"

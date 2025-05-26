@@ -1,6 +1,7 @@
 {
   lib,
   buildGoModule,
+  callPackage,
   fetchFromGitHub,
   nixosTests,
   caddy,
@@ -9,12 +10,12 @@
   stdenv,
 }:
 let
-  version = "2.8.4";
+  version = "2.10.0";
   dist = fetchFromGitHub {
     owner = "caddyserver";
     repo = "dist";
-    rev = "v${version}";
-    hash = "sha256-O4s7PhSUTXoNEIi+zYASx8AgClMC5rs7se863G6w+l0=";
+    tag = "v${version}";
+    hash = "sha256-us1TnszA/10OMVSDsNvzRb6mcM4eMR3pQ5EF4ggA958=";
   };
 in
 buildGoModule {
@@ -24,11 +25,11 @@ buildGoModule {
   src = fetchFromGitHub {
     owner = "caddyserver";
     repo = "caddy";
-    rev = "v${version}";
-    hash = "sha256-CBfyqtWp3gYsYwaIxbfXO3AYaBiM7LutLC7uZgYXfkQ=";
+    tag = "v${version}";
+    hash = "sha256-hzDd2BNTZzjwqhc/STbSAHnNlP7g1cFuMehqU1LumQE=";
   };
 
-  vendorHash = "sha256-1Api8bBZJ1/oYk4ZGIiwWCSraLzK9L+hsKXkFtk6iVM=";
+  vendorHash = "sha256-9Iu4qmBVkGeSAywLgQuDR7y+TwCBqwhVxhfaXhCDnUc=";
 
   subPackages = [ "cmd/caddy" ];
 
@@ -39,7 +40,11 @@ buildGoModule {
   ];
 
   # matches upstream since v2.8.0
-  tags = [ "nobadger" ];
+  tags = [
+    "nobadger"
+    "nomysql"
+    "nopgx"
+  ];
 
   nativeBuildInputs = [ installShellFiles ];
 
@@ -65,22 +70,26 @@ buildGoModule {
         --zsh <($out/bin/caddy completion zsh)
     '';
 
-  passthru.tests = {
-    inherit (nixosTests) caddy;
-    version = testers.testVersion {
-      command = "${caddy}/bin/caddy version";
-      package = caddy;
+  passthru = {
+    tests = {
+      inherit (nixosTests) caddy;
+      version = testers.testVersion {
+        command = "${caddy}/bin/caddy version";
+        package = caddy;
+      };
+      acme-integration = nixosTests.acme.caddy;
     };
+    withPlugins = callPackage ./plugins.nix { inherit caddy; };
   };
 
-  meta = with lib; {
+  meta = {
     homepage = "https://caddyserver.com";
     description = "Fast and extensible multi-platform HTTP/1-2-3 web server with automatic HTTPS";
-    license = licenses.asl20;
+    license = lib.licenses.asl20;
     mainProgram = "caddy";
-    maintainers = with maintainers; [
+    maintainers = with lib.maintainers; [
       Br1ght0ne
-      emilylange
+      stepbrobd
       techknowlogick
     ];
   };

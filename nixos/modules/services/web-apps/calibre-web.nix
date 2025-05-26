@@ -7,6 +7,7 @@
 
 let
   cfg = config.services.calibre-web;
+  dataDir = if lib.hasPrefix "/" cfg.dataDir then cfg.dataDir else "/var/lib/${cfg.dataDir}";
 
   inherit (lib)
     concatStringsSep
@@ -14,6 +15,7 @@ let
     mkIf
     mkOption
     optional
+    optionals
     optionalString
     types
     ;
@@ -47,7 +49,8 @@ in
         type = types.str;
         default = "calibre-web";
         description = ''
-          The directory below {file}`/var/lib` where Calibre-Web stores its data.
+          Where Calibre-Web stores its data.
+          Either an absolute path, or the directory name below {file}`/var/lib`.
         '';
       };
 
@@ -120,10 +123,17 @@ in
   };
 
   config = mkIf cfg.enable {
+    systemd.tmpfiles.settings = lib.optionalAttrs (lib.hasPrefix "/" cfg.dataDir) {
+      "10-calibre-web".${dataDir}.d = {
+        inherit (cfg) user group;
+        mode = "0700";
+      };
+    };
+
     systemd.services.calibre-web =
       let
-        appDb = "/var/lib/${cfg.dataDir}/app.db";
-        gdriveDb = "/var/lib/${cfg.dataDir}/gdrive.db";
+        appDb = "${dataDir}/app.db";
+        gdriveDb = "${dataDir}/gdrive.db";
         calibreWebCmd = "${cfg.package}/bin/calibre-web -p ${appDb} -g ${gdriveDb}";
 
         settings = concatStringsSep ", " (
@@ -138,7 +148,10 @@ in
           ++ optional (
             cfg.options.calibreLibrary != null
           ) "config_calibre_dir = '${cfg.options.calibreLibrary}'"
-          ++ optional cfg.options.enableBookConversion "config_converterpath = '${pkgs.calibre}/bin/ebook-convert'"
+          ++ optionals cfg.options.enableBookConversion [
+            "config_converterpath = '${pkgs.calibre}/bin/ebook-convert'"
+            "config_binariesdir = '${pkgs.calibre}/bin/'"
+          ]
           ++ optional cfg.options.enableKepubify "config_kepubifypath = '${pkgs.kepubify}/bin/kepubify'"
         );
       in
@@ -147,26 +160,29 @@ in
         after = [ "network.target" ];
         wantedBy = [ "multi-user.target" ];
 
-        serviceConfig = {
-          Type = "simple";
-          User = cfg.user;
-          Group = cfg.group;
+        serviceConfig =
+          {
+            Type = "simple";
+            User = cfg.user;
+            Group = cfg.group;
 
-          StateDirectory = cfg.dataDir;
-          ExecStartPre = pkgs.writeShellScript "calibre-web-pre-start" (
-            ''
-              __RUN_MIGRATIONS_AND_EXIT=1 ${calibreWebCmd}
+            ExecStartPre = pkgs.writeShellScript "calibre-web-pre-start" (
+              ''
+                __RUN_MIGRATIONS_AND_EXIT=1 ${calibreWebCmd}
 
-              ${pkgs.sqlite}/bin/sqlite3 ${appDb} "update settings set ${settings}"
-            ''
-            + optionalString (cfg.options.calibreLibrary != null) ''
-              test -f "${cfg.options.calibreLibrary}/metadata.db" || { echo "Invalid Calibre library"; exit 1; }
-            ''
-          );
+                ${pkgs.sqlite}/bin/sqlite3 ${appDb} "update settings set ${settings}"
+              ''
+              + optionalString (cfg.options.calibreLibrary != null) ''
+                test -f "${cfg.options.calibreLibrary}/metadata.db" || { echo "Invalid Calibre library"; exit 1; }
+              ''
+            );
 
-          ExecStart = "${calibreWebCmd} -i ${cfg.listen.ip}";
-          Restart = "on-failure";
-        };
+            ExecStart = "${calibreWebCmd} -i ${cfg.listen.ip}";
+            Restart = "on-failure";
+          }
+          // lib.optionalAttrs (!(lib.hasPrefix "/" cfg.dataDir)) {
+            StateDirectory = cfg.dataDir;
+          };
       };
 
     networking.firewall = mkIf cfg.openFirewall {

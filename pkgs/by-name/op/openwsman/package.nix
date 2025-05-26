@@ -12,13 +12,13 @@
 
 stdenv.mkDerivation rec {
   pname = "openwsman";
-  version = "2.7.2";
+  version = "2.8.1";
 
   src = fetchFromGitHub {
     owner = "Openwsman";
     repo = "openwsman";
-    rev = "v${version}";
-    sha256 = "sha256-CH2pqWs64Dznim3IljmsthKEQfACVlaAKQ/07MgryHo=";
+    tag = "v${version}";
+    hash = "sha256-jXsnjnYZ2UiEj3sJDhMuWlopIECKLraqgIV4evw5Tbw=";
   };
 
   nativeBuildInputs = [
@@ -45,12 +45,12 @@ stdenv.mkDerivation rec {
 
   configureFlags = [ "--disable-more-warnings" ];
 
-  meta = with lib; {
+  meta = {
     description = "Openwsman server implementation and client API with bindings";
     downloadPage = "https://github.com/Openwsman/openwsman/releases";
     homepage = "https://openwsman.github.io";
-    license = licenses.bsd3;
-    maintainers = with maintainers; [ deepfire ];
-    platforms = platforms.linux; # PAM is not available on Darwin
+    license = lib.licenses.bsd3;
+    maintainers = with lib.maintainers; [ deepfire ];
+    platforms = lib.platforms.linux; # PAM is not available on Darwin
   };
 }

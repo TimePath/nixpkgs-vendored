@@ -10,7 +10,6 @@
   fontconfig,
   libGL,
   xorg,
-  darwin,
 }:
 
 rustPlatform.buildRustPackage rec {
@@ -22,7 +21,8 @@ rustPlatform.buildRustPackage rec {
     hash = "sha256-M/ljgtTHMSc7rY/a8CpKGNuOSdVDwRt6+tzPPHdpKOw=";
   };
 
-  cargoHash = "sha256-u3YqXQZCfveSBjxdWb+GC0IA9bpruAYQdxX1zanT3fw=";
+  useFetchCargoVendor = true;
+  cargoHash = "sha256-odcyKOveYCWQ35uh//s19Jtq7OqiUnkeqbh90VWHp9A=";
 
   nativeBuildInputs = [
     pkg-config
@@ -42,9 +42,6 @@ rustPlatform.buildRustPackage rec {
       xorg.libXi
       xorg.libXrandr
       xorg.libxcb
-    ]
-    ++ lib.optionals stdenv.hostPlatform.isDarwin [
-      darwin.apple_sdk.frameworks.AppKit
     ];
 
   postFixup = lib.optionalString stdenv.hostPlatform.isLinux ''

@@ -9,7 +9,7 @@
   ffmpeg,
   gnutls,
   libjpeg_turbo,
-  mesa,
+  libgbm,
   pixman,
   zlib,
 }:
@@ -38,7 +38,7 @@ stdenv.mkDerivation rec {
     ffmpeg
     gnutls
     libjpeg_turbo
-    mesa
+    libgbm
     pixman
     zlib
   ];

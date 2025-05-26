@@ -1,30 +1,33 @@
 {
-  mkDerivation,
+  stdenv,
   lib,
   fetchFromGitHub,
   cmake,
   pkg-config,
+  wrapQtAppsNoGuiHook,
+  qtbase,
+  qca,
   withGstreamer ? true,
   gst_all_1,
   withOmemo ? true,
-  qca-qt5,
   libomemo-c,
 }:
 
-mkDerivation rec {
+stdenv.mkDerivation rec {
   pname = "qxmpp";
-  version = "1.8.2";
+  version = "1.10.2";
 
   src = fetchFromGitHub {
     owner = "qxmpp-project";
     repo = pname;
     rev = "v${version}";
-    sha256 = "sha256-fxTlxlnqttZZWRkt+vo4MJJz7DR/FMXcOqUv+/nlV18=";
+    hash = "sha256-M3F4tNIO3RvDxk/lce8/J6kmQtnsGLILQ15uEzgyfds=";
   };
 
   nativeBuildInputs =
     [
       cmake
+      wrapQtAppsNoGuiHook
     ]
     ++ lib.optionals (withGstreamer || withOmemo) [
       pkg-config
@@ -40,7 +43,8 @@ mkDerivation rec {
       ]
     )
     ++ lib.optionals withOmemo [
-      qca-qt5
+      qtbase
+      qca
       libomemo-c
     ];
   cmakeFlags =

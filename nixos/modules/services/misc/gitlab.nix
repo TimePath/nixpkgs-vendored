@@ -174,13 +174,7 @@ let
       registry = lib.optionalAttrs cfg.registry.enable {
         enabled = true;
         host = cfg.registry.externalAddress;
-        port =
-          if
-            (cfg.registry.externalPort == 80 && !cfg.https) || (cfg.registry.externalPort == 443 && cfg.https)
-          then
-            null
-          else
-            cfg.registry.externalPort;
+        port = cfg.registry.externalPort;
         key = cfg.registry.keyFile;
         api_url = "http://${config.services.dockerRegistry.listenAddress}:${toString config.services.dockerRegistry.port}/";
         issuer = cfg.registry.issuer;
@@ -274,7 +268,7 @@ let
         ) "authentication: :${cfg.smtp.authentication},"}
         enable_starttls_auto: ${boolToString cfg.smtp.enableStartTLSAuto},
         tls: ${boolToString cfg.smtp.tls},
-        ca_file: "/etc/ssl/certs/ca-certificates.crt",
+        ca_file: "${config.security.pki.caBundle}",
         openssl_verify_mode: '${cfg.smtp.opensslVerifyMode}'
       }
     end
@@ -693,7 +687,7 @@ in
         authentication = mkOption {
           type = with types; nullOr str;
           default = null;
-          description = "Authentication type to use, see http://api.rubyonrails.org/classes/ActionMailer/Base.html";
+          description = "Authentication type to use, see <http://api.rubyonrails.org/classes/ActionMailer/Base.html>";
         };
 
         enableStartTLSAuto = mkOption {
@@ -711,7 +705,7 @@ in
         opensslVerifyMode = mkOption {
           type = types.str;
           default = "peer";
-          description = "How OpenSSL checks the certificate, see http://api.rubyonrails.org/classes/ActionMailer/Base.html";
+          description = "How OpenSSL checks the certificate, see <http://api.rubyonrails.org/classes/ActionMailer/Base.html>";
         };
       };
 
@@ -907,6 +901,50 @@ in
           generate one with
 
           openssl genrsa 2048
+
+          This should be a string, not a nix path, since nix paths are
+          copied into the world-readable nix store.
+        '';
+      };
+
+      secrets.activeRecordPrimaryKeyFile = mkOption {
+        type = with types; nullOr path;
+        default = null;
+        description = ''
+          A file containing the secret used to encrypt some rails data
+          in the DB. This should not be the same as `services.gitlab.secrets.activeRecordDeterministicKeyFile`!
+
+          Make sure the secret is at ideally 32 characters and all random,
+          no regular words or you'll be exposed to dictionary attacks.
+
+          This should be a string, not a nix path, since nix paths are
+          copied into the world-readable nix store.
+        '';
+      };
+
+      secrets.activeRecordDeterministicKeyFile = mkOption {
+        type = with types; nullOr path;
+        default = null;
+        description = ''
+          A file containing the secret used to encrypt some rails data in a deterministic way
+          in the DB. This should not be the same as `services.gitlab.secrets.activeRecordPrimaryKeyFile`!
+
+          Make sure the secret is at ideally 32 characters and all random,
+          no regular words or you'll be exposed to dictionary attacks.
+
+          This should be a string, not a nix path, since nix paths are
+          copied into the world-readable nix store.
+        '';
+      };
+
+      secrets.activeRecordSaltFile = mkOption {
+        type = with types; nullOr path;
+        default = null;
+        description = ''
+          A file containing the salt for active record encryption in the DB.
+
+          Make sure the secret is at ideally 32 characters and all random,
+          no regular words or you'll be exposed to dictionary attacks.
 
           This should be a string, not a nix path, since nix paths are
           copied into the world-readable nix store.
@@ -1187,8 +1225,20 @@ in
         message = "services.gitlab.secrets.jwsFile must be set!";
       }
       {
-        assertion = versionAtLeast postgresqlPackage.version "14.9";
-        message = "PostgreSQL >= 14.9 is required to run GitLab 17. Follow the instructions in the manual section for upgrading PostgreSQL here: https://nixos.org/manual/nixos/stable/index.html#module-services-postgres-upgrading";
+        assertion = cfg.secrets.activeRecordPrimaryKeyFile != null;
+        message = "services.gitlab.secrets.activeRecordPrimaryKeyFile must be set!";
+      }
+      {
+        assertion = cfg.secrets.activeRecordDeterministicKeyFile != null;
+        message = "services.gitlab.secrets.activeRecordDeterministicKeyFile must be set!";
+      }
+      {
+        assertion = cfg.secrets.activeRecordSaltFile != null;
+        message = "services.gitlab.secrets.activeRecordSaltFile must be set!";
+      }
+      {
+        assertion = versionAtLeast postgresqlPackage.version "16";
+        message = "PostgreSQL >= 16 is required to run GitLab 18. Follow the instructions in the manual section for upgrading PostgreSQL here: https://nixos.org/manual/nixos/stable/index.html#module-services-postgres-upgrading";
       }
     ];
 
@@ -1486,11 +1536,17 @@ in
             db="$(<'${cfg.secrets.dbFile}')"
             otp="$(<'${cfg.secrets.otpFile}')"
             jws="$(<'${cfg.secrets.jwsFile}')"
-            export secret db otp jws
+            arprimary="$(<'${cfg.secrets.activeRecordPrimaryKeyFile}')"
+            ardeterministic="$(<'${cfg.secrets.activeRecordDeterministicKeyFile}')"
+            arsalt="$(<'${cfg.secrets.activeRecordSaltFile}')"
+            export secret db otp jws arprimary ardeterministic arsalt
             jq -n '{production: {secret_key_base: $ENV.secret,
                     otp_key_base: $ENV.otp,
                     db_key_base: $ENV.db,
-                    openid_connect_signing_key: $ENV.jws}}' \
+                    openid_connect_signing_key: $ENV.jws,
+                    active_record_encryption_primary_key: $ENV.arprimary,
+                    active_record_encryption_deterministic_key: $ENV.ardeterministic,
+                    active_record_encryption_key_derivation_salt: $ENV.arsalt}}' \
                > '${cfg.statePath}/config/secrets.yml'
           )
 

@@ -17,7 +17,7 @@
 
 buildPythonPackage rec {
   pname = "commoncode";
-  version = "32.0.0";
+  version = "32.2.1";
   pyproject = true;
 
   disabled = pythonOlder "3.8";
@@ -26,12 +26,14 @@ buildPythonPackage rec {
     owner = "nexB";
     repo = "commoncode";
     tag = "v${version}";
-    hash = "sha256-yqvsBJHrxVkSqp3QnYmHDJr3sef/g4pkSlkSioYuOc4=";
+    hash = "sha256-dCiERdNVup95UnvmJEzkpQsRvpk2eKqvwD6jkEBrXfE=";
   };
 
   dontConfigure = true;
 
   build-system = [ setuptools-scm ];
+
+  pythonRelaxDeps = [ "beautifulsoup4" ];
 
   dependencies = [
     attrs

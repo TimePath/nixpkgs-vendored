@@ -4,8 +4,6 @@
   lib,
   ...
 }:
-
-with lib;
 let
   cfg = config.services.tandoor-recipes;
   pkg = cfg.package;
@@ -18,7 +16,7 @@ let
       DEBUG_TOOLBAR = "0";
       MEDIA_ROOT = "/var/lib/tandoor-recipes";
     }
-    // optionalAttrs (config.time.timeZone != null) {
+    // lib.optionalAttrs (config.time.timeZone != null) {
       TZ = config.time.timeZone;
     }
     // (lib.mapAttrs (_: toString) cfg.extraConfig);
@@ -33,10 +31,10 @@ let
   '';
 in
 {
-  meta.maintainers = with maintainers; [ ambroisie ];
+  meta.maintainers = with lib.maintainers; [ jvanbruegge ];
 
   options.services.tandoor-recipes = {
-    enable = mkOption {
+    enable = lib.mkOption {
       type = lib.types.bool;
       default = false;
       description = ''
@@ -51,20 +49,20 @@ in
       '';
     };
 
-    address = mkOption {
-      type = types.str;
+    address = lib.mkOption {
+      type = lib.types.str;
       default = "localhost";
       description = "Web interface address.";
     };
 
-    port = mkOption {
-      type = types.port;
+    port = lib.mkOption {
+      type = lib.types.port;
       default = 8080;
       description = "Web interface port.";
     };
 
-    extraConfig = mkOption {
-      type = types.attrs;
+    extraConfig = lib.mkOption {
+      type = lib.types.attrs;
       default = { };
       description = ''
         Extra tandoor recipes config options.
@@ -77,10 +75,33 @@ in
       };
     };
 
-    package = mkPackageOption pkgs "tandoor-recipes" { };
+    user = lib.mkOption {
+      type = lib.types.str;
+      default = "tandoor_recipes";
+      description = "User account under which Tandoor runs.";
+    };
+
+    group = lib.mkOption {
+      type = lib.types.str;
+      default = "tandoor_recipes";
+      description = "Group under which Tandoor runs.";
+    };
+
+    package = lib.mkPackageOption pkgs "tandoor-recipes" { };
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
+    users.users = lib.mkIf (cfg.user == "tandoor_recipes") {
+      tandoor_recipes = {
+        inherit (cfg) group;
+        isSystemUser = true;
+      };
+    };
+
+    users.groups = lib.mkIf (cfg.group == "tandoor_recipes") {
+      tandoor_recipes = { };
+    };
+
     systemd.services.tandoor-recipes = {
       description = "Tandoor Recipes server";
 
@@ -90,17 +111,14 @@ in
         '';
         Restart = "on-failure";
 
-        User = "tandoor_recipes";
-        Group = "tandoor_recipes";
-        DynamicUser = true;
+        User = cfg.user;
+        Group = cfg.group;
         StateDirectory = "tandoor-recipes";
         WorkingDirectory = env.MEDIA_ROOT;
         RuntimeDirectory = "tandoor-recipes";
 
         BindReadOnlyPaths = [
-          "${
-            config.environment.etc."ssl/certs/ca-certificates.crt".source
-          }:/etc/ssl/certs/ca-certificates.crt"
+          "${config.security.pki.caBundle}:/etc/ssl/certs/ca-certificates.crt"
           builtins.storeDir
           "-/etc/resolv.conf"
           "-/etc/nsswitch.conf"

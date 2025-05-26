@@ -15,14 +15,14 @@
 
 buildPythonPackage rec {
   pname = "httpx-oauth";
-  version = "0.15.1";
+  version = "0.16.1";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "frankie567";
     repo = "httpx-oauth";
     tag = "v${version}";
-    hash = "sha256-f3X3kSw7elTScCA3bNggwXyyHORre6Xzup/D0kgn4DQ=";
+    hash = "sha256-/2IBAEZrK0Do7t9g+MWsKuIlcg0ANCfOoagVwTbBso8=";
   };
 
   build-system = [

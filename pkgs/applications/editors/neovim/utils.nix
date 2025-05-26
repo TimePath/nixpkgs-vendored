@@ -3,6 +3,7 @@
   stdenv,
   makeSetupHook,
   callPackage,
+  config,
   vimUtils,
   vimPlugins,
   nodejs,
@@ -107,7 +108,7 @@ let
       # the function you would have passed to lua.withPackages
       extraLuaPackages ? (_: [ ]),
       withNodeJs ? false,
-      withRuby ? true,
+      withRuby ? false,
       vimAlias ? false,
       viAlias ? false,
       configure ? { },
@@ -170,7 +171,7 @@ let
       withPython3 ? true,
       withNodeJs ? false,
       withRuby ? true,
-      # perl is problematic https://github.com/NixOS/nixpkgs/issues/132368
+      # Perl is problematic https://github.com/NixOS/nixpkgs/issues/132368
       withPerl ? false,
 
       # so that we can pass the full neovim config while ignoring it
@@ -220,7 +221,9 @@ let
       ];
 
       nvimGrammars = lib.mapAttrsToList (
-        name: value: value.origGrammar
+        name: value:
+        value.origGrammar
+          or (builtins.throw "additions to `pkgs.vimPlugins.nvim-treesitter.grammarPlugins` set should be passed through `pkgs.neovimUtils.grammarToPlugin` first")
       ) vimPlugins.nvim-treesitter.grammarPlugins;
       isNvimGrammar = x: builtins.elem x nvimGrammars;
 
@@ -269,7 +272,7 @@ let
     ));
 
   /*
-    Fork of vimUtils.packDir that additionnally generates a propagated-build-inputs-file that
+    Fork of vimUtils.packDir that additionally generates a propagated-build-inputs-file that
     can be used by the lua hooks to generate a proper LUA_PATH
 
     Generates a packpath folder as expected by vim
@@ -283,14 +286,14 @@ let
       rawPackDir = vimUtils.packDir packages;
 
     in
-    rawPackDir.override ({
+    rawPackDir.override {
       postBuild = ''
         mkdir $out/nix-support
         for i in $(find -L $out -name propagated-build-inputs ); do
           cat "$i" >> $out/nix-support/propagated-build-inputs
         done
       '';
-    });
+    };
 
 in
 {
@@ -302,5 +305,7 @@ in
   inherit normalizePlugins normalizedPluginsToVimPackage;
 
   inherit buildNeovimPlugin;
+}
+// lib.optionalAttrs config.allowAliases {
   buildNeovimPluginFrom2Nix = lib.warn "buildNeovimPluginFrom2Nix was renamed to buildNeovimPlugin" buildNeovimPlugin;
 }

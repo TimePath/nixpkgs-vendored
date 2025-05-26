@@ -296,7 +296,7 @@ in
       group = "rslsync";
     };
 
-    users.groups.rslsync = { };
+    users.groups.rslsync.gid = config.ids.gids.rslsync;
 
     systemd.services.resilio = with pkgs; {
       description = "Resilio Sync Service";

@@ -52,7 +52,7 @@ stdenv.mkDerivation rec {
       "START_LINUX_X86_64"
     #else        if stdenv.hostPlatform.isDarwin then "START_MACOS.app" # disabled because I cannot test on Darwin
     else
-      abort "Unsupported platform: ${stdenv.hostPlatform.linuxArch}.";
+      throw "Unsupported platform: ${stdenv.hostPlatform.linuxArch}.";
 
   linuxExecutable =
     if stdenv.hostPlatform.isx86_32 then

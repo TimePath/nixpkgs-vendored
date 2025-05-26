@@ -182,7 +182,6 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    systemd.defaultUnit = "graphical.target";
     # Inspired by https://gitlab.gnome.org/World/Phosh/phosh/-/blob/main/data/phosh.service
     systemd.services.phosh = {
       wantedBy = [ "graphical.target" ];
@@ -238,7 +237,7 @@ in
 
     security.pam.services.phosh = { };
 
-    hardware.graphics.enable = lib.mkDefault true;
+    services.graphical-desktop.enable = true;
 
     services.gnome.core-shell.enable = true;
     services.gnome.core-os-services.enable = true;

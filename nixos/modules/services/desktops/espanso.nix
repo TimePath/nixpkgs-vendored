@@ -4,8 +4,6 @@
   pkgs,
   ...
 }:
-
-with lib;
 let
   cfg = config.services.espanso;
 in
@@ -19,14 +17,14 @@ in
 
   options = {
     services.espanso = {
-      enable = mkEnableOption "Espanso";
-      package = mkPackageOption pkgs "espanso" {
+      enable = lib.mkEnableOption "Espanso";
+      package = lib.mkPackageOption pkgs "espanso" {
         example = "pkgs.espanso-wayland";
       };
     };
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     systemd.user.services.espanso = {
       description = "Espanso daemon";
       serviceConfig = {

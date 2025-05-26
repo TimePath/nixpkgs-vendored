@@ -5,25 +5,37 @@
   autoPatchelfHook,
   unzip,
   installShellFiles,
+  makeWrapper,
   openssl,
   writeShellScript,
   curl,
   jq,
   common-updater-scripts,
+  cctools,
+  darwin,
+  rcodesign,
 }:
 
 stdenvNoCC.mkDerivation rec {
-  version = "1.1.31";
+  version = "1.2.13";
   pname = "bun";
 
   src =
     passthru.sources.${stdenvNoCC.hostPlatform.system}
       or (throw "Unsupported system: ${stdenvNoCC.hostPlatform.system}");
 
+  sourceRoot =
+    {
+      aarch64-darwin = "bun-darwin-aarch64";
+      x86_64-darwin = "bun-darwin-x64-baseline";
+    }
+    .${stdenvNoCC.hostPlatform.system} or null;
+
   strictDeps = true;
   nativeBuildInputs = [
     unzip
     installShellFiles
+    makeWrapper
   ] ++ lib.optionals stdenvNoCC.hostPlatform.isLinux [ autoPatchelfHook ];
   buildInputs = [ openssl ];
 
@@ -39,39 +51,54 @@ stdenvNoCC.mkDerivation rec {
     runHook postInstall
   '';
 
-  postPhases = lib.optionals (stdenvNoCC.buildPlatform.canExecute stdenvNoCC.hostPlatform) [
-    "postPatchelf"
-  ];
-  postPatchelf = ''
-    completions_dir=$(mktemp -d)
+  postPhases = [ "postPatchelf" ];
+  postPatchelf =
+    lib.optionalString stdenvNoCC.hostPlatform.isDarwin ''
+      '${lib.getExe' cctools "${cctools.targetPrefix}install_name_tool"}' $out/bin/bun \
+        -change /usr/lib/libicucore.A.dylib '${lib.getLib darwin.ICU}/lib/libicucore.A.dylib'
+      '${lib.getExe rcodesign}' sign --code-signature-flags linker-signed $out/bin/bun
+    ''
+    # We currently cannot generate completions for x86_64-darwin because bun requires avx support to run, which is:
+    # 1. Not currently supported by the version of Rosetta on our aarch64 builders
+    # 2. Is not correctly detected even on macOS 15+, where it is available through Rosetta
+    #
+    # The baseline builds are no longer an option because they too now require avx support.
+    +
+      lib.optionalString
+        (
+          stdenvNoCC.buildPlatform.canExecute stdenvNoCC.hostPlatform
+          && !(stdenvNoCC.hostPlatform.isDarwin && stdenvNoCC.hostPlatform.isx86_64)
+        )
+        ''
+          completions_dir=$(mktemp -d)
 
-    SHELL="bash" $out/bin/bun completions $completions_dir
-    SHELL="zsh" $out/bin/bun completions $completions_dir
-    SHELL="fish" $out/bin/bun completions $completions_dir
+          SHELL="bash" $out/bin/bun completions $completions_dir
+          SHELL="zsh" $out/bin/bun completions $completions_dir
+          SHELL="fish" $out/bin/bun completions $completions_dir
 
-    installShellCompletion --name bun \
-      --bash $completions_dir/bun.completion.bash \
-      --zsh $completions_dir/_bun \
-      --fish $completions_dir/bun.fish
-  '';
+          installShellCompletion --name bun \
+            --bash $completions_dir/bun.completion.bash \
+            --zsh $completions_dir/_bun \
+            --fish $completions_dir/bun.fish
+        '';
 
   passthru = {
     sources = {
       "aarch64-darwin" = fetchurl {
         url = "https://github.com/oven-sh/bun/releases/download/bun-v${version}/bun-darwin-aarch64.zip";
-        hash = "sha256-dOQFfkxCiOFmAr11CjSdSKNpiLERkbVWawAuy8ASkJE=";
+        hash = "sha256-gVQ2dSTYwpjtsmm40N9h1GnsQZTTYcB+S40sZfu8Lvs=";
       };
       "aarch64-linux" = fetchurl {
         url = "https://github.com/oven-sh/bun/releases/download/bun-v${version}/bun-linux-aarch64.zip";
-        hash = "sha256-ZuU14GvAtf1n1sA8amtZUSGp5iJ5qp/SI2wrw4Gwe/4=";
+        hash = "sha256-tqJVN7wtEevkSkeN1iqOAdvJ9OHEt9LXMLSn6dNYDMk=";
       };
       "x86_64-darwin" = fetchurl {
         url = "https://github.com/oven-sh/bun/releases/download/bun-v${version}/bun-darwin-x64-baseline.zip";
-        hash = "sha256-qN8ciVHzHH8GgR89GDgfvteMV+YawMUQLiXNwYyN+wU=";
+        hash = "sha256-BTh6RkWJFTig33Ql6JEuwWt0JRFs1BZ2aqUsowE/jGQ=";
       };
       "x86_64-linux" = fetchurl {
         url = "https://github.com/oven-sh/bun/releases/download/bun-v${version}/bun-linux-x64.zip";
-        hash = "sha256-zHitG4Ktt+iCKk9GrC3C4MRSWhUxh89kW9bUeHzqNJs=";
+        hash = "sha256-i7LkxH6uGD8kc8Vbm853mMSig21kbCWHp5h6PRBi4QA=";
       };
     };
     updateScript = writeShellScript "update-bun" ''

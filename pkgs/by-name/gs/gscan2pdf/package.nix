@@ -11,7 +11,7 @@
   imagemagick,
   libtiff,
   djvulibre,
-  poppler_utils,
+  poppler-utils,
   ghostscript,
   unpaper,
   pdftk,
@@ -19,16 +19,16 @@
   xvfb-run,
   liberation_ttf,
   file,
-  tesseract,
+  tesseract3,
 }:
 
 perlPackages.buildPerlPackage rec {
   pname = "gscan2pdf";
-  version = "2.13.3";
+  version = "2.13.4";
 
   src = fetchurl {
     url = "mirror://sourceforge/gscan2pdf/gscan2pdf-${version}.tar.xz";
-    hash = "sha256-QAs6fsQDe9+nKM/OAVZUHB034K72jHsKoA2LY2JQa8Y=";
+    hash = "sha256-4HcTkVJBscBb8AxeN6orMQFVR0w4hFfkGhxQOzP3mWk=";
   };
 
   patches = [
@@ -98,7 +98,7 @@ perlPackages.buildPerlPackage rec {
       --prefix PATH : "${imagemagick}/bin" \
       --prefix PATH : "${libtiff}/bin" \
       --prefix PATH : "${djvulibre}/bin" \
-      --prefix PATH : "${poppler_utils}/bin" \
+      --prefix PATH : "${poppler-utils}/bin" \
       --prefix PATH : "${ghostscript}/bin" \
       --prefix PATH : "${unpaper}/bin" \
       --prefix PATH : "${pdftk}/bin"
@@ -118,14 +118,14 @@ perlPackages.buildPerlPackage rec {
       imagemagick
       libtiff
       djvulibre
-      poppler_utils
+      poppler-utils
       ghostscript
       unpaper
       pdftk
 
       xvfb-run
       file
-      tesseract # tests are expecting tesseract 3.x precisely
+      tesseract3 # tests are expecting tesseract 3.x precisely
     ]
     ++ (with perlPackages; [
       TestPod

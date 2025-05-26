@@ -23,19 +23,19 @@ stdenv.mkDerivation (finalAttrs: {
   # c.f https://github.com/Shark-ML/Shark/commit/221c1f2e8abfffadbf3c5ef7cf324bc6dc9b4315
   patches = [ ./shark-2-ext-num-literals-all.diff ];
 
-  # https://gitlab.orfeo-toolbox.org/orfeotoolbox/otb/-/blob/develop/SuperBuild/CMake/External_shark.cmake?ref_type=heads
-  cmakeFlags =
-    [
-      (lib.cmakeBool "BUILD_SHARED_LIBS" true)
-      (lib.cmakeBool "BUILD_EXAMPLES" false)
-      (lib.cmakeBool "BUILD_DOCS" false)
-      (lib.cmakeBool "BUILD_TESTING" false)
-      (lib.cmakeBool "ENABLE_CBLAS" false)
-    ]
-    ++ lib.optionals (!enableOpenMP) [
-      (lib.cmakeBool "ENABLE_OPENMP" false)
-    ];
+  # Remove explicitly setting C++11, because boost::math headers need C++14 since Boost187.
+  postPatch = ''
+    sed -i '/CXX_STANDARD/d' src/CMakeLists.txt
+  '';
 
+  # https://gitlab.orfeo-toolbox.org/orfeotoolbox/otb/-/blob/develop/SuperBuild/CMake/External_shark.cmake?ref_type=heads
+  cmakeFlags = [
+    "-DBUILD_SHARED_LIBS=ON"
+    "-DBUILD_EXAMPLES=OFF"
+    "-DBUILD_DOCS=OFF"
+    "-DBUILD_TESTING=OFF"
+    "-DENABLE_CBLAS=OFF"
+  ] ++ lib.optionals (!enableOpenMP) [ "-DENABLE_OPENMP=OFF" ];
   buildInputs = [
     boost
     openssl

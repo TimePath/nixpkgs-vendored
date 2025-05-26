@@ -23,16 +23,19 @@ stdenv.mkDerivation rec {
     hash = "sha256-d2UPefnjiLb1Zm3BE4SYlFdaKbtN4huM1Ydnv4qQUVQ=";
   };
 
-  nativeBuildInputs = lib.optionals withAtopgpu [
-    python3.pkgs.wrapPython
-  ];
+  nativeBuildInputs =
+    [
+      pkg-config
+    ]
+    ++ lib.optionals withAtopgpu [
+      python3.pkgs.wrapPython
+    ];
 
   buildInputs =
     [
       glib
       zlib
       ncurses
-      pkg-config
     ]
     ++ lib.optionals withAtopgpu [
       python3

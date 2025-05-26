@@ -30,16 +30,17 @@
   withEmacs ? true,
   withRuby ? true,
   withSfsexp ? true, # also installs notmuch-git, which requires sexp-support
+  # TODO upstream: it takes too long ! 800 ms here
   withVim ? true,
 }:
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "notmuch";
-  version = "0.38.3";
+  version = "0.39";
 
   src = fetchurl {
     url = "https://notmuchmail.org/releases/notmuch-${finalAttrs.version}.tar.xz";
-    hash = "sha256-mvRsyA2li0MByiuu/MJaQNES0DFVB+YywPPw8IMo0FQ=";
+    hash = "sha256-uIuwKnbEa62NMT/Su0+OOSmLUfZvy+swTZ+Aw+73BOM=";
   };
 
   nativeBuildInputs =
@@ -66,14 +67,6 @@ stdenv.mkDerivation (finalAttrs: {
     ]
     ++ lib.optional withRuby ruby
     ++ lib.optional withSfsexp sfsexp;
-
-  patches = [
-    (fetchpatch {
-      name = "add-workaround-for-Emacs-30-pp-changes.patch";
-      url = "https://git.notmuchmail.org/git?p=notmuch;a=patch;h=e3d4721b1ba4836c7646e057b50123fe994652eb";
-      hash = "sha256-phfNSOlTajTmaf+DjtdmBAWSm+2tUbrQEChInUlwn5k=";
-    })
-  ];
 
   postPatch =
     ''
@@ -113,12 +106,15 @@ stdenv.mkDerivation (finalAttrs: {
     cp bindings/python-cffi/_notmuch_config.py ${placeholder "bindingconfig"}/
   '';
 
-  outputs = [
-    "out"
-    "man"
-    "info"
-    "bindingconfig"
-  ] ++ lib.optional withEmacs "emacs";
+  outputs =
+    [
+      "out"
+      "man"
+      "info"
+      "bindingconfig"
+    ]
+    ++ lib.optional withEmacs "emacs"
+    ++ lib.optional withVim "vim";
 
   # if notmuch is built with s-expression support, the testsuite (T-850.sh) only
   # passes if notmuch-git can be executed, so we need to patch its shebang.
@@ -138,10 +134,9 @@ stdenv.mkDerivation (finalAttrs: {
       ln -s ${test-database} test/test-databases/database-v1.tar.xz
     ''
     + ''
-      # Issues since gnupg: 2.4.0 -> 2.4.1
-      rm test/{T350-crypto,T357-index-decryption}.sh
       # Issues since pbr 6.0.0 bump (ModuleNotFoundError: No module named 'notmuch2')
       rm test/T055-path-config.sh
+      rm test/T610-message-property.sh
       # Flaky, seems to get its paths wrong sometimes (?)
       # *ERROR*: Opening output file: Permission denied, /nix/store/bzy21v2cd5sq1djzwa9b19q08wpp9mm0-emacs-29.1/bin/OUTPUT
       rm test/T460-emacs-tree.sh
@@ -187,15 +182,15 @@ stdenv.mkDerivation (finalAttrs: {
       wrapProgram $out/bin/notmuch-git --prefix PATH : $out/bin:${lib.getBin git}/bin
     ''
     + lib.optionalString withVim ''
-      make -C vim DESTDIR="$out/share/vim-plugins/notmuch" prefix="" install
-      mkdir -p $out/share/nvim
-      ln -s $out/share/vim-plugins/notmuch $out/share/nvim/site
+      make -C vim DESTDIR="$vim/share/vim-plugins/notmuch" prefix="" install
+      mkdir -p $vim/share/nvim
+      ln -s $vim/share/vim-plugins/notmuch $vim/share/nvim/site
     ''
     + lib.optionalString (withVim && withRuby) ''
-      PLUG=$out/share/vim-plugins/notmuch/plugin/notmuch.vim
+      PLUG=$vim/share/vim-plugins/notmuch/plugin/notmuch.vim
       cat >> $PLUG << EOF
         let \$GEM_PATH=\$GEM_PATH . ":${finalAttrs.passthru.gemEnv}/${ruby.gemPath}"
-        let \$RUBYLIB=\$RUBYLIB . ":$out/${ruby.libPath}/${ruby.system}"
+        let \$RUBYLIB=\$RUBYLIB . ":$vim/${ruby.libPath}/${ruby.system}"
         if has('nvim')
       EOF
       for gem in ${finalAttrs.passthru.gemEnv}/${ruby.gemPath}/gems/*/lib; do
@@ -205,7 +200,7 @@ stdenv.mkDerivation (finalAttrs: {
     '';
 
   passthru = {
-    pythonSourceRoot = "notmuch-${finalAttrs.version}/bindings/python";
+    pythonSourceRoot = "notmuch-${finalAttrs.version}/contrib/python-legacy";
     gemEnv = buildEnv {
       name = "notmuch-vim-gems";
       paths = with ruby.gems; [ mail ];

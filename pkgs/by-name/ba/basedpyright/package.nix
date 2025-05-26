@@ -16,16 +16,16 @@
 
 buildNpmPackage rec {
   pname = "basedpyright";
-  version = "1.21.1";
+  version = "1.29.1";
 
   src = fetchFromGitHub {
     owner = "detachhead";
     repo = "basedpyright";
     tag = "v${version}";
-    hash = "sha256-RwckZqEL5U60XSYul74p9Ezg+N8FrnLkRFpdxIa7/34=";
+    hash = "sha256-DUcrR4UwqbP968QYPsjivf2FOUL6hwr5ZAGH+qA8Xtw=";
   };
 
-  npmDepsHash = "sha256-hCZ68sLpQs/7SYVf3pMAHfstRm1C/d80j8fESIFdhnw=";
+  npmDepsHash = "sha256-wzetOJxHJXK7oY1cwOG9YOrKKIDhFPD17em6UQ2859M=";
   npmWorkspace = "packages/pyright";
 
   preBuild = ''
@@ -44,10 +44,12 @@ buildNpmPackage rec {
   postInstall = ''
     mv "$out/bin/pyright" "$out/bin/basedpyright"
     mv "$out/bin/pyright-langserver" "$out/bin/basedpyright-langserver"
+    # Remove dangling symlinks created during installation (remove -delete to just see the files, or -print '%l\n' to see the target
+    find -L $out -type l -print -delete
   '';
 
   nativeInstallCheckInputs = [ versionCheckHook ];
-  versionCheckProgramArg = [ "--version" ];
+  versionCheckProgramArg = "--version";
   doInstallCheck = true;
 
   passthru = {
@@ -94,11 +96,14 @@ buildNpmPackage rec {
   };
 
   meta = {
-    changelog = "https://github.com/detachhead/basedpyright/releases/tag/${version}";
+    changelog = "https://github.com/detachhead/basedpyright/releases/tag/${src.tag}";
     description = "Type checker for the Python language";
     homepage = "https://github.com/detachhead/basedpyright";
     license = lib.licenses.mit;
     mainProgram = "basedpyright";
-    maintainers = with lib.maintainers; [ kiike ];
+    maintainers = with lib.maintainers; [
+      kiike
+      misilelab
+    ];
   };
 }

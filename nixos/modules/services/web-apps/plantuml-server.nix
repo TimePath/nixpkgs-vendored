@@ -106,7 +106,6 @@ in
     systemd.services.plantuml-server = {
       description = "PlantUML server";
       wantedBy = [ "multi-user.target" ];
-      path = [ cfg.home ];
 
       environment = {
         PLANTUML_LIMIT_SIZE = builtins.toString cfg.plantumlLimitSize;

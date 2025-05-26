@@ -18,19 +18,19 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "uuu";
-  version = "1.5.182";
+  version = "1.5.201";
 
   src = fetchFromGitHub {
     owner = "nxp-imx";
     repo = "mfgtools";
     rev = "uuu_${finalAttrs.version}";
-    hash = "sha256-I0EX+vsaOwz+HJUWFC5Z/xRu6xegzEfmuAlBd/OSAp4=";
+    hash = "sha256-G1Let5cJVzxKLs+4umnGfcSEvTeotqsgpZ0CDycBNEo=";
   };
 
   passthru.updateScript = nix-update-script {
     extraArgs = [
       "--version-regex"
-      "uuu_\\([0-9.]+\\)"
+      "uuu_([0-9.]+)"
     ];
   };
 

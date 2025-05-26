@@ -7,24 +7,22 @@
   zlib,
   pkg-config,
   glib,
-  overrideSDK,
   buildPackages,
   pixman,
   vde2,
   alsa-lib,
   flex,
-  pcre2,
   bison,
   lzo,
   snappy,
   libaio,
   libtasn1,
   gnutls,
-  nettle,
   curl,
   dtc,
   ninja,
   meson,
+  perl,
   sigtool,
   makeWrapper,
   removeReferencesTo,
@@ -33,13 +31,9 @@
   libcap_ng,
   socat,
   libslirp,
-  CoreServices,
-  Cocoa,
-  Hypervisor,
-  Kernel,
-  rez,
-  setfile,
-  vmnet,
+  libcbor,
+  apple-sdk_13,
+  darwinMinVersionHook,
   guestAgentSupport ?
     (with stdenv.hostPlatform; isLinux || isNetBSD || isOpenBSD || isSunOS || isWindows) && !minimal,
   numaSupport ? stdenv.hostPlatform.isLinux && !stdenv.hostPlatform.isAarch32 && !minimal,
@@ -81,7 +75,7 @@
   glusterfs,
   libuuid,
   openGLSupport ? sdlSupport,
-  mesa,
+  libgbm,
   libepoxy,
   libdrm,
   rutabagaSupport ?
@@ -133,15 +127,13 @@ assert lib.assertMsg (
 let
   hexagonSupport = hostCpuTargets == null || lib.elem "hexagon" hostCpuTargets;
 
-  buildPlatformStdenv =
-    if stdenv.buildPlatform.isDarwin then
-      overrideSDK buildPackages.stdenv {
-        # Keep these values in sync with `all-packages.nix`.
-        darwinSdkVersion = "12.3";
-        darwinMinVersion = "12.0";
-      }
-    else
-      buildPackages.stdenv;
+  # needed in buildInputs and depsBuildBuild
+  # check log for warnings eg: `warning: 'hv_vm_config_get_max_ipa_size' is only available on macOS 13.0`
+  # to indicate if min version needs to get bumped.
+  darwinSDK = [
+    apple-sdk_13
+    (darwinMinVersionHook "13")
+  ];
 in
 
 stdenv.mkDerivation (finalAttrs: {
@@ -152,14 +144,17 @@ stdenv.mkDerivation (finalAttrs: {
     + lib.optionalString nixosTestRunner "-for-vm-tests"
     + lib.optionalString toolsOnly "-utils"
     + lib.optionalString userOnly "-user";
-  version = "9.1.3";
+  version = "9.2.3";
 
   src = fetchurl {
     url = "https://download.qemu.org/qemu-${finalAttrs.version}.tar.xz";
-    hash = "sha256-SAp3oO0TqbOUFfY5qgILTrDXzFpSVpUQ39gws68brIk=";
+    hash = "sha256-uu1JQnDDYb9pgWrMhFEuPv7XHHoj92aRZCuAvD3naT4=";
   };
 
-  depsBuildBuild = [ buildPlatformStdenv.cc ] ++ lib.optionals hexagonSupport [ pkg-config ];
+  depsBuildBuild =
+    [ buildPackages.stdenv.cc ]
+    ++ lib.optionals stdenv.buildPlatform.isDarwin darwinSDK
+    ++ lib.optionals hexagonSupport [ pkg-config ];
 
   nativeBuildInputs =
     [
@@ -170,6 +165,7 @@ stdenv.mkDerivation (finalAttrs: {
       bison
       meson
       ninja
+      perl
 
       # Don't change this to python3 and python3.pkgs.*, breaks cross-compilation
       python3Packages.python
@@ -180,12 +176,16 @@ stdenv.mkDerivation (finalAttrs: {
       python3Packages.sphinx-rtd-theme
     ]
     ++ lib.optionals hexagonSupport [ glib ]
-    ++ lib.optionals stdenv.hostPlatform.isDarwin [ sigtool ]
+    ++ lib.optionals stdenv.hostPlatform.isDarwin [
+      sigtool
+    ]
     ++ lib.optionals (!userOnly) [ dtc ];
 
+  # gnutls is required for crypto support (luks) in qemu-img
   buildInputs =
     [
       glib
+      gnutls
       zlib
     ]
     ++ lib.optionals (!minimal) [
@@ -195,21 +195,12 @@ stdenv.mkDerivation (finalAttrs: {
       lzo
       snappy
       libtasn1
-      gnutls
-      nettle
       libslirp
+      libcbor
     ]
     ++ lib.optionals (!userOnly) [ curl ]
     ++ lib.optionals ncursesSupport [ ncurses ]
-    ++ lib.optionals stdenv.hostPlatform.isDarwin [
-      CoreServices
-      Cocoa
-      Hypervisor
-      Kernel
-      rez
-      setfile
-      vmnet
-    ]
+    ++ lib.optionals stdenv.hostPlatform.isDarwin darwinSDK
     ++ lib.optionals seccompSupport [ libseccomp ]
     ++ lib.optionals numaSupport [ numactl ]
     ++ lib.optionals alsaSupport [ alsa-lib ]
@@ -248,7 +239,7 @@ stdenv.mkDerivation (finalAttrs: {
       libuuid
     ]
     ++ lib.optionals openGLSupport [
-      mesa
+      libgbm
       libepoxy
       libdrm
     ]
@@ -263,28 +254,25 @@ stdenv.mkDerivation (finalAttrs: {
   dontUseMesonConfigure = true; # meson's configurePhase isn't compatible with qemu build
   dontAddStaticConfigureFlags = true;
 
-  outputs = [ "out" ] ++ lib.optional guestAgentSupport "ga";
+  outputs = [ "out" ] ++ lib.optional enableDocs "doc" ++ lib.optional guestAgentSupport "ga";
   # On aarch64-linux we would shoot over the Hydra's 2G output limit.
   separateDebugInfo = !(stdenv.hostPlatform.isAarch64 && stdenv.hostPlatform.isLinux);
 
   patches = [
     ./fix-qemu-ga.patch
 
+    # On macOS, QEMU uses `Rez(1)` and `SetFile(1)` to attach its icon
+    # to the binary. Unfortunately, those commands are proprietary,
+    # deprecated since Xcode 6, and operate on resource forks, which
+    # these days are stored in extended attributes, which aren’t
+    # supported in the Nix store. So we patch out the calls.
+    ./skip-macos-icon.patch
+
     # Workaround for upstream issue with nested virtualisation: https://gitlab.com/qemu-project/qemu/-/issues/1008
     (fetchpatch {
       url = "https://gitlab.com/qemu-project/qemu/-/commit/3e4546d5bd38a1e98d4bd2de48631abf0398a3a2.diff";
       sha256 = "sha256-oC+bRjEHixv1QEFO9XAm4HHOwoiT+NkhknKGPydnZ5E=";
       revert = true;
-    })
-
-    # musl changes https://gitlab.com/qemu-project/qemu/-/issues/2215
-    (fetchpatch {
-      url = "https://gitlab.com/qemu-project/qemu/-/commit/ac1bbe8ca46c550b3ad99c85744119a3ace7b4f4.diff";
-      sha256 = "sha256-wSlf8+7WHk2Z4I5cLFa37MRroQucPIuFzzyWnG9IpeY=";
-    })
-    (fetchpatch {
-      url = "https://gitlab.com/qemu-project/qemu/-/commit/99174ce39e86ec6aea7bb7ce326b16e3eed9e3da.diff";
-      sha256 = "sha256-Cpt01d1ARoCTuJuC66no4doPgL+4/ZqnJTWwjU2MxnY=";
     })
   ] ++ lib.optional nixosTestRunner ./force-uid0-on-9p.patch;
 
@@ -305,11 +293,14 @@ stdenv.mkDerivation (finalAttrs: {
       --replace '$source_path/VERSION' '$source_path/QEMU_VERSION'
     substituteInPlace meson.build \
       --replace "'VERSION'" "'QEMU_VERSION'"
+    substituteInPlace python/qemu/machine/machine.py \
+      --replace-fail /var/tmp "$TMPDIR"
   '';
 
   configureFlags =
     [
       "--disable-strip" # We'll strip ourselves after separating debug info.
+      "--enable-gnutls" # auto detection only works when building with --enable-system
       (lib.enableFeature enableDocs "docs")
       (lib.enableFeature enableTools "tools")
       "--localstatedir=/var"
@@ -421,7 +412,7 @@ stdenv.mkDerivation (finalAttrs: {
     '';
 
   # Add a ‘qemu-kvm’ wrapper for compatibility/convenience.
-  postInstall = lib.optionalString (!minimal) ''
+  postInstall = lib.optionalString (!minimal && !xenSupport) ''
     ln -s $out/bin/qemu-system-${stdenv.hostPlatform.qemuArch} $out/bin/qemu-kvm
   '';
 
@@ -450,7 +441,8 @@ stdenv.mkDerivation (finalAttrs: {
       homepage = "https://www.qemu.org/";
       description = "Generic and open source machine emulator and virtualizer";
       license = licenses.gpl2Plus;
-      maintainers = with maintainers; [ qyliss ] ++ lib.optionals xenSupport xen.meta.maintainers;
+      maintainers = with maintainers; [ qyliss ];
+      teams = lib.optionals xenSupport xen.meta.teams;
       platforms = platforms.unix;
     }
     # toolsOnly: Does not have qemu-kvm and there's no main support tool

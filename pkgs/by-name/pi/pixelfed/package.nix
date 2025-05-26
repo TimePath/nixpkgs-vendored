@@ -1,27 +1,28 @@
 {
   lib,
   fetchFromGitHub,
-  php83,
+  php,
   nixosTests,
   nix-update-script,
   dataDir ? "/var/lib/pixelfed",
   runtimeDir ? "/run/pixelfed",
 }:
 
-php83.buildComposerProject (finalAttrs: {
+php.buildComposerProject2 (finalAttrs: {
   pname = "pixelfed";
   version = "0.12.5";
 
   src = fetchFromGitHub {
     owner = "pixelfed";
     repo = "pixelfed";
-    rev = "v${finalAttrs.version}";
+    tag = "v${finalAttrs.version}";
     hash = "sha256-bPoYEPCWj7vAKDL/P4yjhrfp4HK9sbBh4eK0Co+xaZc=";
   };
 
-  vendorHash = "sha256-/ep0j1KUBrpcJsd40L8PbUHSrIhV1bKRkq+qqbJB2sM=";
+  vendorHash = "sha256-nJCxWIrsdGQxdiJe9skHv4AnqUpqZHuqXrl/cQrT9Ps=";
 
   postInstall = ''
+    chmod -R u+w $out/share
     mv "$out/share/php/${finalAttrs.pname}"/* $out
     rm -R $out/bootstrap/cache
     # Move static contents for the NixOS module to pick it up, if needed.

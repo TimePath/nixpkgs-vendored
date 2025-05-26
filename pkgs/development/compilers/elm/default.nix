@@ -2,7 +2,7 @@
   pkgs,
   lib,
   makeWrapper,
-  nodejs ? pkgs.nodejs_18,
+  nodejs ? pkgs.nodejs_20,
 }:
 
 let
@@ -22,8 +22,8 @@ let
   # Haskell packages that require ghc 8.10
   hs810Pkgs = import ./packages/ghc8_10 { inherit pkgs lib; };
 
-  # Haskell packages that require ghc 9.2
-  hs92Pkgs = import ./packages/ghc9_2 { inherit pkgs lib; };
+  # Haskell packages that require ghc 9.4
+  hs94Pkgs = import ./packages/ghc9_4 { inherit pkgs lib; };
 
   # Patched, originally npm-downloaded, packages
   patchedNodePkgs = import ./packages/node {
@@ -38,7 +38,7 @@ let
   assembleScope =
     self: basics:
     (hs96Pkgs self).elmPkgs
-    // (hs92Pkgs self).elmPkgs
+    // (hs94Pkgs self).elmPkgs
     // (hs810Pkgs self).elmPkgs
     // (patchedNodePkgs self)
     // basics;
@@ -70,6 +70,8 @@ lib.makeScope pkgs.newScope (
         };
 
       elm-json = callPackage ./packages/elm-json { };
+
+      elm-review = callPackage ./packages/elm-review { };
 
       elm-test-rs = callPackage ./packages/elm-test-rs { };
 

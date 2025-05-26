@@ -16,6 +16,7 @@
   webkitgtk_6_0,
   texliveMedium,
   shared-mime-info,
+  nix-update-script,
 }:
 
 let
@@ -98,6 +99,7 @@ python3Packages.buildPythonApplication {
 
   passthru = {
     inherit reveal-js;
+    updateScript = nix-update-script { };
   };
 
   meta = {
@@ -107,8 +109,8 @@ python3Packages.buildPythonApplication {
     platforms = lib.platforms.linux;
     maintainers = with lib.maintainers; [
       sternenseemann
-      aleksana
     ];
+    teams = [ lib.teams.gnome-circle ];
     mainProgram = "apostrophe";
   };
 }

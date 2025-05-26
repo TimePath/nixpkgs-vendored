@@ -3,8 +3,7 @@
   lib,
   meson,
   mesonEmulatorHook,
-  fetchurl,
-  python3,
+  fetchFromGitLab,
   pkg-config,
   gtk3,
   gtk-mac-integration,
@@ -20,9 +19,8 @@
   gobject-introspection,
   docbook-xsl-nons,
   ninja,
-  gnome,
+  gitUpdater,
   gspell,
-  perl,
   itstool,
   desktop-file-utils,
   vala,
@@ -30,16 +28,21 @@
 
 stdenv.mkDerivation rec {
   pname = "gedit";
-  version = "48.0";
+  version = "48.2";
 
   outputs = [
     "out"
     "devdoc"
   ];
 
-  src = fetchurl {
-    url = "mirror://gnome/sources/gedit/${lib.versions.major version}/gedit-${version}.tar.xz";
-    sha256 = "/g/vm3sHmRINuGrok6BgA2oTRFNS3tkWm6so04rPDoA=";
+  src = fetchFromGitLab {
+    domain = "gitlab.gnome.org";
+    group = "World";
+    owner = "gedit";
+    repo = "gedit";
+    tag = version;
+    fetchSubmodules = true;
+    hash = "sha256-M8ZyjY4wSogEjhEx9sOKfuGkbiypDmZoU0H4ja+TgaY=";
   };
 
   patches = [
@@ -55,9 +58,7 @@ stdenv.mkDerivation rec {
       libxml2
       meson
       ninja
-      perl
       pkg-config
-      python3
       vala
       wrapGAppsHook3
       gtk-doc
@@ -83,21 +84,10 @@ stdenv.mkDerivation rec {
       gtk-mac-integration
     ];
 
-  postPatch = ''
-    chmod +x build-aux/meson/post_install.py
-    chmod +x plugins/externaltools/scripts/gedit-tool-merge.pl
-    patchShebangs build-aux/meson/post_install.py
-    patchShebangs plugins/externaltools/scripts/gedit-tool-merge.pl
-  '';
-
   # Reliably fails to generate gedit-file-browser-enum-types.h in time
   enableParallelBuilding = false;
 
-  passthru = {
-    updateScript = gnome.updateScript {
-      packageName = "gedit";
-    };
-  };
+  passthru.updateScript = gitUpdater { };
 
   meta = with lib; {
     homepage = "https://gitlab.gnome.org/World/gedit/gedit";

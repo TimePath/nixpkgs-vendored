@@ -3,30 +3,29 @@
   buildPythonPackage,
   fetchFromGitHub,
   pythonOlder,
+  nix-update-script,
 
   # build-system
-  poetry-core,
+  pdm-backend,
 
   # buildInputs
   bash,
 
   # dependencies
   aiohttp,
-  httpx-sse,
+  async-timeout,
   langchain-core,
   langchain-text-splitters,
   langsmith,
+  numpy,
   pydantic,
   pyyaml,
   requests,
   sqlalchemy,
   tenacity,
-  async-timeout,
-
-  # optional-dependencies
-  numpy,
 
   # tests
+  blockbuster,
   freezegun,
   httpx,
   lark,
@@ -43,42 +42,49 @@
 
 buildPythonPackage rec {
   pname = "langchain";
-  version = "0.3.7";
+  version = "0.3.25";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "langchain-ai";
     repo = "langchain";
     tag = "langchain==${version}";
-    hash = "sha256-TaK8lnPxKUqwvKLtQIfzg2l8McQ1fd0g9vocHM0+kjY=";
+    hash = "sha256-B2Kg8kC6Qlu89hZVMhgqPU32BwFvgAti0IIYUdosT1A=";
   };
 
   sourceRoot = "${src.name}/libs/langchain";
 
-  build-system = [ poetry-core ];
+  build-system = [ pdm-backend ];
 
   buildInputs = [ bash ];
 
-  pythonRelaxDeps = [ "tenacity" ];
+  pythonRelaxDeps = [
+    # Each component release requests the exact latest core.
+    # That prevents us from updating individul components.
+    "langchain-core"
+    "numpy"
+    "tenacity"
+  ];
 
   dependencies = [
     aiohttp
-    httpx-sse
     langchain-core
     langchain-text-splitters
     langsmith
+    numpy
     pydantic
     pyyaml
     requests
     sqlalchemy
     tenacity
-  ] ++ lib.optionals (pythonOlder "3.11") [ async-timeout ];
+  ] ++ lib.optional (pythonOlder "3.11") async-timeout;
 
   optional-dependencies = {
     numpy = [ numpy ];
   };
 
   nativeCheckInputs = [
+    blockbuster
     freezegun
     httpx
     lark
@@ -118,10 +124,28 @@ buildPythonPackage rec {
     "test_aliases_hidden"
   ];
 
+  disabledTestPaths = [
+    # pydantic.errors.PydanticUserError: `ConversationSummaryMemory` is not fully defined; you should define `BaseCache`, then call `ConversationSummaryMemory.model_rebuild()`.
+    "tests/unit_tests/chains/test_conversation.py"
+    # pydantic.errors.PydanticUserError: `ConversationSummaryMemory` is not fully defined; you should define `BaseCache`, then call `ConversationSummaryMemory.model_rebuild()`.
+    "tests/unit_tests/chains/test_memory.py"
+    # pydantic.errors.PydanticUserError: `ConversationSummaryBufferMemory` is not fully defined; you should define `BaseCache`, then call `ConversationSummaryBufferMemory.model_rebuild()`.
+    "tests/unit_tests/chains/test_summary_buffer_memory.py"
+    "tests/unit_tests/output_parsers/test_fix.py"
+    "tests/unit_tests/chains/test_llm_checker.py"
+    # TypeError: Can't instantiate abstract class RunnableSerializable[RetryOutputParserRetryChainInput, str] without an implementation for abstract method 'invoke'
+    "tests/unit_tests/output_parsers/test_retry.py"
+    # pydantic.errors.PydanticUserError: `LLMSummarizationCheckerChain` is not fully defined; you should define `BaseCache`, then call `LLMSummarizationCheckerChain.model_rebuild()`.
+    "tests/unit_tests/chains/test_llm_summarization_checker.py"
+  ];
+
   pythonImportsCheck = [ "langchain" ];
 
-  passthru = {
-    updateScript = langchain-core.updateScript;
+  passthru.updateScript = nix-update-script {
+    extraArgs = [
+      "--version-regex"
+      "langchain==([0-9.]+)"
+    ];
   };
 
   meta = {
@@ -129,7 +153,10 @@ buildPythonPackage rec {
     homepage = "https://github.com/langchain-ai/langchain";
     changelog = "https://github.com/langchain-ai/langchain/releases/tag/v${version}";
     license = lib.licenses.mit;
-    maintainers = with lib.maintainers; [ natsukium ];
+    maintainers = with lib.maintainers; [
+      natsukium
+      sarahec
+    ];
     mainProgram = "langchain-server";
   };
 }

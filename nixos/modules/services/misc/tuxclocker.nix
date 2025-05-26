@@ -4,25 +4,22 @@
   lib,
   ...
 }:
-
-with lib;
-
 let
   cfg = config.programs.tuxclocker;
 in
 {
   options.programs.tuxclocker = {
-    enable = mkEnableOption ''
+    enable = lib.mkEnableOption ''
       TuxClocker, a hardware control and monitoring program
     '';
 
-    enableAMD = mkEnableOption ''
+    enableAMD = lib.mkEnableOption ''
       AMD GPU controls.
       Sets the `amdgpu.ppfeaturemask` kernel parameter to 0xfffd7fff to enable all TuxClocker controls
     '';
 
-    enabledNVIDIADevices = mkOption {
-      type = types.listOf types.int;
+    enabledNVIDIADevices = lib.mkOption {
+      type = lib.types.listOf lib.types.int;
       default = [ ];
       example = [
         0
@@ -34,8 +31,8 @@ in
       '';
     };
 
-    useUnfree = mkOption {
-      type = types.bool;
+    useUnfree = lib.mkOption {
+      type = lib.types.bool;
       default = false;
       example = true;
       description = ''
@@ -49,7 +46,7 @@ in
     let
       package = if cfg.useUnfree then pkgs.tuxclocker else pkgs.tuxclocker-without-unfree;
     in
-    mkIf cfg.enable {
+    lib.mkIf cfg.enable {
       environment.systemPackages = [
         package
       ];
@@ -74,10 +71,10 @@ in
             ''
           );
         in
-        concatStrings (map configSection cfg.enabledNVIDIADevices);
+        lib.concatStrings (map configSection cfg.enabledNVIDIADevices);
 
       # https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/drivers/gpu/drm/amd/include/amd_shared.h#n207
       # Enable everything modifiable in TuxClocker
-      boot.kernelParams = mkIf cfg.enableAMD [ "amdgpu.ppfeaturemask=0xfffd7fff" ];
+      boot.kernelParams = lib.mkIf cfg.enableAMD [ "amdgpu.ppfeaturemask=0xfffd7fff" ];
     };
 }

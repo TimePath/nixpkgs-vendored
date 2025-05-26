@@ -33,13 +33,13 @@
 
 stdenv.mkDerivation rec {
   pname = "cinnamon-settings-daemon";
-  version = "6.2.0";
+  version = "6.4.3";
 
   src = fetchFromGitHub {
     owner = "linuxmint";
-    repo = pname;
+    repo = "cinnamon-settings-daemon";
     rev = version;
-    hash = "sha256-OAG5Tes+0bi+vKqm77Y7OykTpUkMdRaXIJYLuomIDMo=";
+    hash = "sha256-L7+OgymYoYBdprw66RW8tiGA7XGWjTBpDpXhli8Fjoo=";
   };
 
   patches = [
@@ -105,6 +105,6 @@ stdenv.mkDerivation rec {
     description = "Settings daemon for the Cinnamon desktop";
     license = licenses.gpl2;
     platforms = platforms.linux;
-    maintainers = teams.cinnamon.members;
+    teams = [ teams.cinnamon ];
   };
 }

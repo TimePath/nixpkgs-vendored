@@ -5,17 +5,21 @@
   fetchMixDeps,
   mixRelease,
   nix-update-script,
+
+  # for tests
+  beam27Packages,
+  beam28Packages,
 }:
 # Based on ../elixir-ls/default.nix
 
 let
   pname = "ex_doc";
-  version = "0.34.1";
+  version = "0.38.0";
   src = fetchFromGitHub {
     owner = "elixir-lang";
     repo = "${pname}";
     rev = "v${version}";
-    hash = "sha256-OXIRippEDYAKD222XzNJkkZdXbUkDUauv5amr4oAU7c=";
+    hash = "sha256-NyRvEN07PBk1ZCXLu/lu+d1SYO8fXyiUEcpFZ8cSEng=";
   };
 in
 mixRelease {
@@ -26,32 +30,25 @@ mixRelease {
     elixir
     ;
 
+  escriptBinName = "ex_doc";
+
   stripDebug = true;
 
   mixFodDeps = fetchMixDeps {
     pname = "mix-deps-${pname}";
     inherit src version elixir;
-    hash = "sha256-fYINsATbw3M3r+IVoYS14aVEsg9OBuH6mNUqzQJuDQo=";
+    hash = "sha256-TknrENa0Nb1Eobd4oTBl6TilPVEsw9+XjPdF3Ntq+DI=";
   };
 
-  configurePhase = ''
-    runHook preConfigure
-    mix deps.compile --no-deps-check
-    runHook postConfigure
-  '';
+  passthru = {
+    tests = {
+      # ex_doc is the doc generation for OTP 27+, so let's make sure they build
+      erlang_27 = beam27Packages.erlang;
+      erlang_28 = beam28Packages.erlang;
+    };
 
-  buildPhase = ''
-    runHook preBuild
-    mix do escript.build
-    runHook postBuild
-  '';
-
-  installPhase = ''
-    runHook preInstall
-    mkdir -p $out/bin
-    cp -v ex_doc $out/bin
-    runHook postInstall
-  '';
+    updateScript = nix-update-script { };
+  };
 
   meta = with lib; {
     homepage = "https://github.com/elixir-lang/ex_doc";
@@ -63,5 +60,4 @@ mixRelease {
     mainProgram = "ex_doc";
     maintainers = with maintainers; [ chiroptical ];
   };
-  passthru.updateScript = nix-update-script { };
 }

@@ -8,19 +8,20 @@
 {
   lib,
   stdenv,
-  pkgsStatic,
   enableDebug ? false,
 }:
 
 name: emulator:
 
-pkgsStatic.stdenv.mkDerivation {
+stdenv.mkDerivation {
   inherit name;
 
   src = ./binfmt-p-wrapper.c;
 
   dontUnpack = true;
   dontInstall = true;
+
+  buildInputs = [ stdenv.cc.libc.static or null ];
 
   buildPhase = ''
     runHook preBuild

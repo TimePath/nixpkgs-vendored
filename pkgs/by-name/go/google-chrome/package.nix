@@ -39,7 +39,7 @@
   libXScrnSaver,
   libxshmfence,
   libXtst,
-  mesa,
+  libgbm,
   nspr,
   nss,
   pango,
@@ -145,7 +145,7 @@ let
       libXScrnSaver
       libxshmfence
       libXtst
-      mesa
+      libgbm
       nspr
       nss
       opusWithCustomModes
@@ -171,11 +171,11 @@ let
 
   linux = stdenv.mkDerivation (finalAttrs: {
     inherit pname meta passthru;
-    version = "135.0.7049.84";
+    version = "136.0.7103.113";
 
     src = fetchurl {
       url = "https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_${finalAttrs.version}-1_amd64.deb";
-      hash = "sha256-ZygM2YuML23KPJQ8Kl5f2YqI+0vbXnC3fYk8l8R/nXk=";
+      hash = "sha256-BnKKu7X34g+zg4rDqjVXT3Kx2E8Gn5ELqs3LQS3GCkg=";
     };
 
     # With strictDeps on, some shebangs were not being patched correctly
@@ -225,6 +225,8 @@ let
 
       substituteInPlace $out/share/google/$appname/google-$appname \
         --replace-fail 'CHROME_WRAPPER' 'WRAPPER'
+      substituteInPlace $out/share/applications/com.google.Chrome.desktop \
+        --replace-fail /usr/bin/google-chrome-$dist $exe
       substituteInPlace $out/share/applications/google-$appname.desktop \
         --replace-fail /usr/bin/google-chrome-$dist $exe
       substituteInPlace $out/share/gnome-control-center/default-apps/google-$appname.xml \
@@ -256,7 +258,7 @@ let
         --suffix PATH            : "${lib.makeBinPath [ xdg-utils ]}" \
         --prefix XDG_DATA_DIRS   : "$XDG_ICON_DIRS:$GSETTINGS_SCHEMAS_PATH:${addDriverRunpath.driverLink}/share" \
         --set CHROME_WRAPPER  "google-chrome-$dist" \
-        --add-flags "\''${NIXOS_OZONE_WL:+\''${WAYLAND_DISPLAY:+--ozone-platform-hint=auto --enable-features=WaylandWindowDecorations}}" \
+        --add-flags "\''${NIXOS_OZONE_WL:+\''${WAYLAND_DISPLAY:+--ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime=true}}" \
         --add-flags "--simulate-outdated-no-au='Tue, 31 Dec 2099 23:59:59 GMT'" \
         --add-flags ${lib.escapeShellArg commandLineArgs}
 
@@ -274,11 +276,11 @@ let
 
   darwin = stdenvNoCC.mkDerivation (finalAttrs: {
     inherit pname meta passthru;
-    version = "135.0.7049.85";
+    version = "136.0.7103.114";
 
     src = fetchurl {
-      url = "http://dl.google.com/release2/chrome/adtorua7m5iaphuubpwxkpgb7qwa_135.0.7049.85/GoogleChrome-135.0.7049.85.dmg";
-      hash = "sha256-NvCVflxCbMyx4wnbg+3IlO01xZuvzKAVPgg/S629Xls=";
+      url = "http://dl.google.com/release2/chrome/iwktnyywqpn7dye3zjzgosvevq_136.0.7103.114/GoogleChrome-136.0.7103.114.dmg";
+      hash = "sha256-myJawlgVBQlLtgBfSfCL5XfdnH8d7xd+j8JV2+2MZ/s=";
     };
 
     dontPatch = true;

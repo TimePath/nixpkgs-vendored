@@ -4,17 +4,13 @@
   lib,
   ...
 }:
-
-with pkgs;
-with lib;
-
 let
 
   cfg = config.services.riemann-tools;
 
   riemannHost = "${cfg.riemannHost}";
 
-  healthLauncher = writeScriptBin "riemann-health" ''
+  healthLauncher = pkgs.writeScriptBin "riemann-health" ''
     #!/bin/sh
     exec ${pkgs.riemann-tools}/bin/riemann-health ${builtins.concatStringsSep " " cfg.extraArgs} --host ${riemannHost}
   '';
@@ -25,22 +21,22 @@ in
   options = {
 
     services.riemann-tools = {
-      enableHealth = mkOption {
-        type = types.bool;
+      enableHealth = lib.mkOption {
+        type = lib.types.bool;
         default = false;
         description = ''
           Enable the riemann-health daemon.
         '';
       };
-      riemannHost = mkOption {
-        type = types.str;
+      riemannHost = lib.mkOption {
+        type = lib.types.str;
         default = "127.0.0.1";
         description = ''
           Address of the host riemann node. Defaults to localhost.
         '';
       };
-      extraArgs = mkOption {
-        type = types.listOf types.str;
+      extraArgs = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
         default = [ ];
         description = ''
           A list of commandline-switches forwarded to a riemann-tool.
@@ -55,7 +51,7 @@ in
     };
   };
 
-  config = mkIf cfg.enableHealth {
+  config = lib.mkIf cfg.enableHealth {
 
     users.groups.riemanntools.gid = config.ids.gids.riemanntools;
 
@@ -67,7 +63,7 @@ in
 
     systemd.services.riemann-health = {
       wantedBy = [ "multi-user.target" ];
-      path = [ procps ];
+      path = [ pkgs.procps ];
       serviceConfig = {
         User = "riemanntools";
         ExecStart = "${healthLauncher}/bin/riemann-health";

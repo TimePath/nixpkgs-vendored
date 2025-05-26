@@ -19,6 +19,10 @@
   python3,
   linuxHeaders,
   nixosTests,
+  runCommandLocal,
+  gnutar,
+  gnugrep,
+  envoy,
 
   # v8 (upstream default), wavm, wamr, wasmtime, disabled
   wasmRuntime ? "wamr",
@@ -30,16 +34,16 @@ let
     # However, the version string is more useful for end-users.
     # These are contained in a attrset of their own to make it obvious that
     # people should update both.
-    version = "1.32.3";
-    rev = "58bd599ebd5918d4d005de60954fcd2cb00abd95";
-    hash = "sha256-5HpxcsAPoyVOJ3Aem+ZjSLa8Zu6s76iCMiWJbp8RjHc=";
+    version = "1.34.0";
+    rev = "d7809ba2b07fd869d49bfb122b27f6a7977b4d94";
+    hash = "sha256-SKdUrBXe0E3fMo73NROFO9Ck5FZidF/awP+QRA5t3VM=";
   };
 
   # these need to be updated for any changes to fetchAttrs
   depsHash =
     {
-      x86_64-linux = "sha256-YFXNatolLM9DdwkMnc9SWsa6Z6/aGzqLmo/zKE7OFy0=";
-      aarch64-linux = "sha256-AjG1OBjPjiSwWCmIJgHevSQHx8+rzRgmLsw3JwwD0hk=";
+      x86_64-linux = "sha256-CiP9qH8/+nNZM8BNz84eVwWphVyDNo2KOYcK0wOsXn0=";
+      aarch64-linux = "sha256-9HGg68R546JY1EOm22tg9CuPt0nU+FooFcLG9A2hkzE=";
     }
     .${stdenv.system} or (throw "unsupported system ${stdenv.system}");
 
@@ -55,6 +59,8 @@ buildBazelPackage rec {
       repo = "envoy";
       inherit (srcVer) hash rev;
     };
+    # By convention, these patches are generated like:
+    # git format-patch --zero-commit --signoff --no-numbered --minimal --full-index --no-signature
     patches = [
       # use system Python, not bazel-fetched binary Python
       ./0001-nixpkgs-use-system-Python.patch
@@ -65,26 +71,8 @@ buildBazelPackage rec {
       # use system C/C++ tools
       ./0003-nixpkgs-use-system-C-C-toolchains.patch
 
-      # patch boringssl to work with GCC 14
-      # vendored patch from https://boringssl.googlesource.com/boringssl/+/c70190368c7040c37c1d655f0690bcde2b109a0d
-      ./0004-nixpkgs-patch-boringssl-for-gcc14.patch
-
-      # update rust rules to work with rustc v1.83
-      # cherry-pick of https://github.com/envoyproxy/envoy/commit/019f589da2cc8da7673edd077478a100b4d99436
-      # drop with v1.33.x
-      ./0005-deps-Bump-rules_rust-0.54.1-37056.patch
-
-      # patch gcc flags to work with GCC 14
-      # (silences erroneus -Werror=maybe-uninitialized and others)
-      # cherry-pick of https://github.com/envoyproxy/envoy/commit/448e4e14f4f188687580362a861ae4a0dbb5b1fb
-      # drop with v1.33.x
-      ./0006-gcc-warnings.patch
-
-      # Remove "-Werror" from protobuf build
-      # This is fixed in protobuf v28 and later:
-      # https://github.com/protocolbuffers/protobuf/commit/f5a1b178ad52c3e64da40caceaa4ca9e51045cb4
-      # drop with v1.33.x
-      ./0007-protobuf-remove-Werror.patch
+      # bump rules_rust to support newer Rust
+      ./0004-nixpkgs-bump-rules_rust-to-0.60.0.patch
     ];
     postPatch = ''
       chmod -R +w .
@@ -108,6 +96,12 @@ buildBazelPackage rec {
     substituteInPlace bazel/dependency_imports.bzl \
       --replace-fail 'crate_universe_dependencies()' 'crate_universe_dependencies(rust_toolchain_cargo_template="@@//bazel/nix:cargo", rust_toolchain_rustc_template="@@//bazel/nix:rustc")' \
       --replace-fail 'crates_repository(' 'crates_repository(rust_toolchain_cargo_template="@@//bazel/nix:cargo", rust_toolchain_rustc_template="@@//bazel/nix:rustc",'
+
+    # patch rules_rust for envoy specifics, but also to support old Bazel
+    # (Bazel 6 doesn't have ctx.watch, but ctx.path is sufficient for our use)
+    cp ${./rules_rust.patch} bazel/rules_rust.patch
+    substituteInPlace bazel/repositories.bzl \
+      --replace-fail ', "@envoy//bazel:rules_rust_ppc64le.patch"' ""
 
     substitute ${./rules_rust_extra.patch} bazel/nix/rules_rust_extra.patch \
       --subst-var-by bash "$(type -p bash)"
@@ -150,9 +144,12 @@ buildBazelPackage rec {
       sed -i \
         -e 's,${python3},__NIXPYTHON__,' \
         -e 's,${stdenv.shellPackage},__NIXSHELL__,' \
+        -e 's,${builtins.storeDir}/[^/]\+/bin/bash,__NIXBASH__,' \
         $bazelOut/external/com_github_luajit_luajit/build.py \
         $bazelOut/external/local_config_sh/BUILD \
-        $bazelOut/external/*_pip3/BUILD.bazel
+        $bazelOut/external/*_pip3/BUILD.bazel \
+        $bazelOut/external/rules_rust/util/process_wrapper/private/process_wrapper.sh \
+        $bazelOut/external/rules_rust/crate_universe/src/metadata/cargo_tree_rustc_wrapper.sh
 
       rm -r $bazelOut/external/go_sdk
       rm -r $bazelOut/external/local_jdk
@@ -195,9 +192,12 @@ buildBazelPackage rec {
       sed -i \
         -e 's,__NIXPYTHON__,${python3},' \
         -e 's,__NIXSHELL__,${stdenv.shellPackage},' \
+        -e 's,__NIXBASH__,${stdenv.shell},' \
         $bazelOut/external/com_github_luajit_luajit/build.py \
         $bazelOut/external/local_config_sh/BUILD \
-        $bazelOut/external/*_pip3/BUILD.bazel
+        $bazelOut/external/*_pip3/BUILD.bazel \
+        $bazelOut/external/rules_rust/util/process_wrapper/private/process_wrapper.sh \
+        $bazelOut/external/rules_rust/crate_universe/src/metadata/cargo_tree_rustc_wrapper.sh
 
       # Install repinned rules_rust lockfile
       cp $bazelOut/external/Cargo.Bazel.lock source/extensions/dynamic_modules/sdk/rust/Cargo.Bazel.lock
@@ -263,6 +263,38 @@ buildBazelPackage rec {
     envoy = nixosTests.envoy;
     # tested as a core component of Pomerium
     pomerium = nixosTests.pomerium;
+
+    deps-store-free =
+      runCommandLocal "${envoy.name}-deps-store-free-test"
+        {
+          nativeBuildInputs = [
+            gnutar
+            gnugrep
+          ];
+        }
+        ''
+          touch $out
+          tar -xf ${envoy.deps}
+          grep -r /nix/store external && status=$? || status=$?
+          case $status in
+            1)
+              echo "No match found."
+              ;;
+            0)
+              echo
+              echo "Error: Found references to /nix/store in envoy.deps derivation"
+              echo "This is a reproducibility issue, as the hash of the fixed-output derivation"
+              echo "will change in case the store path of the input changes."
+              echo
+              echo "Replace the store path in fetcherAttrs.preInstall."
+              exit 1
+              ;;
+            *)
+              echo "An unexpected error occurred."
+              exit $status
+              ;;
+          esac
+        '';
   };
 
   meta = with lib; {

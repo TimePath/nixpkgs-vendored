@@ -10,16 +10,18 @@
 
 buildGoModule rec {
   pname = "tenv";
-  version = "3.1.0";
+  version = "4.6.2";
 
   src = fetchFromGitHub {
     owner = "tofuutils";
     repo = "tenv";
-    rev = "v${version}";
-    hash = "sha256-nZhJgkXP4ZdVp244bdOswwEOTeH/HopFrQN/A0L+W/k=";
+    tag = "v${version}";
+    hash = "sha256-oYAl388/PBIL7LxOWUCZLHYfOKkkB/BEaTKpTN8rp5U=";
   };
 
-  vendorHash = "sha256-yhGqKuHHiSW6exPuKGFzeDO9GEc/S8XGkGNhPM1gXgQ=";
+  vendorHash = "sha256-5aWf5O25cudtIny159t3Mllp2wV0C+JxWe7RDkYOxVM=";
+
+  excludedPackages = [ "tools" ];
 
   # Tests disabled for requiring network access to release.hashicorp.com
   doCheck = false;

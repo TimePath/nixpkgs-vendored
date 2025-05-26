@@ -2,22 +2,25 @@
   lib,
   buildGoModule,
   fetchFromGitHub,
+  versionCheckHook,
 }:
 
 buildGoModule rec {
   pname = "httpx";
-  version = "1.6.9";
+  version = "1.7.0";
 
   src = fetchFromGitHub {
     owner = "projectdiscovery";
     repo = "httpx";
     tag = "v${version}";
-    hash = "sha256-fkHMtFshRNtRhsxjbYOkeL2cln84NAa01jcGKips5Kk=";
+    hash = "sha256-V4OTIUm7KSUSKgQczkOtIw8HlkLEMgvX53a4caQP5IU=";
   };
 
-  vendorHash = "sha256-zTPJtuKPtsVsgMwHFjVwAh1/3DudW7TPWOMJ20nNu1I=";
+  vendorHash = "sha256-lwk/ajywAJ969U5gpYQgIg8+u1xKARFH+HTk2+OgY4A=";
 
   subPackages = [ "cmd/httpx" ];
+
+  nativeInstallCheckInputs = [ versionCheckHook ];
 
   ldflags = [
     "-s"
@@ -26,6 +29,10 @@ buildGoModule rec {
 
   # Tests require network access
   doCheck = false;
+
+  doInstallCheck = true;
+
+  versionCheckProgramArg = "-version";
 
   meta = with lib; {
     description = "Fast and multi-purpose HTTP toolkit";

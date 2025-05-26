@@ -1,7 +1,7 @@
 {
   lib,
   stdenv,
-  substituteAll,
+  replaceVars,
   fetchurl,
   zlibSupport ? true,
   zlib,
@@ -130,8 +130,7 @@ stdenv.mkDerivation rec {
   patches = [
     ./dont_fetch_vendored_deps.patch
 
-    (substituteAll {
-      src = ./tk_tcl_paths.patch;
+    (replaceVars ./tk_tcl_paths.patch {
       inherit tk tcl;
       tk_dev = tk.dev;
       tcl_dev = tcl;
@@ -139,8 +138,7 @@ stdenv.mkDerivation rec {
       tcl_libprefix = tcl.libPrefix;
     })
 
-    (substituteAll {
-      src = ./sqlite_paths.patch;
+    (replaceVars ./sqlite_paths.patch {
       inherit (sqlite) out dev;
     })
   ];

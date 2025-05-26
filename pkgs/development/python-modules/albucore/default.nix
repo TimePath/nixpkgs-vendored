@@ -7,12 +7,13 @@
   pytestCheckHook,
   numpy,
   opencv-python,
+  simsimd,
   stringzilla,
 }:
 
 buildPythonPackage rec {
   pname = "albucore";
-  version = "0.0.19";
+  version = "0.0.24";
   pyproject = true;
 
   disabled = pythonOlder "3.9";
@@ -21,7 +22,7 @@ buildPythonPackage rec {
     owner = "albumentations-team";
     repo = "albucore";
     tag = version;
-    hash = "sha256-GwT7Py7pKbpHxx4avj37/hRjSJXdH5uBU11nCITysVw=";
+    hash = "sha256-frVMPW3au/6vPRY89GIt7chCPkUMl13DpPqCPqIjz/o=";
   };
 
   pythonRelaxDeps = [ "opencv-python" ];
@@ -31,6 +32,7 @@ buildPythonPackage rec {
   dependencies = [
     numpy
     opencv-python
+    simsimd
     stringzilla
   ];
 

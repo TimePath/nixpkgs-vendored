@@ -4,7 +4,6 @@
   rustPlatform,
   fetchFromGitHub,
   installShellFiles,
-  darwin,
 }:
 
 rustPlatform.buildRustPackage rec {
@@ -13,19 +12,16 @@ rustPlatform.buildRustPackage rec {
 
   src = fetchFromGitHub {
     owner = "str4d";
-    repo = pname;
+    repo = "rage";
     rev = "v${version}";
     hash = "sha256-aZs1iqfpsiMuhxXNqRatpKD99eDBCsWHk4OPpnnaB70=";
   };
 
-  cargoHash = "sha256-2cbW5GexETIjDzKjeYB7my3Q7Ev5fRrWh8eaBYZLmGM=";
+  useFetchCargoVendor = true;
+  cargoHash = "sha256-GdvqkB/jHAGUbzhOLPkIX664JJH3WrZZtv+/E/PhTR8=";
 
   nativeBuildInputs = [
     installShellFiles
-  ];
-
-  buildInputs = lib.optionals stdenv.hostPlatform.isDarwin [
-    darwin.apple_sdk.frameworks.Foundation
   ];
 
   # cargo test has an x86-only dependency

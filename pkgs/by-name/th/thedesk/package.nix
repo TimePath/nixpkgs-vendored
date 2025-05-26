@@ -9,7 +9,7 @@
   alsa-lib,
   gtk3,
   libxshmfence,
-  mesa,
+  libgbm,
   nss,
 }:
 
@@ -32,16 +32,12 @@ stdenv.mkDerivation rec {
     alsa-lib
     gtk3
     libxshmfence
-    mesa
+    libgbm
     nss
   ];
 
   dontBuild = true;
   dontConfigure = true;
-
-  unpackPhase = ''
-    dpkg-deb -x ${src} ./
-  '';
 
   installPhase = ''
     runHook preInstall

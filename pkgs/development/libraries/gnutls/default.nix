@@ -2,13 +2,10 @@
   lib,
   stdenv,
   fetchurl,
-  fetchpatch2,
   zlib,
-  lzo,
   libtasn1,
   nettle,
   pkg-config,
-  lzip,
   perl,
   gmp,
   autoconf,
@@ -28,7 +25,6 @@
   libunistring,
   withP11-kit ? !stdenv.hostPlatform.isStatic,
   p11-kit,
-  Security, # darwin Security.framework
   # certificate compression - only zlib now, more possible: zstd, brotli
 
   # for passthru.tests
@@ -63,11 +59,11 @@ in
 
 stdenv.mkDerivation rec {
   pname = "gnutls";
-  version = "3.8.6";
+  version = "3.8.9";
 
   src = fetchurl {
     url = "mirror://gnupg/gnutls/v${lib.versions.majorMinor version}/gnutls-${version}.tar.xz";
-    hash = "sha256-LhWIquU8sy1Dk38fTsoo/r2cDHqhc0/F3WGn6B4OvN0=";
+    hash = "sha256-aeET2ALRZwxNWsG5kECx8tXHwF2uxQA4E8BJtRhIIO0=";
   };
 
   outputs =
@@ -87,15 +83,6 @@ stdenv.mkDerivation rec {
 
   patches = [
     ./nix-ssl-cert-file.patch
-    # Revert https://gitlab.com/gnutls/gnutls/-/merge_requests/1800
-    # dlopen isn't as easy in NixPkgs, as noticed in tests broken by this.
-    # Without getting the libs into RPATH they won't be found.
-    (fetchpatch2 {
-      name = "revert-dlopen-compression.patch";
-      url = "https://gitlab.com/gnutls/gnutls/-/commit/8584908d6b679cd4e7676de437117a793e18347c.diff";
-      revert = true;
-      hash = "sha256-r/+Gmwqy0Yc1LHL/PdPLXlErUBC5JxquLzCBAN3LuRM=";
-    })
   ];
 
   # Skip some tests:
@@ -137,6 +124,13 @@ stdenv.mkDerivation rec {
     ]
     ++ lib.optionals (stdenv.hostPlatform.isMinGW) [
       "--disable-doc"
+    ]
+    ++ lib.optionals (stdenv.hostPlatform.isLinux && tpmSupport) [
+      "--with-trousers-lib=${trousers}/lib/libtspi.so"
+    ]
+    ++ [
+      # do not dlopen in nixpkgs
+      "--with-zlib=link"
     ];
 
   enableParallelBuilding = true;
@@ -145,8 +139,6 @@ stdenv.mkDerivation rec {
 
   buildInputs =
     [
-      lzo
-      lzip
       libtasn1
       libidn2
       zlib
@@ -156,7 +148,7 @@ stdenv.mkDerivation rec {
       gettext
       libiconv
     ]
-    ++ lib.optional (withP11-kit) p11-kit
+    ++ lib.optional withP11-kit p11-kit
     ++ lib.optional (tpmSupport && stdenv.hostPlatform.isLinux) trousers;
 
   nativeBuildInputs =
@@ -175,10 +167,7 @@ stdenv.mkDerivation rec {
       util-linux
     ];
 
-  propagatedBuildInputs =
-    [ nettle ]
-    # Builds dynamically linking against gnutls seem to need the framework now.
-    ++ lib.optional isDarwin Security;
+  propagatedBuildInputs = [ nettle ];
 
   inherit doCheck;
   # stdenv's `NIX_SSL_CERT_FILE=/no-cert-file.crt` breaks tests.
@@ -215,8 +204,8 @@ stdenv.mkDerivation rec {
       samba
       openconnect
       ;
-    inherit (ocamlPackages) ocamlnet;
-    haskell-gnutls = haskellPackages.gnutls;
+    #inherit (ocamlPackages) ocamlnet;
+    #haskell-gnutls = haskellPackages.gnutls;
     python3-gnutls = python3Packages.python3-gnutls;
     rsyslog = rsyslog.override { withGnutls = true; };
     static = pkgsStatic.gnutls;

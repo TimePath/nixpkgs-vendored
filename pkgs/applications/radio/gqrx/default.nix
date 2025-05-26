@@ -17,9 +17,10 @@
   # drivers (optional):
   rtl-sdr,
   hackrf,
-  pulseaudioSupport ? true,
+  stdenv,
+  pulseaudioSupport ? !stdenv.hostPlatform.isDarwin,
   libpulseaudio,
-  portaudioSupport ? false,
+  portaudioSupport ? stdenv.hostPlatform.isDarwin,
   portaudio,
 }:
 
@@ -30,13 +31,13 @@ assert !(pulseaudioSupport && portaudioSupport);
 
 gnuradioMinimal.pkgs.mkDerivation rec {
   pname = "gqrx";
-  version = "2.17.5";
+  version = "2.17.6";
 
   src = fetchFromGitHub {
     owner = "gqrx-sdr";
     repo = "gqrx";
     rev = "v${version}";
-    hash = "sha256-9VePsl/vaSTZ1TMyIeaGoZNrZv+O/7BxQ3ubD5S2EjY=";
+    hash = "sha256-/ykKcwOotu8kn+EpJI+EUeqSkHZ2IrSh+o7lBGeHrZ0=";
   };
 
   nativeBuildInputs = [
@@ -50,15 +51,17 @@ gnuradioMinimal.pkgs.mkDerivation rec {
       gnuradioMinimal.unwrapped.logLib
       mpir
       fftwFloat
-      alsa-lib
       libjack2
       gnuradioMinimal.unwrapped.boost
       qtbase
       qtsvg
-      qtwayland
       gnuradioMinimal.pkgs.osmosdr
       rtl-sdr
       hackrf
+    ]
+    ++ lib.optionals stdenv.hostPlatform.isLinux [
+      alsa-lib
+      qtwayland
     ]
     ++ lib.optionals (gnuradioMinimal.hasFeature "gr-ctrlport") [
       thrift
@@ -78,7 +81,7 @@ gnuradioMinimal.pkgs.mkDerivation rec {
           "Gr-audio";
     in
     [
-      "-DLINUX_AUDIO_BACKEND=${audioBackend}"
+      "-D${if stdenv.hostPlatform.isDarwin then "OSX" else "LINUX"}_AUDIO_BACKEND=${audioBackend}"
     ];
 
   # Prevent double-wrapping, inject wrapper args manually instead.
@@ -100,7 +103,7 @@ gnuradioMinimal.pkgs.mkDerivation rec {
     # Some of the code comes from the Cutesdr project, with a BSD license, but
     # it's currently unknown which version of the BSD license that is.
     license = licenses.gpl3Plus;
-    platforms = platforms.linux; # should work on Darwin / macOS too
+    platforms = platforms.linux ++ platforms.darwin;
     maintainers = with maintainers; [
       bjornfor
       fpletz

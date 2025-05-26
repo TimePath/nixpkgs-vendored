@@ -13,7 +13,7 @@
   pango,
   cairo,
   libxkbcommon,
-  mesa,
+  libgbm,
   expat,
   alsa-lib,
   buildFHSEnv,
@@ -48,7 +48,8 @@ let
   };
 
   typoraFHS = buildFHSEnv {
-    name = "typora-fhs";
+    pname = "typora-fhs";
+    inherit version;
     targetPkgs =
       pkgs:
       (with pkgs; [
@@ -65,7 +66,7 @@ let
         libdrm
         pango
         cairo
-        mesa
+        libgbm
         libGL
         expat
         libxkbcommon

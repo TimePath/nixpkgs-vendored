@@ -43,7 +43,6 @@ in
 stdenv.mkDerivation {
   inherit name;
   builder = writeText "${fetcher}-builder.sh" ''
-    source "$stdenv/setup"
     echo "${fetcher} exporting to $out"
 
     declare -A creds

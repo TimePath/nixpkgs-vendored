@@ -4,19 +4,16 @@
   pkgs,
   ...
 }:
-
-with lib;
-
 let
   cfg = config.services.sundtek;
 
 in
 {
   options.services.sundtek = {
-    enable = mkEnableOption "Sundtek driver";
+    enable = lib.mkEnableOption "Sundtek driver";
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
 
     environment.systemPackages = [ pkgs.sundtek ];
 

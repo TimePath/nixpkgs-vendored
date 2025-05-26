@@ -8,11 +8,14 @@ with lib;
 let
   cfg = config.services.promtail;
 
+  format = pkgs.formats.json { };
   prettyJSON =
     conf:
-    pkgs.runCommandLocal "promtail-config.json" { } ''
-      echo '${builtins.toJSON conf}' | ${pkgs.buildPackages.jq}/bin/jq 'del(._module)' > $out
-    '';
+    with lib;
+    pipe conf [
+      (flip removeAttrs [ "_module" ])
+      (format.generate "promtail-config.json")
+    ];
 
   allowSystemdJournal =
     cfg.configuration ? scrape_configs && lib.any (v: v ? journal) cfg.configuration.scrape_configs;
@@ -28,7 +31,7 @@ in
     enable = mkEnableOption "the Promtail ingresser";
 
     configuration = mkOption {
-      type = (pkgs.formats.json { }).type;
+      type = format.type;
       description = ''
         Specify the configuration for Promtail in Nix.
         This option will be ignored if `services.promtail.configFile` is defined.

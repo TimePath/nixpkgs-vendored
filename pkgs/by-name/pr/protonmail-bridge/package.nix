@@ -8,16 +8,16 @@
 
 buildGoModule rec {
   pname = "protonmail-bridge";
-  version = "3.15.0";
+  version = "3.19.0";
 
   src = fetchFromGitHub {
     owner = "ProtonMail";
     repo = "proton-bridge";
     rev = "v${version}";
-    hash = "sha256-mfaZJ1XI07b90cbWvWFzyppJnJG+Q9LyViuQmt3XWvY=";
+    hash = "sha256-Jx6yzn3QNOVz/VM8dqmTm4Upzz46aNo9d6lvhjLwdL4=";
   };
 
-  vendorHash = "sha256-avtw9MtnDo/992JAhXKCr/FXv+9M2j/pBLDNRVGsseM=";
+  vendorHash = "sha256-S08Vw/dLLVd6zFWmpG8wDVf7LOdSC29qo7pUscYHDyY=";
 
   nativeBuildInputs = [ pkg-config ];
 

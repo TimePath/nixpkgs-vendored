@@ -11,7 +11,7 @@
   lib,
   stdenv,
   makeWrapper,
-  gradle,
+  gradle_8,
   perl,
   jre,
   libGL,
@@ -62,6 +62,9 @@ let
   };
 
   depsPath' = if depsPath != null then depsPath else ./. + "/${pname}/deps.json";
+
+  # "Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0."
+  gradle = gradle_8;
 
 in
 stdenv.mkDerivation (

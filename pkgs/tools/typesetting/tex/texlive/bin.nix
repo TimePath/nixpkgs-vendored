@@ -2,6 +2,7 @@
   lib,
   stdenv,
   fetchurl,
+  fetchFromGitHub,
   fetchpatch,
   buildPackages,
   texlive,
@@ -10,6 +11,7 @@
   libpng,
   libX11,
   freetype,
+  ttfautohint,
   gd,
   libXaw,
   icu,
@@ -133,12 +135,19 @@ let
   binPackages = lib.getAttrs (corePackages ++ coreBigPackages) tlpdb;
 
   common = {
-    src = fetchurl {
-      urls = [
-        "http://ftp.math.utah.edu/pub/tex/historic/systems/texlive/${year}/texlive-${year}0313-source.tar.xz"
-        "ftp://tug.ctan.org/pub/tex/historic/systems/texlive/${year}/texlive-${year}0313-source.tar.xz"
-      ];
-      hash = "sha256-OHiqDh7QMBwFOw4u5OmtmZxEE0X0iC55vdHI9M6eebk=";
+    # FIXME revert to official tarballs for TeX-Live 2025
+    #src = fetchurl {
+    #  urls = [
+    #    "http://ftp.math.utah.edu/pub/tex/historic/systems/texlive/${year}/texlive-${year}0312-source.tar.xz"
+    #          "ftp://tug.ctan.org/pub/tex/historic/systems/texlive/${year}/texlive-${year}0312-source.tar.xz"
+    #  ];
+    #  hash = "sha256-e22HzwFmFnD6xFyTEmvtl7mEMTntUQ+XXQR+qTi2/pY=";
+    #};
+    src = fetchFromGitHub {
+      owner = "TeX-Live";
+      repo = "texlive-source";
+      rev = "refs/tags/svn70897";
+      hash = "sha256-ZCoZAO0qGWPWW72BJOi5P7/A/qEm+SY3PQyLbx+e3pY=";
     };
 
     prePatch =
@@ -213,6 +222,10 @@ let
           else
             mkdir -p "''${!package}"/bin
             mv "$out/bin/$bin" "''${!package}"/bin/
+            if [[ -e "$out/share/texmf-dist/scripts/$bin" ]] ; then
+              mkdir -p "''${!package}"/share/texmf-dist/scripts
+              mv "$out/share/texmf-dist/scripts/$bin" "''${!package}"/share/texmf-dist/scripts/
+            fi
           fi
         else
           echo "WARNING: no output known for binary '$bin', leaving in 'out'"
@@ -240,10 +253,11 @@ rec {
 
     patches = [
       (fetchpatch {
-        name = "ttfdump-CVE-2024-25262.patch";
-        url = "https://tug.org/svn/texlive/trunk/Build/source/texk/ttfdump/libttf/hdmx.c?r1=57915&r2=69520&view=patch";
-        stripLen = 2;
-        hash = "sha256-WH2kioqFAs3jaFmu4DdEUdrTf6eiymtiWTZi3vWwU7k=";
+        # do not create extractbb -> xdvipdfmx link
+        name = "extractbb-separate-package.patch";
+        url = "https://github.com/TeX-Live/texlive-source/commit/e48aafd2889281e5e9082cf2e4815a906b9a68ec.patch";
+        hash = "sha256-Rh0PJeUgKUfmgZ+WXnTteM5A0vXPEajKzZBU7AoE7Vs";
+        excludes = [ "texk/dvipdfm-x/ChangeLog" ];
       })
     ];
 
@@ -332,16 +346,24 @@ rec {
 
     # TODO: perhaps improve texmf.cnf search locations
     postInstall =
-      # remove redundant texmf-dist (content provided by TeX Live packages)
-      ''
-        rm -fr "$out"/share/texmf-dist
-      ''
       # install himktables in separate output for use in cross compilation
-      + ''
+      ''
         mkdir -p $dev/bin
         cp texk/web2c/.libs/himktables $dev/bin/himktables
       ''
-      + common.moveBins;
+      + common.moveBins
+      # remove redundant texmf-dist (content provided by TeX Live packages)
+      + ''
+        rm -frv "$out"/share/texmf-dist
+
+        mkdir -p "${placeholder "psutils"}"/share/texmf-dist/scripts/psutils
+        cp texk/psutils/{extractres.pl,includeres.pl,psjoin.pl} "${placeholder "psutils"}"/share/texmf-dist/scripts/psutils
+      ''
+      # remove broken symlinks
+      + ''
+        rm "$out"/bin/{eptex,ptex,uptex}
+        rm "${placeholder "ptex"}"/bin/{pbibtex,pdvitype,ppltotf,ptftopl}
+      '';
 
     passthru = { inherit version buildInputs; };
 
@@ -383,19 +405,6 @@ rec {
         name = "lua_fixed_hash.patch";
         url = "https://bugs.debian.org/cgi-bin/bugreport.cgi?att=1;bug=1009196;filename=lua_fixed_hash.patch;msg=45";
         sha256 = "sha256-FTu1eRd3AUU7IRs2/7e7uwHuvZsrzTBPypbcEZkU7y4=";
-      })
-      # update to LuaTeX 1.16.1 to prepare for 1.17.0 below
-      (fetchpatch {
-        name = "luatex-1.16.1.patch";
-        url = "https://github.com/TeX-Live/texlive-source/commit/ad8702a45e317fa9d396ef4d50467c37964a9543.patch";
-        hash = "sha256-qfzUfkJUfW285w+fnbpO8JLArM7/uj3yb9PONgZrJLE=";
-      })
-      # fixes security issues in luatex that allows arbitrary code execution even with shell-escape disabled and network requests, see https://tug.org/~mseven/luatex.html
-      # fixed in LuaTeX 1.17.0, shipped as a rare binary update in TL 2023
-      (fetchpatch {
-        name = "luatex-1.17.0.patch";
-        url = "https://github.com/TeX-Live/texlive-source/commit/6ace460233115bd42b36e63c7ddce11cc92a1ebd.patch";
-        hash = "sha256-2fbIdwnw/XQXci9OqRrb6B5tHiSR0co08NyFgMyXCvc=";
       })
       # Fixes texluajitc crashes on aarch64, backport of the upstream fix
       # https://github.com/LuaJIT/LuaJIT/commit/e9af1abec542e6f9851ff2368e7f196b6382a44c
@@ -441,7 +450,7 @@ rec {
       ''
       # force XeTeX to use fontconfig instead of Core Text, so that fonts can be made available via FONTCONFIG_FILE,
       # by tricking configure into thinking that the relevant test result is already in the config cache
-      + lib.optionalString stdenv.isDarwin ''
+      + lib.optionalString stdenv.hostPlatform.isDarwin ''
         export kpse_cv_have_ApplicationServices=no
       '';
 
@@ -514,7 +523,11 @@ rec {
         "tie"
         "web"
       ];
-    postInstall = common.moveBins;
+    postInstall =
+      common.moveBins
+      + ''
+        rm "${placeholder "ptex"}"/bin/{pbibtex,pdvitype,ppltotf,ptftopl}
+      '';
   };
 
   chktex = stdenv.mkDerivation {
@@ -542,15 +555,12 @@ rec {
   # for details see https://wiki.contextgarden.net/Building_LuaMetaTeX_for_TeX_Live
   context = stdenv.mkDerivation rec {
     pname = "luametatex";
-    version = "2.10.08";
+    version = "2.11.02";
 
     src = fetchurl {
-      url = "https://tug.org/svn/texlive/trunk/Master/source/luametatex-${version}.tar.xz?pathrev=67034&view=co";
-      # keep the name the same, to avoid rebuilds now
-      name = "luametatex-${version}.tar.xz?revision=67034&view=co";
-      # when bumping the version this should probably be changed to:
-      # name = "luametatex-${version}.tar.xz";
-      hash = "sha256-3JeOUQ63jJOZWTxFCoyWjfcrspmdmC/yqgS1JaLfTWk=";
+      name = "luametatex-${version}.tar.xz";
+      url = "https://tug.org/svn/texlive/trunk/Master/source/luametatex-${version}.tar.xz?pathrev=70384&view=co";
+      hash = "sha256-o7esoBBTTYEstkd7l34BWxew3fIRdVcFiGxrT1/KP1o=";
     };
 
     enableParallelBuilding = true;
@@ -584,6 +594,7 @@ rec {
 
     configureFlags = [
       "--disable-manpage" # man pages are provided by the doc container
+      "--with-ttfautohint"
     ];
 
     # PDF handling requires mutool (from mupdf) since Ghostscript 10.01
@@ -599,6 +610,7 @@ rec {
       ghostscript
       zlib
       freetype
+      ttfautohint
       woff2
       potrace
       xxHash
@@ -692,20 +704,14 @@ rec {
       # so that top level updates do not break texlive
       src = fetchurl {
         url = "mirror://sourceforge/asymptote/${finalAttrs.version}/asymptote-${finalAttrs.version}.src.tgz";
-        hash = "sha256-DecadD+m7pORuH3Sdcs/5M3vUbN6rhSkFoNN0Soq9bs=";
+        hash = "sha256-egUACsP2vwYx2uvSCZ8H/jLU9f17Siz8gFWwCNSXsIQ=";
       };
 
       texContainer = texlive.pkgs.asymptote.tex;
       texdocContainer = texlive.pkgs.asymptote.texdoc;
 
-      patches = [
-        (fetchpatch {
-          # partial fix for macOS XDR/V3D support (LDFLAGS change seems like an unrelated bugfix)
-          name = "restore-LDFLAGS-dont-look-for-tirpc-under-MacOS.patch";
-          url = "https://github.com/vectorgraphics/asymptote/commit/7e17096b22d18d133d1bc5916b6e32c0cb24ad10.patch";
-          hash = "sha256-olCFzqfZwWOAjqlB5lDPXYRHU9i3VQNgoR0cO5TmW98=";
-        })
-      ];
+      # build issue with asymptote 2.95 has been fixed
+      postConfigure = "";
     }
   );
 

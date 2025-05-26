@@ -511,6 +511,7 @@ let
           (assertKeyIsSystemdCredential "PresharedKey")
           (assertOnlyFields [
             "PublicKey"
+            "PublicKeyFile"
             "PresharedKey"
             "PresharedKeyFile"
             "AllowedIPs"
@@ -1069,6 +1070,7 @@ let
           "DUIDType"
           "DUIDRawData"
           "IAID"
+          "RequestAddress"
           "RequestBroadcast"
           "RouteMetric"
           "RapidCommit"
@@ -1631,6 +1633,7 @@ let
           "Wash"
           "SplitGSO"
           "AckFilter"
+          "RTTSec"
         ])
         (assertValueOneOf "AutoRateIngress" boolValues)
         (assertInt "OverheadBytes")
@@ -3316,16 +3319,11 @@ let
           ];
         };
 
-        systemd.services."systemd-network-wait-online@" = {
-          description = "Wait for Network Interface %I to be Configured";
-          conflicts = [ "shutdown.target" ];
-          requisite = [ "systemd-networkd.service" ];
-          after = [ "systemd-networkd.service" ];
-          serviceConfig = {
-            Type = "oneshot";
-            RemainAfterExit = true;
-            ExecStart = "${config.systemd.package}/lib/systemd/systemd-networkd-wait-online -i %I ${utils.escapeSystemdExecArgs cfg.wait-online.extraArgs}";
-          };
+        systemd.services."systemd-networkd-wait-online@" = {
+          serviceConfig.ExecStart = [
+            ""
+            "${config.systemd.package}/lib/systemd/systemd-networkd-wait-online -i %i ${utils.escapeSystemdExecArgs cfg.wait-online.extraArgs}"
+          ];
         };
 
       })
@@ -3347,6 +3345,7 @@ let
 
         systemd.additionalUpstreamSystemUnits = [
           "systemd-networkd-wait-online.service"
+          "systemd-networkd-wait-online@.service"
           "systemd-networkd.service"
           "systemd-networkd.socket"
           "systemd-networkd-persistent-storage.service"
@@ -3368,6 +3367,8 @@ let
               config.environment.etc."systemd/networkd.conf".source
             ];
             aliases = [ "dbus-org.freedesktop.network1.service" ];
+            notSocketActivated = true;
+            stopIfChanged = false;
           };
 
         networking.iproute2 = mkIf (cfg.config.addRouteTablesToIPRoute2 && cfg.config.routeTables != { }) {

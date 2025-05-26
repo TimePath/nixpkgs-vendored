@@ -17,22 +17,23 @@
   libdrm,
   libudev0-shim,
   libxkbcommon,
-  mesa,
+  libgbm,
   nspr,
   nss,
   pango,
   xorg,
+  writeScript,
 }:
 let
-  id = "180492850";
+  id = "243289393";
 in
 stdenvNoCC.mkDerivation rec {
   pname = "multiviewer-for-f1";
-  version = "1.35.2";
+  version = "1.43.2";
 
   src = fetchurl {
     url = "https://releases.multiviewer.dev/download/${id}/multiviewer-for-f1_${version}_amd64.deb";
-    sha256 = "sha256-V1+kMgfbgDS47YNIotmzrh2Hry5pvdQvrzWwuKJY1oM=";
+    sha256 = "sha256-wdA5f/80GkKP6LrrP2E6M9GY5bl6rg7Spz7NWB7cQjg=";
   };
 
   nativeBuildInputs = [
@@ -53,7 +54,7 @@ stdenvNoCC.mkDerivation rec {
     gtk3
     libdrm
     libxkbcommon
-    mesa
+    libgbm
     nspr
     nss
     pango
@@ -85,12 +86,36 @@ stdenvNoCC.mkDerivation rec {
     mv -t $out/share usr/share/* usr/lib/multiviewer-for-f1
 
     makeWrapper "$out/share/multiviewer-for-f1/MultiViewer for F1" $out/bin/multiviewer-for-f1 \
-      --add-flags "\''${NIXOS_OZONE_WL:+\''${WAYLAND_DISPLAY:+--ozone-platform=wayland --enable-features=WaylandWindowDecorations}}" \
+      --add-flags "\''${NIXOS_OZONE_WL:+\''${WAYLAND_DISPLAY:+--ozone-platform=wayland --enable-features=WaylandWindowDecorations --enable-wayland-ime=true}}" \
       --prefix LD_LIBRARY_PATH : "${
         lib.makeLibraryPath [ libudev0-shim ]
       }:\"$out/share/Multiviewer for F1\""
 
     runHook postInstall
+  '';
+
+  passthru.updateScript = writeScript "update-multiviewer-for-f1" ''
+    #!/usr/bin/env nix-shell
+    #!nix-shell -i bash -p curl common-updater-scripts
+    set -eu -o pipefail
+
+    # Get latest API for packages, store so we only make one request
+    latest=$(curl -s "https://api.multiviewer.app/api/v1/releases/latest/")
+
+    # From the downloaded JSON extract the url, version and id
+    link=$(echo $latest | jq -r '.downloads[] | select(.platform=="linux_deb").url')
+    id=$(echo $latest | jq -r '.downloads[] | select(.platform=="linux_deb").id')
+    version=$(echo $latest | jq -r '.version')
+
+    if [ "$version" != "${version}" ]
+    then
+      # Pre-calculate package hash
+      hash=$(nix-prefetch-url --type sha256 $link)
+
+      # Update ID and version in source
+      update-source-version ${pname} "$id" --version-key=id
+      update-source-version ${pname} "$version" "$hash" --system=x86_64-linux
+    fi
   '';
 
   meta = with lib; {

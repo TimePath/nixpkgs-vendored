@@ -69,13 +69,13 @@ let
         nativeLibs = [ pkgs.mariadb.client ];
       });
       clsql-postgresql = super.clsql-postgresql.overrideLispAttrs (o: {
-        nativeLibs = [ pkgs.postgresql.lib ];
+        nativeLibs = [ pkgs.libpq ];
       });
       clsql-sqlite3 = super.clsql-sqlite3.overrideLispAttrs (o: {
         nativeLibs = [ pkgs.sqlite ];
       });
       cl-webkit2 = super.cl-webkit2.overrideLispAttrs (o: {
-        nativeLibs = [ pkgs.webkitgtk_4_0 ];
+        nativeLibs = [ pkgs.webkitgtk_4_1 ];
       });
       dbd-mysql = super.dbd-mysql.overrideLispAttrs (o: {
         nativeLibs = [ pkgs.mariadb.client ];
@@ -307,6 +307,9 @@ let
       });
       vk = super.vk.overrideLispAttrs (o: {
         nativeLibs = [ pkgs.vulkan-loader ];
+      });
+      _3d-math = super._3d-math.overrideLispAttrs (o: {
+        flags = o.flags ++ (if o.program == "sbcl" then [ "--dynamic-space-size 4096" ] else [ ]);
       });
     }
   );

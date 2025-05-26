@@ -140,7 +140,7 @@ in
     assertions = [
       {
         assertion = cfg.nginx != null || cfg.webServerUser != null;
-        message = "Either services.matomo.nginx or services.matomo.nginx.webServerUser is mandatory";
+        message = "Either services.matomo.nginx or services.matomo.webServerUser is mandatory";
       }
     ];
 

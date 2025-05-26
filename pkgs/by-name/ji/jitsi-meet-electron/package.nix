@@ -11,27 +11,18 @@
   libXi,
   libXtst,
   zlib,
-  darwin,
   electron,
 }:
 
-let
-  inherit (darwin.apple_sdk.frameworks)
-    Carbon
-    CoreFoundation
-    ApplicationServices
-    OpenGL
-    ;
-in
 buildNpmPackage rec {
   pname = "jitsi-meet-electron";
-  version = "2024.6.0";
+  version = "2025.2.0";
 
   src = fetchFromGitHub {
     owner = "jitsi";
     repo = "jitsi-meet-electron";
     rev = "v${version}";
-    hash = "sha256-jnt+aHkCnIj4GGFbAk6AlVhg0rvzFhGCELAaYMCZx88=";
+    hash = "sha256-Pk62BpfXblRph3ktxy8eF9umRmPRZbZGjRWduy+3z+s=";
   };
 
   nativeBuildInputs =
@@ -43,22 +34,15 @@ buildNpmPackage rec {
     ];
 
   # robotjs node-gyp dependencies
-  buildInputs =
-    lib.optionals stdenv.hostPlatform.isLinux [
-      libpng
-      libX11
-      libXi
-      libXtst
-      zlib
-    ]
-    ++ lib.optionals stdenv.hostPlatform.isDarwin [
-      Carbon
-      CoreFoundation
-      ApplicationServices
-      OpenGL
-    ];
+  buildInputs = lib.optionals stdenv.hostPlatform.isLinux [
+    libpng
+    libX11
+    libXi
+    libXtst
+    zlib
+  ];
 
-  npmDepsHash = "sha256-zmnxNJdalspZib1PGZN0YBIauJ+gaxs6Iir94cPRNtU=";
+  npmDepsHash = "sha256-TckV91RJo06OKb8nIvxBCxu28qyHtA/ACDshOlaCQxA=";
 
   makeCacheWritable = true;
 
@@ -91,6 +75,8 @@ buildNpmPackage rec {
         -c.electronVersion=${electron.version}
   '';
 
+  NIX_CFLAGS_COMPILE = "-Wno-implicit-function-declaration";
+
   installPhase = ''
     runHook preInstall
 
@@ -100,7 +86,7 @@ buildNpmPackage rec {
 
       makeWrapper ${lib.getExe electron} $out/bin/jitsi-meet-electron \
           --add-flags $out/share/jitsi-meet-electron/resources/app.asar \
-          --add-flags "\''${NIXOS_OZONE_WL:+\''${WAYLAND_DISPLAY:+--ozone-platform-hint=auto --enable-features=WaylandWindowDecorations}}" \
+          --add-flags "\''${NIXOS_OZONE_WL:+\''${WAYLAND_DISPLAY:+--ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime=true}}" \
           --set-default ELECTRON_IS_DEV 0 \
           --inherit-argv0
 
@@ -141,7 +127,8 @@ buildNpmPackage rec {
     homepage = "https://github.com/jitsi/jitsi-meet-electron";
     license = licenses.asl20;
     mainProgram = "jitsi-meet-electron";
-    maintainers = teams.jitsi.members ++ [ maintainers.tomasajt ];
+    maintainers = [ maintainers.tomasajt ];
+    teams = [ teams.jitsi ];
     inherit (electron.meta) platforms;
   };
 }

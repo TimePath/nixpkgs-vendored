@@ -4,26 +4,23 @@
   pkgs,
   ...
 }:
-
-with lib;
-
 let
   cfg = config.services.prometheus.alertmanagerWebhookLogger;
 in
 {
   options.services.prometheus.alertmanagerWebhookLogger = {
-    enable = mkEnableOption "Alertmanager Webhook Logger";
+    enable = lib.mkEnableOption "Alertmanager Webhook Logger";
 
-    package = mkPackageOption pkgs "alertmanager-webhook-logger" { };
+    package = lib.mkPackageOption pkgs "alertmanager-webhook-logger" { };
 
-    extraFlags = mkOption {
-      type = types.listOf types.str;
+    extraFlags = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
       default = [ ];
       description = "Extra command line options to pass to alertmanager-webhook-logger.";
     };
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     systemd.services.alertmanager-webhook-logger = {
       description = "Alertmanager Webhook Logger";
 
@@ -34,7 +31,7 @@ in
       serviceConfig = {
         ExecStart = ''
           ${cfg.package}/bin/alertmanager-webhook-logger \
-          ${escapeShellArgs cfg.extraFlags}
+          ${lib.escapeShellArgs cfg.extraFlags}
         '';
 
         CapabilityBoundingSet = [ "" ];
@@ -85,5 +82,5 @@ in
     };
   };
 
-  meta.maintainers = [ maintainers.jpds ];
+  meta.maintainers = [ lib.maintainers.jpds ];
 }

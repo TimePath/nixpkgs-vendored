@@ -68,7 +68,7 @@ in
           `config` to `[ { foo.x = 42; } { bar.y = 42; }]` will put the `foo`
           section before the `bar` section unlike the default alphabetical
           order, which can be helpful for sections such as `include` and
-          `includeIf`. See the CONFIGURATION FILE section of git-config(1) for
+          `includeIf`. See the CONFIGURATION FILE section of {manpage}`git-config(1)` for
           more information.
         '';
       };
@@ -81,6 +81,8 @@ in
         enable = lib.mkEnableOption "git-lfs (Large File Storage)";
 
         package = lib.mkPackageOption pkgs "git-lfs" { };
+
+        enablePureSSHTransfer = lib.mkEnableOption "Enable pure SSH transfer in server side by adding git-lfs-transfer to environment.systemPackages";
       };
     };
   };
@@ -93,7 +95,10 @@ in
       };
     })
     (lib.mkIf (cfg.enable && cfg.lfs.enable) {
-      environment.systemPackages = [ cfg.lfs.package ];
+      environment.systemPackages = lib.mkMerge [
+        [ cfg.lfs.package ]
+        (lib.mkIf cfg.lfs.enablePureSSHTransfer [ pkgs.git-lfs-transfer ])
+      ];
       programs.git.config = {
         filter.lfs = {
           clean = "git-lfs clean -- %f";

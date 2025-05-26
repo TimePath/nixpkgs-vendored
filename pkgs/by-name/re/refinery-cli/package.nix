@@ -1,11 +1,9 @@
 {
   fetchCrate,
   lib,
-  stdenv,
   openssl,
   pkg-config,
   rustPlatform,
-  darwin,
 }:
 
 rustPlatform.buildRustPackage rec {
@@ -22,13 +20,14 @@ rustPlatform.buildRustPackage rec {
   # https://github.com/NixOS/nixpkgs/issues/332957
   cargoPatches = [ ./time-crate.patch ];
 
-  cargoHash = "sha256-RGhcI0TiZWKkzXpiozGLIulQ6YpzWt6lRCPMTTLZDfE=";
+  useFetchCargoVendor = true;
+  cargoHash = "sha256-gcPVbKcPkV0H+BpErTokvLKFxpSXhxNoptxOeuhH1FU=";
 
   nativeBuildInputs = [ pkg-config ];
 
   buildInputs = [
     openssl
-  ] ++ lib.optionals stdenv.hostPlatform.isDarwin [ darwin.apple_sdk.frameworks.SystemConfiguration ];
+  ];
 
   meta = with lib; {
     description = "Run migrations for the Refinery ORM for Rust via the CLI";

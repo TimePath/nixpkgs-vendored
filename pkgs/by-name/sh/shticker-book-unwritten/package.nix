@@ -9,7 +9,8 @@ let
 
 in
 buildFHSEnv {
-  name = "shticker_book_unwritten";
+  pname = "shticker_book_unwritten";
+  inherit (shticker-book-unwritten-unwrapped) version;
   targetPkgs =
     pkgs: with pkgs; [
       alsa-lib

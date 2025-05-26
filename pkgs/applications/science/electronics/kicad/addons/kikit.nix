@@ -31,7 +31,7 @@ let
   targetSpec = targetSpecs.${addonName};
 in
 stdenv.mkDerivation {
-  name = "kicadaddon-${addonName}";
+  pname = "kicadaddon-${addonName}";
   inherit (kikit-module) src version;
 
   nativeBuildInputs = [

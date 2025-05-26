@@ -1,18 +1,21 @@
 {
   deployAndroidPackage,
   lib,
+  stdenv,
   package,
+  os,
+  arch,
   autoPatchelfHook,
   makeWrapper,
-  os,
   pkgs,
   pkgsi686Linux,
   postInstall,
+  meta,
 }:
 
 deployAndroidPackage {
   name = "androidsdk-tools";
-  inherit os package;
+  inherit package os arch;
   nativeBuildInputs = [ makeWrapper ] ++ lib.optionals (os == "linux") [ autoPatchelfHook ];
   buildInputs = lib.optional (os == "linux") (
     (with pkgs; [
@@ -27,15 +30,18 @@ deployAndroidPackage {
       libXrender
       libXext
     ])
-    ++ (with pkgsi686Linux; [
-      glibc
-      xorg.libX11
-      xorg.libXrender
-      xorg.libXext
-      fontconfig.lib
-      freetype
-      zlib
-    ])
+    ++ lib.optionals (os == "linux" && stdenv.isx86_64) (
+      with pkgsi686Linux;
+      [
+        glibc
+        xorg.libX11
+        xorg.libXrender
+        xorg.libXext
+        fontconfig.lib
+        freetype
+        zlib
+      ]
+    )
   );
 
   patchInstructions = ''
@@ -73,5 +79,5 @@ deployAndroidPackage {
     ${postInstall}
   '';
 
-  meta.license = lib.licenses.unfree;
+  inherit meta;
 }

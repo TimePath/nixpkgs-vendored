@@ -40,7 +40,8 @@ let
 
   babelfishTranslate =
     path: name:
-    pkgs.runCommandLocal "${name}.fish" {
+    pkgs.runCommand "${name}.fish" {
+      preferLocalBuild = true;
       nativeBuildInputs = [ pkgs.babelfish ];
     } "babelfish < ${path} > $out;";
 
@@ -268,7 +269,7 @@ in
             };
             generateCompletions =
               package:
-              pkgs.runCommandLocal
+              pkgs.runCommand
                 (
                   with lib.strings;
                   let
@@ -280,6 +281,7 @@ in
                 (
                   {
                     inherit package;
+                    preferLocalBuild = true;
                   }
                   // lib.optionalAttrs (package ? meta.priority) { meta.priority = package.meta.priority; }
                 )
@@ -332,5 +334,5 @@ in
     '';
 
   };
-
+  meta.maintainers = with lib.maintainers; [ sigmasquadron ];
 }

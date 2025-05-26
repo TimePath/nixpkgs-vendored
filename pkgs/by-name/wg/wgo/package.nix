@@ -6,7 +6,7 @@
 
 let
   pname = "wgo";
-  version = "0.5.6d";
+  version = "0.5.11";
 in
 buildGoModule {
   inherit pname version;
@@ -15,7 +15,7 @@ buildGoModule {
     owner = "bokwoon95";
     repo = "wgo";
     rev = "v${version}";
-    hash = "sha256-PzBje046mS844zpU5X1eoRcULJH8sh49yf8lrxeA764=";
+    hash = "sha256-iTUZTeruP21pfd/28fdIhhS5GiSn6DC9Oe2w6VTaxFE=";
   };
 
   vendorHash = "sha256-w6UJxZToHbbQmuXkyqFzyssFcE+7uVNqOuIF/XKdEsU=";

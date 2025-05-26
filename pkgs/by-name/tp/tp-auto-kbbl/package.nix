@@ -14,12 +14,13 @@ rustPlatform.buildRustPackage rec {
 
   src = fetchFromGitHub {
     owner = "saibotd";
-    repo = pname;
+    repo = "tp-auto-kbbl";
     rev = version;
     hash = "sha256-fhBCsOjaQH2tRsBjMGiDmZSIkAgEVxxywVp8/0uAaTU=";
   };
 
-  cargoHash = "sha256-zBTn3dcKzm5JfL1a31m6ZHXp2JoGObPBciy1BfVmL1Q=";
+  useFetchCargoVendor = true;
+  cargoHash = "sha256-Ptc4m+99YknHY28DR5WHt/JG9tgUOcbz/TezUkezmS8=";
 
   nativeBuildInputs = [ pkg-config ];
   buildInputs = [
@@ -32,7 +33,7 @@ rustPlatform.buildRustPackage rec {
     description = "Auto toggle keyboard back-lighting on Thinkpads (and maybe other laptops) for Linux";
     homepage = "https://github.com/saibotd/tp-auto-kbbl";
     license = licenses.mit;
-    maintainers = with maintainers; [ sebtm ];
+    maintainers = with maintainers; [ ];
     platforms = platforms.linux;
     mainProgram = "tp-auto-kbbl";
   };

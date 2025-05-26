@@ -39,8 +39,11 @@ stdenv.mkDerivation (
       ++ (args.propagatedBuildInputs or [ ]);
 
     cmakeFlags =
-      args.cmakeFlags or [ ]
-      ++ lib.optional stdenv.hostPlatform.isDarwin "-DQT_NO_XCODE_MIN_VERSION_CHECK=ON";
+      # don't leak OS version into the final output
+      # https://bugreports.qt.io/browse/QTBUG-136060
+      [ "-DCMAKE_SYSTEM_VERSION=" ]
+      ++ lib.optional stdenv.hostPlatform.isDarwin "-DQT_NO_XCODE_MIN_VERSION_CHECK=ON"
+      ++ args.cmakeFlags or [ ];
 
     moveToDev = false;
 
@@ -70,7 +73,6 @@ stdenv.mkDerivation (
         lgpl3Plus
       ];
       maintainers = with maintainers; [
-        milahu
         nickcao
       ];
       platforms = platforms.unix;

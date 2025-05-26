@@ -50,14 +50,12 @@ sets are
 
 * `pkgs.python27Packages`
 * `pkgs.python3Packages`
-* `pkgs.python39Packages`
 * `pkgs.python310Packages`
 * `pkgs.python311Packages`
 * `pkgs.python312Packages`
 * `pkgs.python313Packages`
 * `pkgs.python314Packages`
 * `pkgs.pypy27Packages`
-* `pkgs.pypy39Packages`
 * `pkgs.pypy310Packages`
 
 and the aliases
@@ -66,7 +64,7 @@ and the aliases
 * `pkgs.python3Packages` pointing to `pkgs.python312Packages`
 * `pkgs.pythonPackages` pointing to `pkgs.python2Packages`
 * `pkgs.pypy2Packages` pointing to `pkgs.pypy27Packages`
-* `pkgs.pypy3Packages` pointing to `pkgs.pypy39Packages`
+* `pkgs.pypy3Packages` pointing to `pkgs.pypy310Packages`
 * `pkgs.pypyPackages` pointing to `pkgs.pypy2Packages`
 
 
@@ -190,7 +188,15 @@ following are specific to `buildPythonPackage`:
   [`makeWrapper`](#fun-makeWrapper) set `PATH` and `PYTHONPATH` environment variables before calling
   the binary. Additional arguments here can allow a developer to set environment
   variables which will be available when the binary is run. For example,
-  `makeWrapperArgs = ["--set FOO BAR" "--set BAZ QUX"]`.
+  `makeWrapperArgs = ["--set" "FOO" "BAR" "--set" "BAZ" "QUX"]`.
+
+  ::: {.note}
+  When `__structuredAttrs = false`, the attribute `makeWrapperArgs` is passed as a space-separated string to the build script. Developers should use `prependToVar` or `appendToVar` to add arguments to it in build phases, or use `__structuredAttrs = true` to ensure that `makeWrapperArgs` is passed as a Bash array.
+
+  For compatibility purposes,
+  when `makeWrapperArgs` shell variable is specified as a space-separated string (instead of a Bash array) in the build script, the string content is Bash-expanded before concatenated into the `wrapProgram` command. Still, developers should not rely on such behaviours, but use `__structuredAttrs = true` to specify flags containing spaces (e.g. `makeWrapperArgs = [ "--set" "GREETING" "Hello, world!" ]`), or use -pre and -post phases to specify flags with Bash-expansions (e.g. `preFixup = ''makeWrapperArgs+=(--prefix PATH : "$SOME_PATH")`'').
+  :::
+
 * `namePrefix`: Prepends text to `${name}` parameter. In case of libraries, this
   defaults to `"python3.8-"` for Python 3.8, etc., and in case of applications to `""`.
 * `pypaBuildFlags ? []`: A list of strings. Arguments to be passed to `python -m build --wheel`.
@@ -219,7 +225,7 @@ because their behaviour is different:
 * `dependencies ? []`: Aside from propagating dependencies,
   `buildPythonPackage` also injects code into and wraps executables with the
   paths included in this list. Items listed in `install_requires` go here.
-* `optional-dependencies ? { }`: Optional feature flagged dependencies.  Items listed in `extras_requires` go here.
+* `optional-dependencies ? { }`: Optional feature flagged dependencies.  Items listed in `extras_require` go here.
 
 
 ##### Overriding Python packages {#overriding-python-packages}
@@ -1274,36 +1280,14 @@ test run would be:
 However, many repositories' test suites do not translate well to nix's build
 sandbox, and will generally need many tests to be disabled.
 
-To filter tests using pytest, one can do the following:
+This is achievable by
+- Including paths or test items (`path/to/file.py::MyClass` or `path/to/file.py::MyClass::test_method`) with positional arguments.
+- Excluding paths with `--ignore` or globbed paths with `--ignore-glob`.
+- Excluding test items using the `--deselect` flag.
+- Including or excluding classes or test methods by their name using the `-k` flag.
+- Including or excluding test by their marks using the `-m` flag.
 
-```nix
-{
-  nativeCheckInputs = [ pytest ];
-  # avoid tests which need additional data or touch network
-  checkPhase = ''
-    runHook preCheck
-
-    pytest tests/ --ignore=tests/integration -k 'not download and not update' --ignore=tests/test_failing.py
-
-    runHook postCheck
-  '';
-}
-```
-
-`--ignore` will tell pytest to ignore that file or directory from being
-collected as part of a test run. This is useful is a file uses a package
-which is not available in nixpkgs, thus skipping that test file is much
-easier than having to create a new package.
-
-`-k` is used to define a predicate for test names. In this example, we are
-filtering out tests which contain `download` or `update` in their test case name.
-Only one `-k` argument is allowed, and thus a long predicate should be concatenated
-with “\\” and wrapped to the next line.
-
-::: {.note}
-In pytest==6.0.1, the use of “\\” to continue a line (e.g. `-k 'not download \'`) has
-been removed, in this case, it's recommended to use `pytestCheckHook`.
-:::
+We highly recommend `pytestCheckHook` for an easier and more structural setup.
 
 #### Using pytestCheckHook {#using-pytestcheckhook}
 
@@ -1313,7 +1297,40 @@ when a package may need many items disabled to run the test suite.
 Most packages use `pytest` or `unittest`, which is compatible with `pytest`,
 so you will most likely use `pytestCheckHook`.
 
-Using the example above, the analogous `pytestCheckHook` usage would be:
+To use `pytestCheckHook`, add it to `nativeCheckInputs`.
+Adding `pytest` is not required, since it is included with `pytestCheckHook`.
+
+```nix
+{
+  nativeCheckInputs = [
+    pytestCheckHook
+  ];
+}
+```
+
+`pytestCheckHook` recognizes the following attributes:
+
+`enabledTestPaths` and `disabledTestPaths`
+
+:   To specify path globs (files or directories) or test items.
+
+`enabledTests` and `disabledTests`
+
+:   To specify keywords for class names or test method names.
+
+`enabledTestMarks` and `disabledTestMarks`
+
+:   To specify test marks.
+
+`pytestFlags`
+
+:   To append additional command-line arguments to `pytest`.
+
+By default, `pytest` automatically discovers which tests to run.
+If tests are explicitly enabled, only those tests will run.
+A test, that is both enabled and disabled, will not run.
+
+The following example demonstrates usage of various `pytestCheckHook` attributes:
 
 ```nix
 {
@@ -1321,26 +1338,73 @@ Using the example above, the analogous `pytestCheckHook` usage would be:
     pytestCheckHook
   ];
 
-  # requires additional data
-  pytestFlagsArray = [
+  # Allow running the following test paths and test objects.
+  enabledTestPaths = [
+    # Find tests under the tests directory.
+    # The trailing slash is not necessary.
     "tests/"
-    "--ignore=tests/integration"
+
+    # Additionally run test_foo
+    "other-tests/test_foo.py::Foo::test_foo"
   ];
 
-  disabledTests = [
-    # touches network
-    "download"
-    "update"
-  ];
-
+  # Override the above-enabled test paths and test objects.
   disabledTestPaths = [
-    "tests/test_failing.py"
+    # Tests under tests/integration requires additional data.
+    "tests/integration"
+  ];
+
+  # Allow tests by keywords matching their class names or method names.
+  enabledTests = [
+    # pytest by default only runs test methods begin with "test_" or end with "_test".
+    # This includes all functions whose name contains "test".
+    "test"
+  ];
+
+  # Override the above-enabled tests by keywords matching their class names or method names.
+  disabledTests = [
+    # Tests touching networks.
+    "upload"
+    "download"
+  ];
+
+  # Additional pytest flags
+  pytestFlags = [
+    # Disable benchmarks and run benchmarking tests only once.
+    "--benchmark-disable"
   ];
 }
 ```
 
-This is especially useful when tests need to be conditionally disabled,
-for example:
+These attributes are all passed into the derivation directly
+and added to the `pytest` command without additional Bash expansion.
+It requires `__structuredAttrs = true` to pass list elements containing spaces.
+
+The `<enabled/disabled>TestsPaths` attributes expand Unix-style globs.
+If a test path contains characters like `*`, `?`, `[`, or `]`, you can
+quote them with square brackets (`[*]`, `[?]`, `[[]`, and `[]]`) to match literally.
+
+The `<enabled/disabled>Tests` and `<enabled/disabled>TestMarks` attribute pairs
+form a logical expression `((included_element1) or (included_element2)) and not (excluded_element1) and not (excluded_element2)`
+which will be passed to pytest's `-k` and `-m` flags respectively.
+With `__structuredAttrs = true` enabled, they additionally support sub-expressions.
+
+For example, you could disable test items like `TestFoo::test_bar_functionality`
+by disabling tests that match both `"Foo"` **and** `"bar"`:
+
+```nix
+{
+  __structuredAttrs = true;
+
+  disabledTests = [
+    "Foo and bar"
+  ];
+}
+```
+
+The main benefits of using `pytestCheckHook` to construct `pytest` commands
+is structuralization and eval-time accessibility.
+This is especially helpful to select tests or specify flags conditionally:
 
 ```nix
 {
@@ -1360,10 +1424,6 @@ for example:
     ];
 }
 ```
-
-Trying to concatenate the related strings to disable tests in a regular
-[`checkPhase`](#ssec-check-phase) would be much harder to read. This also enables us to comment on
-why specific tests are disabled.
 
 #### Using pythonImportsCheck {#using-pythonimportscheck}
 
@@ -1485,7 +1545,7 @@ automatically add `pythonRelaxDepsHook` if either `pythonRelaxDeps` or
     unittestCheckHook
   ];
 
-  unittestFlagsArray = [
+  unittestFlags = [
     "-s"
     "tests"
     "-v"
@@ -2042,6 +2102,14 @@ Note this method is preferred over adding parameters to builders, as that can
 result in packages depending on different variants and thereby causing
 collisions.
 
+::: {.note}
+The `optional-dependencies` attribute should only be used for dependency groups
+as defined in package metadata. If a package gracefully handles missing
+dependencies in runtime but doesn't advertise it through package metadata, then
+these dependencies should not be listed at all. (One may still have to list
+them in `nativeCheckInputs` to pass test suite.)
+:::
+
 ### How to contribute a Python package to nixpkgs? {#tools}
 
 Packages inside nixpkgs must use the [`buildPythonPackage`](#buildpythonpackage-function) or [`buildPythonApplication`](#buildpythonapplication-function) function directly,
@@ -2049,6 +2117,7 @@ because we can only provide security support for non-vendored dependencies.
 
 We recommend [nix-init](https://github.com/nix-community/nix-init) for creating new python packages within nixpkgs,
 as it already prefetches the source, parses dependencies for common formats and prefills most things in `meta`.
+When using the tool, pull from the original source repository instead of PyPI, if possible.
 
 See also [contributing section](#contributing).
 
@@ -2074,30 +2143,6 @@ This will reconfigure the checkPhase to make use of that particular test framewo
 Occasionally packages don't make use of a common test framework, which may then require a custom checkPhase.
 
 #### Common issues {#common-issues}
-
-* Non-working tests can often be deselected. Most Python modules
-  do follow the standard test protocol where the pytest runner can be used.
-  `pytest` supports the `-k` and `--ignore` parameters to ignore test
-  methods or classes as well as whole files. For `pytestCheckHook` these are
-  conveniently exposed as `disabledTests` and `disabledTestPaths` respectively.
-
-  ```nix
-  buildPythonPackage {
-    # ...
-    nativeCheckInputs = [
-      pytestCheckHook
-    ];
-
-    disabledTests = [
-      "function_name"
-      "other_function"
-    ];
-
-    disabledTestPaths = [
-      "this/file.py"
-    ];
-  }
-  ```
 
 * Tests that attempt to access `$HOME` can be fixed by using `writableTmpDirAsHomeHook` in
   `nativeCheckInputs`, which sets up a writable temporary directory as the home directory. Alternatively,
@@ -2146,12 +2191,17 @@ The following rules are desired to be respected:
   that characters should be converted to lowercase and `.` and `_` should be
   replaced by a single `-` (foo-bar-baz instead of Foo__Bar.baz).
   If necessary, `pname` has to be given a different value within `fetchPypi`.
+* It's generally preferable to fetch `src` directly from the repo and not from
+  PyPI. Use `fetchPypi` when there's a clear technical reason to do so.
 * Packages from sources such as GitHub and GitLab that do not exist on PyPI
   should not use a name that is already used on PyPI. When possible, they should
   use the package repository name prefixed with the owner (e.g. organization) name
   and using a `-` as delimiter.
 * Attribute names in `python-packages.nix` should be sorted alphanumerically to
   avoid merge conflicts and ease locating attributes.
+* Non-python runtime dependencies should be added via explicit wrapping or
+  patching (using e.g. `substituteInPlace`), rather than through propagation via
+  `dependencies`/`propagatedBuildInputs`, to reduce clutter in `$PATH`.
 
 This list is useful for reviewers as well as for self-checking when submitting packages.
 

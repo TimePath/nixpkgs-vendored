@@ -2,21 +2,23 @@
   lib,
   buildGoModule,
   fetchFromGitHub,
-  fetchurl,
+  fetchzip,
   fuse,
   stdenv,
   installShellFiles,
   versionCheckHook,
+  callPackage,
 }:
 buildGoModule rec {
   pname = "alist";
-  version = "3.38.0";
+  version = "3.44.0";
+  webVersion = "3.44.0";
 
   src = fetchFromGitHub {
     owner = "AlistGo";
     repo = "alist";
     tag = "v${version}";
-    hash = "sha256-HF5T/TZXiyT186qZyzz+m0K9ajF1wk8YAZljcq5ccWM=";
+    hash = "sha256-zaIS2DYB7x76SCHCX9aJ0/8Lejwy3/AlLbnztSNJtSc=";
     # populate values that require us to use git. By doing this in postFetch we
     # can delete .git afterwards and maintain better reproducibility of the src.
     leaveDotGit = true;
@@ -28,13 +30,13 @@ buildGoModule rec {
       find "$out" -name .git -print0 | xargs -0 rm -rf
     '';
   };
-  web = fetchurl {
-    url = "https://github.com/AlistGo/alist-web/releases/download/${version}/dist.tar.gz";
-    hash = "sha256-jHbWhjvHfgtdocuuELbOwrMzL8tOQfBVdH9MxasEwGo=";
+  web = fetchzip {
+    url = "https://github.com/AlistGo/alist-web/releases/download/${webVersion}/dist.tar.gz";
+    hash = "sha256-YPqbEPpwRVTWwH/LOq7cGsYju6YqdFCOseD52OsnkSk=";
   };
 
   proxyVendor = true;
-  vendorHash = "sha256-Q5E86bNedXOqMKS3WrXicWg27vnjyGao0nE34Ws2l9E=";
+  vendorHash = "sha256-eBIlBtO+AlW2TE4xgxktePb2bm1lIYiuZ4+AUd1bdW8=";
 
   buildInputs = [ fuse ];
 
@@ -45,14 +47,12 @@ buildGoModule rec {
     "-w"
     "-X \"github.com/alist-org/alist/v3/internal/conf.GitAuthor=Xhofe <i@nn.ci>\""
     "-X github.com/alist-org/alist/v3/internal/conf.Version=${version}"
-    "-X github.com/alist-org/alist/v3/internal/conf.WebVersion=${version}"
+    "-X github.com/alist-org/alist/v3/internal/conf.WebVersion=${webVersion}"
   ];
 
   preConfigure = ''
-    # use matched web files
     rm -rf public/dist
-    tar -xzf ${web}
-    mv -f dist public
+    cp -r ${web} public/dist
   '';
 
   preBuild = ''
@@ -68,6 +68,7 @@ buildGoModule rec {
         "TestHTTPAll"
         "TestWebsocketAll"
         "TestWebsocketCaller"
+        "TestDownloadOrder"
       ];
     in
     [ "-skip=^${builtins.concatStringsSep "$|^" skippedTests}$" ];
@@ -88,6 +89,10 @@ buildGoModule rec {
   nativeInstallCheckInputs = [
     versionCheckHook
   ];
+
+  passthru = {
+    updateScript = lib.getExe (callPackage ./update.nix { });
+  };
 
   meta = {
     description = "File list/WebDAV program that supports multiple storages";

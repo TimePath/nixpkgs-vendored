@@ -13,11 +13,11 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "monetdb";
-  version = "11.51.3";
+  version = "11.53.3";
 
   src = fetchurl {
     url = "https://dev.monetdb.org/downloads/sources/archive/MonetDB-${finalAttrs.version}.tar.bz2";
-    hash = "sha256-ql6J4e62sL/g6s6cr2xMoxmlsLyovapaGtpcQIZ9tOU=";
+    hash = "sha256-8q8Q3b7D6BR+UMmcu4T5y+Xtwmr1URHc0Cq97tfDD6I=";
   };
 
   nativeBuildInputs = [
@@ -45,8 +45,7 @@ stdenv.mkDerivation (finalAttrs: {
       $out/bin/Mz.py \
       $out/bin/Mtest.py \
       $out/bin/sqlsample.pl \
-      $out/bin/malsample.pl \
-      $out/bin/Mconvert.py
+      $out/bin/malsample.pl
   '';
 
   passthru.tests = { inherit (nixosTests) monetdb; };

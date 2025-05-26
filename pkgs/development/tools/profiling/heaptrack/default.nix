@@ -3,11 +3,12 @@
   stdenv,
   mkDerivation,
   fetchFromGitHub,
+  fetchpatch,
   cmake,
   extra-cmake-modules,
   makeBinaryWrapper,
   zlib,
-  boost179,
+  boost,
   libunwind,
   elfutils,
   sparsehash,
@@ -32,6 +33,14 @@ mkDerivation rec {
     hash = "sha256-pP+s60ERnmOctYTe/vezCg0VYzziApNY0QaF3aTccZU=";
   };
 
+  patches = [
+    # cmake: Fix C compatibility of libunwind probes
+    (fetchpatch {
+      url = "https://invent.kde.org/sdk/heaptrack/-/commit/c6c45f3455a652c38aefa402aece5dafa492e8ab.patch";
+      hash = "sha256-eou53UUQX+S7yrz2RS95GwkAnNIZY/aaze0eAdjnbPU=";
+    })
+  ];
+
   nativeBuildInputs = [
     cmake
     extra-cmake-modules
@@ -40,7 +49,7 @@ mkDerivation rec {
   buildInputs =
     [
       zlib
-      boost179
+      boost
       libunwind
       sparsehash
       zstd
@@ -67,7 +76,7 @@ mkDerivation rec {
     homepage = "https://github.com/KDE/heaptrack";
     license = licenses.lgpl21Plus;
     mainProgram = "heaptrack_gui";
-    maintainers = with maintainers; [ gebner ];
+    maintainers = with maintainers; [ ];
     platforms = platforms.unix;
   };
 }

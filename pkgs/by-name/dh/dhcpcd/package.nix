@@ -44,6 +44,7 @@ stdenv.mkDerivation rec {
     "--localstatedir=/var"
     "--disable-privsep"
     "--dbdir=/var/lib/dhcpcd"
+    "--with-default-hostname=nixos"
     (lib.enableFeature enablePrivSep "privsep")
   ] ++ lib.optional enablePrivSep "--privsepuser=dhcpcd";
 
@@ -62,13 +63,18 @@ stdenv.mkDerivation rec {
   ) "[ -e ${placeholder "out"}/lib/dhcpcd/dev/udev.so ]";
 
   passthru.tests = {
-    inherit (nixosTests.networking.scripted) macvlan dhcpSimple dhcpOneIf;
+    inherit (nixosTests.networking.scripted)
+      macvlan
+      dhcpSimple
+      dhcpHostname
+      dhcpOneIf
+      ;
   };
 
   meta = with lib; {
     description = "Client for the Dynamic Host Configuration Protocol (DHCP)";
     homepage = "https://roy.marples.name/projects/dhcpcd";
-    platforms = platforms.linux ++ platforms.freebsd;
+    platforms = platforms.linux ++ platforms.freebsd ++ platforms.openbsd;
     license = licenses.bsd2;
     maintainers = [ ];
     mainProgram = "dhcpcd";

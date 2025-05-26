@@ -11,7 +11,7 @@
 
 buildPythonPackage rec {
   pname = "awsiotsdk";
-  version = "1.22.0";
+  version = "1.22.2";
   pyproject = true;
 
   disabled = pythonOlder "3.7";
@@ -20,8 +20,13 @@ buildPythonPackage rec {
     owner = "aws";
     repo = "aws-iot-device-sdk-python-v2";
     tag = "v${version}";
-    hash = "sha256-2ZMNG+6yshEvjEpyN6uV62m11LZUrUHAzpRbm1foif0=";
+    hash = "sha256-vqx/OgQ/hgH6ULBI1I9+fD4CswQZDzfdNlhImbnQiKg=";
   };
+
+  postPatch = ''
+    substituteInPlace awsiot/__init__.py \
+      --replace-fail  "__version__ = '1.0.0-dev'" "__version__ = '${version}'"
+  '';
 
   pythonRelaxDeps = [ "awscrt" ];
 

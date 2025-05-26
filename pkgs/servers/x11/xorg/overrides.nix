@@ -48,12 +48,11 @@
   libxslt,
   libxcrypt,
   hwdata,
-  ApplicationServices,
-  Carbon,
-  Cocoa,
-  Xplugin,
   xorg,
   windows,
+  libgbm,
+  mesa-gl-headers,
+  dri-pkgconfig-stub,
 }:
 
 let
@@ -154,7 +153,6 @@ self: super:
     };
   });
 
-  gccmakedep = addMainProgram super.gccmakedep { };
   iceauth = addMainProgram super.iceauth { };
   ico = addMainProgram super.ico { };
 
@@ -229,35 +227,11 @@ self: super:
     };
   });
 
-  libxcvt = super.libxcvt.overrideAttrs (
-    {
-      meta ? { },
-      ...
-    }:
-    {
-      meta = meta // {
-        homepage = "https://gitlab.freedesktop.org/xorg/lib/libxcvt";
-        mainProgram = "cvt";
-        badPlatforms = meta.badPlatforms or [ ] ++ [
-          lib.systems.inspect.platformPatterns.isStatic
-        ];
-      };
-    }
-  );
-
   libX11 = super.libX11.overrideAttrs (attrs: {
     outputs = [
       "out"
       "dev"
       "man"
-    ];
-    patches = [
-      # Fix spurious Xerror when running synchronized
-      # https://gitlab.freedesktop.org/xorg/lib/libx11/-/merge_requests/264
-      (fetchpatch {
-        url = "https://gitlab.freedesktop.org/xorg/lib/libx11/-/commit/f3d6ebac35301d4ad068e307f0fbe6aa12ccbccb.patch";
-        hash = "sha256-wQNMsbQ+h9VlNiWr+r34AxvViC8fq02ZhcARRnw7O9k=";
-      })
     ];
     configureFlags =
       attrs.configureFlags or [ ]
@@ -282,8 +256,10 @@ self: super:
   });
 
   libAppleWM = super.libAppleWM.overrideAttrs (attrs: {
-    nativeBuildInputs = attrs.nativeBuildInputs ++ [ autoreconfHook ];
-    buildInputs = attrs.buildInputs ++ [ xorg.utilmacros ];
+    nativeBuildInputs = attrs.nativeBuildInputs ++ [
+      autoreconfHook
+      xorg.utilmacros
+    ];
     meta = attrs.meta // {
       platforms = lib.platforms.darwin;
     };
@@ -401,17 +377,6 @@ self: super:
       "dev"
       "devdoc"
     ];
-  });
-
-  luit = super.luit.overrideAttrs (attrs: {
-    # See https://bugs.freedesktop.org/show_bug.cgi?id=47792
-    # Once the bug is fixed upstream, this can be removed.
-    configureFlags = [ "--disable-selective-werror" ];
-
-    buildInputs = attrs.buildInputs ++ [ libiconv ];
-    meta = attrs.meta // {
-      mainProgram = "luit";
-    };
   });
 
   libICE = super.libICE.overrideAttrs (attrs: {
@@ -637,45 +602,6 @@ self: super:
     ]; # mainly to avoid propagation
   });
 
-  libpciaccess = super.libpciaccess.overrideAttrs (attrs: {
-    nativeBuildInputs = attrs.nativeBuildInputs ++ [
-      meson
-      ninja
-    ];
-
-    buildInputs =
-      attrs.buildInputs
-      ++ [ zlib ]
-      ++ lib.optionals stdenv.hostPlatform.isNetBSD [
-        netbsd.libarch
-        netbsd.libpci
-      ];
-
-    mesonFlags = [
-      (lib.mesonOption "pci-ids" "${hwdata}/share/hwdata")
-      (lib.mesonEnable "zlib" true)
-    ];
-
-    meta = attrs.meta // {
-      # https://gitlab.freedesktop.org/xorg/lib/libpciaccess/-/blob/master/configure.ac#L108-114
-      platforms =
-        lib.fold (os: ps: ps ++ lib.platforms.${os})
-          [ ]
-          [ "cygwin" "freebsd" "linux" "netbsd" "openbsd" "illumos" ];
-      badPlatforms = [
-        # mandatory shared library
-        lib.systems.inspect.platformPatterns.isStatic
-      ];
-    };
-  });
-
-  libpthreadstubs = super.libpthreadstubs.overrideAttrs (attrs: {
-    # only contains a pkgconfig file on linux and windows
-    meta = attrs.meta // {
-      platforms = lib.platforms.unix ++ lib.platforms.windows;
-    };
-  });
-
   setxkbmap = super.setxkbmap.overrideAttrs (attrs: {
     postInstall = ''
       mkdir -p $out/share/man/man7
@@ -687,20 +613,10 @@ self: super:
     };
   });
 
-  makedepend = addMainProgram super.makedepend { };
   mkfontscale = addMainProgram super.mkfontscale { };
   oclock = addMainProgram super.oclock { };
   smproxy = addMainProgram super.smproxy { };
   transset = addMainProgram super.transset { };
-
-  utilmacros = super.utilmacros.overrideAttrs (attrs: {
-    # not needed for releases, we propagate the needed tools
-    propagatedBuildInputs = attrs.propagatedBuildInputs or [ ] ++ [
-      automake
-      autoconf
-      libtool
-    ];
-  });
 
   viewres = addMainProgram super.viewres { };
 
@@ -903,8 +819,13 @@ self: super:
   });
 
   xf86videonouveau = super.xf86videonouveau.overrideAttrs (attrs: {
-    nativeBuildInputs = attrs.nativeBuildInputs ++ [ autoreconfHook ];
-    buildInputs = attrs.buildInputs ++ [ xorg.utilmacros ];
+    nativeBuildInputs = attrs.nativeBuildInputs ++ [
+      autoreconfHook
+      buildPackages.xorg.utilmacros # For xorg-utils.m4 macros
+      buildPackages.xorg.xorgserver # For xorg-server.m4 macros
+    ];
+    # fixes `implicit declaration of function 'wfbScreenInit'; did you mean 'fbScreenInit'?
+    NIX_CFLAGS_COMPILE = "-Wno-error=implicit-function-declaration";
   });
 
   xf86videoglint = super.xf86videoglint.overrideAttrs (attrs: {
@@ -935,11 +856,7 @@ self: super:
   });
 
   xf86videovmware = super.xf86videovmware.overrideAttrs (attrs: {
-    buildInputs = attrs.buildInputs ++ [
-      mesa
-      mesa.driversdev
-      llvm
-    ]; # for libxatracker
+    buildInputs = attrs.buildInputs ++ [ mesa ];
     env.NIX_CFLAGS_COMPILE = toString [ "-Wno-error=address" ]; # gcc12
     meta = attrs.meta // {
       platforms = [
@@ -1062,7 +979,7 @@ self: super:
       '';
     in
     xorg.xkeyboardconfig.overrideAttrs (old: {
-      buildInputs = old.buildInputs ++ [ automake ];
+      nativeBuildInputs = old.nativeBuildInputs ++ [ automake ];
       postPatch = lib.concatStrings (lib.mapAttrsToList patchIn layouts);
     });
 
@@ -1171,7 +1088,9 @@ self: super:
           ];
           buildInputs = commonBuildInputs ++ [
             libdrm
-            mesa
+            libgbm
+            mesa-gl-headers
+            dri-pkgconfig-stub
           ];
           propagatedBuildInputs =
             attrs.propagatedBuildInputs or [ ]
@@ -1233,9 +1152,6 @@ self: super:
             bootstrap_cmds
             automake
             autoconf
-            Xplugin
-            Carbon
-            Cocoa
             mesa
           ];
           propagatedBuildInputs = commonPropagatedBuildInputs ++ [
@@ -1294,7 +1210,6 @@ self: super:
           preConfigure = ''
             mkdir -p $out/Applications
             export NIX_CFLAGS_COMPILE="$NIX_CFLAGS_COMPILE -Wno-error"
-            substituteInPlace hw/xquartz/pbproxy/Makefile.in --replace -F/System -F${ApplicationServices}
           '';
           postInstall = ''
             rm -fr $out/share/X11/xkb/compiled
@@ -1335,15 +1250,12 @@ self: super:
         "--without-dtrace"
       ];
 
-    buildInputs =
-      old.buildInputs
-      ++ [
-        xorg.pixman
-        xorg.libXfont2
-        xorg.xtrans
-        xorg.libxcvt
-      ]
-      ++ lib.optional stdenv.hostPlatform.isDarwin [ Xplugin ];
+    buildInputs = old.buildInputs ++ [
+      xorg.pixman
+      xorg.libXfont2
+      xorg.xtrans
+      xorg.libxcvt
+    ];
   });
 
   lndir = super.lndir.overrideAttrs (attrs: {
@@ -1568,15 +1480,6 @@ self: super:
   xsetroot = addMainProgram super.xsetroot { };
   xsm = addMainProgram super.xsm { };
   xstdcmap = addMainProgram super.xstdcmap { };
-  xtrans = super.xtrans.overrideAttrs (attrs: {
-    patches = [
-      # https://gitlab.freedesktop.org/xorg/lib/libxtrans/-/merge_requests/22
-      (fetchpatch {
-        url = "https://gitlab.freedesktop.org/xorg/lib/libxtrans/-/commit/ae99ac32f61e0db92a45179579030a23fe1b5770.patch";
-        hash = "sha256-QnTTcZPd9QaHS5up4Ne7iuNL/OBu+DnzXprovWnW4cw=";
-      })
-    ];
-  });
   xwd = addMainProgram super.xwd { };
   xwininfo = addMainProgram super.xwininfo { };
   xwud = addMainProgram super.xwud { };

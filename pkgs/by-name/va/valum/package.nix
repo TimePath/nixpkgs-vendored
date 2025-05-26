@@ -9,7 +9,7 @@
   vala,
   ctpl,
   libgee,
-  libsoup,
+  libsoup_2_4,
   fcgi,
 }:
 
@@ -34,7 +34,7 @@ stdenv.mkDerivation rec {
     vala
     ctpl
     libgee
-    libsoup
+    libsoup_2_4
     fcgi
   ];
 

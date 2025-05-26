@@ -48,19 +48,21 @@
   withMakeWrapper ? !stdenv.hostPlatform.isMinGW,
   libnghttp2,
 
+  # for passthru.updateScript
+  nix-update-script,
   # for passthru.tests
   gnutls,
 }:
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "unbound";
-  version = "1.22.0";
+  version = "1.23.0";
 
   src = fetchFromGitHub {
     owner = "NLnetLabs";
     repo = "unbound";
-    rev = "refs/tags/release-${finalAttrs.version}";
-    hash = "sha256-CFsd8tdFL+JbxmDZoWdStvWcs9azSaLtMG8Ih5oXE/A=";
+    tag = "release-${finalAttrs.version}";
+    hash = "sha256-a9WNUVDy7ORB40VFUhkUxEaBho+HVNJ105AqdGDr+tI=";
   };
 
   outputs = [
@@ -70,13 +72,13 @@ stdenv.mkDerivation (finalAttrs: {
   ]; # "dev" would only split ~20 kB
 
   nativeBuildInputs =
-    [
-      bison
-      flex
-      pkg-config
-    ]
-    ++ lib.optionals withMakeWrapper [ makeWrapper ]
+    lib.optionals withMakeWrapper [ makeWrapper ]
     ++ lib.optionals withDNSTAP [ protobufc ]
+    ++ [
+      pkg-config
+      flex
+      bison
+    ]
     ++ lib.optionals withPythonModule [ swig ];
 
   buildInputs =
@@ -185,7 +187,8 @@ stdenv.mkDerivation (finalAttrs: {
       # Build libunbound again, but only against nettle instead of openssl.
       # This avoids gnutls.out -> unbound.lib -> lib.getLib openssl.
       ''
-        configureFlags="$configureFlags --with-nettle=${nettle.dev} --with-libunbound-only"
+        appendToVar configureFlags "--with-nettle=${nettle.dev}"
+        appendToVar configureFlags "--with-libunbound-only"
         configurePhase
         buildPhase
         if [ -n "$doCheck" ]; then
@@ -202,17 +205,24 @@ stdenv.mkDerivation (finalAttrs: {
       ) " --replace '-L${pkg.dev}/lib' '-L${pkg.out}/lib' --replace '-R${pkg.dev}/lib' '-R${pkg.out}/lib'"
     ) (builtins.filter (p: p != null) finalAttrs.buildInputs);
 
-  passthru.tests = {
-    inherit gnutls;
-    nixos-test = nixosTests.unbound;
-    nixos-test-exporter = nixosTests.prometheus-exporters.unbound;
+  passthru = {
+    updateScript = nix-update-script {
+      extraArgs = [
+        "--version-regex=release-(.+)"
+      ];
+    };
+    tests = {
+      inherit gnutls;
+      nixos-test = nixosTests.unbound;
+      nixos-test-exporter = nixosTests.prometheus-exporters.unbound;
+    };
   };
 
-  meta = with lib; {
+  meta = {
     description = "Validating, recursive, and caching DNS resolver";
-    license = licenses.bsd3;
+    license = lib.licenses.bsd3;
     homepage = "https://www.unbound.net";
-    maintainers = [ ];
-    platforms = platforms.unix ++ platforms.windows;
+    maintainers = with lib.maintainers; [ Scrumplex ];
+    platforms = with lib.platforms; unix ++ windows;
   };
 })

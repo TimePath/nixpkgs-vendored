@@ -1,15 +1,12 @@
 { config, lib, ... }:
-
-with lib;
-
 {
   meta = {
-    maintainers = [ maintainers.joachifm ];
+    maintainers = [ lib.maintainers.joachifm ];
   };
 
   options = {
-    security.lockKernelModules = mkOption {
-      type = types.bool;
+    security.lockKernelModules = lib.mkOption {
+      type = lib.types.bool;
       default = false;
       description = ''
         Disable kernel module loading once the system is fully initialised.
@@ -20,10 +17,10 @@ with lib;
     };
   };
 
-  config = mkIf config.security.lockKernelModules {
-    boot.kernelModules = concatMap (
+  config = lib.mkIf config.security.lockKernelModules {
+    boot.kernelModules = lib.concatMap (
       x:
-      optionals (x.device != null) (
+      lib.optionals (x.device != null) (
         if x.fsType == "vfat" then
           [
             "vfat"

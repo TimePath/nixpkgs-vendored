@@ -10,22 +10,22 @@
 buildHomeAssistantComponent rec {
   owner = "kongo09";
   domain = "philips_airpurifier_coap";
-  version = "0.28.0";
+  version = "0.34.0";
 
   src = fetchFromGitHub {
     inherit owner;
     repo = "philips-airpurifier-coap";
     rev = "v${version}";
-    hash = "sha256-yoaph/R3c4j+sXEC02Hv+ixtuif70/y6Gag5NBpKFLs=";
+    hash = "sha256-jQXQdcgW8IDmjaHjmeyXHcNTXYmknNDw7Flegy6wj2A=";
   };
-
-  postPatch = ''
-    substituteInPlace custom_components/philips_airpurifier_coap/manifest.json --replace-fail 'getmac==0.9.4' 'getmac>=0.9.4'
-  '';
 
   dependencies = [
     aioairctrl
     getmac
+  ];
+
+  ignoreVersionRequirement = [
+    "getmac"
   ];
 
   meta = {

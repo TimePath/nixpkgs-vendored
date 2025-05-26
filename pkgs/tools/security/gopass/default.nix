@@ -10,25 +10,34 @@
   xclip,
   wl-clipboard,
   passAlias ? false,
+  apple-sdk_14,
+  testers,
+  nix-update-script,
+  gopass,
 }:
 
 buildGoModule rec {
   pname = "gopass";
-  version = "1.15.14";
+  version = "1.15.16";
 
   nativeBuildInputs = [
     installShellFiles
     makeWrapper
   ];
 
+  buildInputs = lib.optionals stdenv.hostPlatform.isDarwin [
+    # For ScreenCaptureKit.h, see https://github.com/NixOS/nixpkgs/pull/358760#discussion_r1858327365
+    apple-sdk_14
+  ];
+
   src = fetchFromGitHub {
     owner = "gopasspw";
     repo = "gopass";
     rev = "v${version}";
-    hash = "sha256-3oXdHjW3svGfOEoikEeGm4oU9j+7IBOHw5KH7CCV/uw=";
+    hash = "sha256-oZeik172VBSxuO3DfD5t8cKPl3AYjlyEw5x4/7g9h6o=";
   };
 
-  vendorHash = "sha256-GeppWyIWE8kYIqhRf1iHksWksdjbIzy96rRpx+qQ3L0=";
+  vendorHash = "sha256-mfUt1H7eApxb05SXWS1Fa/kU6ppnZs3IXvO4Bt5aXLo=";
 
   subPackages = [ "." ];
 
@@ -67,6 +76,12 @@ buildGoModule rec {
   '';
   passthru = {
     inherit wrapperPath;
+
+    tests.version = testers.testVersion {
+      package = gopass;
+    };
+
+    updateScript = nix-update-script { };
   };
 
   meta = with lib; {

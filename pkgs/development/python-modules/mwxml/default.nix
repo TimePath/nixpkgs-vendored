@@ -1,22 +1,29 @@
 {
   lib,
+  stdenv,
   buildPythonPackage,
   fetchPypi,
+
+  # build-system
+  setuptools,
+
+  # dependencies
   jsonschema,
   mwcli,
   mwtypes,
+
+  # tests
   pytestCheckHook,
-  setuptools,
 }:
 
 buildPythonPackage rec {
   pname = "mwxml";
-  version = "0.3.5";
+  version = "0.3.6";
   pyproject = true;
 
   src = fetchPypi {
     inherit pname version;
-    hash = "sha256-K/5c6BfX2Jo/jcKhCa3hCQ8PtWzqSFZ8xFqe1R/CSEs=";
+    hash = "sha256-WlMYHTAhUq0D7FE/8Yaongx+H8xQx4MwRSoIcsqmOTU=";
   };
 
   build-system = [ setuptools ];
@@ -27,9 +34,14 @@ buildPythonPackage rec {
     mwtypes
   ];
 
+  pythonImportsCheck = [ "mwxml" ];
+
   nativeCheckInputs = [ pytestCheckHook ];
 
-  pythonImportsCheck = [ "mwxml" ];
+  disabledTests = lib.optionals stdenv.hostPlatform.isDarwin [
+    # AttributeError: Can't get local object 'map.<locals>.process_path'
+    "test_complex_error_handler"
+  ];
 
   meta = {
     description = "Set of utilities for processing MediaWiki XML dump data";

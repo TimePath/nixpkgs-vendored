@@ -3,10 +3,8 @@
   stdenv,
   fetchFromGitHub,
   fetchpatch2,
-  substituteAll,
-  apple-sdk_11,
+  replaceVars,
   cmake,
-  darwinMinVersionHook,
   ninja,
   zlib,
   mklSupport ? true,
@@ -15,19 +13,18 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "FEBio";
-  version = "4.7";
+  version = "4.8";
 
   src = fetchFromGitHub {
     owner = "febiosoftware";
     repo = "FEBio";
     rev = "v${finalAttrs.version}";
-    hash = "sha256-RRdIOyXg4jYW76ABfJdMfVtCYMLYFdvyOI98nHXCof8=";
+    hash = "sha256-x2QYnMMiGd2x2jvBMLBK7zdJv3yzYHkJ6a+0xes6OOk=";
   };
 
   patches = [
     # Fix library searching and installation
-    (substituteAll {
-      src = ./fix-cmake.patch;
+    (replaceVars ./fix-cmake.patch {
       so = stdenv.hostPlatform.extensions.sharedLibrary;
     })
 
@@ -49,13 +46,7 @@ stdenv.mkDerivation (finalAttrs: {
     ninja
   ];
 
-  buildInputs =
-    [ zlib ]
-    ++ lib.optionals mklSupport [ mkl ]
-    ++ lib.optionals stdenv.hostPlatform.isDarwin [
-      apple-sdk_11
-      (darwinMinVersionHook "10.15")
-    ];
+  buildInputs = [ zlib ] ++ lib.optionals mklSupport [ mkl ];
 
   meta = {
     description = "FEBio Suite Solver";

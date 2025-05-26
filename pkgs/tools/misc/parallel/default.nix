@@ -12,11 +12,11 @@
 
 stdenv.mkDerivation rec {
   pname = "parallel";
-  version = "20240922";
+  version = "20250322";
 
   src = fetchurl {
     url = "mirror://gnu/parallel/parallel-${version}.tar.bz2";
-    hash = "sha256-YyEHFei3xeEp4JjzM8183V/HovMl6OD7ntbtup8ay8Q=";
+    hash = "sha256-yCiW53mxjCoVdSfzLzXemm2YT4uOutK0Hbx4wzrbqr4=";
   };
 
   outputs = [
@@ -25,7 +25,11 @@ stdenv.mkDerivation rec {
     "doc"
   ];
 
-  nativeBuildInputs = [ makeWrapper ];
+  strictDeps = true;
+  nativeBuildInputs = [
+    makeWrapper
+    perl
+  ];
   buildInputs = [
     perl
     procps

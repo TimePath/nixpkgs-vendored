@@ -8,11 +8,14 @@
   zstd,
   scx-common,
   scx,
+  protobuf,
+  libseccomp,
 }:
 rustPlatform.buildRustPackage {
   pname = "scx_rustscheds";
   inherit (scx-common) version src;
 
+  useFetchCargoVendor = true;
   inherit (scx-common.versionInfo.scx) cargoHash;
 
   # Copy compiled headers and libs from scx.cscheds
@@ -24,16 +27,17 @@ rustPlatform.buildRustPackage {
 
   nativeBuildInputs = [
     pkg-config
-    llvmPackages.clang
+    rustPlatform.bindgenHook
+    protobuf
   ];
   buildInputs = [
     elfutils
     zlib
     zstd
+    libseccomp
   ];
 
   env = {
-    LIBCLANG_PATH = "${lib.getLib llvmPackages.libclang}/lib";
     BPF_CLANG = lib.getExe llvmPackages.clang;
     BPF_EXTRA_CFLAGS_PRE_INCL = lib.concatStringsSep " " [
       "-I${scx.cscheds.dev}/libbpf/src/usr/include"

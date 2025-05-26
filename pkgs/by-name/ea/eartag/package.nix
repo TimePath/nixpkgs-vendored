@@ -17,6 +17,7 @@
   librsvg,
   python3Packages,
   blueprint-compiler,
+  nix-update-script,
 }:
 
 python3Packages.buildPythonApplication rec {
@@ -73,6 +74,10 @@ python3Packages.buildPythonApplication rec {
     makeWrapperArgs+=("''${gappsWrapperArgs[@]}")
   '';
 
+  passthru = {
+    updateScript = nix-update-script { };
+  };
+
   meta = with lib; {
     homepage = "https://gitlab.gnome.org/World/eartag";
     description = "Simple music tag editor";
@@ -82,5 +87,6 @@ python3Packages.buildPythonApplication rec {
     license = licenses.mit;
     mainProgram = "eartag";
     maintainers = with maintainers; [ foo-dogsquared ];
+    teams = [ teams.gnome-circle ];
   };
 }

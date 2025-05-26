@@ -6,13 +6,13 @@
 
 buildGoModule rec {
   pname = "mtr-exporter";
-  version = "0.3.0";
+  version = "0.5.1";
 
   src = fetchFromGitHub {
     owner = "mgumz";
     repo = "mtr-exporter";
     rev = version;
-    hash = "sha256-vVYdIfogXHixf1/7+uGKSxbqVmr9NeCUuNVYE07HoBw=";
+    hash = "sha256-+myQg27TGclU+SfU8oO+DvXYqc/8sWE2zRK6fL2DhwM=";
   };
 
   vendorHash = null;

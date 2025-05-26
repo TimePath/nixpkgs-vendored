@@ -7,13 +7,13 @@
   unzip,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "kotlin";
-  version = "2.0.21";
+  version = "2.1.20";
 
   src = fetchurl {
-    url = "https://github.com/JetBrains/kotlin/releases/download/v${version}/kotlin-compiler-${version}.zip";
-    sha256 = "sha256-A1LApFvSL4D2sm5IXNBNqAR7ql3lSGUoH7n4mkp7zyo=";
+    url = "https://github.com/JetBrains/kotlin/releases/download/v${finalAttrs.version}/kotlin-compiler-${finalAttrs.version}.zip";
+    sha256 = "sha256-oRgZew3lX/qyvI1c0DpeOQM8+1M4PWkxvHYd7AeEiRo=";
   };
 
   propagatedBuildInputs = [ jre ];
@@ -50,4 +50,4 @@ stdenv.mkDerivation rec {
     maintainers = with lib.maintainers; [ SubhrajyotiSen ];
     platforms = lib.platforms.all;
   };
-}
+})

@@ -5,8 +5,6 @@
   lib,
   ...
 }:
-
-with lib;
 let
   opt = options.services.rkvm;
   cfg = config.services.rkvm;
@@ -16,34 +14,34 @@ in
   meta.maintainers = [ ];
 
   options.services.rkvm = {
-    enable = mkOption {
+    enable = lib.mkOption {
       default = cfg.server.enable || cfg.client.enable;
-      defaultText = literalExpression "config.${opt.server.enable} || config.${opt.client.enable}";
-      type = types.bool;
+      defaultText = lib.literalExpression "config.${opt.server.enable} || config.${opt.client.enable}";
+      type = lib.types.bool;
       description = ''
         Whether to enable rkvm, a Virtual KVM switch for Linux machines.
       '';
     };
 
-    package = mkPackageOption pkgs "rkvm" { };
+    package = lib.mkPackageOption pkgs "rkvm" { };
 
     server = {
-      enable = mkEnableOption "the rkvm server daemon (input transmitter)";
+      enable = lib.mkEnableOption "the rkvm server daemon (input transmitter)";
 
-      settings = mkOption {
-        type = types.submodule {
+      settings = lib.mkOption {
+        type = lib.types.submodule {
           freeformType = toml.type;
           options = {
-            listen = mkOption {
-              type = types.str;
+            listen = lib.mkOption {
+              type = lib.types.str;
               default = "0.0.0.0:5258";
               description = ''
                 An internet socket address to listen on, either IPv4 or IPv6.
               '';
             };
 
-            switch-keys = mkOption {
-              type = types.listOf types.str;
+            switch-keys = lib.mkOption {
+              type = lib.types.listOf lib.types.str;
               default = [
                 "left-alt"
                 "left-ctrl"
@@ -55,8 +53,8 @@ in
               '';
             };
 
-            certificate = mkOption {
-              type = types.path;
+            certificate = lib.mkOption {
+              type = lib.types.path;
               default = "/etc/rkvm/certificate.pem";
               description = ''
                 TLS certificate path.
@@ -67,8 +65,8 @@ in
               '';
             };
 
-            key = mkOption {
-              type = types.path;
+            key = lib.mkOption {
+              type = lib.types.path;
               default = "/etc/rkvm/key.pem";
               description = ''
                 TLS key path.
@@ -79,8 +77,8 @@ in
               '';
             };
 
-            password = mkOption {
-              type = types.str;
+            password = lib.mkOption {
+              type = lib.types.str;
               description = ''
                 Shared secret token to authenticate the client.
                 Make sure this matches your client's config.
@@ -95,22 +93,22 @@ in
     };
 
     client = {
-      enable = mkEnableOption "the rkvm client daemon (input receiver)";
+      enable = lib.mkEnableOption "the rkvm client daemon (input receiver)";
 
-      settings = mkOption {
-        type = types.submodule {
+      settings = lib.mkOption {
+        type = lib.types.submodule {
           freeformType = toml.type;
           options = {
-            server = mkOption {
-              type = types.str;
+            server = lib.mkOption {
+              type = lib.types.str;
               example = "192.168.0.123:5258";
               description = ''
                 An RKVM server's internet socket address, either IPv4 or IPv6.
               '';
             };
 
-            certificate = mkOption {
-              type = types.path;
+            certificate = lib.mkOption {
+              type = lib.types.path;
               default = "/etc/rkvm/certificate.pem";
               description = ''
                 TLS ceritficate path.
@@ -121,8 +119,8 @@ in
               '';
             };
 
-            password = mkOption {
-              type = types.str;
+            password = lib.mkOption {
+              type = lib.types.str;
               description = ''
                 Shared secret token to authenticate the client.
                 Make sure this matches your server's config.
@@ -138,7 +136,7 @@ in
 
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     environment.systemPackages = [ cfg.package ];
 
     systemd.services =
@@ -169,8 +167,8 @@ in
         };
       in
       {
-        rkvm-server = mkIf cfg.server.enable (mkBase "server");
-        rkvm-client = mkIf cfg.client.enable (mkBase "client");
+        rkvm-server = lib.mkIf cfg.server.enable (mkBase "server");
+        rkvm-client = lib.mkIf cfg.client.enable (mkBase "client");
       };
   };
 

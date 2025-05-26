@@ -17,9 +17,7 @@
   bison,
   autoconf,
   libiconv,
-  libobjc,
   libunwind,
-  Foundation,
   buildEnv,
   bundler,
   bundix,
@@ -121,9 +119,7 @@ let
           bundler,
           bundix,
           libiconv,
-          libobjc,
           libunwind,
-          Foundation,
           makeBinaryWrapper,
           buildRubyGem,
           defaultGemConfig,
@@ -185,9 +181,7 @@ let
             ++ op (!cursesSupport && stdenv.hostPlatform.isDarwin) readline
             ++ ops stdenv.hostPlatform.isDarwin [
               libiconv
-              libobjc
               libunwind
-              Foundation
             ];
           propagatedBuildInputs = op jemallocSupport jemalloc;
 
@@ -221,7 +215,7 @@ let
 
           cargoDeps =
             if yjitSupport then
-              rustPlatform.fetchCargoTarball {
+              rustPlatform.fetchCargoVendor {
                 inherit (finalAttrs) src;
                 sourceRoot = "${finalAttrs.pname}-${version}/${finalAttrs.cargoRoot}";
                 hash =
@@ -431,18 +425,18 @@ in
   ruby_3_2 = generic {
     version = rubyVersion "3" "2" "8" "";
     hash = "sha256-d6zdjPu+H45XO15lNuA8UQPfmJ3AX6aMcPARgzw1YHU=";
-    cargoHash = "sha256-6du7RJo0DH+eYMOoh3L31F3aqfR5+iG1iKauSV1uNcQ=";
+    cargoHash = "sha256-CMVx5/+ugDNEuLAvyPN0nGHwQw6RXyfRsMO9I+kyZpk=";
   };
 
   ruby_3_3 = generic {
-    version = rubyVersion "3" "3" "7" "";
-    hash = "sha256-nDfDsSKIx67CDKEhznaEW+W7XXdmKiSRllGq8dEshig=";
-    cargoHash = "sha256-GeelTMRFIyvz1QS2L+Q3KAnyQy7jc0ejhx3TdEFVEbk=";
+    version = rubyVersion "3" "3" "8" "";
+    hash = "sha256-WuKKh6WaPkrWa8KTHSMturlT0KqPa687xPj4CXfInKs=";
+    cargoHash = "sha256-xE7Cv+NVmOHOlXa/Mg72CTSaZRb72lOja98JBvxPvSs=";
   };
 
   ruby_3_4 = generic {
     version = rubyVersion "3" "4" "3" "";
     hash = "sha256-VaTNHcvlyifPZeiak1pILCuyKEgyk5JmVRwOxotDf0Y=";
-    cargoHash = "sha256-kdfNY8wVmSRR+cwEDYge/HDPRvdTNKLk/BhgqQeelOg=";
+    cargoHash = "sha256-5Tp8Kth0yO89/LIcU8K01z6DdZRr8MAA0DPKqDEjIt0=";
   };
 }

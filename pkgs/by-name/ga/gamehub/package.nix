@@ -11,7 +11,7 @@
   gtk3,
   glib-networking,
   libgee,
-  libsoup,
+  libsoup_2_4,
   json-glib,
   sqlite,
   webkitgtk_4_0,
@@ -26,7 +26,7 @@ stdenv.mkDerivation rec {
 
   src = fetchFromGitHub {
     owner = "tkashkin";
-    repo = pname;
+    repo = "GameHub";
     rev = "${version}-master";
     hash = "sha256-dBGzXwDO9BvnEIcdfqlGnMzUdBqaVA96Ds0fY6eukes=";
   };
@@ -47,7 +47,7 @@ stdenv.mkDerivation rec {
     json-glib
     libgee
     libmanette
-    libsoup
+    libsoup_2_4
     libXtst
     sqlite
     webkitgtk_4_0

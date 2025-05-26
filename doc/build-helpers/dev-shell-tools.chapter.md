@@ -54,10 +54,10 @@ devShellTools.unstructuredDerivationInputEnv {
   };
 }
 # => {
-#   name = "foo";
-#   buildInputs = "/nix/store/...-hello /nix/store/...-figlet";
-#   builder = "/nix/store/...-bash";
-# }
+#  name = "foo";
+#  buildInputs = "/nix/store/...-hello /nix/store/...-figlet";
+#  builder = "/nix/store/...-bash";
+#}
 ```
 
 Note that `args` is not included, because Nix does not added it to the builder process environment.

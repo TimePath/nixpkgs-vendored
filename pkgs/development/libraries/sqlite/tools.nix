@@ -5,7 +5,6 @@
   unzip,
   sqlite,
   tcl,
-  Foundation,
 }:
 
 let
@@ -20,18 +19,18 @@ let
     }:
     stdenv.mkDerivation rec {
       inherit pname;
-      version = "3.46.1";
+      version = "3.48.0";
 
       # nixpkgs-update: no auto update
       src =
         assert version == sqlite.version;
         fetchurl {
-          url = "https://sqlite.org/2024/sqlite-src-${archiveVersion version}.zip";
-          hash = "sha256-3vP8KS657MRE9sGVDlx52EYu1eez1gX9YVLRReHVq7Q=";
+          url = "https://sqlite.org/2025/sqlite-src-${archiveVersion version}.zip";
+          hash = "sha256-LXsDK2/f6MRCqoCfhQaHqB0GOB3uzXvjMSYB0oYS5kA=";
         };
 
       nativeBuildInputs = [ unzip ];
-      buildInputs = [ tcl ] ++ lib.optional stdenv.hostPlatform.isDarwin Foundation;
+      buildInputs = [ tcl ];
 
       makeFlags = [ makeTarget ];
 
@@ -60,5 +59,12 @@ in
     description = "Tool that shows statistics about SQLite databases";
     homepage = "https://www.sqlite.org/sqlanalyze.html";
     mainProgram = "sqlite3_analyzer";
+  };
+  sqlite-rsync = mkTool {
+    pname = "sqlite-rsync";
+    makeTarget = "sqlite3_rsync";
+    description = "Database remote-copy tool for SQLite";
+    homepage = "https://www.sqlite.org/rsync.html";
+    mainProgram = "sqlite3_rsync";
   };
 }

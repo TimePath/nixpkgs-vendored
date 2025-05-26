@@ -11,33 +11,17 @@
     inherit hash;
   },
   patches ? [ ],
-  maintainers ? lib.teams.nix.members ++ [
+  maintainers ? [
     lib.maintainers.lovesegfault
     lib.maintainers.artturin
   ],
+  teams ? [ lib.teams.nix ],
   self_attribute_name,
 }@args:
 assert (hash == null) -> (src != null);
 let
-  atLeast24 = lib.versionAtLeast version "2.4pre";
-  atLeast25 = lib.versionAtLeast version "2.5pre";
-  atLeast27 = lib.versionAtLeast version "2.7pre";
-  atLeast210 = lib.versionAtLeast version "2.10pre";
-  atLeast213 = lib.versionAtLeast version "2.13pre";
-  atLeast214 = lib.versionAtLeast version "2.14pre";
-  atLeast218 = lib.versionAtLeast version "2.18pre";
-  atLeast219 = lib.versionAtLeast version "2.19pre";
-  atLeast220 = lib.versionAtLeast version "2.20pre";
-  atLeast221 = lib.versionAtLeast version "2.21pre";
   atLeast224 = lib.versionAtLeast version "2.24pre";
-  # Major.minor versions unaffected by CVE-2024-27297
-  unaffectedByFodSandboxEscape = [
-    "2.3"
-    "2.16"
-    "2.18"
-    "2.19"
-    "2.20"
-  ];
+  atLeast225 = lib.versionAtLeast version "2.25pre";
 in
 {
   stdenv,
@@ -53,8 +37,6 @@ in
   callPackage,
   coreutils,
   curl,
-  darwin,
-  darwinMinVersionHook,
   docbook_xsl_ns,
   docbook5,
   editline,
@@ -79,12 +61,11 @@ in
   mdbook-linkcheck,
   nlohmann_json,
   nixosTests,
-  nixVersions,
   openssl,
   perl,
+  python3,
   pkg-config,
   rapidcheck,
-  Security,
   sqlite,
   util-linuxMinimal,
   xz,
@@ -130,7 +111,10 @@ let
       "shadowstack"
     ] ++ lib.optional stdenv.hostPlatform.isMusl "fortify";
 
-    nativeInstallCheckInputs = lib.optional atLeast221 git ++ lib.optional atLeast219 man;
+    nativeInstallCheckInputs = lib.optional atLeast224 [
+      git
+      man
+    ];
 
     nativeBuildInputs =
       [
@@ -141,19 +125,21 @@ let
         flex
         jq
       ]
-      ++ lib.optionals (enableDocumentation && !atLeast24) [
-        libxslt
-        libxml2
-        docbook_xsl_ns
-        docbook5
-      ]
-      ++ lib.optionals (enableDocumentation && atLeast24) [
-        (lib.getBin lowdown-unsandboxed)
-        mdbook
-      ]
-      ++ lib.optionals (atLeast213 && enableDocumentation) [
-        mdbook-linkcheck
-      ]
+      ++ lib.optionals enableDocumentation (
+        if atLeast224 then
+          [
+            (lib.getBin lowdown-unsandboxed)
+            mdbook
+            mdbook-linkcheck
+          ]
+        else
+          [
+            libxslt
+            libxml2
+            docbook_xsl_ns
+            docbook5
+          ]
+      )
       ++ lib.optionals stdenv.hostPlatform.isLinux [
         util-linuxMinimal
       ];
@@ -173,36 +159,29 @@ let
         libarchive
         lowdown
       ]
-      ++ lib.optionals atLeast220 [
+      ++ lib.optionals atLeast224 [
         libgit2
-      ]
-      ++ lib.optionals (atLeast224 || lib.versionAtLeast version "pre20240626") [
         toml11
+        rapidcheck
       ]
-      ++ lib.optionals stdenv.hostPlatform.isDarwin [
-        Security
+      ++ lib.optionals (atLeast225 && enableDocumentation) [
+        python3
       ]
       ++ lib.optionals (stdenv.hostPlatform.isx86_64) [
         libcpuid
-      ]
-      ++ lib.optionals atLeast214 [
-        rapidcheck
       ]
       ++ lib.optionals withLibseccomp [
         libseccomp
       ]
       ++ lib.optionals withAWS [
         aws-sdk-cpp
-      ]
-      ++ lib.optional (atLeast218 && stdenv.hostPlatform.isDarwin) [
-        darwin.apple_sdk.libs.sandbox
       ];
 
     propagatedBuildInputs =
       [
         boehmgc
       ]
-      ++ lib.optionals (atLeast27) [
+      ++ lib.optionals atLeast224 [
         nlohmann_json
       ];
 
@@ -227,7 +206,7 @@ let
         # removes config.nix entirely and is not present in 2.3.x, we need to
         # patch around an issue where the Nix configure step pulls in the build
         # system's bash and other utilities when cross-compiling.
-        lib.optionalString (stdenv.buildPlatform != stdenv.hostPlatform && !atLeast24) ''
+        lib.optionalString (stdenv.buildPlatform != stdenv.hostPlatform && !atLeast224) ''
           mkdir tmp/
           substitute corepkgs/config.nix.in tmp/config.nix.in \
             --subst-var-by bash ${bash}/bin/bash \
@@ -253,7 +232,7 @@ let
       ++ lib.optionals stdenv.hostPlatform.isLinux [
         "--with-sandbox-shell=${busybox-sandbox-shell}/bin/busybox"
       ]
-      ++ lib.optionals (atLeast210 && stdenv.hostPlatform.isLinux && stdenv.hostPlatform.isStatic) [
+      ++ lib.optionals (atLeast224 && stdenv.hostPlatform.isLinux && stdenv.hostPlatform.isStatic) [
         "--enable-embedded-sandbox-shell"
       ]
       ++
@@ -270,7 +249,7 @@ let
         # RISC-V support in progress https://github.com/seccomp/libseccomp/pull/50
         "--disable-seccomp-sandboxing"
       ]
-      ++ lib.optionals (atLeast210 && stdenv.cc.isGNU && !enableStatic) [
+      ++ lib.optionals (atLeast224 && stdenv.cc.isGNU && !enableStatic) [
         "--enable-lto"
       ];
 
@@ -288,7 +267,7 @@ let
     installFlags = [ "sysconfdir=$(out)/etc" ];
 
     doInstallCheck = true;
-    installCheckTarget = if atLeast210 then "installcheck" else null;
+    installCheckTarget = if atLeast224 then "installcheck" else null;
 
     # socket path becomes too long otherwise
     preInstallCheck =
@@ -301,10 +280,10 @@ let
         export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
       ''
       # See https://github.com/NixOS/nix/issues/5687
-      + lib.optionalString (atLeast25 && stdenv.hostPlatform.isDarwin) ''
+      + lib.optionalString (atLeast224 && stdenv.hostPlatform.isDarwin) ''
         echo "exit 99" > tests/gc-non-blocking.sh
       '' # TODO: investigate why this broken
-      + lib.optionalString (atLeast25 && stdenv.hostPlatform.system == "aarch64-linux") ''
+      + lib.optionalString (atLeast224 && stdenv.hostPlatform.system == "aarch64-linux") ''
         echo "exit 0" > tests/functional/flakes/show.sh
       ''
       + ''
@@ -312,7 +291,7 @@ let
         export MANPATH=$man/share/man:$MANPATH
       '';
 
-    separateDebugInfo = stdenv.hostPlatform.isLinux && (atLeast24 -> !enableStatic);
+    separateDebugInfo = stdenv.hostPlatform.isLinux && (atLeast224 -> !enableStatic);
 
     enableParallelBuilding = true;
 
@@ -322,7 +301,6 @@ let
       perl-bindings = perl.pkgs.toPerlModule (
         callPackage ./nix-perl.nix {
           nix = self;
-          inherit Security;
         }
       );
 
@@ -357,13 +335,10 @@ let
       '';
       homepage = "https://nixos.org/";
       license = licenses.lgpl21Plus;
-      inherit maintainers;
+      inherit maintainers teams;
       platforms = platforms.unix;
       outputsToInstall = [ "out" ] ++ optional enableDocumentation "man";
       mainProgram = "nix";
-      knownVulnerabilities = lib.optional (
-        !builtins.elem (lib.versions.majorMinor version) unaffectedByFodSandboxEscape && !atLeast221
-      ) "CVE-2024-27297";
     };
   };
 in

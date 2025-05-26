@@ -4,23 +4,20 @@
   pkgs,
   ...
 }:
-
-with lib;
-
 let
   cfg = config.security.chromiumSuidSandbox;
   sandbox = pkgs.chromium.sandbox;
 in
 {
   imports = [
-    (mkRenamedOptionModule
+    (lib.mkRenamedOptionModule
       [ "programs" "unity3d" "enable" ]
       [ "security" "chromiumSuidSandbox" "enable" ]
     )
   ];
 
-  options.security.chromiumSuidSandbox.enable = mkOption {
-    type = types.bool;
+  options.security.chromiumSuidSandbox.enable = lib.mkOption {
+    type = lib.types.bool;
     default = false;
     description = ''
       Whether to install the Chromium SUID sandbox which is an executable that
@@ -34,7 +31,7 @@ in
     '';
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     environment.systemPackages = [ sandbox ];
     security.wrappers.${sandbox.passthru.sandboxExecutableName} = {
       setuid = true;

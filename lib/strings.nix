@@ -268,6 +268,43 @@ rec {
     concatStringsSep sep (lib.imap1 f list);
 
   /**
+    Like [`concatMapStringsSep`](#function-library-lib.strings.concatMapStringsSep)
+    but takes an attribute set instead of a list.
+
+    # Inputs
+
+    `sep`
+    : Separator to add between item strings
+
+    `f`
+    : Function that takes each key and value and return a string
+
+    `attrs`
+    : Attribute set to map from
+
+    # Type
+
+    ```
+    concatMapAttrsStringSep :: String -> (String -> Any -> String) -> AttrSet -> String
+    ```
+
+    # Examples
+
+    :::{.example}
+    ## `lib.strings.concatMapAttrsStringSep` usage example
+
+    ```nix
+    concatMapAttrsStringSep "\n" (name: value: "${name}: foo-${value}") { a = "0.1.0"; b = "0.2.0"; }
+    => "a: foo-0.1.0\nb: foo-0.2.0"
+    ```
+
+    :::
+  */
+  concatMapAttrsStringSep =
+    sep: f: attrs:
+    concatStringsSep sep (lib.attrValues (lib.mapAttrs f attrs));
+
+  /**
     Concatenate a list of strings, adding a newline at the end of each one.
     Defined as `concatMapStrings (s: s + "\n")`.
 
@@ -961,7 +998,11 @@ rec {
 
     :::
   */
-  escapeC = list: replaceStrings list (map (c: "\\x${toLower (lib.toHexString (charToInt c))}") list);
+  escapeC =
+    list:
+    replaceStrings list (
+      map (c: "\\x${fixedWidthString 2 "0" (toLower (lib.toHexString (charToInt c)))}") list
+    );
 
   /**
     Escape the `string` so it can be safely placed inside a URL
@@ -1423,6 +1464,43 @@ rec {
   toUpper = replaceStrings lowerChars upperChars;
 
   /**
+    Converts the first character of a string `s` to upper-case.
+
+    # Inputs
+
+    `str`
+    : The string to convert to sentence case.
+
+    # Type
+
+    ```
+    toSentenceCase :: string -> string
+    ```
+
+    # Examples
+    :::{.example}
+    ## `lib.strings.toSentenceCase` usage example
+
+    ```nix
+    toSentenceCase "home"
+    => "Home"
+    ```
+
+    :::
+  */
+  toSentenceCase =
+    str:
+    lib.throwIfNot (isString str)
+      "toSentenceCase does only accepts string values, but got ${typeOf str}"
+      (
+        let
+          firstChar = substring 0 1 str;
+          rest = substring 1 (stringLength str) str;
+        in
+        addContextFrom str (toUpper firstChar + toLower rest)
+      );
+
+  /**
     Appends string context from string like object `src` to `target`.
 
     :::{.warning}
@@ -1513,6 +1591,97 @@ rec {
       );
     in
     map (addContextFrom s) splits;
+
+  /**
+    Splits a string into substrings based on a predicate that examines adjacent characters.
+
+    This function provides a flexible way to split strings by checking pairs of characters
+    against a custom predicate function. Unlike simpler splitting functions, this allows
+    for context-aware splitting based on character transitions and patterns.
+
+    # Inputs
+
+    `predicate`
+    : Function that takes two arguments (previous character and current character)
+      and returns true when the string should be split at the current position.
+      For the first character, previous will be "" (empty string).
+
+    `keepSplit`
+    : Boolean that determines whether the splitting character should be kept as
+      part of the result. If true, the character will be included at the beginning
+      of the next substring; if false, it will be discarded.
+
+    `str`
+    : The input string to split.
+
+    # Return
+
+    A list of substrings from the original string, split according to the predicate.
+
+    # Type
+
+    ```
+    splitStringBy :: (string -> string -> bool) -> bool -> string -> [string]
+    ```
+
+    # Examples
+    :::{.example}
+    ## `lib.strings.splitStringBy` usage example
+
+    Split on periods and hyphens, discarding the separators:
+    ```nix
+    splitStringBy (prev: curr: builtins.elem curr [ "." "-" ]) false "foo.bar-baz"
+    => [ "foo" "bar" "baz" ]
+    ```
+
+    Split on transitions from lowercase to uppercase, keeping the uppercase characters:
+    ```nix
+    splitStringBy (prev: curr: builtins.match "[a-z]" prev != null && builtins.match "[A-Z]" curr != null) true "fooBarBaz"
+    => [ "foo" "Bar" "Baz" ]
+    ```
+
+    Handle leading separators correctly:
+    ```nix
+    splitStringBy (prev: curr: builtins.elem curr [ "." ]) false ".foo.bar.baz"
+    => [ "" "foo" "bar" "baz" ]
+    ```
+
+    Handle trailing separators correctly:
+    ```nix
+    splitStringBy (prev: curr: builtins.elem curr [ "." ]) false "foo.bar.baz."
+    => [ "foo" "bar" "baz" "" ]
+    ```
+    :::
+  */
+  splitStringBy =
+    predicate: keepSplit: str:
+    let
+      len = stringLength str;
+
+      # Helper function that processes the string character by character
+      go =
+        pos: currentPart: result:
+        # Base case: reached end of string
+        if pos == len then
+          result ++ [ currentPart ]
+        else
+          let
+            currChar = substring pos 1 str;
+            prevChar = if pos > 0 then substring (pos - 1) 1 str else "";
+            isSplit = predicate prevChar currChar;
+          in
+          if isSplit then
+            # Split here - add current part to results and start a new one
+            let
+              newResult = result ++ [ currentPart ];
+              newCurrentPart = if keepSplit then currChar else "";
+            in
+            go (pos + 1) newCurrentPart newResult
+          else
+            # Keep building current part
+            go (pos + 1) (currentPart + currChar) result;
+    in
+    if len == 0 then [ (addContextFrom str "") ] else map (addContextFrom str) (go 0 "" [ ]);
 
   /**
     Return a string without the specified prefix, if the prefix matches.
@@ -1807,7 +1976,7 @@ rec {
     : The type of the feature to be set, as described in
       https://cmake.org/cmake/help/latest/command/set.html
       the possible values (case insensitive) are:
-      BOOL FILEPATH PATH STRING INTERNAL
+      BOOL FILEPATH PATH STRING INTERNAL LIST
 
     `value`
     : The desired value
@@ -1837,6 +2006,7 @@ rec {
         "PATH"
         "STRING"
         "INTERNAL"
+        "LIST"
       ];
     in
     type: feature: value:
@@ -2395,7 +2565,16 @@ rec {
       let
         str = toString x;
       in
-      substring 0 1 str == "/" && dirOf str == storeDir
+      substring 0 1 str == "/"
+      && (
+        dirOf str == storeDir
+        # Match content‐addressed derivations, which _currently_ do not have a
+        # store directory prefix.
+        # This is a workaround for https://github.com/NixOS/nix/issues/12361
+        # which was needed during the experimental phase of ca-derivations and
+        # should be removed once the issue has been resolved.
+        || builtins.match "/[0-9a-z]{52}" str != null
+      )
     else
       false;
 

@@ -6,19 +6,16 @@
   lua5_3,
 }:
 
-let
-  version = "0.2.0";
-in
-stdenvNoCC.mkDerivation {
-  inherit version;
+stdenvNoCC.mkDerivation (finalAttrs: {
+  version = "0.2.1";
 
   pname = "lunarml";
 
   src = fetchFromGitHub {
     owner = "minoki";
     repo = "LunarML";
-    tag = "v${version}";
-    hash = "sha256-w0DWvFegAdpJTab60cDLA+tketmMYeKApx1rCNr27i4=";
+    tag = "v${finalAttrs.version}";
+    hash = "sha256-wNcsvtIR/MbvwAIhybc7zzbS+RgfwndQ1jdDVdte+44=";
   };
 
   outputs = [
@@ -62,4 +59,4 @@ stdenvNoCC.mkDerivation {
     ];
     platforms = mlton.meta.platforms;
   };
-}
+})

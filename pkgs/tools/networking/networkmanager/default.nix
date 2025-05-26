@@ -2,11 +2,11 @@
   lib,
   stdenv,
   fetchurl,
-  substituteAll,
+  replaceVars,
   gettext,
   pkg-config,
   dbus,
-  gnome,
+  gitUpdater,
   libuuid,
   polkit,
   gnutls,
@@ -28,7 +28,6 @@
   openresolv,
   libndp,
   newt,
-  libsoup,
   ethtool,
   gnused,
   iputils,
@@ -59,13 +58,13 @@
 let
   pythonForDocs = python3.pythonOnBuildForHost.withPackages (pkgs: with pkgs; [ pygobject3 ]);
 in
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "networkmanager";
-  version = "1.48.10";
+  version = "1.52.0";
 
   src = fetchurl {
-    url = "mirror://gnome/sources/NetworkManager/${lib.versions.majorMinor version}/NetworkManager-${version}.tar.xz";
-    hash = "sha256-XcGI/f/PLSPInTSx5jGaayAgPhLq7CSzADe36orIxhM=";
+    url = "https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/releases/${finalAttrs.version}/downloads/NetworkManager-${finalAttrs.version}.tar.xz";
+    hash = "sha256-NW8hoV2lHkIY/U0P14zqYeBnsRFqJc3e5K+d8FBi6S0=";
   };
 
   outputs = [
@@ -113,10 +112,7 @@ stdenv.mkDerivation rec {
     "-Dresolvconf=${openresolv}/bin/resolvconf"
 
     # DHCP clients
-    # ISC DHCP client has reached it's end of life, so stop using it
-    "-Ddhclient=no"
     "-Ddhcpcd=${dhcpcd}/bin/dhcpcd"
-    "-Ddhcpcanon=no"
 
     # Miscellaneous
     # almost cross-compiles, however fails with
@@ -130,14 +126,12 @@ stdenv.mkDerivation rec {
   ];
 
   patches = [
-    (substituteAll {
-      src = ./fix-paths.patch;
+    (replaceVars ./fix-paths.patch {
       inherit
         iputils
         openconnect
         ethtool
         gnused
-        systemd
         ;
       inherit runtimeShell;
     })
@@ -145,9 +139,6 @@ stdenv.mkDerivation rec {
     # Meson does not support using different directories during build and
     # for installation like Autotools did with flags passed to make install.
     ./fix-install-paths.patch
-
-    # https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/merge_requests/1966
-    ./without-systemd.patch
   ];
 
   buildInputs = [
@@ -166,7 +157,6 @@ stdenv.mkDerivation rec {
     modemmanager
     readline
     newt
-    libsoup
     jansson
     dbus # used to get directory paths with pkg-config during configuration
   ];
@@ -230,10 +220,9 @@ stdenv.mkDerivation rec {
   '';
 
   passthru = {
-    updateScript = gnome.updateScript {
-      packageName = "NetworkManager";
-      attrPath = "networkmanager";
-      versionPolicy = "odd-unstable";
+    updateScript = gitUpdater {
+      odd-unstable = true;
+      url = "https://gitlab.freedesktop.org/NetworkManager/NetworkManager.git";
     };
     tests = {
       inherit (nixosTests.networking) networkmanager;
@@ -245,16 +234,15 @@ stdenv.mkDerivation rec {
     description = "Network configuration and management tool";
     license = licenses.gpl2Plus;
     changelog = "https://gitlab.freedesktop.org/NetworkManager/NetworkManager/-/raw/${version}/NEWS";
-    maintainers =
-      teams.freedesktop.members
-      ++ (with maintainers; [
-        domenkozar
-        obadz
-      ]);
+    maintainers = with maintainers; [
+      domenkozar
+      obadz
+    ];
+    teams = [ teams.freedesktop ];
     platforms = platforms.linux;
     badPlatforms = [
       # Mandatory shared libraries.
       lib.systems.inspect.platformPatterns.isStatic
     ];
   };
-}
+})

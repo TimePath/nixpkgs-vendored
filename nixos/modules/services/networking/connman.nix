@@ -16,7 +16,7 @@ let
   enableIwd = cfg.wifi.backend == "iwd";
 in
 {
-  meta.maintainers = with lib.maintainers; [ AndersonTorres ];
+  meta.maintainers = with lib.maintainers; [ ];
 
   imports = [
     (lib.mkRenamedOptionModule [ "networking" "connman" ] [ "services" "connman" ])
@@ -118,7 +118,7 @@ in
     systemd.services.connman = {
       description = "Connection service";
       wantedBy = [ "multi-user.target" ];
-      after = [ "syslog.target" ] ++ lib.optional enableIwd "iwd.service";
+      after = lib.optional enableIwd "iwd.service";
       requires = lib.optional enableIwd "iwd.service";
       serviceConfig = {
         Type = "dbus";
@@ -140,7 +140,6 @@ in
     systemd.services.connman-vpn = lib.mkIf cfg.enableVPN {
       description = "ConnMan VPN service";
       wantedBy = [ "multi-user.target" ];
-      after = [ "syslog.target" ];
       before = [ "connman.service" ];
       serviceConfig = {
         Type = "dbus";

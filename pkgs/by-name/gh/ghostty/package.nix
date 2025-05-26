@@ -60,6 +60,7 @@ stdenv.mkDerivation (finalAttrs: {
 
   deps = callPackage ./deps.nix {
     name = "${finalAttrs.pname}-cache-${finalAttrs.version}";
+    zig = zig_0_13;
   };
 
   strictDeps = true;
@@ -157,7 +158,7 @@ stdenv.mkDerivation (finalAttrs: {
 
   doInstallCheck = true;
 
-  versionCheckProgramArg = [ "--version" ];
+  versionCheckProgramArg = "--version";
 
   passthru = {
     tests = lib.optionalAttrs stdenv.hostPlatform.isLinux {
@@ -188,9 +189,6 @@ stdenv.mkDerivation (finalAttrs: {
     ];
     outputsToInstall = [
       "out"
-      "man"
-      "shell_integration"
-      "terminfo"
     ];
     platforms = lib.platforms.linux ++ lib.platforms.darwin;
     # Issues finding the SDK in the sandbox

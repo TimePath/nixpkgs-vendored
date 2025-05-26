@@ -3,7 +3,11 @@
   version,
   engineVersion,
   engineHashes ? { },
-  engineUrl ? "https://github.com/flutter/engine.git@${engineVersion}",
+  engineUrl ?
+    if lib.versionAtLeast version "3.29" then
+      "https://github.com/flutter/flutter.git@${engineVersion}"
+    else
+      "https://github.com/flutter/engine.git@${engineVersion}",
   enginePatches ? [ ],
   engineRuntimeModes ? [
     "release"
@@ -22,7 +26,7 @@
   callPackage,
   makeWrapper,
   darwin,
-  git,
+  gitMinimal,
   which,
   jq,
   flutterTools ? null,
@@ -61,11 +65,12 @@ let
     name = "flutter-${version}-unwrapped";
     inherit src patches version;
 
-    buildInputs = [ git ];
     nativeBuildInputs = [
       makeWrapper
       jq
+      gitMinimal
     ] ++ lib.optionals stdenv.hostPlatform.isDarwin [ darwin.DarwinTools ];
+    strictDeps = true;
 
     preConfigure = ''
       if [ "$(< bin/internal/engine.version)" != '${engineVersion}' ]; then
@@ -76,6 +81,7 @@ let
 
     postPatch = ''
       patchShebangs --build ./bin/
+      patchShebangs packages/flutter_tools/bin
     '';
 
     buildPhase = ''
@@ -139,7 +145,7 @@ let
       makeShellWrapper "$out/bin/dart" "$out/bin/flutter" \
         --set-default FLUTTER_ROOT "$out" \
         --set FLUTTER_ALREADY_LOCKED true \
-        --add-flags "--disable-dart-dev \$NIX_FLUTTER_TOOLS_VM_OPTIONS $out/bin/cache/flutter_tools.snapshot"
+        --add-flags "--disable-dart-dev --packages='${flutterTools.pubcache}/package_config.json' \$NIX_FLUTTER_TOOLS_VM_OPTIONS $out/bin/cache/flutter_tools.snapshot"
 
       runHook postInstall
     '';
@@ -192,11 +198,10 @@ let
         "x86_64-darwin"
         "aarch64-darwin"
       ];
-      maintainers =
-        teams.flutter.members
-        ++ (with maintainers; [
-          ericdallo
-        ]);
+      maintainers = with maintainers; [
+        ericdallo
+      ];
+      teams = [ teams.flutter ];
     };
   };
 in

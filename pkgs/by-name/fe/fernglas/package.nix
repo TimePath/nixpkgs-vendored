@@ -37,7 +37,8 @@ rustPlatform.buildRustPackage rec {
     hash = "sha256-FlbOBX/+/LLmoqMJLvu59XuHYmiohIhDc1VjkZu4Wzo=";
   };
 
-  cargoHash = "sha256-ls9HvwtbpOwzQbi/+9IbgXurZp0LjQKGZcDuLZlX+Vk=";
+  useFetchCargoVendor = true;
+  cargoHash = "sha256-aY5/dIplV8yWaQ2IdWxxC7T1DoKeRjsN5eT+UxsaA1E=";
 
   offlineCache = fetchYarnDeps {
     yarnLock = src + "/frontend/yarn.lock";
@@ -77,7 +78,7 @@ rustPlatform.buildRustPackage rec {
     changelog = "https://github.com/wobcom/fernglas/releases/tag/fernglas-${version}";
     license = licenses.eupl12;
     platforms = platforms.linux;
-    maintainers = teams.wdz.members;
+    teams = [ teams.wdz ];
     mainProgram = "fernglas";
   };
 }

@@ -8,15 +8,11 @@
 
 with import ../../lib/testing-python.nix { inherit system pkgs; };
 runTest (
-  { config, ... }:
+  { config, lib, ... }:
   {
     inherit name;
-    meta = with pkgs.lib.maintainers; {
-      maintainers = [
-        globin
-        eqyiel
-        ma27
-      ];
+    meta = {
+      maintainers = lib.teams.nextcloud.members;
     };
 
     imports = [ testBase ];
@@ -59,6 +55,7 @@ runTest (
 
           services.nextcloud = {
             enable = true;
+            config.dbtype = "sqlite";
             datadir = "/var/lib/nextcloud-data";
             autoUpdateApps = {
               enable = true;

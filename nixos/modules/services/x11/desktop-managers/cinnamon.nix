@@ -18,7 +18,7 @@ let
     extraGSettingsOverrides = cfg.extraGSettingsOverrides;
   };
 
-  notExcluded = pkg: (!(lib.elem pkg config.environment.cinnamon.excludePackages));
+  notExcluded = pkg: utils.disablePackageByName pkg config.environment.cinnamon.excludePackages;
 in
 
 {
@@ -117,6 +117,7 @@ in
       services.gnome.glib-networking.enable = true;
       services.gnome.gnome-keyring.enable = true;
       services.gvfs.enable = true;
+      services.power-profiles-daemon.enable = mkDefault true;
       services.switcherooControl.enable = mkDefault true; # xapp-gpu-offload-helper
       services.touchegg.enable = mkDefault true;
       services.udisks2.enable = true;
@@ -143,6 +144,17 @@ in
         with pkgs;
         (
           [
+            # Teach nemo-desktop how to launch file browser.
+            # https://github.com/linuxmint/nemo/blob/6.4.0/src/nemo-desktop-application.c#L398
+            (writeTextFile {
+              name = "x-cinnamon-mimeapps";
+              destination = "/share/applications/x-cinnamon-mimeapps.list";
+              text = ''
+                [Default Applications]
+                inode/directory=nemo.desktop
+              '';
+            })
+
             desktop-file-utils
 
             # common-files
@@ -159,9 +171,6 @@ in
             cinnamon-screensaver
             # cinnamon-killer-daemon: provided by cinnamon-common
             networkmanagerapplet # session requirement - also nm-applet not needed
-
-            # For a polkit authentication agent
-            polkit_gnome
 
             # packages
             nemo-with-extensions
@@ -222,13 +231,6 @@ in
       programs.bash.vteIntegration = mkDefault true;
       programs.zsh.vteIntegration = mkDefault true;
 
-      # Qt application style
-      qt = {
-        enable = mkDefault true;
-        style = mkDefault "gtk2";
-        platformTheme = mkDefault "gtk2";
-      };
-
       # Default Fonts
       fonts.packages = with pkgs; [
         dejavu_fonts # Default monospace font in LMDE 6+
@@ -252,10 +254,10 @@ in
           xviewer
           xreader
           xed-editor
-          xplayer
           pix
 
           # external apps shipped with linux-mint
+          celluloid
           gnome-calculator
           gnome-calendar
           gnome-screenshot

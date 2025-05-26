@@ -11,7 +11,7 @@
   lib,
   libGLU,
   libGL,
-  mesa,
+  libgbm,
   opencl-clhpp,
   pkg-config,
   stdenv,
@@ -24,7 +24,7 @@ stdenv.mkDerivation rec {
 
   src = fetchFromGitHub {
     owner = "arrayfire";
-    repo = pname;
+    repo = "forge";
     rev = "v1.0.8";
     sha256 = "sha256-lSZAwcqAHiuZkpYcVfwvZCfNmEF3xGN9S/HuZQrGeKU=";
   };
@@ -65,7 +65,7 @@ stdenv.mkDerivation rec {
     libGLU
     opencl-clhpp
     SDL2
-    mesa
+    libgbm
   ];
 
   meta = with lib; {

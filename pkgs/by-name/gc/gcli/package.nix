@@ -3,7 +3,6 @@
   fetchFromGitHub,
   stdenv,
   curl,
-  autoreconfHook,
   pkg-config,
   byacc,
   flex,
@@ -11,17 +10,16 @@
 
 stdenv.mkDerivation rec {
   pname = "gcli";
-  version = "2.2.0";
+  version = "2.7.0";
 
   src = fetchFromGitHub {
     owner = "herrhotzenplotz";
     repo = "gcli";
-    rev = version;
-    hash = "sha256-extVTaTWVFXSTiXlZ/MtiiFdc/KZEDkc+A7xxylJaM4=";
+    rev = "v${version}";
+    hash = "sha256-N5dzGhyXPDWcm/cNUSUQt4rR+PzaD1OUssRO3Sdfmoo=";
   };
 
   nativeBuildInputs = [
-    autoreconfHook
     pkg-config
     byacc
     flex

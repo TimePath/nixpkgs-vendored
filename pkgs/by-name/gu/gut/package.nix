@@ -7,16 +7,16 @@
 
 buildGoModule rec {
   pname = "gut";
-  version = "0.3.0";
+  version = "0.3.2";
 
   src = fetchFromGitHub {
     owner = "julien040";
     repo = "gut";
     rev = version;
-    hash = "sha256-l7yjZEcpsnVisd93EqIug1n0k18m4tUmCQFXC6b63cg=";
+    hash = "sha256-3A6CwGIZGnTFkMRxDdDg/WpUQezNmGjjSz4Rj/6t1GI=";
   };
 
-  vendorHash = "sha256-G9oDMHLmdv/vQfofTqKAf21xaGp+lvW+sedLmaj+A5A=";
+  vendorHash = "sha256-EL+fsh603ydZfc3coI8VXkvAStQ0fwzBsJIOztB/VHc=";
 
   ldflags = [
     "-s"

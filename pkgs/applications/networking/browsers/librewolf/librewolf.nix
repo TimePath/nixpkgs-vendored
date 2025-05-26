@@ -9,15 +9,18 @@ rec {
   extraPatches = [ "${source}/patches/pref-pane/pref-pane-small.patch" ];
 
   extraConfigureFlags = [
-    "--with-app-name=librewolf"
     "--with-unsigned-addon-scopes=app,system"
     "--disable-default-browser-agent"
   ];
 
   extraPostPatch = ''
     while read patch_name; do
-      echo "applying LibreWolf patch: $patch_name"
-      patch -p1 < ${source}/$patch_name
+      if [ "$patch_name" != "patches/macos-import-vector.patch" ]; then
+        echo "applying LibreWolf patch: $patch_name"
+        patch -p1 < ${source}/$patch_name
+      else
+        echo "skipping LibreWolf patch: $patch"
+      fi
     done <${source}/assets/patches.txt
 
     cp -r ${source}/themes/browser .

@@ -3,8 +3,6 @@
   rustPlatform,
   fetchFromGitHub,
   installShellFiles,
-  stdenv,
-  darwin,
 }:
 
 rustPlatform.buildRustPackage rec {
@@ -18,14 +16,11 @@ rustPlatform.buildRustPackage rec {
     hash = "sha256-C3Co+hXstVN/WADIpzqr7f3muAgQL0Zbnz6VI1XNo4U=";
   };
 
-  cargoHash = "sha256-QyFUxnq4BSULgpZxCu5+7TWfu6Gey0JFkOYSK+rL7l0=";
+  useFetchCargoVendor = true;
+  cargoHash = "sha256-OPcT2iMZPx1mXXtghznq65YQtfxsOV1etgqZMMLzkmo=";
 
   nativeBuildInputs = [
     installShellFiles
-  ];
-
-  buildInputs = lib.optionals stdenv.hostPlatform.isDarwin [
-    darwin.apple_sdk.frameworks.Security
   ];
 
   checkFlags = [

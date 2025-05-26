@@ -7,16 +7,16 @@
 
 buildGoModule rec {
   pname = "terramate";
-  version = "0.10.8";
+  version = "0.13.1";
 
   src = fetchFromGitHub {
     owner = "terramate-io";
     repo = "terramate";
     rev = "v${version}";
-    hash = "sha256-fT1yuFFHI88wUXKguWZD+PHU4j3w5eda7kzCDn+Gg+o=";
+    hash = "sha256-lIYtNvluKRufV0bXi2z2/8F7221Sum20usA0j0pHU7I=";
   };
 
-  vendorHash = "sha256-kjzpXOoyTwjpYLBqDuB6Eup5Yzgej2U+HUo4z8V+cEI=";
+  vendorHash = "sha256-84xlUXCJhsZjNxdWQ/Tr/WA4/+gP8NlqQQHnA8R8nz8=";
 
   # required for version info
   nativeBuildInputs = [ git ];
@@ -25,6 +25,9 @@ buildGoModule rec {
     "-extldflags"
     "-static"
   ];
+
+  # Needed for the tests to pass on macOS
+  __darwinAllowLocalNetworking = true;
 
   # Disable failing E2E tests preventing the package from building
   excludedPackages = [

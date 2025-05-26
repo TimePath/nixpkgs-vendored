@@ -12,8 +12,6 @@
   whereami,
   lua,
   lz4,
-  Foundation,
-  AppKit,
   withGui ? true,
   wrapQtAppsHook,
   qtbase,
@@ -31,13 +29,13 @@
 assert withBlueshark -> stdenv.hostPlatform.isLinux;
 stdenv.mkDerivation (finalAttrs: {
   pname = "proxmark3";
-  version = "4.18994";
+  version = "4.20142";
 
   src = fetchFromGitHub {
     owner = "RfidResearchGroup";
     repo = "proxmark3";
     rev = "v${finalAttrs.version}";
-    hash = "sha256-LeVQnidlCGFwtgJZdGlIFEYgf3M3BtfxoBKsxSFEo2w=";
+    hash = "sha256-kdwjwydeX8EwJazFzrrk5osv0YVzDVzn2S1sDKRQdR8=";
   };
 
   patches = [
@@ -73,11 +71,7 @@ stdenv.mkDerivation (finalAttrs: {
     ]
     ++ lib.optional withGui qtbase
     ++ lib.optional withPython python3
-    ++ lib.optional withBlueshark bluez5
-    ++ lib.optionals stdenv.hostPlatform.isDarwin [
-      Foundation
-      AppKit
-    ];
+    ++ lib.optional withBlueshark bluez5;
 
   makeFlags =
     [

@@ -1,15 +1,15 @@
 {
   lib,
-  fetchzip,
+  fetchFromGitLab,
+  cpio,
   ddcutil,
   easyeffects,
   gjs,
   glib,
+  gnome-menus,
   nautilus,
   gobject-introspection,
-  gsound,
   hddtemp,
-  libgda,
   libgtop,
   libhandy,
   liquidctl,
@@ -18,12 +18,16 @@
   nvme-cli,
   procps,
   smartmontools,
-  substituteAll,
+  replaceVars,
+  stdenvNoCC,
   touchegg,
   util-linux,
   vte,
   wrapGAppsHook3,
   xdg-utils,
+  gtk4,
+  desktop-file-utils,
+  xdg-user-dirs,
 }:
 let
   # Helper method to reduce redundancy
@@ -44,6 +48,17 @@ in
 # the upstream repository's sources.
 super:
 lib.trivial.pipe super [
+  (patchExtension "apps-menu@gnome-shell-extensions.gcampax.github.com" (old: {
+    patches = [
+      (replaceVars
+        ./extensionOverridesPatches/apps-menu_at_gnome-shell-extensions.gcampax.github.com.patch
+        {
+          gmenu_path = "${gnome-menus}/lib/girepository-1.0";
+        }
+      )
+    ];
+  }))
+
   (patchExtension "caffeine@patapon.info" (old: {
     meta.maintainers = with lib.maintainers; [ eperuffo ];
   }))
@@ -86,8 +101,7 @@ lib.trivial.pipe super [
   (patchExtension "eepresetselector@ulville.github.io" (old: {
     patches = [
       # Needed to find the currently set preset
-      (substituteAll {
-        src = ./extensionOverridesPatches/eepresetselector_at_ulville.github.io.patch;
+      (replaceVars ./extensionOverridesPatches/eepresetselector_at_ulville.github.io.patch {
         easyeffects_gsettings_path = "${glib.getSchemaPath easyeffects}";
       })
     ];
@@ -95,8 +109,7 @@ lib.trivial.pipe super [
 
   (patchExtension "freon@UshakovVasilii_Github.yahoo.com" (old: {
     patches = [
-      (substituteAll {
-        src = ./extensionOverridesPatches/freon_at_UshakovVasilii_Github.yahoo.com.patch;
+      (replaceVars ./extensionOverridesPatches/freon_at_UshakovVasilii_Github.yahoo.com.patch {
         inherit
           hddtemp
           liquidctl
@@ -123,45 +136,64 @@ lib.trivial.pipe super [
   (patchExtension "gtk4-ding@smedius.gitlab.com" (old: {
     nativeBuildInputs = [ wrapGAppsHook3 ];
     patches = [
-      (substituteAll {
+      (replaceVars ./extensionOverridesPatches/gtk4-ding_at_smedius.gitlab.com.patch {
         inherit gjs;
         util_linux = util-linux;
         xdg_utils = xdg-utils;
-        src = ./extensionOverridesPatches/gtk4-ding_at_smedius.gitlab.com.patch;
-        nautilus_gsettings_path = "${glib.getSchemaPath nautilus}";
+        gtk_update_icon_cache = "${gtk4.out}/bin/gtk4-update-icon-cache";
+        update_desktop_database = "${desktop-file-utils.out}/bin/update-desktop-database";
+        xdg_user_dirs = lib.getExe xdg-user-dirs;
+        nautilus_gsettings_path = glib.getSchemaPath nautilus;
       })
     ];
   }))
 
-  (patchExtension "pano@elhan.io" (
-    final: prev: {
-      version = "v23-alpha3";
-      src = fetchzip {
-        url = "https://github.com/oae/gnome-shell-pano/releases/download/${final.version}/pano@elhan.io.zip";
-        hash = "sha256-LYpxsl/PC8hwz0ZdH5cDdSZPRmkniBPUCqHQxB4KNhc=";
-        stripRoot = false;
-      };
-      preInstall = ''
-        substituteInPlace extension.js \
-          --replace-fail "import Gda from 'gi://Gda?version>=5.0'" "imports.gi.GIRepository.Repository.prepend_search_path('${libgda}/lib/girepository-1.0'); const Gda = (await import('gi://Gda')).default" \
-          --replace-fail "import GSound from 'gi://GSound'" "imports.gi.GIRepository.Repository.prepend_search_path('${gsound}/lib/girepository-1.0'); const GSound = (await import('gi://GSound')).default"
-      '';
+  (patchExtension "lunarcal@ailin.nemui" (
+    old:
+    let
+      chinese-calendar = stdenvNoCC.mkDerivation (finalAttrs: {
+        pname = "chinese-calendar";
+        version = "20240107";
+        nativeBuildInputs = [
+          cpio # used in install.sh
+        ];
+        src = fetchFromGitLab {
+          domain = "gitlab.gnome.org";
+          owner = "Nei";
+          repo = "ChineseCalendar";
+          tag = finalAttrs.version;
+          hash = "sha256-z8Af9e70bn3ztUZteIEt/b3nJIFosbnoy8mwKMM6Dmc=";
+        };
+        installPhase = ''
+          runHook preInstall
+          HOME=$out ./install.sh
+          runHook postInstall
+        '';
+      });
+    in
+    {
+      patches = [
+        (replaceVars ./extensionOverridesPatches/lunarcal_at_ailin.nemui.patch {
+          chinese_calendar_path = chinese-calendar;
+        })
+      ];
     }
   ))
 
   (patchExtension "system-monitor@gnome-shell-extensions.gcampax.github.com" (old: {
     patches = [
-      (substituteAll {
-        src = ./extensionOverridesPatches/system-monitor_at_gnome-shell-extensions.gcampax.github.com.patch;
-        gtop_path = "${libgtop}/lib/girepository-1.0";
-      })
+      (replaceVars
+        ./extensionOverridesPatches/system-monitor_at_gnome-shell-extensions.gcampax.github.com.patch
+        {
+          gtop_path = "${libgtop}/lib/girepository-1.0";
+        }
+      )
     ];
   }))
 
   (patchExtension "system-monitor-next@paradoxxx.zero.gmail.com" (old: {
     patches = [
-      (substituteAll {
-        src = ./extensionOverridesPatches/system-monitor-next_at_paradoxxx.zero.gmail.com.patch;
+      (replaceVars ./extensionOverridesPatches/system-monitor-next_at_paradoxxx.zero.gmail.com.patch {
         gtop_path = "${libgtop}/lib/girepository-1.0";
       })
     ];
@@ -170,8 +202,7 @@ lib.trivial.pipe super [
 
   (patchExtension "Vitals@CoreCoding.com" (old: {
     patches = [
-      (substituteAll {
-        src = ./extensionOverridesPatches/vitals_at_corecoding.com.patch;
+      (replaceVars ./extensionOverridesPatches/vitals_at_corecoding.com.patch {
         gtop_path = "${libgtop}/lib/girepository-1.0";
       })
     ];

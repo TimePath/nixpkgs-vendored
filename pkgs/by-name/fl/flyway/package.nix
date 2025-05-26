@@ -9,23 +9,22 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "flyway";
-  version = "9.22.3";
+  version = "11.7.0";
   src = fetchurl {
     url = "mirror://maven/org/flywaydb/flyway-commandline/${finalAttrs.version}/flyway-commandline-${finalAttrs.version}.tar.gz";
-    sha256 = "sha256-utAJpbU5NkKyJyyWB0yfwHZJxQAVJgiKm12wmGK1ojQ=";
+    sha256 = "sha256-Ajm4V+AAaC3NXvdTkxJ9uhk0QayZzoPYyU5RRrWxz/g=";
   };
   nativeBuildInputs = [ makeWrapper ];
   dontBuild = true;
   dontStrip = true;
   installPhase = ''
     mkdir -p $out/bin $out/share/flyway
-    cp -r sql jars drivers conf $out/share/flyway
-    install -Dt $out/share/flyway/lib lib/community/*.jar lib/*.jar lib/aad/*.jar lib/oracle_wallet/*.jar
+    cp -r drivers conf licenses README.txt $out/share/flyway
+    install -Dt $out/share/flyway/lib lib/*.jar lib/flyway/*.jar lib/oracle_wallet/*.jar lib/aad/msal4j-1.15.1.jar lib/aad/slf4j-api-1.7.30.jar
     makeWrapper "${jre_headless}/bin/java" $out/bin/flyway \
       --add-flags "-Djava.security.egd=file:/dev/../dev/urandom" \
       --add-flags "-classpath '$out/share/flyway/lib/*:$out/share/flyway/drivers/*'" \
       --add-flags "org.flywaydb.commandline.Main" \
-      --add-flags "-jarDirs='$out/share/flyway/jars'"
   '';
   passthru.tests = {
     version = testers.testVersion { package = finalAttrs.finalPackage; };

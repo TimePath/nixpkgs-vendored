@@ -2,7 +2,7 @@
   lib,
   stdenv,
   fetchurl,
-  substituteAll,
+  replaceVars,
   buildPackages,
   bzip2,
   curlMinimal,
@@ -29,13 +29,11 @@
   useSharedLibraries ? (!isMinimalBuild && !stdenv.hostPlatform.isCygwin),
   uiToolkits ? [ ], # can contain "ncurses" and/or "qt5"
   buildDocs ? !(isMinimalBuild || (uiToolkits == [ ])),
-  darwin,
   libsForQt5,
   gitUpdater,
 }:
 
 let
-  inherit (darwin.apple_sdk.frameworks) CoreServices SystemConfiguration;
   inherit (libsForQt5) qtbase wrapQtAppsHook;
   cursesUI = lib.elem "ncurses" uiToolkits;
   qt5UI = lib.elem "qt5" uiToolkits;
@@ -50,11 +48,11 @@ stdenv.mkDerivation (finalAttrs: {
     + lib.optionalString isMinimalBuild "-minimal"
     + lib.optionalString cursesUI "-cursesUI"
     + lib.optionalString qt5UI "-qt5UI";
-  version = "3.30.5";
+  version = "3.31.6";
 
   src = fetchurl {
     url = "https://cmake.org/files/v${lib.versions.majorMinor finalAttrs.version}/cmake-${finalAttrs.version}.tar.gz";
-    hash = "sha256-n1XhpAUI8vKbfgZfoIwp+CxAL6BALag5//5koldVqG0=";
+    hash = "sha256-ZTQn8PUBR1Cq//InJ/sqpgxscyypGAjPt4ziLd2eVfA=";
   };
 
   patches =
@@ -64,27 +62,22 @@ stdenv.mkDerivation (finalAttrs: {
       ./000-nixpkgs-cmake-prefix-path.diff
       # Don't search in non-Nix locations such as /usr, but do search in our libc.
       ./001-search-path.diff
-      # Don't depend on frameworks.
-      ./002-application-services.diff
-      # Derived from https://github.com/libuv/libuv/commit/1a5d4f08238dd532c3718e210078de1186a5920d
-      ./003-libuv-application-services.diff
     ]
     ++ lib.optional stdenv.hostPlatform.isCygwin ./004-cygwin.diff
-    # Derived from https://github.com/curl/curl/commit/31f631a142d855f069242f3e0c643beec25d1b51
-    ++ lib.optional (
-      stdenv.hostPlatform.isDarwin && isMinimalBuild
-    ) ./005-remove-systemconfiguration-dep.diff
     # On Darwin, always set CMAKE_SHARED_LIBRARY_RUNTIME_C_FLAG.
     ++ lib.optional stdenv.hostPlatform.isDarwin ./006-darwin-always-set-runtime-c-flag.diff
     # On platforms where ps is not part of stdenv, patch the invocation of ps to use an absolute path.
-    ++ lib.optional (stdenv.hostPlatform.isDarwin || stdenv.hostPlatform.isFreeBSD) (substituteAll {
-      src = ./007-darwin-bsd-ps-abspath.diff;
-      ps = lib.getExe ps;
-    })
+    ++ lib.optional (stdenv.hostPlatform.isDarwin || stdenv.hostPlatform.isFreeBSD) (
+      replaceVars ./007-darwin-bsd-ps-abspath.diff {
+        ps = lib.getExe ps;
+      }
+    )
     ++ [
       # Backport of https://gitlab.kitware.com/cmake/cmake/-/merge_requests/9900
-      # Needed to corretly link curl in pkgsStatic.
+      # Needed to correctly link curl in pkgsStatic.
       ./008-FindCURL-Add-more-target-properties-from-pkg-config.diff
+      # Backport of https://gitlab.kitware.com/cmake/cmake/-/commit/1b0c92a3a1b782ff3e1c4499b6ab8db614d45bcd
+      ./009-cmCurl-Avoid-using-undocumented-type-for-CURLOPT_NETRC-values.diff
     ];
 
   outputs =
@@ -124,9 +117,7 @@ stdenv.mkDerivation (finalAttrs: {
     ]
     ++ lib.optional useOpenSSL openssl
     ++ lib.optional cursesUI ncurses
-    ++ lib.optional qt5UI qtbase
-    ++ lib.optional stdenv.hostPlatform.isDarwin CoreServices
-    ++ lib.optional (stdenv.hostPlatform.isDarwin && !isMinimalBuild) SystemConfiguration;
+    ++ lib.optional qt5UI qtbase;
 
   preConfigure = ''
     fixCmakeFiles .
@@ -234,7 +225,6 @@ stdenv.mkDerivation (finalAttrs: {
     maintainers = with lib.maintainers; [
       ttuegel
       lnl7
-      AndersonTorres
     ];
     platforms = lib.platforms.all;
     mainProgram = "cmake";

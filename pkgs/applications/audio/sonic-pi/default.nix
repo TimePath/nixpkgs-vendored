@@ -17,7 +17,7 @@
   crossguid,
   reproc,
   platform-folders,
-  ruby,
+  ruby_3_2,
   erlang,
   elixir,
   beamPackages,
@@ -39,6 +39,11 @@
   SDL2,
   fmt,
 }:
+
+# Sonic Pi fails to build with Ruby 3.3.
+let
+  ruby = ruby_3_2;
+in
 
 stdenv.mkDerivation rec {
   pname = "sonic-pi";
@@ -109,6 +114,7 @@ stdenv.mkDerivation rec {
     "-DUSE_SYSTEM_LIBS=ON"
     "-DBUILD_IMGUI_INTERFACE=${if withImGui then "ON" else "OFF"}"
     "-DWITH_QT_GUI_WEBENGINE=${if withTauWidget then "ON" else "OFF"}"
+    "-DAPP_INSTALL_ROOT=${placeholder "out"}/app"
   ];
 
   doCheck = true;
@@ -140,9 +146,6 @@ stdenv.mkDerivation rec {
 
     # Prebuild Ruby vendored dependencies and Qt docs
     ./linux-prebuild.sh -o
-
-    # Append CMake flag depending on the value of $out
-    cmakeFlags+=" -DAPP_INSTALL_ROOT=$out/app"
   '';
 
   postBuild = ''

@@ -39,7 +39,7 @@ let
   tests = {
     default = testsForPackage {
       druidPackage = pkgs.druid;
-      hadoopPackage = pkgs.hadoop_3_2;
+      hadoopPackage = pkgs.hadoop_3_3;
     };
   };
   testsForPackage =

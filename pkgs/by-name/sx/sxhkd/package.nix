@@ -58,7 +58,6 @@ stdenv.mkDerivation (finalAttrs: {
     mainProgram = "sxhkd";
     maintainers = with lib.maintainers; [
       vyp
-      AndersonTorres
       ncfavier
     ];
     inherit (libxcb.meta) platforms;

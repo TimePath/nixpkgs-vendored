@@ -61,6 +61,7 @@ mkDerivation rec {
       firmware to the radio, backing up model settings, editing settings and
       running radio simulators.
     '';
+    mainProgram = "companion" + lib.concatStrings (lib.take 2 (lib.splitVersion version));
     homepage = "https://www.open-tx.org/";
     license = licenses.gpl2Only;
     platforms = [

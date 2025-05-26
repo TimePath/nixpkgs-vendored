@@ -3,6 +3,7 @@
   stdenv,
   makeWrapper,
   buildEnv,
+  bash,
   breezy,
   coreutils,
   cvs,
@@ -12,7 +13,6 @@
   git-lfs,
   gnused,
   mercurial,
-  nix,
   subversion,
 }:
 
@@ -22,7 +22,9 @@ let
     stdenv.mkDerivation {
       name = "nix-prefetch-${tool}";
 
+      strictDeps = true;
       nativeBuildInputs = [ makeWrapper ];
+      buildInputs = [ bash ];
 
       dontUnpack = true;
 
@@ -35,7 +37,6 @@ let
               ++ [
                 coreutils
                 gnused
-                nix
               ]
             )
           } \
@@ -48,10 +49,14 @@ let
         description = "Script used to obtain source hashes for fetch${tool}";
         maintainers = with maintainers; [ bennofs ];
         platforms = platforms.unix;
+        mainProgram = "nix-prefetch-${tool}";
       };
     };
 in
 rec {
+  # No explicit dependency on Nix, as these can be used inside builders,
+  # and thus will cause dependency loops. When used _outside_ builders,
+  # we expect people to have a Nix implementation available ambiently.
   nix-prefetch-bzr = mkPrefetchScript "bzr" ../../../build-support/fetchbzr/nix-prefetch-bzr [
     breezy
   ];

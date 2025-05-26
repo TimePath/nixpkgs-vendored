@@ -4,24 +4,65 @@
   pkgs,
   ...
 }:
-
-with lib;
-
 let
   cfg = config.services.borgmatic;
   settingsFormat = pkgs.formats.yaml { };
 
+  postgresql = config.services.postgresql.package;
+  mysql = config.services.mysql.package;
+  requireSudo =
+    s:
+    s ? postgresql_databases
+    && lib.any (d: d ? username && !(d ? password) && !(d ? pg_dump_command)) s.postgresql_databases;
+  addRequiredBinaries =
+    s:
+    s
+    // {
+      postgresql_databases = map (
+        d:
+        let
+          as_user = if d ? username && !(d ? password) then "${pkgs.sudo}/bin/sudo -u ${d.username} " else "";
+        in
+        {
+          pg_dump_command =
+            if d.name == "all" then
+              "${as_user}${postgresql}/bin/pg_dumpall"
+            else
+              "${as_user}${postgresql}/bin/pg_dump";
+          pg_restore_command = "${as_user}${postgresql}/bin/pg_restore";
+          psql_command = "${as_user}${postgresql}/bin/psql";
+        }
+        // d
+      ) (s.postgresql_databases or [ ]);
+      mariadb_databases = map (
+        d:
+        {
+          mariadb_dump_command = "${mysql}/bin/mariadb-dump";
+          mariadb_command = "${mysql}/bin/mariadb";
+        }
+        // d
+      ) (s.mariadb_databases or [ ]);
+      mysql_databases = map (
+        d:
+        {
+          mysql_dump_command = "${mysql}/bin/mysqldump";
+          mysql_command = "${mysql}/bin/mysql";
+        }
+        // d
+      ) (s.mysql_databases or [ ]);
+    };
+
   repository =
-    with types;
+    with lib.types;
     submodule {
       options = {
-        path = mkOption {
+        path = lib.mkOption {
           type = str;
           description = ''
             Path to the repository
           '';
         };
-        label = mkOption {
+        label = lib.mkOption {
           type = str;
           description = ''
             Label to the repository
@@ -30,11 +71,11 @@ let
       };
     };
   cfgType =
-    with types;
+    with lib.types;
     submodule {
       freeformType = settingsFormat.type;
       options = {
-        source_directories = mkOption {
+        source_directories = lib.mkOption {
           type = listOf str;
           default = [ ];
           description = ''
@@ -48,7 +89,7 @@ let
             "/home/user/path with spaces"
           ];
         };
-        repositories = mkOption {
+        repositories = lib.mkOption {
           type = listOf repository;
           default = [ ];
           description = ''
@@ -75,29 +116,32 @@ let
       };
     };
 
-  cfgfile = settingsFormat.generate "config.yaml" cfg.settings;
+  cfgfile = settingsFormat.generate "config.yaml" (addRequiredBinaries cfg.settings);
+
+  anycfgRequiresSudo =
+    requireSudo cfg.settings || lib.any requireSudo (lib.attrValues cfg.configurations);
 in
 {
   options.services.borgmatic = {
-    enable = mkEnableOption "borgmatic";
+    enable = lib.mkEnableOption "borgmatic";
 
-    settings = mkOption {
+    settings = lib.mkOption {
       description = ''
         See https://torsion.org/borgmatic/docs/reference/configuration/
       '';
       default = null;
-      type = types.nullOr cfgType;
+      type = lib.types.nullOr cfgType;
     };
 
-    configurations = mkOption {
+    configurations = lib.mkOption {
       description = ''
         Set of borgmatic configurations, see https://torsion.org/borgmatic/docs/reference/configuration/
       '';
       default = { };
-      type = types.attrsOf cfgType;
+      type = lib.types.attrsOf cfgType;
     };
 
-    enableConfigCheck = mkEnableOption "checking all configurations during build time" // {
+    enableConfigCheck = lib.mkEnableOption "checking all configurations during build time" // {
       default = true;
     };
   };
@@ -105,10 +149,12 @@ in
   config =
     let
       configFiles =
-        (optionalAttrs (cfg.settings != null) { "borgmatic/config.yaml".source = cfgfile; })
-        // mapAttrs' (
+        (lib.optionalAttrs (cfg.settings != null) { "borgmatic/config.yaml".source = cfgfile; })
+        // lib.mapAttrs' (
           name: value:
-          nameValuePair "borgmatic.d/${name}.yaml" { source = settingsFormat.generate "${name}.yaml" value; }
+          lib.nameValuePair "borgmatic.d/${name}.yaml" {
+            source = settingsFormat.generate "${name}.yaml" (addRequiredBinaries value);
+          }
         ) cfg.configurations;
       borgmaticCheck =
         name: f:
@@ -117,15 +163,15 @@ in
           touch $out
         '';
     in
-    mkIf cfg.enable {
+    lib.mkIf cfg.enable {
 
       warnings =
         [ ]
         ++
-          optional (cfg.settings != null && cfg.settings ? location)
+          lib.optional (cfg.settings != null && cfg.settings ? location)
             "`services.borgmatic.settings.location` is deprecated, please move your options out of sections to the global scope"
         ++
-          optional (catAttrs "location" (attrValues cfg.configurations) != [ ])
+          lib.optional (lib.catAttrs "location" (lib.attrValues cfg.configurations) != [ ])
             "`services.borgmatic.configurations.<name>.location` is deprecated, please move your options out of sections to the global scope";
 
       environment.systemPackages = [ pkgs.borgmatic ];
@@ -133,10 +179,15 @@ in
       environment.etc = configFiles;
 
       systemd.packages = [ pkgs.borgmatic ];
+      systemd.services.borgmatic.path = [ pkgs.coreutils ];
+      systemd.services.borgmatic.serviceConfig = lib.optionalAttrs anycfgRequiresSudo {
+        NoNewPrivileges = false;
+        CapabilityBoundingSet = "CAP_DAC_READ_SEARCH CAP_NET_RAW CAP_SETUID CAP_SETGID";
+      };
 
       # Workaround: https://github.com/NixOS/nixpkgs/issues/81138
       systemd.timers.borgmatic.wantedBy = [ "timers.target" ];
 
-      system.checks = mkIf cfg.enableConfigCheck (mapAttrsToList borgmaticCheck configFiles);
+      system.checks = lib.mkIf cfg.enableConfigCheck (lib.mapAttrsToList borgmaticCheck configFiles);
     };
 }

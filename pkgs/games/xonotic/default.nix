@@ -17,8 +17,8 @@
   freetype,
   libpng,
   libtheora,
-  # glx
   libX11,
+  # glx
   libGLU,
   libGL,
   libXpm,
@@ -100,9 +100,9 @@ let
         libvorbis
         curl
         gmp
+        libX11
       ]
       ++ lib.optionals withGLX [
-        libX11
         libGLU
         libGL
         libXpm
@@ -218,23 +218,21 @@ rec {
       rm -rf $(ls | grep -v "^data$" | grep -v "^key_0.d0pk$")
     '';
     meta.hydraPlatforms = [ ];
-    passthru.version = version;
+    inherit version pname;
   };
 
   xonotic =
     runCommand "xonotic${variant}-${version}"
       {
-        inherit xonotic-unwrapped;
+        inherit xonotic-unwrapped version;
+        pname = "${pname}${variant}";
         nativeBuildInputs = [
           makeWrapper
           copyDesktopItems
         ];
         desktopItems = [ desktopItem ];
-        passthru = {
-          inherit version;
-          meta = meta // {
-            hydraPlatforms = [ ];
-          };
+        meta = meta // {
+          hydraPlatforms = [ ];
         };
       }
       (

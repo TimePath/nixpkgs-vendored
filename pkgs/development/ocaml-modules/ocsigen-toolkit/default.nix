@@ -13,7 +13,7 @@
 stdenv.mkDerivation rec {
   pname = "ocsigen-toolkit";
   name = "ocaml${ocaml.version}-${pname}-${version}";
-  version = "3.3.4";
+  version = "4.1.0";
 
   propagatedBuildInputs = [
     calendar
@@ -42,7 +42,7 @@ stdenv.mkDerivation rec {
     owner = "ocsigen";
     repo = pname;
     rev = version;
-    hash = "sha256-6ccu8WJxUwpR5YyB4j1jQPWba8GhQDxuw+IDHswQpSA=";
+    hash = "sha256-1kw2HANajHDdMmjuYNB79ZDqy2Ml02nc5s+cJzIoxQ8=";
   };
 
   meta = {

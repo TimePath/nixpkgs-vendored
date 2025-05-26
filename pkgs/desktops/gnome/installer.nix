@@ -13,7 +13,7 @@ let
       inherit system;
       modules = [
         module
-        { isoImage.isoBaseName = isoBaseName; }
+        { image.baseName = isoBaseName; }
       ] ++ extraModules;
     }).config;
 

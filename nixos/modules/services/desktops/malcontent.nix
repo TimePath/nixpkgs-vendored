@@ -1,14 +1,10 @@
 # Malcontent daemon.
-
 {
   config,
   lib,
   pkgs,
   ...
 }:
-
-with lib;
-
 {
 
   ###### interface
@@ -17,7 +13,7 @@ with lib;
 
     services.malcontent = {
 
-      enable = mkEnableOption "Malcontent, parental control support for applications";
+      enable = lib.mkEnableOption "Malcontent, parental control support for applications";
 
     };
 
@@ -25,7 +21,7 @@ with lib;
 
   ###### implementation
 
-  config = mkIf config.services.malcontent.enable {
+  config = lib.mkIf config.services.malcontent.enable {
 
     environment.systemPackages = with pkgs; [
       malcontent

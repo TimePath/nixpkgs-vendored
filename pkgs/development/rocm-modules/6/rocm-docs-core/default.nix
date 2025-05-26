@@ -1,6 +1,5 @@
 {
   lib,
-  stdenv,
   fetchFromGitHub,
   gitUpdater,
   buildPythonPackage,
@@ -11,6 +10,7 @@
   pygithub,
   sphinx,
   breathe,
+  myst-nb,
   myst-parser,
   sphinx-book-theme,
   sphinx-copybutton,
@@ -24,14 +24,14 @@
 # FIXME: Move to rocmPackages_common
 buildPythonPackage rec {
   pname = "rocm-docs-core";
-  version = "0.34.0";
+  version = "1.17.0";
   format = "pyproject";
 
   src = fetchFromGitHub {
     owner = "ROCm";
     repo = "rocm-docs-core";
     rev = "v${version}";
-    hash = "sha256-p75g68Dn0RrjX9vYY+AWNu0qOKTLsBCnOZekMO0Usho=";
+    hash = "sha256-fGRJyQq0Eook1Dc9Qy+dehQ5BVNX+6pkkFN9adb21Eo=";
   };
 
   buildInputs = [ setuptools ];
@@ -43,6 +43,7 @@ buildPythonPackage rec {
     pygithub
     sphinx
     breathe
+    myst-nb
     myst-parser
     sphinx-book-theme
     sphinx-copybutton
@@ -64,7 +65,7 @@ buildPythonPackage rec {
       mit
       cc-by-40
     ];
-    maintainers = teams.rocm.members;
+    teams = [ teams.rocm ];
     platforms = platforms.linux;
   };
 }

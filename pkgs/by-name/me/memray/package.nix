@@ -10,14 +10,14 @@
 
 python3Packages.buildPythonApplication rec {
   pname = "memray";
-  version = "1.14.0";
+  version = "1.17.2";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "bloomberg";
     repo = "memray";
     tag = "v${version}";
-    hash = "sha256-U9JR60rSxPYXbZaKR7vVNhGT78AXnqcoqvVC6/1OW/E=";
+    hash = "sha256-n000m2jIJJFZFTjfECS3gFrO6xHauZW46xe1tDqI6Lg=";
   };
 
   build-system = with python3Packages; [
@@ -48,7 +48,7 @@ python3Packages.buildPythonApplication rec {
       pytest-textual-snapshot
       pytestCheckHook
     ]
-    ++ lib.optionals (pythonOlder "3.12") [ greenlet ];
+    ++ lib.optionals (pythonOlder "3.14") [ greenlet ];
 
   pythonImportsCheck = [ "memray" ];
 
@@ -58,26 +58,22 @@ python3Packages.buildPythonApplication rec {
     # Import issue
     "test_header_allocator"
     "test_hybrid_stack_of_allocations_inside_ceval"
-
-    # snapshot-based tests are too fragile
-    # see https://github.com/bloomberg/memray/issues/654
-    "TestTUILooks"
-    "test_tui_basic"
-    "test_tui_pause"
-    "test_tui_gradient"
-    "test_merge_threads"
-    "test_unmerge_threads"
   ];
 
   disabledTestPaths = [
     # Very time-consuming and some tests fails (performance-related?)
     "tests/integration/test_main.py"
+
+    # AssertionError since textual was updated to 3.1.0
+    # https://github.com/bloomberg/memray/issues/750
+    "tests/unit/test_tree_reporter.py"
+    "tests/unit/test_tui_reporter.py"
   ];
 
   meta = with lib; {
     description = "Memory profiler for Python";
     homepage = "https://bloomberg.github.io/memray/";
-    changelog = "https://github.com/bloomberg/memray/releases/tag/v${version}";
+    changelog = "https://github.com/bloomberg/memray/releases/tag/${src.tag}";
     license = licenses.asl20;
     maintainers = with maintainers; [ fab ];
     platforms = platforms.linux;

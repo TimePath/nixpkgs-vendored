@@ -9,7 +9,6 @@
   libtiff,
   zlib,
   lcms2,
-  jpylyzer,
   jpipLibSupport ? false, # JPIP library & executables
   jpipServerSupport ? false,
   curl,
@@ -30,9 +29,15 @@
 }:
 
 let
-  mkFlag = optSet: flag: "-D${flag}=${if optSet then "ON" else "OFF"}";
+  # may need to get updated with package
+  # https://github.com/uclouvain/openjpeg-data
+  test-data = fetchFromGitHub {
+    owner = "uclouvain";
+    repo = "openjpeg-data";
+    rev = "a428429db695fccfc6d698bd13b6937dffd9d005";
+    hash = "sha256-udUi7sPNQJ5uCIAM8SqMGee6vRj1QbF9pLjdpNTQE5k=";
+  };
 in
-
 stdenv.mkDerivation rec {
   pname = "openjpeg";
   version = "2.5.2";
@@ -65,16 +70,15 @@ stdenv.mkDerivation rec {
   ];
 
   cmakeFlags = [
-    "-DCMAKE_INSTALL_NAME_DIR=\${CMAKE_INSTALL_PREFIX}/lib"
-    "-DBUILD_SHARED_LIBS=ON"
+    (lib.cmakeBool "BUILD_SHARED_LIBS" (!stdenv.hostPlatform.isStatic))
     "-DBUILD_CODEC=ON"
     "-DBUILD_THIRDPARTY=OFF"
-    (mkFlag jpipLibSupport "BUILD_JPIP")
-    (mkFlag jpipServerSupport "BUILD_JPIP_SERVER")
+    (lib.cmakeBool "BUILD_JPIP" jpipLibSupport)
+    (lib.cmakeBool "BUILD_JPIP_SERVER" jpipServerSupport)
     "-DBUILD_VIEWER=OFF"
     "-DBUILD_JAVA=OFF"
-    (mkFlag doCheck "BUILD_TESTING")
-  ];
+    (lib.cmakeBool "BUILD_TESTING" doCheck)
+  ] ++ lib.optional doCheck "-DOPJ_DATA_ROOT=${test-data}";
 
   nativeBuildInputs = [
     cmake
@@ -94,12 +98,14 @@ stdenv.mkDerivation rec {
     ]
     ++ lib.optional (jpipLibSupport) jdk;
 
-  doCheck = (!stdenv.hostPlatform.isAarch64 && !stdenv.hostPlatform.isPower64); # tests fail on aarch64-linux and powerpc64
-  nativeCheckInputs = [ jpylyzer ];
+  # tests did fail on powerpc64
+  doCheck = !stdenv.hostPlatform.isPower64 && stdenv.buildPlatform.canExecute stdenv.hostPlatform;
+
   checkPhase = ''
-    substituteInPlace ../tools/ctest_scripts/travis-ci.cmake \
-      --replace "JPYLYZER_EXECUTABLE=" "JPYLYZER_EXECUTABLE=\"$(command -v jpylyzer)\" # "
-    OPJ_SOURCE_DIR=.. ctest -S ../tools/ctest_scripts/travis-ci.cmake
+    runHook preCheck
+    ctest -j $NIX_BUILD_CORES \
+          -E '.*jpylyser' --exclude-from-file ${./exclude-tests}
+    runHook postCheck
   '';
 
   passthru = {

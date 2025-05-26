@@ -8,13 +8,13 @@
 
 buildGoModule rec {
   pname = "cri-tools";
-  version = "1.31.1";
+  version = "1.33.0";
 
   src = fetchFromGitHub {
     owner = "kubernetes-sigs";
     repo = pname;
     rev = "v${version}";
-    hash = "sha256-ruhWuBpPjc0dX7kgiTBFFHriSGYx4XoMNv+M39aIh10=";
+    hash = "sha256-KxckDpZ3xfD+buCGrQ+udJF0X2D9sg/d3TLSQEcWyV4=";
   };
 
   vendorHash = null;
@@ -48,6 +48,6 @@ buildGoModule rec {
     description = "CLI and validation tools for Kubelet Container Runtime Interface (CRI)";
     homepage = "https://github.com/kubernetes-sigs/cri-tools";
     license = licenses.asl20;
-    maintainers = with maintainers; [ ] ++ teams.podman.members;
+    teams = [ teams.podman ];
   };
 }

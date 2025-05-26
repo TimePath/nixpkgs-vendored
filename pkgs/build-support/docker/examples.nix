@@ -110,6 +110,16 @@ rec {
 
     runAsRoot = ''
       mkdir -p /data
+      cat >/bin/healthcheck <<-'EOF'
+      set -x
+      probe="$(/bin/redis-cli ping)"
+      echo "$probe"
+      if [ "$probe" = 'PONG' ]; then
+        exit 0
+      fi
+      exit 1
+      EOF
+      chmod +x /bin/healthcheck
     '';
 
     config = {
@@ -117,6 +127,15 @@ rec {
       WorkingDir = "/data";
       Volumes = {
         "/data" = { };
+      };
+      Healthcheck = {
+        Test = [
+          "CMD-SHELL"
+          "/bin/healthcheck"
+        ];
+        Interval = 30000000000;
+        Timeout = 10000000000;
+        Retries = 3;
       };
     };
   };
@@ -131,7 +150,7 @@ rec {
   nixFromDockerHub = pullImage {
     imageName = "nixos/nix";
     imageDigest = "sha256:85299d86263a3059cf19f419f9d286cc9f06d3c13146a8ebbb21b3437f598357";
-    sha256 = "19fw0n3wmddahzr20mhdqv6jkjn1kanh6n2mrr08ai53dr8ph5n7";
+    hash = "sha256-xxZ4UW6jRIVAzlVYA62awcopzcYNViDyh6q1yocF3KU=";
     finalImageTag = "2.2.1";
     finalImageName = "nix";
   };
@@ -140,7 +159,7 @@ rec {
   testNixFromDockerHub = pkgs.testers.invalidateFetcherByDrvHash pullImage {
     imageName = "nixos/nix";
     imageDigest = "sha256:85299d86263a3059cf19f419f9d286cc9f06d3c13146a8ebbb21b3437f598357";
-    sha256 = "19fw0n3wmddahzr20mhdqv6jkjn1kanh6n2mrr08ai53dr8ph5n7";
+    hash = "sha256-xxZ4UW6jRIVAzlVYA62awcopzcYNViDyh6q1yocF3KU=";
     finalImageTag = "2.2.1";
     finalImageName = "nix";
   };

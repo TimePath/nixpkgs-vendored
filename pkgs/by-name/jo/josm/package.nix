@@ -11,21 +11,21 @@
 }:
 let
   pname = "josm";
-  version = "19253";
+  version = "19369";
   srcs = {
     jar = fetchurl {
       url = "https://josm.openstreetmap.de/download/josm-snapshot-${version}.jar";
-      hash = "sha256-GnN+XtGzhLZ2PKAGHv+GMMh0FpilwET7EfKI4CAwYgg=";
+      hash = "sha256-rcnfrKaKVWvPLdr8hab380Ao661NVj+pCZMIGiUM0aQ=";
     };
     macosx = fetchurl {
       url = "https://josm.openstreetmap.de/download/macosx/josm-macos-${version}-java21.zip";
-      hash = "sha256-bcCl+w+pvsR+8QXKjM9bVyTAgzp+wre71tZMp5+VJTA=";
+      hash = "sha256-zIiOq14o972Z+V4Cc3IFjcgd50G1VDEoxbcYVtOR5C4=";
     };
     pkg = fetchFromGitHub {
       owner = "JOSM";
       repo = "josm";
-      rev = "refs/tags/${version}-tested";
-      hash = "sha256-I1mMtNzFkBoU0qcx2rVd9nmDK91ccVyaKwPft72M3r0=";
+      tag = "${version}-tested";
+      hash = "sha256-mPuf98HfvmAHcnOiFKHUtqNVg7sy5XZP2hnm7ZdaUQo=";
     };
   };
 
@@ -36,7 +36,7 @@ let
     "--add-exports=java.desktop/com.sun.imageio.spi=ALL-UNNAMED"
   ];
 in
-stdenv.mkDerivation rec {
+stdenv.mkDerivation {
   inherit pname version;
 
   dontUnpack = true;
@@ -58,7 +58,9 @@ stdenv.mkDerivation rec {
         # Add libXxf86vm to path because it is needed by at least Kendzi3D plugin
         makeWrapper ${jre}/bin/java $out/bin/josm \
           --add-flags "${baseJavaOpts} ${extraJavaOpts} -jar $out/share/josm/josm.jar" \
-          --prefix LD_LIBRARY_PATH ":" '${libXxf86vm}/lib'
+          --prefix LD_LIBRARY_PATH ":" '${libXxf86vm}/lib' \
+          --prefix _JAVA_AWT_WM_NONREPARENTING : 1 \
+          --prefix _JAVA_OPTIONS : "-Dawt.useSystemAAFontSettings=on"
       '';
 
   meta = {

@@ -10,10 +10,10 @@
   file,
   gobject-introspection,
   json-glib,
-  libsoup,
+  libsoup_2_4,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation {
   pname = "timezonemap";
   version = "0.4.5.1";
 
@@ -42,7 +42,7 @@ stdenv.mkDerivation rec {
     gtk3
     glib
     json-glib
-    libsoup
+    libsoup_2_4
   ];
 
   configureFlags = [

@@ -1,14 +1,15 @@
 {
-  lib,
   callPackage,
-  runCommand,
   fetchgit,
   fontconfig,
   git,
+  lib,
   makeWrapper,
+  python3,
+  runCommand,
+  system,
   writeText,
   writeTextFile,
-  python3,
 
   # Artifacts dependencies
   fetchurl,
@@ -24,11 +25,12 @@
 
   # Other overridable arguments
   extraLibs ? [ ],
-  precompile ? true,
-  setDefaultDepot ? true,
+  juliaCpuTarget ? null,
+  makeTransitiveDependenciesImportable ? false, # Used to support symbol indexing
   makeWrapperArgs ? "",
   packageOverrides ? { },
-  makeTransitiveDependenciesImportable ? false, # Used to support symbol indexing
+  precompile ? true,
+  setDefaultDepot ? true,
 }:
 
 packageNames:
@@ -205,19 +207,24 @@ let
             if lib.versionAtLeast julia.version "1.7" then ./extract_artifacts.jl else ./extract_artifacts_16.jl
           }" \
           '${lib.generators.toJSON { } (import ./extra-libs.nix)}' \
+          '${lib.generators.toJSON { } (stdenv.hostPlatform.isDarwin)}' \
           "$out"
       '';
 
   # Import the artifacts Nix to build Overrides.toml (IFD)
-  artifacts = import artifactsNix {
-    inherit
-      lib
-      fetchurl
-      pkgs
-      glibc
-      stdenv
-      ;
-  };
+  artifacts = import artifactsNix (
+    {
+      inherit
+        lib
+        fetchurl
+        pkgs
+        stdenv
+        ;
+    }
+    // lib.optionalAttrs (!stdenv.targetPlatform.isDarwin) {
+      inherit glibc;
+    }
+  );
   overridesJson = writeTextFile {
     name = "Overrides.json";
     text = lib.generators.toJSON { } artifacts;
@@ -236,6 +243,7 @@ let
     inherit
       closureYaml
       extraLibs
+      juliaCpuTarget
       overridesToml
       packageImplications
       precompile
@@ -255,21 +263,23 @@ runCommand "julia-${julia.version}-env"
   {
     nativeBuildInputs = [ makeWrapper ];
 
-    inherit julia;
-    inherit juliaWrapped;
-    meta = julia.meta;
+    passthru = {
+      inherit julia;
+      inherit juliaWrapped;
+      inherit (julia) pname version meta;
 
-    # Expose the steps we used along the way in case the user wants to use them, for example to build
-    # expressions and build them separately to avoid IFD.
-    inherit dependencies;
-    inherit closureYaml;
-    inherit dependencyUuidToInfoYaml;
-    inherit dependencyUuidToRepoYaml;
-    inherit minimalRegistry;
-    inherit artifactsNix;
-    inherit overridesJson;
-    inherit overridesToml;
-    inherit projectAndDepot;
+      # Expose the steps we used along the way in case the user wants to use them, for example to build
+      # expressions and build them separately to avoid IFD.
+      inherit dependencies;
+      inherit closureYaml;
+      inherit dependencyUuidToInfoYaml;
+      inherit dependencyUuidToRepoYaml;
+      inherit minimalRegistry;
+      inherit artifactsNix;
+      inherit overridesJson;
+      inherit overridesToml;
+      inherit projectAndDepot;
+    };
   }
   (
     ''

@@ -2,7 +2,7 @@
   stdenv,
   lib,
   fetchFromGitHub,
-  substituteAll,
+  replaceVars,
   openssl,
   gsound,
   meson,
@@ -23,7 +23,7 @@
 
 stdenv.mkDerivation rec {
   pname = "gnome-shell-extension-gsconnect";
-  version = "58";
+  version = "62";
 
   outputs = [
     "out"
@@ -34,14 +34,15 @@ stdenv.mkDerivation rec {
     owner = "GSConnect";
     repo = "gnome-shell-extension-gsconnect";
     rev = "v${version}";
-    hash = "sha256-bpy4G+f3NJ2iVsycPluV+98at0G2wlp7t5cPEMGM90s=";
+    hash = "sha256-HFm04XC61AjkJSt4YBc4dO9v563w+LsYDSaZckPYE14=";
   };
 
   patches = [
     # Make typelibs available in the extension
-    (substituteAll {
-      src = ./fix-paths.patch;
+    (replaceVars ./fix-paths.patch {
       gapplication = "${glib.bin}/bin/gapplication";
+      # Replaced in postPatch
+      typelibPath = null;
     })
 
     # Allow installing installed tests to a separate output
@@ -119,7 +120,8 @@ stdenv.mkDerivation rec {
     description = "KDE Connect implementation for Gnome Shell";
     homepage = "https://github.com/GSConnect/gnome-shell-extension-gsconnect/wiki";
     license = licenses.gpl2Plus;
-    maintainers = teams.gnome.members ++ [ maintainers.doronbehar ];
+    maintainers = [ maintainers.doronbehar ];
+    teams = [ teams.gnome ];
     platforms = platforms.linux;
   };
 }

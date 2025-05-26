@@ -1,6 +1,6 @@
 {
   lib,
-  gnuradio3_8Minimal,
+  gnuradioMinimal,
   thrift,
   fetchFromGitHub,
   pkg-config,
@@ -10,7 +10,7 @@
   liquid-dsp,
 }:
 
-gnuradio3_8Minimal.pkgs.mkDerivation rec {
+gnuradioMinimal.pkgs.mkDerivation rec {
   pname = "inspectrum";
   version = "0.3.1";
 
@@ -32,9 +32,9 @@ gnuradio3_8Minimal.pkgs.mkDerivation rec {
       liquid-dsp
       qt5.qtbase
     ]
-    ++ lib.optionals (gnuradio3_8Minimal.hasFeature "gr-ctrlport") [
+    ++ lib.optionals (gnuradioMinimal.hasFeature "gr-ctrlport") [
       thrift
-      gnuradio3_8Minimal.unwrapped.python.pkgs.thrift
+      gnuradioMinimal.unwrapped.python.pkgs.thrift
     ];
 
   meta = with lib; {

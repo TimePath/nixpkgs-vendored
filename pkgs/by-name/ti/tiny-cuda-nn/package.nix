@@ -1,4 +1,5 @@
 {
+  config,
   cmake,
   cudaPackages,
   fetchFromGitHub,
@@ -12,7 +13,7 @@
 }:
 let
   inherit (lib) lists strings;
-  inherit (cudaPackages) backendStdenv flags;
+  inherit (cudaPackages) backendStdenv cudaAtLeast flags;
 
   cuda-common-redist = with cudaPackages; [
     (lib.getDev cuda_cudart) # cuda_runtime.h
@@ -35,6 +36,14 @@ let
     name = "cuda-redist";
     paths = cuda-common-redist;
   };
+
+  unsupportedCudaCapabilities = [
+    "9.0a"
+  ];
+
+  cudaCapabilities = lists.subtractLists unsupportedCudaCapabilities flags.cudaCapabilities;
+
+  cudaArchitecturesString = strings.concatMapStringsSep ";" flags.dropDot cudaCapabilities;
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = "tiny-cuda-nn";
@@ -50,6 +59,13 @@ stdenv.mkDerivation (finalAttrs: {
     fetchSubmodules = true;
     hash = "sha256-qW6Fk2GB71fvZSsfu+mykabSxEKvaikZ/pQQZUycOy0=";
   };
+
+  # Remove this once a release is made with
+  # https://github.com/NVlabs/tiny-cuda-nn/commit/78a14fe8c292a69f54e6d0d47a09f52b777127e1
+  postPatch = lib.optionals (cudaAtLeast "11.0") ''
+    substituteInPlace bindings/torch/setup.py --replace-fail \
+      "-std=c++14" "-std=c++17"
+  '';
 
   nativeBuildInputs =
     [
@@ -87,13 +103,13 @@ stdenv.mkDerivation (finalAttrs: {
   );
 
   # NOTE: We cannot use pythonImportsCheck for this module because it uses torch to immediately
-  #   initailize CUDA and GPU access is not allowed in the nix build environment.
+  #   initialize CUDA and GPU access is not allowed in the nix build environment.
   # NOTE: There are no tests for the C++ library or the python bindings, so we just skip the check
   #   phase -- we're not missing anything.
   doCheck = false;
 
   preConfigure = ''
-    export TCNN_CUDA_ARCHITECTURES="${flags.cmakeCudaArchitecturesString}"
+    export TCNN_CUDA_ARCHITECTURES="${cudaArchitecturesString}"
     export CUDA_HOME="${cuda-native-redist}"
     export LIBRARY_PATH="${cuda-native-redist}/lib/stubs:$LIBRARY_PATH"
     export CC="${backendStdenv.cc}/bin/cc"
@@ -101,7 +117,7 @@ stdenv.mkDerivation (finalAttrs: {
   '';
 
   # When building the python bindings, we cannot re-use the artifacts from the C++ build so we
-  # skip the CMake confurePhase and the buildPhase.
+  # skip the CMake configurePhase and the buildPhase.
   dontUseCmakeConfigure = pythonSupport;
 
   # The configurePhase usually puts you in the build directory, so for the python bindings we
@@ -161,7 +177,11 @@ stdenv.mkDerivation (finalAttrs: {
     license = licenses.bsd3;
     maintainers = with maintainers; [ connorbaker ];
     platforms = platforms.linux;
-    # g++: error: unrecognized command-line option '-mf16c'
-    broken = stdenv.hostPlatform.isAarch64;
+    badPlatforms = [
+      # g++: error: unrecognized command-line option '-mf16c'
+      lib.systems.inspect.patterns.isAarch64
+    ];
+    # Requires torch.cuda._is_compiled() == True to build
+    broken = !config.cudaSupport;
   };
 })

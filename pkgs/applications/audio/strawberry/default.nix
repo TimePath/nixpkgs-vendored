@@ -1,58 +1,54 @@
 {
-  stdenv,
-  lib,
-  fetchFromGitHub,
-  cmake,
-  pkg-config,
-  wrapQtAppsHook,
   alsa-lib,
   boost,
   chromaprint,
+  cmake,
+  fetchFromGitHub,
   fftw,
+  glib-networking,
   gnutls,
+  gst_all_1,
+  kdsingleapplication,
+  lib,
+  libXdmcp,
   libcdio,
   libebur128,
-  libmtp,
-  libpthreadstubs,
-  libtasn1,
-  libXdmcp,
-  ninja,
-  pcre,
-  protobuf,
-  sqlite,
-  taglib,
   libgpod,
   libidn2,
+  libmtp,
+  libpthreadstubs,
   libpulseaudio,
   libselinux,
   libsepol,
-  p11-kit,
-  util-linux,
-  qtbase,
-  qtx11extras ? null, # doesn't exist in qt6
-  qttools,
-  withGstreamer ? true,
-  glib-networking,
-  gst_all_1,
-  withVlc ? true,
-  libvlc,
+  libtasn1,
+  ninja,
   nix-update-script,
+  p11-kit,
+  pkg-config,
+  qtbase,
+  qttools,
+  sqlite,
+  stdenv,
+  taglib,
+  util-linux,
+  wrapQtAppsHook,
+  sparsehash,
+  rapidjson,
 }:
 
 let
-  inherit (lib) optionals optionalString;
+  inherit (lib) optionals;
 
 in
 stdenv.mkDerivation rec {
   pname = "strawberry";
-  version = "1.1.3";
+  version = "1.2.10";
 
   src = fetchFromGitHub {
     owner = "jonaski";
     repo = pname;
     rev = version;
-    hash = "sha256-yca1BJWhSUVamqSKfvEzU3xbzdR+kwfSs0pyS08oUR0=";
-    fetchSubmodules = true;
+    hash = "sha256-ByZHyHkMlU571QSu1bbYZC7aEX4Jc8N3j05WbXRQaBY=";
   };
 
   # the big strawberry shown in the context menu is *very* much in your face, so use the grey version instead
@@ -68,19 +64,19 @@ stdenv.mkDerivation rec {
       chromaprint
       fftw
       gnutls
+      kdsingleapplication
+      libXdmcp
       libcdio
       libebur128
       libidn2
       libmtp
       libpthreadstubs
       libtasn1
-      libXdmcp
-      pcre
-      protobuf
+      qtbase
       sqlite
       taglib
-      qtbase
-      qtx11extras
+      sparsehash
+      rapidjson
     ]
     ++ optionals stdenv.hostPlatform.isLinux [
       libgpod
@@ -89,19 +85,15 @@ stdenv.mkDerivation rec {
       libsepol
       p11-kit
     ]
-    ++ optionals withGstreamer (
-      with gst_all_1;
-      [
-        glib-networking
-        gstreamer
-        gst-libav
-        gst-plugins-base
-        gst-plugins-good
-        gst-plugins-bad
-        gst-plugins-ugly
-      ]
-    )
-    ++ optionals withVlc [ libvlc ];
+    ++ (with gst_all_1; [
+      glib-networking
+      gst-libav
+      gst-plugins-bad
+      gst-plugins-base
+      gst-plugins-good
+      gst-plugins-ugly
+      gstreamer
+    ]);
 
   nativeBuildInputs =
     [
@@ -115,7 +107,7 @@ stdenv.mkDerivation rec {
       util-linux
     ];
 
-  postInstall = optionalString withGstreamer ''
+  postInstall = ''
     qtWrapperArgs+=(
       --prefix GST_PLUGIN_SYSTEM_PATH_1_0 : "$GST_PLUGIN_SYSTEM_PATH_1_0"
       --prefix GIO_EXTRA_MODULES : "${glib-networking.out}/lib/gio/modules"

@@ -22,15 +22,11 @@
   libXcursor,
   libXft,
   libXrender,
-  ApplicationServices,
-  Carbon,
-  Cocoa,
 
   withGL ? true,
   libGL,
   libGLU,
   glew,
-  OpenGL,
 
   withCairo ? true,
   cairo,
@@ -49,7 +45,7 @@
 let
   onOff = value: if value then "ON" else "OFF";
 in
-stdenv.mkDerivation rec {
+stdenv.mkDerivation {
   pname = "fltk";
   inherit version;
 
@@ -83,16 +79,15 @@ stdenv.mkDerivation rec {
     ];
 
   buildInputs =
-    lib.optionals stdenv.hostPlatform.isDarwin [
-      ApplicationServices
-      Carbon
-    ]
-    ++ lib.optionals (withGL && !stdenv.hostPlatform.isDarwin) [
+    lib.optionals (withGL && !stdenv.hostPlatform.isDarwin) [
       libGL
       libGLU
     ]
     ++ lib.optionals (withExamples && withGL) [
       glew
+    ]
+    ++ lib.optionals stdenv.hostPlatform.isLinux [
+      fontconfig
     ];
 
   propagatedBuildInputs =
@@ -103,7 +98,6 @@ stdenv.mkDerivation rec {
     ]
     ++ lib.optionals stdenv.hostPlatform.isLinux [
       freetype
-      fontconfig
       libX11
       libXext
       libXinerama
@@ -111,12 +105,6 @@ stdenv.mkDerivation rec {
       libXcursor
       libXft
       libXrender
-    ]
-    ++ lib.optionals stdenv.hostPlatform.isDarwin [
-      Cocoa
-    ]
-    ++ lib.optionals (withGL && stdenv.hostPlatform.isDarwin) [
-      OpenGL
     ]
     ++ lib.optionals withCairo [
       cairo

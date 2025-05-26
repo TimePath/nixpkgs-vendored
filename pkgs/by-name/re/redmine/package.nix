@@ -3,17 +3,17 @@
   stdenv,
   fetchurl,
   bundlerEnv,
-  ruby_3_2,
+  ruby,
   makeWrapper,
   nixosTests,
 }:
 
 let
-  version = "5.1.7";
+  version = "6.0.5";
   rubyEnv = bundlerEnv {
     name = "redmine-env-${version}";
 
-    ruby = ruby_3_2;
+    inherit ruby;
     gemdir = ./.;
     groups = [
       "development"
@@ -31,7 +31,7 @@ stdenv.mkDerivation rec {
 
   src = fetchurl {
     url = "https://www.redmine.org/releases/redmine-${version}.tar.gz";
-    hash = "sha256-x1x94iWzyekg298u3dpse0VCIamYiQdxGnENg+UCcx4=";
+    hash = "sha256-lNzFMRXgWBrEbmDD7ZMY8ZJs5GS6u7OF5SNiF9Hmpk4=";
   };
 
   nativeBuildInputs = [ makeWrapper ];
@@ -47,13 +47,14 @@ stdenv.mkDerivation rec {
 
   buildPhase = ''
     mv config config.dist
-    mv public/themes public/themes.dist
+    mv themes themes.dist
   '';
 
   installPhase = ''
     mkdir -p $out/bin $out/share
     cp -r . $out/share/redmine
-    for i in config files log plugins public/plugin_assets public/themes tmp; do
+    mkdir $out/share/redmine/public/assets
+    for i in config files log plugins public/assets public/plugin_assets themes tmp; do
       rm -rf $out/share/redmine/$i
       ln -fs /run/redmine/$i $out/share/redmine/$i
     done
@@ -73,6 +74,5 @@ stdenv.mkDerivation rec {
       megheaiulian
     ];
     license = licenses.gpl2;
-    knownVulnerabilities = [ "CVE-2024-54133" ];
   };
 }

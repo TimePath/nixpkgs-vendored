@@ -54,6 +54,13 @@ stdenv.mkDerivation (finalAttrs: {
     "CFLAGS_EXTRA=-DNO_SOFT_VDB"
   ];
 
+  # OpenBSD patches lld (!!!!) to inject this symbol into every linker invocation.
+  # We are obviously not doing that.
+  postConfigure = lib.optionalString stdenv.hostPlatform.isOpenBSD ''
+    echo >$TMP/openbsd.ldscript "__data_start = ADDR(.data);"
+    export NIX_LDFLAGS="$NIX_LDFLAGS -T $TMP/openbsd.ldscript"
+  '';
+
   # `gctest` fails under x86_64 emulation on aarch64-darwin
   # and also on aarch64-linux (qemu-user)
   doCheck =
@@ -87,7 +94,7 @@ stdenv.mkDerivation (finalAttrs: {
     '';
     changelog = "https://github.com/ivmai/bdwgc/blob/v${finalAttrs.version}/ChangeLog";
     license = "https://hboehm.info/gc/license.txt"; # non-copyleft, X11-style license
-    maintainers = with lib.maintainers; [ AndersonTorres ];
+    maintainers = with lib.maintainers; [ ];
     platforms = lib.platforms.all;
   };
 })

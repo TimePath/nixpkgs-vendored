@@ -8,7 +8,7 @@
   lib,
   stdenv,
   wrapGAppsHook3,
-  libxml2,
+  libxmlb,
   gtk3,
   gvfs,
   cinnamon-desktop,
@@ -20,17 +20,28 @@
   shared-mime-info,
   cinnamon-translations,
   libgsf,
+  python3,
 }:
 
+let
+  # For action-layout-editor.
+  pythonEnv = python3.withPackages (
+    pp: with pp; [
+      pycairo
+      pygobject3
+      python-xapp
+    ]
+  );
+in
 stdenv.mkDerivation rec {
   pname = "nemo";
-  version = "6.2.8";
+  version = "6.4.5";
 
   src = fetchFromGitHub {
     owner = "linuxmint";
     repo = pname;
     rev = version;
-    hash = "sha256-1GJLsUlptwXcZUWIOztskV0nHA9BnPmnVeTgUwJ+QDQ=";
+    hash = "sha256-9JfCBC5YjfQadF7KzPgZ1yPkiSjmuEO1tfMU2BmJES8=";
   };
 
   patches = [
@@ -48,7 +59,8 @@ stdenv.mkDerivation rec {
     glib
     gtk3
     cinnamon-desktop
-    libxml2
+    libxmlb # action-layout-editor
+    pythonEnv
     xapp
     libexif
     exempi
@@ -97,7 +109,7 @@ stdenv.mkDerivation rec {
       licenses.lgpl2
     ];
     platforms = platforms.linux;
-    maintainers = teams.cinnamon.members;
+    teams = [ teams.cinnamon ];
     mainProgram = "nemo";
   };
 }

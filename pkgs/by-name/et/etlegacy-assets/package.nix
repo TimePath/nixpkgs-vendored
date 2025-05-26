@@ -6,7 +6,7 @@
 
 stdenv.mkDerivation {
   pname = "etlegacy-assets";
-  version = "2.82.0";
+  version = "2.83.2";
 
   srcs =
     let

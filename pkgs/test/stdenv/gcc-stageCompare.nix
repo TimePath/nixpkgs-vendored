@@ -15,6 +15,7 @@
 }:
 
 assert stdenv.cc.isGNU;
+
 with pkgs;
 # rebuild gcc using the "final" stdenv
 let
@@ -30,6 +31,8 @@ let
         NIX_OUTPATH_USED_AS_RANDOM_SEED = stdenv.cc.cc.out;
       });
 in
+assert lib.assertMsg (gcc-stageCompare ? checksum)
+  "tests-stdenv-gcc-stageCompare: No `checksum` output in `gcc-stageCompare` see conditional in `gcc/common/checksum.nix`";
 (runCommand "gcc-stageCompare" { } ''
   diff -sr ${pkgs.gcc-unwrapped.checksum}/checksums ${gcc-stageCompare.checksum}/checksums && touch $out
 '').overrideAttrs

@@ -24,11 +24,6 @@ buildNpmPackage rec {
 
   npmDepsHash = "sha256-WNK1ke5NEbt2Gb92hEItnwu65rI/5VsbZDfTSp6aKvg=";
 
-  # Fix error: no member named 'aligned_alloc' in the global namespace
-  env.NIX_CFLAGS_COMPILE = lib.optionalString (
-    stdenv.hostPlatform.isDarwin && lib.versionOlder stdenv.hostPlatform.darwinSdkVersion "11.0"
-  ) "-D_LIBCPP_HAS_NO_LIBRARY_ALIGNED_ALLOCATION=1";
-
   nativeBuildInputs = [
     python3
     pkg-config

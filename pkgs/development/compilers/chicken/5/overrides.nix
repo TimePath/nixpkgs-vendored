@@ -37,7 +37,6 @@ in
           pkgs.libglvnd
           pkgs.libGLU
         ]
-        ++ lib.optionals stdenv.hostPlatform.isDarwin [ pkgs.darwin.apple_sdk.frameworks.OpenGL ]
         ++ lib.optionals stdenv.hostPlatform.isLinux [ pkgs.xorg.libX11 ]
       ))
       old
@@ -137,22 +136,15 @@ in
   mosquitto = addToPropagatedBuildInputs ([ pkgs.mosquitto ]);
   nanomsg = addToBuildInputs pkgs.nanomsg;
   ncurses = addToBuildInputsWithPkgConfig [ pkgs.ncurses ];
-  opencl = addToBuildInputs (
-    [
-      pkgs.opencl-headers
-      pkgs.ocl-icd
-    ]
-    ++ lib.optionals stdenv.hostPlatform.isDarwin [ pkgs.darwin.apple_sdk.frameworks.OpenCL ]
-  );
+  opencl = addToBuildInputs ([
+    pkgs.opencl-headers
+    pkgs.ocl-icd
+  ]);
   openssl = addToBuildInputs pkgs.openssl;
   plot = addToBuildInputs pkgs.plotutils;
-  postgresql = addToBuildInputsWithPkgConfig pkgs.postgresql;
+  postgresql = addToBuildInputsWithPkgConfig pkgs.libpq;
   rocksdb = addToBuildInputs pkgs.rocksdb_8_3;
-  scheme2c-compatibility =
-    old:
-    addToNativeBuildInputs (lib.optionals (stdenv.system == "x86_64-darwin") [
-      pkgs.memorymappingHook
-    ]) (addPkgConfig old);
+  scheme2c-compatibility = addPkgConfig;
   sdl-base =
     old:
     (
@@ -192,10 +184,10 @@ in
     old: (addToBuildInputs [ pkgs.ncurses pkgs.stfl ] old) // (addToCscOptions "-L -lncurses" old);
   taglib =
     old:
-    (addToBuildInputs [ pkgs.zlib pkgs.taglib ] old)
+    (addToBuildInputs [ pkgs.zlib pkgs.taglib_1 ] old)
     // (
       # needed for tablib-config to be in PATH
-      addToNativeBuildInputs pkgs.taglib old
+      addToNativeBuildInputs pkgs.taglib_1 old
     );
   uuid-lib = addToBuildInputs pkgs.libuuid;
   webview = addToBuildInputsWithPkgConfig pkgs.webkitgtk_4_0;
@@ -227,16 +219,10 @@ in
     };
   opengl =
     old:
-    (addToBuildInputsWithPkgConfig (
-      lib.optionals (!stdenv.hostPlatform.isDarwin) [
-        pkgs.libGL
-        pkgs.libGLU
-      ]
-      ++ lib.optionals stdenv.hostPlatform.isDarwin [
-        pkgs.darwin.apple_sdk.frameworks.Foundation
-        pkgs.darwin.apple_sdk.frameworks.OpenGL
-      ]
-    ) old)
+    (addToBuildInputsWithPkgConfig (lib.optionals (!stdenv.hostPlatform.isDarwin) [
+      pkgs.libGL
+      pkgs.libGLU
+    ]) old)
     // {
       postPatch = ''
         substituteInPlace opengl.egg \

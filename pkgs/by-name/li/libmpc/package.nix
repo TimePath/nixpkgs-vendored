@@ -4,6 +4,7 @@
   fetchurl,
   gmp,
   mpfr,
+  updateAutotoolsGnuConfigScriptsHook,
 }:
 
 # Note: this package is used for bootstrapping fetchurl, and thus
@@ -26,6 +27,10 @@ stdenv.mkDerivation rec {
   buildInputs = [
     gmp
     mpfr
+  ];
+  nativeBuildInputs = [
+    # needed until config scripts are updated to not use /usr/bin/uname on FreeBSD native
+    updateAutotoolsGnuConfigScriptsHook
   ];
 
   doCheck = true; # not cross;

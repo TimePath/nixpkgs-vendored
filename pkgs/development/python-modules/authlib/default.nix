@@ -1,6 +1,7 @@
 {
   lib,
   buildPythonPackage,
+  cacert,
   cachelib,
   cryptography,
   fetchFromGitHub,
@@ -19,7 +20,7 @@
 
 buildPythonPackage rec {
   pname = "authlib";
-  version = "1.3.2";
+  version = "1.5.2";
   pyproject = true;
 
   disabled = pythonOlder "3.8";
@@ -28,7 +29,7 @@ buildPythonPackage rec {
     owner = "lepture";
     repo = "authlib";
     tag = "v${version}";
-    hash = "sha256-gaFnai5QzHhnyn73JB+QzybaolLWC9barBFdnlEMyMU=";
+    hash = "sha256-ra1RKprUAqhax0z1osl0lFgFENQZuSW/5FxSmsCdKNY=";
   };
 
   build-system = [ setuptools ];
@@ -63,7 +64,7 @@ buildPythonPackage rec {
   meta = with lib; {
     description = "Library for building OAuth and OpenID Connect servers";
     homepage = "https://github.com/lepture/authlib";
-    changelog = "https://github.com/lepture/authlib/blob/v${version}/docs/changelog.rst";
+    changelog = "https://github.com/lepture/authlib/blob/${src.tag}/docs/changelog.rst";
     license = licenses.bsd3;
     maintainers = with maintainers; [ flokli ];
   };

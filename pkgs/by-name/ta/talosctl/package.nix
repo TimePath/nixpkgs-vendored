@@ -3,20 +3,21 @@
   buildGoModule,
   fetchFromGitHub,
   installShellFiles,
+  versionCheckHook,
 }:
 
 buildGoModule rec {
   pname = "talosctl";
-  version = "1.8.3";
+  version = "1.10.1";
 
   src = fetchFromGitHub {
     owner = "siderolabs";
     repo = "talos";
-    rev = "v${version}";
-    hash = "sha256-KC5FxNrKRcAvM9IVuj9jh2AdQ6qqqdo3GwWRHH8t9As=";
+    tag = "v${version}";
+    hash = "sha256-szu/tr97T9pBFmw/D9muh3KAP/yN9rk7DvyscAw3gIQ=";
   };
 
-  vendorHash = "sha256-/Xt/WZ+5ptxsiUkm6mplilB9gqv3mz+j7tyNikzJtkA=";
+  vendorHash = "sha256-i+lUT/+ICqojOZo08uNfP7CFZM7eeZ9s5v6qL/pZUho=";
 
   ldflags = [
     "-s"
@@ -37,6 +38,10 @@ buildGoModule rec {
   '';
 
   doCheck = false; # no tests
+
+  doInstallCheck = true;
+  nativeInstallCheckInputs = [ versionCheckHook ];
+  versionCheckProgramArg = "version";
 
   meta = with lib; {
     description = "CLI for out-of-band management of Kubernetes nodes created by Talos";

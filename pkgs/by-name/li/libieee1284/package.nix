@@ -17,7 +17,7 @@ stdenv.mkDerivation rec {
 
   src = fetchFromGitHub {
     owner = "twaugh";
-    repo = pname;
+    repo = "libieee1284";
     rev = "V${builtins.replaceStrings [ "." ] [ "_" ] version}";
     sha256 = "0wfv1prmhhpyll9l4g1ij3im7hk9mm96ydw3l9fvhjp3993cdn2x";
   };
@@ -25,7 +25,7 @@ stdenv.mkDerivation rec {
   patches = [
     (fetchurl {
       name = "musl.patch";
-      url = "https://gitweb.gentoo.org/repo/gentoo.git/plain/sys-libs/libieee1284/files/libieee1284-0.2.11-don-t-blindly-assume-outb_p-to-be-available.patch";
+      url = "https://gitweb.gentoo.org/repo/gentoo.git/plain/sys-libs/libieee1284/files/libieee1284-0.2.11-don-t-blindly-assume-outb_p-to-be-available.patch?id=dec60bb6900d6ebdaaa6aa1dcb845b30b739f9b5";
       hash = "sha256-sNu0OPBMa9GIwSu754noateF4FZC14f+8YRgYUl13KQ=";
     })
   ];

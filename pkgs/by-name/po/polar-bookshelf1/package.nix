@@ -94,10 +94,6 @@ stdenv.mkDerivation rec {
     libnghttp2
   ];
 
-  unpackPhase = ''
-    dpkg-deb -x $src .
-  '';
-
   installPhase = ''
     mkdir -p $out/share/polar-bookshelf $out/bin $out/lib
     mv opt/Polar\ Bookshelf/* $out/share/polar-bookshelf

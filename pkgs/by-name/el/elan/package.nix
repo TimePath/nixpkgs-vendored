@@ -16,17 +16,17 @@
 
 rustPlatform.buildRustPackage rec {
   pname = "elan";
-  version = "3.1.1-unstable-2024-08-02";
+  version = "4.1.1";
 
   src = fetchFromGitHub {
     owner = "leanprover";
     repo = "elan";
-    # commit "chore: update to build with rust 1.80 (leanprover/elan#134)"
-    rev = "97ce78e0e6aecdf3e8d35dbf42b0614302efb250";
-    hash = "sha256-7cwpHMyhpTxYXjZM4xbDK+epvA2kBf7jelvMaPGP1kU=";
+    rev = "v${version}";
+    hash = "sha256-z20QiYbpEx591CtGerdX63not9S7TB5BJFoCoGTYen0=";
   };
 
-  cargoHash = "sha256-ON5d7ryMKEhkx6dV760msr+y/+4hIwssXUE5Ocaq2W0=";
+  useFetchCargoVendor = true;
+  cargoHash = "sha256-T8R1BostefR0vbmKo1UDmP6FjXWfsfFUtF/oRqAN7mc=";
 
   nativeBuildInputs = [
     pkg-config
@@ -89,7 +89,7 @@ rustPlatform.buildRustPackage rec {
       asl20 # or
       mit
     ];
-    maintainers = with maintainers; [ gebner ];
+    maintainers = with maintainers; [ ];
     mainProgram = "elan";
   };
 }

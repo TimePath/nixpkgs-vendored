@@ -9,10 +9,13 @@
   xdg-utils,
   gtk3,
   jdk,
-  gradle,
+  gradle_8,
   python3,
 }:
-
+let
+  # "Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0."
+  gradle = gradle_8;
+in
 stdenv.mkDerivation rec {
   version = "5.13";
   pname = "jabref";
@@ -99,6 +102,9 @@ stdenv.mkDerivation rec {
 
     DEFAULT_JVM_OPTS=$(sed -n -E "s/^DEFAULT_JVM_OPTS='(.*)'$/\1/p" $out/bin/JabRef | sed -e "s|\$APP_HOME|$out|g" -e 's/"//g')
 
+    # Temp fix: openjfx doesn't build with webkit
+    unzip $out/lib/javafx-web-*-*.jar libjfxwebkit.so -d $out/lib/
+
     runHook postInstall
   '';
 
@@ -137,7 +143,6 @@ stdenv.mkDerivation rec {
       "aarch64-linux"
     ];
     maintainers = with maintainers; [
-      gebner
       linsui
     ];
   };

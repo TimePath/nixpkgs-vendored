@@ -10,21 +10,22 @@
   httpx,
   httpx-sse,
   orjson,
+  typing-extensions,
 
   # passthru
-  writeScript,
+  nix-update-script,
 }:
 
 buildPythonPackage rec {
   pname = "langgraph-sdk";
-  version = "0.1.35";
+  version = "0.1.66";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "langchain-ai";
     repo = "langgraph";
     tag = "sdk==${version}";
-    hash = "sha256-HWUGRoe5S0HPfOEbqUnFYLVrHe3SJtk3U8cy1JON050=";
+    hash = "sha256-RmyKnCL0hPOEXau+BtcWfOVt7BCtCkWuAEdDOxUV20o=";
   };
 
   sourceRoot = "${src.name}/libs/sdk-py";
@@ -35,28 +36,23 @@ buildPythonPackage rec {
     httpx
     httpx-sse
     orjson
+    typing-extensions
   ];
+
+  disabledTests = [ "test_aevaluate_results" ]; # Compares execution time to magic number
 
   pythonImportsCheck = [ "langgraph_sdk" ];
 
-  passthru = {
-    updateScript = writeScript "update.sh" ''
-      #!/usr/bin/env nix-shell
-      #!nix-shell -i bash -p nix-update
-
-      set -eu -o pipefail +e
-      nix-update --commit --version-regex '(.*)' python3Packages.langgraph
-      nix-update --commit --version-regex 'sdk==(.*)' python3Packages.langgraph-sdk
-      nix-update --commit --version-regex 'checkpoint==(.*)' python3Packages.langgraph-checkpoint
-      nix-update --commit --version-regex 'checkpointduckdb==(.*)' python3Packages.langgraph-checkpoint-duckdb
-      nix-update --commit --version-regex 'checkpointpostgres==(.*)' python3Packages.langgraph-checkpoint-postgres
-      nix-update --commit --version-regex 'checkpointsqlite==(.*)' python3Packages.langgraph-checkpoint-sqlite
-    '';
+  passthru.updateScript = nix-update-script {
+    extraArgs = [
+      "--version-regex"
+      "sdk==(\\d+\\.\\d+\\.\\d+)"
+    ];
   };
 
   meta = {
     description = "SDK for interacting with the LangGraph Cloud REST API";
-    homepage = "https://github.com/langchain-ai/langgraphtree/main/libs/sdk-py";
+    homepage = "https://github.com/langchain-ai/langgraph/tree/main/libs/sdk-py";
     changelog = "https://github.com/langchain-ai/langgraph/releases/tag/sdk==${version}";
     license = lib.licenses.mit;
     maintainers = with lib.maintainers; [ sarahec ];

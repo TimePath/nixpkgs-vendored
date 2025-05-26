@@ -13,13 +13,13 @@
 
 stdenv.mkDerivation rec {
   pname = "sslh";
-  version = "2.1.2";
+  version = "2.2.3";
 
   src = fetchFromGitHub {
     owner = "yrutschle";
-    repo = pname;
+    repo = "sslh";
     rev = "v${version}";
-    hash = "sha256-+G6xYiytSWW2CljuaeJZfTuXCjkbDCzwU/FSLBmvnGw=";
+    hash = "sha256-SWkhTgJM6s89mgvJbqa+N75+0TYCvlEH1NQgaKjocFo=";
   };
 
   postPatch = "patchShebangs *.sh";

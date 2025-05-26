@@ -10,7 +10,6 @@
   flex,
   git,
   gperf,
-  llvmPackages_17,
   ninja,
   pkg-config,
   python3,
@@ -60,24 +59,15 @@
   libxslt,
   lcms2,
   libkrb5,
-  mesa,
+  libgbm,
   enableProprietaryCodecs ? true,
   # darwin
-  autoSignDarwinBinariesHook,
   bootstrap_cmds,
   cctools,
   xcbuild,
 }:
 
-let
-  # Error when using clang 16:
-  # .../src/3rdparty/chromium/base/containers/flat_tree.h:354:22:
-  # error: invalid operands to binary expression ('const container_type' (aka 'const std::vector<device::BluetoothUUID>') and 'const container_type')
-  #    return lhs.body_ <=> rhs.body_;
-  #           ~~~~~~~~~ ^   ~~~~~~~~~
-  stdenv' = if stdenv.cc.isClang then llvmPackages_17.stdenv else stdenv;
-in
-(qtModule.override { stdenv = stdenv'; }) {
+qtModule {
   pname = "qtwebengine";
   nativeBuildInputs =
     [
@@ -92,9 +82,6 @@ in
       which
       gn
       nodejs
-    ]
-    ++ lib.optionals (stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isAarch64) [
-      autoSignDarwinBinariesHook
     ]
     ++ lib.optionals stdenv.hostPlatform.isDarwin [
       bootstrap_cmds
@@ -123,6 +110,11 @@ in
 
     # Override locales install path so they go to QtWebEngine's $out
     ./locales-path.patch
+
+    # Fix build with Pipewire 1.4
+    ./pipewire-1.4.patch
+    # Reproducibility QTBUG-136068
+    ./gn-object-sorted.patch
   ];
 
   postPatch =
@@ -273,7 +265,7 @@ in
       pipewire
 
       libkrb5
-      mesa
+      libgbm
     ];
 
   buildInputs = [

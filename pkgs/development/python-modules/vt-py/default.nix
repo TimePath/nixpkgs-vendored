@@ -1,5 +1,6 @@
 {
   lib,
+  aiofiles,
   aiohttp,
   buildPythonPackage,
   fetchFromGitHub,
@@ -13,7 +14,7 @@
 
 buildPythonPackage rec {
   pname = "vt-py";
-  version = "0.18.4";
+  version = "0.20.0";
   pyproject = true;
 
   disabled = pythonOlder "3.7";
@@ -22,7 +23,7 @@ buildPythonPackage rec {
     owner = "VirusTotal";
     repo = "vt-py";
     tag = version;
-    hash = "sha256-pMljLoJBSLq1UxXn+iOeiebWgVfdxW8uzdXPsZtANuw=";
+    hash = "sha256-5go6O5V8mY1Ph3peF6ISJ63/cnhNtDIlgeLztp2zpkY=";
   };
 
   postPatch = ''
@@ -34,7 +35,10 @@ buildPythonPackage rec {
 
   build-system = [ setuptools ];
 
-  dependencies = [ aiohttp ];
+  dependencies = [
+    aiofiles
+    aiohttp
+  ];
 
   nativeCheckInputs = [
     flask

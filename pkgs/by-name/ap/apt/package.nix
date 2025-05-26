@@ -1,7 +1,7 @@
 {
   lib,
   stdenv,
-  fetchurl,
+  fetchFromGitLab,
   bzip2,
   cmake,
   curl,
@@ -34,11 +34,14 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "apt";
-  version = "2.9.8";
+  version = "3.0.1";
 
-  src = fetchurl {
-    url = "mirror://debian/pool/main/a/apt/apt_${finalAttrs.version}.tar.xz";
-    hash = "sha256-VPt7NL25PqIIESOrNfiTwm/g8+gApU6Onsy18+LslxA=";
+  src = fetchFromGitLab {
+    domain = "salsa.debian.org";
+    owner = "apt-team";
+    repo = "apt";
+    rev = finalAttrs.version;
+    hash = "sha256-pWOXwcZBhr2kOZuP0IEg/PazF8bIN0qvsHOz8SY+Xr8=";
   };
 
   # cycle detection; lib can't be split
@@ -49,13 +52,23 @@ stdenv.mkDerivation (finalAttrs: {
     "man"
   ];
 
-  nativeBuildInputs = [
-    cmake
-    gtest
-    (lib.getBin libxslt)
-    pkg-config
-    triehash
-  ];
+  nativeBuildInputs =
+    [
+      cmake
+      dpkg # dpkg-architecture
+      gettext # msgfmt
+      gtest
+      (lib.getBin libxslt)
+      pkg-config
+      triehash
+      perlPackages.perl
+    ]
+    ++ lib.optionals withDocs [
+      docbook_xml_dtd_45
+      doxygen
+      perlPackages.Po4a
+      w3m
+    ];
 
   buildInputs =
     [
@@ -64,23 +77,17 @@ stdenv.mkDerivation (finalAttrs: {
       db
       dpkg
       gnutls
+      gtest
       libgcrypt
       libgpg-error
       libseccomp
       libtasn1
       lz4
       p11-kit
-      perlPackages.perl
       udev
       xxHash
       xz
       zstd
-    ]
-    ++ lib.optionals withDocs [
-      docbook_xml_dtd_45
-      doxygen
-      perlPackages.Po4a
-      w3m
     ]
     ++ lib.optionals withNLS [
       gettext
@@ -88,6 +95,7 @@ stdenv.mkDerivation (finalAttrs: {
 
   cmakeFlags = [
     (lib.cmakeOptionType "filepath" "BERKELEY_INCLUDE_DIRS" "${lib.getDev db}/include")
+    (lib.cmakeOptionType "filepath" "DPKG_DATADIR" "${dpkg}/share/dpkg")
     (lib.cmakeOptionType "filepath" "DOCBOOK_XSL" "${docbook_xsl}/share/xml/docbook-xsl")
     (lib.cmakeOptionType "filepath" "GNUTLS_INCLUDE_DIR" "${lib.getDev gnutls}/include")
     (lib.cmakeFeature "DROOT_GROUP" "root")
@@ -101,7 +109,7 @@ stdenv.mkDerivation (finalAttrs: {
     changelog = "https://salsa.debian.org/apt-team/apt/-/raw/${finalAttrs.version}/debian/changelog";
     license = with lib.licenses; [ gpl2Plus ];
     mainProgram = "apt";
-    maintainers = with lib.maintainers; [ AndersonTorres ];
+    maintainers = with lib.maintainers; [ ];
     platforms = lib.platforms.linux;
   };
 })

@@ -12,21 +12,17 @@
   openssl,
   pkg-config,
   zeromq,
-  darwin,
 }:
 
-let
-  inherit (darwin.apple_sdk.frameworks) Foundation;
-in
 stdenv.mkDerivation rec {
   pname = "p2pool";
-  version = "4.1.1";
+  version = "4.4";
 
   src = fetchFromGitHub {
     owner = "SChernykh";
     repo = "p2pool";
     rev = "v${version}";
-    hash = "sha256-rxsKbrgDdVtGEv63SHi3FbFpqU2j6ESksq0SDm78j+0=";
+    hash = "sha256-+wkcTkHhGNanCznL5d9yUezi9wLIchxt6TPPpEUqgN8=";
     fetchSubmodules = true;
   };
 
@@ -42,17 +38,9 @@ stdenv.mkDerivation rec {
     hwloc
     openssl
     curl
-  ] ++ lib.optionals stdenv.hostPlatform.isDarwin [ Foundation ];
+  ];
 
   cmakeFlags = [ "-DWITH_LTO=OFF" ];
-
-  env.NIX_CFLAGS_COMPILE = toString (
-    lib.optionals
-      (stdenv.hostPlatform.isDarwin && lib.versionOlder stdenv.hostPlatform.darwinMinVersion "10.13")
-      [
-        "-faligned-allocation"
-      ]
-  );
 
   installPhase = ''
     runHook preInstall

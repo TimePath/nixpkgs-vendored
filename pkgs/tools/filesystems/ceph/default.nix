@@ -251,13 +251,12 @@ let
         });
 
         # We pin the older `cryptography` 40 here;
-        # this also forces us to pin an older `pyopenssl` because the current one
-        # is not compatible with older `cryptography`, see:
-        #     https://github.com/pyca/pyopenssl/blob/d9752e44127ba36041b045417af8a0bf16ec4f1e/CHANGELOG.rst#2320-2023-05-30
+        # this also forces us to pin other packages, see below
         cryptography = self.callPackage ./old-python-packages/cryptography.nix { };
 
         # This is the most recent version of `pyopenssl` that's still compatible with `cryptography` 40.
         # See https://github.com/NixOS/nixpkgs/pull/281858#issuecomment-1899358602
+        # and https://github.com/pyca/pyopenssl/blob/d9752e44127ba36041b045417af8a0bf16ec4f1e/CHANGELOG.rst#2320-2023-05-30
         pyopenssl = super.pyopenssl.overridePythonAttrs (old: rec {
           version = "23.1.1";
           src = fetchPypi {
@@ -279,7 +278,12 @@ let
           outputs = lib.filter (o: o != "doc") old.outputs;
         });
 
-        fastapi = super.fastapi.overridePythonAttrs (old: rec {
+        # This is the most recent version of `trustme` that's still compatible with `cryptography` 40.
+        # See https://github.com/NixOS/nixpkgs/issues/359723
+        # and https://github.com/python-trio/trustme/commit/586f7759d5c27beb44da60615a71848eb2a5a490
+        trustme = self.callPackage ./old-python-packages/trustme.nix { };
+
+        fastapi = super.fastapi.overridePythonAttrs (old: {
           # Flaky test:
           #     ResourceWarning: Unclosed <MemoryObjectSendStream>
           # Unclear whether it's flaky in general or only in this overridden package set.
@@ -352,10 +356,10 @@ let
   );
   inherit (ceph-python-env.python) sitePackages;
 
-  version = "19.2.1";
+  version = "19.2.2";
   src = fetchurl {
     url = "https://download.ceph.com/tarballs/ceph-${version}.tar.gz";
-    hash = "sha256-QEX3LHxySVgLBg21iQga1DnyQsXFi6593e+WSjgT/h8=";
+    hash = "sha256-7FD9LJs25VzUCRIBm01Cm3ss1YLTN9YLwPZnHSMd8rs=";
   };
 in
 rec {

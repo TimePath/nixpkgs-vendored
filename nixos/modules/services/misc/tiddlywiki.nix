@@ -4,13 +4,12 @@
   pkgs,
   ...
 }:
-
-with lib;
-
 let
 
   cfg = config.services.tiddlywiki;
-  listenParams = concatStrings (mapAttrsToList (n: v: " '${n}=${toString v}' ") cfg.listenOptions);
+  listenParams = lib.concatStrings (
+    lib.mapAttrsToList (n: v: " '${n}=${toString v}' ") cfg.listenOptions
+  );
   exe = "${pkgs.nodePackages.tiddlywiki}/lib/node_modules/.bin/tiddlywiki";
   name = "tiddlywiki";
   dataDir = "/var/lib/" + name;
@@ -20,10 +19,10 @@ in
 
   options.services.tiddlywiki = {
 
-    enable = mkEnableOption "TiddlyWiki nodejs server";
+    enable = lib.mkEnableOption "TiddlyWiki nodejs server";
 
-    listenOptions = mkOption {
-      type = types.attrs;
+    listenOptions = lib.mkOption {
+      type = lib.types.attrs;
       default = { };
       example = {
         credentials = "../credentials.csv";
@@ -38,7 +37,7 @@ in
     };
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     systemd = {
       services.tiddlywiki = {
         description = "TiddlyWiki nodejs server";

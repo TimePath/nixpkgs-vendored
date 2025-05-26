@@ -101,7 +101,7 @@ package_dir = package_attrs["dir"]
 package_file_name = "package.nix"
 deps_file_name = "deps.json"
 
-# To update deps.json, we copy the package to a temporary directory and run
+# To update deps.nix, we copy the package to a temporary directory and run
 # passthru.fetch-deps script there.
 with tempfile.TemporaryDirectory() as work_dir:
     package_file = os.path.join(work_dir, package_file_name)

@@ -6,16 +6,19 @@
   getconf,
   gitUpdater,
   testers,
+  unixtools,
 }:
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "passt";
-  version = "2024_09_06.6b38f07";
+  version = "2025_05_03.587980c";
 
   src = fetchurl {
     url = "https://passt.top/passt/snapshot/passt-${finalAttrs.version}.tar.gz";
-    hash = "sha256-Qf1neJOkYXR5p9Owk60qtc22A+au4EY45Qt9PfJ+Lrs=";
+    hash = "sha256-ussvShWxhR6ScBYiCJG0edrqS+W+74DSlsDRS1GCByA=";
   };
+
+  separateDebugInfo = true;
 
   postPatch = ''
     substituteInPlace Makefile --replace-fail \
@@ -31,6 +34,7 @@ stdenv.mkDerivation (finalAttrs: {
   passthru = {
     tests.version = testers.testVersion {
       package = finalAttrs.finalPackage;
+      command = "${unixtools.script}/bin/script -c 'passt --version'";
     };
 
     updateScript = gitUpdater {

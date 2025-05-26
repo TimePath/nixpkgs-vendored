@@ -19,7 +19,7 @@
   cairo,
   expat,
   libdrm,
-  mesa,
+  libgbm,
   alsa-lib,
   at-spi2-core,
   cups,
@@ -53,19 +53,19 @@ let
     xorg.libXrandr
     expat
     libdrm
-    mesa
+    libgbm
     alsa-lib
     at-spi2-core
     cups
   ];
 in
 stdenv.mkDerivation (finalAttrs: {
-  version = "6.2.2";
+  version = "6.3.2";
   pname = "staruml";
 
   src = fetchurl {
     url = "https://files.staruml.io/releases-v6/StarUML_${finalAttrs.version}_amd64.deb";
-    sha256 = "sha256-1zxrT7phXeQYNbWHWMyPuHiUglrPSMPP0bfAcfvt8dM=";
+    sha256 = "sha256-hN37cDsh+wWB0hIewRn/xeLXINX7MGA+9MPfi8X91qs=";
   };
 
   nativeBuildInputs = [
@@ -76,12 +76,6 @@ stdenv.mkDerivation (finalAttrs: {
     glib
     hicolor-icon-theme
   ];
-
-  unpackPhase = ''
-    mkdir pkg
-    dpkg-deb -x $src pkg
-    sourceRoot=pkg
-  '';
 
   installPhase = ''
     mkdir -p $out/bin

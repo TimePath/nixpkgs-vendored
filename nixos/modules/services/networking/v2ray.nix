@@ -7,6 +7,9 @@
 
 with lib;
 
+let
+  json = pkgs.formats.json { };
+in
 {
   options = {
 
@@ -37,7 +40,7 @@ with lib;
       };
 
       config = mkOption {
-        type = types.nullOr (types.attrsOf types.unspecified);
+        type = types.nullOr json.type;
         default = null;
         example = {
           inbounds = [

@@ -52,7 +52,7 @@ perl.pkgs.toPerlModule (
     mesonFlags = [
       (lib.mesonOption "dbi_path" "${perlPackages.DBI}/${perl.libPrefix}")
       (lib.mesonOption "dbd_sqlite_path" "${perlPackages.DBDSQLite}/${perl.libPrefix}")
-      (lib.mesonEnable "tests" finalAttrs.doCheck)
+      (lib.mesonEnable "tests" finalAttrs.finalPackage.doCheck)
     ];
 
     mesonCheckFlags = [

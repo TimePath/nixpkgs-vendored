@@ -16,7 +16,7 @@
 
 buildPythonPackage rec {
   pname = "magicgui";
-  version = "0.9.1";
+  version = "0.10.0";
   pyproject = true;
 
   disabled = pythonOlder "3.8";
@@ -25,7 +25,7 @@ buildPythonPackage rec {
     owner = "pyapp-kit";
     repo = "magicgui";
     tag = "v${version}";
-    hash = "sha256-6ye29HtGQ8iwYE2kQ1wWIBC+bzFsMZmJR4eTXWwu7+U=";
+    hash = "sha256-taPnP9uB1y9hNqG/3MF3ZTc0q94+8WUx4E6+TQsJnIU=";
   };
 
   build-system = [

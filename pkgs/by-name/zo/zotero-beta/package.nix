@@ -13,7 +13,7 @@
   gtk3,
   libGL,
   xorg,
-  mesa,
+  libgbm,
   pango,
   pciutils,
 }:
@@ -54,12 +54,12 @@ stdenv.mkDerivation rec {
       xorg.libXrandr
       xorg.libXtst
       xorg.libxcb
-      mesa
+      libgbm
       pango
       pciutils
     ]
     + ":"
-    + lib.makeSearchPathOutput "lib" "lib64" [ stdenv.cc.cc ];
+    + lib.makeSearchPathOutput "lib" "lib" [ stdenv.cc.cc ];
 
   desktopItem = makeDesktopItem {
     name = "zotero";

@@ -9,15 +9,16 @@
   hunspell,
   hspell,
   nuspell,
+  libvoikko,
   unittest-cpp,
 
   withHspell ? true,
   withAspell ? true,
   withHunspell ? true,
   withNuspell ? true,
+  withVoikko ? true,
   withAppleSpell ? stdenv.hostPlatform.isDarwin,
 
-  Cocoa,
 }:
 
 assert withAppleSpell -> stdenv.hostPlatform.isDarwin;
@@ -53,8 +54,8 @@ stdenv.mkDerivation rec {
     ++ lib.optionals withNuspell [
       nuspell
     ]
-    ++ lib.optionals withAppleSpell [
-      Cocoa
+    ++ lib.optionals withVoikko [
+      libvoikko
     ];
 
   checkInputs = [
@@ -80,6 +81,7 @@ stdenv.mkDerivation rec {
     (lib.withFeature withHspell "hspell")
     (lib.withFeature withHunspell "hunspell")
     (lib.withFeature withNuspell "nuspell")
+    (lib.withFeature withVoikko "voikko")
     (lib.withFeature withAppleSpell "applespell")
   ];
 

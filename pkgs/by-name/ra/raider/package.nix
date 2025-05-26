@@ -9,6 +9,7 @@
   meson,
   mesonEmulatorHook,
   ninja,
+  nix-update-script,
   pkg-config,
   stdenv,
   wrapGAppsHook4,
@@ -44,6 +45,10 @@ stdenv.mkDerivation rec {
     libadwaita
   ];
 
+  passthru = {
+    updateScript = nix-update-script { };
+  };
+
   meta = with lib; {
     description = "Permanently delete your files (also named File Shredder)";
     longDescription = ''
@@ -62,8 +67,8 @@ stdenv.mkDerivation rec {
     mainProgram = "raider";
     maintainers = with maintainers; [
       benediktbroich
-      aleksana
     ];
+    teams = [ lib.teams.gnome-circle ];
     platforms = platforms.unix;
   };
 }

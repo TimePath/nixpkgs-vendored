@@ -90,17 +90,9 @@ stdenv.mkDerivation {
 }
 ```
 
-where the builder can do anything it wants, but typically starts with
+where `stdenv` sets up the environment automatically (e.g. by resetting `PATH` and populating it from build inputs). If you want, you can use `stdenv`’s generic builder:
 
 ```bash
-source $stdenv/setup
-```
-
-to let `stdenv` set up the environment (e.g. by resetting `PATH` and populating it from build inputs). If you want, you can still use `stdenv`’s generic builder:
-
-```bash
-source $stdenv/setup
-
 buildPhase() {
   echo "... this is my custom build phase ..."
   gcc foo.c -o foo
@@ -367,7 +359,7 @@ let mapOffset(h, t, i) = i + (if i <= 0 then h else t - 1)
 dep(h0, t0, A, B)
 propagated-dep(h1, t1, B, C)
 h0 + h1 in {-1, 0, 1}
-h0 + t1 in {-1, 0, -1}
+h0 + t1 in {-1, 0, 1}
 ----------------------------- Take immediate dependencies' propagated dependencies
 propagated-dep(mapOffset(h0, t0, h1),
                mapOffset(h0, t0, t1),
@@ -380,7 +372,7 @@ propagated-dep(h, t, A, B)
 dep(h, t, A, B)
 ```
 
-Some explanation of this monstrosity is in order. In the common case, the target offset of a dependency is the successor to the target offset: `t = h + 1`. That means that:
+Some explanation of this monstrosity is in order. In the common case, the target offset of a dependency is the successor to the host offset: `t = h + 1`. That means that:
 
 ```
 let f(h, t, i) = i + (if i <= 0 then h else t - 1)
@@ -437,7 +429,7 @@ The propagated equivalent of `depsBuildBuild`. This perhaps never ought to be us
 
 ##### `propagatedNativeBuildInputs` {#var-stdenv-propagatedNativeBuildInputs}
 
-The propagated equivalent of `nativeBuildInputs`. This would be called `depsBuildHostPropagated` but for historical continuity. For example, if package `Y` has `propagatedNativeBuildInputs = [X]`, and package `Z` has `buildInputs = [Y]`, then package `Z` will be built as if it included package `X` in its `nativeBuildInputs`. If instead, package `Z` has `nativeBuildInputs = [Y]`, then `Z` will be built as if it included `X` in the `depsBuildBuild` of package `Z`, because of the sum of the two `-1` host offsets.
+The propagated equivalent of `nativeBuildInputs`. This would be called `depsBuildHostPropagated` but for historical continuity. For example, if package `Y` has `propagatedNativeBuildInputs = [X]`, and package `Z` has `buildInputs = [Y]`, then package `Z` will be built as if it included package `X` in its `nativeBuildInputs`. Note that if instead, package `Z` has `nativeBuildInputs = [Y]`, then `X` will not be included at all.
 
 ##### `depsBuildTargetPropagated` {#var-stdenv-depsBuildTargetPropagated}
 
@@ -918,7 +910,7 @@ Like `stripAllList`, but only applies to packages’ target platform. By default
 
 ##### `stripAllFlags` {#var-stdenv-stripAllFlags}
 
-Flags passed to the `strip` command applied to the files in the directories listed in `stripAllList`. Defaults to `-s` (i.e. `--strip-all`).
+Flags passed to the `strip` command applied to the files in the directories listed in `stripAllList`. Defaults to `-s -p` (i.e. `--strip-all --preserve-dates`).
 
 ##### `stripDebugList` {#var-stdenv-stripDebugList}
 
@@ -930,7 +922,7 @@ Like `stripDebugList`, but only applies to packages’ target platform. By defau
 
 ##### `stripDebugFlags` {#var-stdenv-stripDebugFlags}
 
-Flags passed to the `strip` command applied to the files in the directories listed in `stripDebugList`. Defaults to `-S` (i.e. `--strip-debug`).
+Flags passed to the `strip` command applied to the files in the directories listed in `stripDebugList`. Defaults to `-S -p` (i.e. `--strip-debug --preserve-dates`).
 
 ##### `stripExclude` {#var-stdenv-stripExclude}
 
@@ -1149,11 +1141,14 @@ They cannot be overridden without rebuilding the package.
 
 If dependencies should be resolved at runtime, use `--suffix` to append fallback values to `PATH`.
 
-There’s many more kinds of arguments, they are documented in `nixpkgs/pkgs/build-support/setup-hooks/make-wrapper.sh` for the `makeWrapper` implementation and in `nixpkgs/pkgs/build-support/setup-hooks/make-binary-wrapper/make-binary-wrapper.sh` for the `makeBinaryWrapper` implementation.
+There’s many more kinds of arguments, they are documented in `nixpkgs/pkgs/build-support/setup-hooks/make-wrapper.sh` for the `makeWrapper` implementation and in `nixpkgs/pkgs/by-name/ma/makeBinaryWrapper/make-binary-wrapper.sh` for the `makeBinaryWrapper` implementation.
 
 `wrapProgram` is a convenience function you probably want to use most of the time, implemented by both `makeWrapper` and `makeBinaryWrapper`.
 
 Using the `makeBinaryWrapper` implementation is usually preferred, as it creates a tiny _compiled_ wrapper executable, that can be used as a shebang interpreter. This is needed mostly on Darwin, where shebangs cannot point to scripts, [due to a limitation with the `execve`-syscall](https://stackoverflow.com/questions/67100831/macos-shebang-with-absolute-path-not-working). Compiled wrappers generated by `makeBinaryWrapper` can be inspected with `less <path-to-wrapper>` - by scrolling past the binary data you should be able to see the shell command that generated the executable and there see the environment variables that were injected into the wrapper.
+
+However, `makeWrapper` is more flexible and implements more arguments.
+Use `makeWrapper` if you need the wrapper to use shell features (e.g. look up environment variables) at runtime.
 
 ### `remove-references-to -t` \<storepath\> [ `-t` \<storepath\> ... ] \<file\> ... {#fun-remove-references-to}
 
@@ -1308,7 +1303,7 @@ addEnvHooks "$hostOffset" myBashFunction
 
 The *existence* of setups hooks has long been documented and packages inside Nixpkgs are free to use this mechanism. Other packages, however, should not rely on these mechanisms not changing between Nixpkgs versions. Because of the existing issues with this system, there’s little benefit from mandating it be stable for any period of time.
 
-First, let’s cover some setup hooks that are part of Nixpkgs default `stdenv`. This means that they are run for every package built using `stdenv.mkDerivation` or when using a custom builder that has `source $stdenv/setup`. Some of these are platform specific, so they may run on Linux but not Darwin or vice-versa.
+First, let’s cover some setup hooks that are part of Nixpkgs default `stdenv`. This means that they are run for every package built using `stdenv.mkDerivation`, even with custom builders. Some of these are platform specific, so they may run on Linux but not Darwin or vice-versa.
 
 ### `move-docs.sh` {#move-docs.sh}
 
@@ -1411,6 +1406,20 @@ This setup hook moves any systemd user units installed in the `lib/` subdirector
 
 This hook only runs when compiling for Linux.
 
+### `no-broken-symlinks.sh` {#no-broken-symlinks.sh}
+
+This setup hook checks for, reports, and (by default) fails builds when "broken" symlinks are found. A symlink is considered "broken" if it's dangling (the target doesn't exist) or reflexive (it refers to itself).
+
+This hook can be disabled by setting `dontCheckForBrokenSymlinks`.
+
+::: {.note}
+The hook only considers symlinks with targets inside the Nix store.
+:::
+
+::: {.note}
+The check for reflexivity is direct and does not account for transitivity, so this hook will not prevent cycles in symlinks.
+:::
+
 ### `set-source-date-epoch-to-latest.sh` {#set-source-date-epoch-to-latest.sh}
 
 This sets `SOURCE_DATE_EPOCH` to the modification time of the most recent file.
@@ -1434,8 +1443,7 @@ hook, as they might introduce unexpected behavior in some specific cases.
 This setup hook ensures that the directory specified by the `HOME` environment
 variable is writable. If it is not, the hook assigns `HOME` to a writable
 directory (in `.home` in `$NIX_BUILD_TOP`). This adjustment is necessary for
-certain packages that require write access to a home directory. This hook can
-be added to any phase.
+certain packages that require write access to a home directory.
 
 By setting `HOME` to a writable directory, this setup hook prevents failures in
 packages that attempt to write to the home directory.
@@ -1468,6 +1476,7 @@ these in the [Hooks Reference](#chap-hooks).
 ### Compiler and Linker wrapper hooks {#compiler-linker-wrapper-hooks}
 
 If the file `${cc}/nix-support/cc-wrapper-hook` exists, it will be run at the end of the [compiler wrapper](#cc-wrapper).
+If the file `${binutils}/nix-support/ld-wrapper-hook` exists, it will be run at the end of the linker wrapper, before the linker runs.
 If the file `${binutils}/nix-support/post-link-hook` exists, it will be run at the end of the linker wrapper.
 These hooks allow a user to inject code into the wrappers.
 As an example, these hooks can be used to extract `extraBefore`, `params` and `extraAfter` which store all the command line arguments passed to the compiler and linker respectively.
@@ -1586,9 +1595,17 @@ intel_drv.so: undefined symbol: vgaHWFreeHWRec
 
 Adds the `-fzero-call-used-regs=used-gpr` compiler option. This causes the general-purpose registers that an architecture's calling convention considers "call-used" to be zeroed on return from the function. This can make it harder for attackers to construct useful ROP gadgets and also reduces the chance of data leakage from a function call.
 
+#### `stackclashprotection` {#stackclashprotection}
+
+This flag adds the `-fstack-clash-protection` compiler option, which causes growth of a program's stack to access each successive page in order. This should force the guard page to be accessed and cause an attempt to "jump over" this guard page to crash.
+
 ### Hardening flags disabled by default {#sec-hardening-flags-disabled-by-default}
 
 The following flags are disabled by default and should be enabled with `hardeningEnable` for packages that take untrusted input like network services.
+
+#### `nostrictaliasing` {#nostrictaliasing}
+
+This flag adds the `-fno-strict-aliasing` compiler option, which prevents the compiler from assuming code has been written strictly following the standard in regards to pointer aliasing and therefore performing optimizations that may be unsafe for code that has not followed these rules.
 
 #### `pie` {#pie}
 
@@ -1615,7 +1632,7 @@ This breaks some code that does advanced stack management or exception handling.
 
 #### `trivialautovarinit` {#trivialautovarinit}
 
-Adds the `-ftrivial-auto-var-init=pattern` compiler option. This causes "trivially-initializable" uninitialized stack variables to be forcibly initialized with a nonzero value that is likely to cause a crash (and therefore be noticed). Uninitialized variables generally take on their values based on fragments of previous program state, and attackers can carefully manipulate that state to craft malicious initial values for these variables.
+Adds the `-ftrivial-auto-var-init=pattern` compiler option. Uninitialized variables generally take on their values based on fragments of previous program state, and attackers can carefully manipulate that state to craft malicious initial values for these variables. This flag causes "trivially-initializable" uninitialized stack variables to be forcibly initialized with a nonzero value that is likely to cause a crash (and therefore be noticed).
 
 Use of this flag is controversial as it can prevent tools that detect uninitialized variable use (such as valgrind) from operating correctly.
 
@@ -1624,10 +1641,6 @@ This should be turned off or fixed for build errors such as:
 ```
 sorry, unimplemented: __builtin_clear_padding not supported for variable length aggregates
 ```
-
-#### `stackclashprotection` {#stackclashprotection}
-
-This flag adds the `-fstack-clash-protection` compiler option, which causes growth of a program's stack to access each successive page in order. This should force the guard page to be accessed and cause an attempt to "jump over" this guard page to crash.
 
 #### `pacret` {#pacret}
 

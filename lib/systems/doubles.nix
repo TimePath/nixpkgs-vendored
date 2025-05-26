@@ -12,13 +12,12 @@ let
 
     # Darwin
     "x86_64-darwin"
-    "i686-darwin"
     "aarch64-darwin"
-    "armv7a-darwin"
 
     # FreeBSD
     "i686-freebsd"
     "x86_64-freebsd"
+    "aarch64-freebsd"
 
     # Genode
     "aarch64-genode"

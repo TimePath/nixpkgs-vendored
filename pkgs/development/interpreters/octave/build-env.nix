@@ -4,7 +4,9 @@
   octave,
   buildEnv,
   makeWrapper,
+  locale,
   texinfo,
+  glibcLocalesUtf8,
   wrapOctave,
   computeRequiredOctavePackages,
   extraLibs ? [ ],
@@ -27,6 +29,7 @@ buildEnv {
 
   nativeBuildInputs = [ makeWrapper ];
   buildInputs = [
+    locale
     texinfo
     wrapOctave
   ];
@@ -43,7 +46,9 @@ buildEnv {
          cd "${octave}/bin"
          for prg in *; do
              if [ -x $prg ]; then
-                makeWrapper "${octave}/bin/$prg" "$out/bin/$prg" --set OCTAVE_SITE_INITFILE "$out/share/octave/site/m/startup/octaverc"
+                makeWrapper "${octave}/bin/$prg" "$out/bin/$prg" \
+                            --set OCTAVE_SITE_INITFILE "$out/share/octave/site/m/startup/octaverc" \
+                            --set LOCALE_ARCHIVE "${glibcLocalesUtf8}/lib/locale/locale-archive"
              fi
          done
          cd $out

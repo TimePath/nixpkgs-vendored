@@ -9,7 +9,7 @@
 
 buildPythonPackage rec {
   pname = "bibtexparser";
-  version = "1.4.1";
+  version = "1.4.3";
   format = "setuptools";
 
   disabled = pythonOlder "3.7";
@@ -18,7 +18,7 @@ buildPythonPackage rec {
     owner = "sciunto-org";
     repo = "python-${pname}";
     tag = "v${version}";
-    hash = "sha256-YMkLSx7L2srLINZa6Ec0rPoxE2SdMv6CnI4BpHgHuzM=";
+    hash = "sha256-9m+7RbeJMJssviyIezPrSLMMGcQTHYaOFQwLhnu04Es=";
   };
 
   propagatedBuildInputs = [ pyparsing ];

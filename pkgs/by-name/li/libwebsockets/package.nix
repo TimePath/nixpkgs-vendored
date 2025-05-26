@@ -6,20 +6,19 @@
   openssl,
   zlib,
   libuv,
-  removeReferencesTo,
   # External poll is required for e.g. mosquitto, but discouraged by the maintainer.
   withExternalPoll ? false,
 }:
 
 stdenv.mkDerivation rec {
   pname = "libwebsockets";
-  version = "4.3.3";
+  version = "4.3.5";
 
   src = fetchFromGitHub {
     owner = "warmcat";
     repo = "libwebsockets";
     rev = "v${version}";
-    hash = "sha256-IXA9NUh55GtZmn4BhCXntVdHcKZ34iZIJ/0wlySj0/M=";
+    hash = "sha256-KOAhIVn4G5u0A1TE75Xv7iYO3/i8foqWYecH0kJHdBM=";
   };
 
   outputs = [
@@ -33,10 +32,7 @@ stdenv.mkDerivation rec {
     libuv
   ];
 
-  nativeBuildInputs = [
-    cmake
-    removeReferencesTo
-  ];
+  nativeBuildInputs = [ cmake ];
 
   cmakeFlags =
     [
@@ -59,7 +55,6 @@ stdenv.mkDerivation rec {
     );
 
   postInstall = ''
-    find "$out" -type f -exec remove-references-to -t ${stdenv.cc.cc} '{}' +
     # Fix path that will be incorrect on move to "dev" output.
     substituteInPlace "$out/lib/cmake/libwebsockets/LibwebsocketsTargets-release.cmake" \
       --replace "\''${_IMPORT_PREFIX}" "$out"

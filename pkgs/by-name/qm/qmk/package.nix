@@ -14,12 +14,12 @@
 
 python3.pkgs.buildPythonApplication rec {
   pname = "qmk";
-  version = "1.1.5";
+  version = "1.1.7";
   format = "pyproject";
 
   src = fetchPypi {
     inherit pname version;
-    hash = "sha256-Lv48dSIwxrokuHGcO26FpWRL+PfQ3SN3V+2pt7fmCxE=";
+    hash = "sha256-4Qhzsa5GAAeSgt7FZsRWIVO1ZB+010WtBv9SV38Xgto=";
   };
 
   nativeBuildInputs = with python3.pkgs; [
@@ -50,7 +50,7 @@ python3.pkgs.buildPythonApplication rec {
       gnumake
       pkgsCross.avr.buildPackages.binutils
       pkgsCross.avr.buildPackages.binutils.bintools
-      pkgsCross.avr.buildPackages.gcc8
+      pkgsCross.avr.buildPackages.gcc
       pkgsCross.avr.libcCross
     ];
 

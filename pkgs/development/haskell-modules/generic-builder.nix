@@ -39,7 +39,6 @@ let
     removeReferencesTo
     pkg-config
     coreutils
-    gnugrep
     glibcLocales
     emscripten
     ;
@@ -108,6 +107,7 @@ in
   license,
   enableParallelBuilding ? true,
   maintainers ? null,
+  teams ? null,
   changelog ? null,
   mainProgram ? null,
   doCoverage ? false,
@@ -127,9 +127,9 @@ in
   benchmarkHaskellDepends ? [ ],
   benchmarkSystemDepends ? [ ],
   benchmarkFrameworkDepends ? [ ],
-  # testTarget is deprecated starting with 25.05. Use testTargets instead.
-  testTarget ? lib.concatStringsSep " " testTargets,
-  testTargets ? [ ],
+  # testTarget is deprecated. Use testTargets instead.
+  testTarget ? "",
+  testTargets ? lib.strings.splitString " " testTarget,
   testFlags ? [ ],
   broken ? false,
   preCompileBuildDriver ? null,
@@ -515,6 +515,14 @@ let
 
   intermediatesDir = "share/haskell/${ghc.version}/${pname}-${version}/dist";
 
+  # On old ghcjs, the jsexe directories are the output but on the js backend they seem to be treated as intermediates
+  jsexe = rec {
+    shouldUseNode = isGhcjs;
+    shouldAdd = stdenv.hostPlatform.isGhcjs && isExecutable;
+    shouldCopy = shouldAdd && !doInstallIntermediates;
+    shouldSymlink = shouldAdd && doInstallIntermediates;
+  };
+
   # This is a script suitable for --test-wrapper of Setup.hs' test command
   # (https://cabal.readthedocs.io/en/3.12/setup-commands.html#cmdoption-runhaskell-Setup.hs-test-test-wrapper).
   # We use it to set some environment variables that the test suite may need,
@@ -539,6 +547,11 @@ let
 
     exec "$@"
   '';
+
+  testTargetsString =
+    lib.warnIf (testTarget != "")
+      "haskellPackages.mkDerivation: testTarget is deprecated. Use testTargets instead"
+      (lib.concatStringsSep " " testTargets);
 
 in
 lib.fix (
@@ -621,13 +634,13 @@ lib.fix (
           for p in "''${pkgsHostHost[@]}" "''${pkgsHostTarget[@]}"; do
             ${buildPkgDb ghc "$packageConfDir"}
             if [ -d "$p/include" ]; then
-              configureFlags+=" --extra-include-dirs=$p/include"
+              appendToVar configureFlags "--extra-include-dirs=$p/include"
             fi
             if [ -d "$p/lib" ]; then
-              configureFlags+=" --extra-lib-dirs=$p/lib"
+              appendToVar configureFlags "--extra-lib-dirs=$p/lib"
             fi
             if [[ -d "$p/Library/Frameworks" ]]; then
-              configureFlags+=" --extra-framework-dirs=$p/Library/Frameworks"
+              appendToVar configureFlags "--extra-framework-dirs=$p/Library/Frameworks"
             fi
         ''
         + ''
@@ -722,7 +735,7 @@ lib.fix (
         echo configureFlags: $configureFlags
         ${setupCommand} configure $configureFlags 2>&1 | ${coreutils}/bin/tee "$NIX_BUILD_TOP/cabal-configure.log"
         ${lib.optionalString (!allowInconsistentDependencies) ''
-          if ${gnugrep}/bin/egrep -q -z 'Warning:.*depends on multiple versions' "$NIX_BUILD_TOP/cabal-configure.log"; then
+          if grep -E -q -z 'Warning:.*depends on multiple versions' "$NIX_BUILD_TOP/cabal-configure.log"; then
             echo >&2 "*** abort because of serious configure-time warning from Cabal"
             exit 1
           fi
@@ -768,7 +781,7 @@ lib.fix (
           ${lib.escapeShellArgs (builtins.map (opt: "--test-option=${opt}") testFlags)}
         )
         export NIX_GHC_PACKAGE_PATH_FOR_TEST="''${NIX_GHC_PACKAGE_PATH_FOR_TEST:-$packageConfDir:}"
-        ${setupCommand} test ${testTarget} $checkFlags ''${checkFlagsArray:+"''${checkFlagsArray[@]}"}
+        ${setupCommand} test ${testTargetsString} $checkFlags ''${checkFlagsArray:+"''${checkFlagsArray[@]}"}
         runHook postCheck
       '';
 
@@ -816,7 +829,8 @@ lib.fix (
               find $packageConfDir -maxdepth 0 -empty -delete;
             ''
         }
-        ${optionalString isGhcjs ''
+
+        ${optionalString jsexe.shouldUseNode ''
           for exeDir in "${binDir}/"*.jsexe; do
             exe="''${exeDir%.jsexe}"
             printWords '#!${nodejs}/bin/node' > "$exe"
@@ -826,6 +840,14 @@ lib.fix (
           done
         ''}
         ${optionalString doCoverage "mkdir -p $out/share && cp -r dist/hpc $out/share"}
+
+        ${optionalString jsexe.shouldCopy ''
+          for jsexeDir in dist/build/*/*.jsexe; do
+            bn=$(basename $jsexeDir)
+            exe="''${bn%.jsexe}"
+            cp -r dist/build/$exe/$exe.jsexe ${binDir}
+          done
+        ''}
 
         ${optionalString enableSeparateDocOutput ''
           for x in ${docdir "$doc"}"/html/src/"*.html; do
@@ -845,6 +867,14 @@ lib.fix (
         mkdir -p "$installIntermediatesDir"
         cp -r dist/build "$installIntermediatesDir"
         runHook postInstallIntermediates
+
+        ${optionalString jsexe.shouldSymlink ''
+          for jsexeDir in $installIntermediatesDir/build/*/*.jsexe; do
+            bn=$(basename $jsexeDir)
+            exe="''${bn%.jsexe}"
+            (cd ${binDir} && ln -s $installIntermediatesDir/build/$exe/$exe.jsexe)
+          done
+        ''}
       '';
 
       passthru = passthru // rec {
@@ -964,7 +994,7 @@ lib.fix (
             buildInputs = otherBuildInputsSystem;
             LANG = "en_US.UTF-8";
             LOCALE_ARCHIVE = lib.optionalString (
-              stdenv.hostPlatform.libc == "glibc"
+              stdenv.buildPlatform.libc == "glibc"
             ) "${buildPackages.glibcLocales}/lib/locale/locale-archive";
             "NIX_${ghcCommandCaps}" = "${ghcEnv}/bin/${ghcCommand}";
             "NIX_${ghcCommandCaps}PKG" = "${ghcEnv}/bin/${ghcCommand}-pkg";
@@ -985,6 +1015,7 @@ lib.fix (
         // optionalAttrs (args ? broken) { inherit broken; }
         // optionalAttrs (args ? description) { inherit description; }
         // optionalAttrs (args ? maintainers) { inherit maintainers; }
+        // optionalAttrs (args ? teams) { inherit teams; }
         // optionalAttrs (args ? hydraPlatforms) { inherit hydraPlatforms; }
         // optionalAttrs (args ? badPlatforms) { inherit badPlatforms; }
         // optionalAttrs (args ? changelog) { inherit changelog; }

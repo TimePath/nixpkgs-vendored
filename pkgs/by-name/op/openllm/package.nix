@@ -11,7 +11,7 @@ let
         version = "23.1.2";
         build-system = [ super.poetry-core ];
         src = oldAttrs.src.override {
-          tag = "v${version}";
+          rev = "refs/tags/v${version}";
           hash = "sha256-YO4Clbo5fmXbysxwwM2qCHJwO5KwDC05VctRVFruJcw=";
         };
       });
@@ -27,7 +27,7 @@ python.pkgs.buildPythonApplication rec {
   src = fetchFromGitHub {
     owner = "bentoml";
     repo = "openllm";
-    tag = "v${version}";
+    rev = "refs/tags/v${version}";
     hash = "sha256-4KIpe6KjbBDDUj0IjzSccxjgZyBoaUVIQJYk1+W01Vo=";
   };
 

@@ -6,13 +6,13 @@
 
 buildGoModule rec {
   pname = "gitlab-ci-pipelines-exporter";
-  version = "0.5.8";
+  version = "0.5.10";
 
   src = fetchFromGitHub {
     owner = "mvisonneau";
     repo = pname;
     rev = "v${version}";
-    sha256 = "sha256-plrQPPclDaJiFHc1HNCk+bYiLO0fJX/HC/vTTO5eoy8=";
+    sha256 = "sha256-G298u9bitEst8QzZd1/B6PTCNpGqq88Z8W8w67/cVkQ=";
   };
 
   subPackages = [ "cmd/${pname}" ];
@@ -21,7 +21,7 @@ buildGoModule rec {
     "-X main.version=v${version}"
   ];
 
-  vendorHash = "sha256-6l8jNQu+vI2SLPvKxl1o0XkqYbFyehqkrT75hEjIH/c=";
+  vendorHash = "sha256-LPS0paXtzNAOFW8FUAFbcEcVTtp3WFh6N/f6tuFPT50=";
   doCheck = true;
 
   meta = with lib; {

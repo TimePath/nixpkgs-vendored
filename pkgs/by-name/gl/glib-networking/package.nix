@@ -2,7 +2,7 @@
   stdenv,
   lib,
   fetchurl,
-  substituteAll,
+  replaceVars,
   meson,
   ninja,
   nixosTests,
@@ -11,7 +11,6 @@
   gettext,
   makeWrapper,
   gnutls,
-  p11-kit,
   libproxy,
   gnome,
   gsettings-desktop-schemas,
@@ -33,8 +32,7 @@ stdenv.mkDerivation rec {
   };
 
   patches = [
-    (substituteAll {
-      src = ./hardcode-gsettings.patch;
+    (replaceVars ./hardcode-gsettings.patch {
       gds_gsettings_path = glib.getSchemaPath gsettings-desktop-schemas;
     })
 
@@ -61,7 +59,6 @@ stdenv.mkDerivation rec {
   buildInputs = [
     glib
     gnutls
-    p11-kit
     libproxy
     gsettings-desktop-schemas
     bash # installed-tests shebangs
@@ -97,7 +94,11 @@ stdenv.mkDerivation rec {
     description = "Network-related giomodules for glib";
     homepage = "https://gitlab.gnome.org/GNOME/glib-networking";
     license = licenses.lgpl21Plus;
-    maintainers = teams.gnome.members;
+    teams = [ teams.gnome ];
     platforms = platforms.unix;
+    badPlatforms = [
+      # GIO shared modules are mandatory.
+      lib.systems.inspect.platformPatterns.isStatic
+    ];
   };
 }

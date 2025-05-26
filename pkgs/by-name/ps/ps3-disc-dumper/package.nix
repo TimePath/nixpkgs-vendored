@@ -5,35 +5,34 @@
   zlib,
   openssl,
   dotnetCorePackages,
+  nix-update-script,
 }:
 
 buildDotnetModule rec {
   pname = "ps3-disc-dumper";
-  version = "3.2.3";
+  version = "4.3.6";
 
   src = fetchFromGitHub {
     owner = "13xforever";
     repo = "ps3-disc-dumper";
     tag = "v${version}";
-    hash = "sha256-m3TS9H6cbEAHn6PvYQDMzdKdnOnDSM4lxCTdHBCXLV4=";
+    hash = "sha256-dHd5pAWvol4TQBXcbb1E71TTxEWvLogvj0K4VL9huNs=";
   };
 
   dotnet-sdk = dotnetCorePackages.sdk_9_0;
   dotnet-runtime = dotnetCorePackages.sdk_9_0;
-  projectFile = "UI.Console/UI.Console.csproj";
+  dotnetFlags = [ "-p:TargetFramework=net9.0" ];
+  dotnetRestoreFlags = [ "-p:Configuration=${buildType}" ];
+  buildType = "Linux";
+  projectFile = "UI.Avalonia/UI.Avalonia.csproj";
   nugetDeps = ./deps.json;
-
-  postPatch = ''
-    substituteInPlace UI.Console/UI.Console.csproj \
-      --replace-fail 'net6.0' 'net9.0'
-  '';
 
   runtimeDeps = [
     zlib
     openssl
   ];
 
-  passthru.updateScript = ./update.sh;
+  passthru.updateScript = nix-update-script { };
 
   meta = {
     description = "Handy utility to make decrypted PS3 disc dumps";

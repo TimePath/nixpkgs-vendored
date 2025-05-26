@@ -4,7 +4,7 @@
   boost,
   buildPythonPackage,
   cmake,
-  darwin,
+  distutils,
   doxygen,
   draco,
   embree,
@@ -23,7 +23,7 @@
   ninja,
   numpy,
   opencolorio,
-  openimageio,
+  openimageio_2,
   opensubdiv,
   osl,
   ptex,
@@ -51,18 +51,17 @@ in
 
 buildPythonPackage rec {
   pname = "openusd";
-  version = "24.08";
+  version = "25.02a";
   pyproject = false;
 
   src = fetchFromGitHub {
     owner = "PixarAnimationStudios";
     repo = "OpenUSD";
     tag = "v${version}";
-    hash = "sha256-slBJleeDi0mCVThty4NUX4M9vaCLV+E8rnp1Ab77TmE=";
+    hash = "sha256-QFwG6kOLM+R+QIAozk/Dbldj8LRt9kCJv0W/EGHkq6Q=";
   };
 
-  stdenv =
-    if python.stdenv.hostPlatform.isDarwin then darwin.apple_sdk_11_0.stdenv else python.stdenv;
+  stdenv = python.stdenv;
 
   outputs = [ "out" ] ++ lib.optional withDocs "doc";
 
@@ -70,8 +69,8 @@ buildPythonPackage rec {
     (fetchpatch {
       name = "port-to-embree-4.patch";
       # https://github.com/PixarAnimationStudios/OpenUSD/pull/2266
-      url = "https://github.com/PixarAnimationStudios/OpenUSD/commit/c8fec1342e05dca98a1afd4ea93c7a5f0b41e25b.patch?full_index=1";
-      hash = "sha256-pK1TUwmVv9zsZkOypq25pl+FJDxJJvozUtVP9ystGtI=";
+      url = "https://github.com/PixarAnimationStudios/OpenUSD/commit/a07a6b4d1da19bfc499db49641d74fb7c1a71e9b.patch?full_index=1";
+      hash = "sha256-Gww6Ll2nKwpcxMY9lnf5BZ3eqUWz1rik9P3mPKDOf+Y=";
     })
   ];
 
@@ -113,14 +112,13 @@ buildPythonPackage rec {
     [
       alembic.dev
       bison
-      boost
       draco
       embree
       flex
       imath
       materialx
       opencolorio
-      openimageio
+      openimageio_2
       opensubdiv
       ptex
       tbb
@@ -130,13 +128,9 @@ buildPythonPackage rec {
       libX11
       libXt
     ]
-    ++ lib.optionals stdenv.hostPlatform.isDarwin (with darwin.apple_sdk_11_0.frameworks; [ Cocoa ])
     ++ lib.optionals withOsl [ osl ]
     ++ lib.optionals withUsdView [ qt6.qtbase ]
-    ++ lib.optionals (withUsdView && stdenv.hostPlatform.isLinux) [
-      qt6.qtbase
-      qt6.qtwayland
-    ];
+    ++ lib.optionals (withUsdView && stdenv.hostPlatform.isLinux) [ qt6.qtwayland ];
 
   propagatedBuildInputs =
     [
@@ -144,6 +138,7 @@ buildPythonPackage rec {
       jinja2
       numpy
       pyopengl
+      distutils
     ]
     ++ lib.optionals (withTools || withUsdView) [
       pyside-tools-uic
@@ -175,6 +170,7 @@ buildPythonPackage rec {
       for interchange between graphics applications.
     '';
     homepage = "https://openusd.org/";
+    changelog = "https://github.com/PixarAnimationStudios/OpenUSD/${src.tag}/CHANGELOG.md";
     license = lib.licenses.tost;
     maintainers = with lib.maintainers; [
       shaddydc

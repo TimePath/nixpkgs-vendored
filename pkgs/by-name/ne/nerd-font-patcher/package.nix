@@ -6,11 +6,11 @@
 
 python3Packages.buildPythonApplication rec {
   pname = "nerd-font-patcher";
-  version = "3.1.1";
+  version = "3.3.0";
 
   src = fetchzip {
     url = "https://github.com/ryanoasis/nerd-fonts/releases/download/v${version}/FontPatcher.zip";
-    sha256 = "sha256-H2dPUs6HVKJcjxy5xtz9nL3SSPXKQF3w30/0l7A0PeY=";
+    sha256 = "sha256-/LbO8+ZPLFIUjtZHeyh6bQuplqRfR6SZRu9qPfVZ0Mw=";
     stripRoot = false;
   };
 

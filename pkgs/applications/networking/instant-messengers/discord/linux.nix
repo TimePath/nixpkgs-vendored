@@ -43,7 +43,7 @@
   libXtst,
   libxcb,
   libxshmfence,
-  mesa,
+  libgbm,
   nspr,
   nss,
   pango,
@@ -62,9 +62,14 @@
   openasar,
   withVencord ? false,
   vencord,
+  withMoonlight ? false,
+  moonlight,
   withTTS ? true,
+  enableAutoscroll ? false,
 }:
-
+assert lib.assertMsg (
+  !(withMoonlight && withVencord)
+) "discord: Moonlight and Vencord can not be enabled at the same time";
 let
   disableBreakingUpdates =
     runCommand "disable-breaking-updates.py"
@@ -80,7 +85,6 @@ let
         chmod +x $out/bin/disable-breaking-updates.py
       '';
 in
-
 stdenv.mkDerivation rec {
   inherit
     pname
@@ -101,7 +105,7 @@ stdenv.mkDerivation rec {
     libXtst
     libxcb
     libxshmfence
-    mesa
+    libgbm
     nss
     wrapGAppsHook3
     makeShellWrapper
@@ -115,7 +119,7 @@ stdenv.mkDerivation rec {
       systemd
       libpulseaudio
       libdrm
-      mesa
+      libgbm
       stdenv.cc.cc
       alsa-lib
       atk
@@ -168,8 +172,12 @@ stdenv.mkDerivation rec {
 
     wrapProgramShell $out/opt/${binaryName}/${binaryName} \
         "''${gappsWrapperArgs[@]}" \
-        --add-flags "\''${NIXOS_OZONE_WL:+\''${WAYLAND_DISPLAY:+--ozone-platform=wayland --enable-features=WaylandWindowDecorations}}" \
-        ${lib.strings.optionalString withTTS "--add-flags \"--enable-speech-dispatcher\""} \
+        --add-flags "\''${NIXOS_OZONE_WL:+\''${WAYLAND_DISPLAY:+--ozone-platform=wayland --enable-features=WaylandWindowDecorations --enable-wayland-ime=true}}" \
+        ${lib.strings.optionalString withTTS ''
+          --run 'if [[ "''${NIXOS_SPEECH:-default}" != "False" ]]; then NIXOS_SPEECH=True; else unset NIXOS_SPEECH; fi' \
+          --add-flags "\''${NIXOS_SPEECH:+--enable-speech-dispatcher}" \
+        ''} \
+        ${lib.strings.optionalString enableAutoscroll "--add-flags \"--enable-blink-features=MiddleClickAutoscroll\""} \
         --prefix XDG_DATA_DIRS : "${gtk3}/share/gsettings-schemas/${gtk3.name}/" \
         --prefix LD_LIBRARY_PATH : ${libPath}:$out/opt/${binaryName} \
         --run "${lib.getExe disableBreakingUpdates}"
@@ -195,6 +203,12 @@ stdenv.mkDerivation rec {
       mkdir $out/opt/${binaryName}/resources/app.asar
       echo '{"name":"discord","main":"index.js"}' > $out/opt/${binaryName}/resources/app.asar/package.json
       echo 'require("${vencord}/patcher.js")' > $out/opt/${binaryName}/resources/app.asar/index.js
+    ''
+    + lib.strings.optionalString withMoonlight ''
+      mv $out/opt/${binaryName}/resources/app.asar $out/opt/${binaryName}/resources/_app.asar
+      mkdir $out/opt/${binaryName}/resources/app
+      echo '{"name":"discord","main":"injector.js","private": true}' > $out/opt/${binaryName}/resources/app/package.json
+      echo 'require("${moonlight}/injector.js").inject(require("path").join(__dirname, "../_app.asar"));' > $out/opt/${binaryName}/resources/app/injector.js
     '';
 
   desktopItem = makeDesktopItem {

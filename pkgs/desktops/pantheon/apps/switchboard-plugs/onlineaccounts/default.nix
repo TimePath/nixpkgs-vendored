@@ -27,6 +27,8 @@ stdenv.mkDerivation rec {
   };
 
   nativeBuildInputs = [
+    glib # glib-compile-resources
+    gtk4 # gtk-update-icon-cache
     meson
     ninja
     pkg-config
@@ -51,6 +53,6 @@ stdenv.mkDerivation rec {
     homepage = "https://github.com/elementary/switchboard-plug-onlineaccounts";
     license = licenses.gpl3Plus;
     platforms = platforms.linux;
-    maintainers = teams.pantheon.members;
+    teams = [ teams.pantheon ];
   };
 }

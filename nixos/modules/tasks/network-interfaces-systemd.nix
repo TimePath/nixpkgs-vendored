@@ -53,42 +53,26 @@ let
     )
   );
 
-  genericDhcpNetworks =
-    initrd:
-    mkIf cfg.useDHCP {
-      networks."99-ethernet-default-dhcp" = {
-        # We want to match physical ethernet interfaces as commonly
-        # found on laptops, desktops and servers, to provide an
-        # "out-of-the-box" setup that works for common cases.  This
-        # heuristic isn't perfect (it could match interfaces with
-        # custom names that _happen_ to start with en or eth), but
-        # should be good enough to make the common case easy and can
-        # be overridden on a case-by-case basis using
-        # higher-priority networks or by disabling useDHCP.
-
-        # Type=ether matches veth interfaces as well, and this is
-        # more likely to result in interfaces being configured to
-        # use DHCP when they shouldn't.
-
-        matchConfig.Name = [
-          "en*"
-          "eth*"
-        ];
-        DHCP = "yes";
-        networkConfig.IPv6PrivacyExtensions = "kernel";
+  genericDhcpNetworks = mkIf cfg.useDHCP {
+    networks."99-ethernet-default-dhcp" = {
+      matchConfig = {
+        Type = "ether";
+        Kind = "!*"; # physical interfaces have no kind
       };
-      networks."99-wireless-client-dhcp" = {
-        # Like above, but this is much more likely to be correct.
-        matchConfig.WLANInterfaceType = "station";
-        DHCP = "yes";
-        networkConfig.IPv6PrivacyExtensions = "kernel";
-        # We also set the route metric to one more than the default
-        # of 1024, so that Ethernet is preferred if both are
-        # available.
-        dhcpV4Config.RouteMetric = 1025;
-        ipv6AcceptRAConfig.RouteMetric = 1025;
-      };
+      DHCP = "yes";
+      networkConfig.IPv6PrivacyExtensions = "kernel";
     };
+    networks."99-wireless-client-dhcp" = {
+      matchConfig.WLANInterfaceType = "station";
+      DHCP = "yes";
+      networkConfig.IPv6PrivacyExtensions = "kernel";
+      # We also set the route metric to one more than the default
+      # of 1024, so that Ethernet is preferred if both are
+      # available.
+      dhcpV4Config.RouteMetric = 1025;
+      ipv6AcceptRAConfig.RouteMetric = 1025;
+    };
+  };
 
   interfaceNetworks = mkMerge (
     forEach interfaces (i: {
@@ -234,7 +218,7 @@ in
       # former, the user retains full control over the configuration.
       boot.initrd.systemd.network = mkMerge [
         defaultGateways
-        (genericDhcpNetworks true)
+        genericDhcpNetworks
         interfaceNetworks
         bridgeNetworks
         vlanNetworks
@@ -285,7 +269,7 @@ in
           enable = true;
         }
         defaultGateways
-        (genericDhcpNetworks false)
+        genericDhcpNetworks
         interfaceNetworks
         bridgeNetworks
         (mkMerge (

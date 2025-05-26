@@ -77,14 +77,7 @@ let
   );
 
   # Handle assertions and warnings
-
-  failedAssertions = map (x: x.message) (filter (x: !x.assertion) config.assertions);
-
-  baseSystemAssertWarn =
-    if failedAssertions != [ ] then
-      throw "\nFailed assertions:\n${concatStringsSep "\n" (map (x: "- ${x}") failedAssertions)}"
-    else
-      showWarnings config.warnings baseSystem;
+  baseSystemAssertWarn = lib.asserts.checkAssertWarn config.assertions config.warnings baseSystem;
 
   # Replace runtime dependencies
   system =
@@ -383,7 +376,7 @@ in
         );
         # End if legacy environment variables
 
-        preSwitchCheck = config.system.preSwitchChecks.script;
+        preSwitchCheck = config.system.preSwitchChecksScript;
 
         # Not actually used in the builder. `passedChecks` is just here to create
         # the build dependencies. Checks are similar to build dependencies in the

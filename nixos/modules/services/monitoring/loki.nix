@@ -108,8 +108,9 @@ in
 
     systemd.services.loki = {
       description = "Loki Service Daemon";
+      wants = [ "network-online.target" ];
+      after = [ "network-online.target" ];
       wantedBy = [ "multi-user.target" ];
-      after = [ "network.target" ];
 
       serviceConfig =
         let

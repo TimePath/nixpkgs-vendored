@@ -20,10 +20,6 @@ stdenv.mkDerivation rec {
     autoPatchelfHook
   ];
 
-  unpackCmd = ''
-    dpkg-deb -x ${src} ./sslmate-agent-${pname}
-  '';
-
   installPhase = ''
     runHook preInstall
 

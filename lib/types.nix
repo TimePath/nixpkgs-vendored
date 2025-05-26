@@ -74,6 +74,31 @@ let
     in
     if pos == null then "" else " at ${pos.file}:${toString pos.line}:${toString pos.column}";
 
+  # Internal functor to help for migrating functor.wrapped to functor.payload.elemType
+  # Note that individual attributes can be overriden if needed.
+  elemTypeFunctor =
+    name:
+    { elemType, ... }@payload:
+    {
+      inherit name payload;
+      wrappedDeprecationMessage = makeWrappedDeprecationMessage payload;
+      type = outer_types.types.${name};
+      binOp =
+        a: b:
+        let
+          merged = a.elemType.typeMerge b.elemType.functor;
+        in
+        if merged == null then null else { elemType = merged; };
+    };
+  makeWrappedDeprecationMessage =
+    payload:
+    { loc }:
+    lib.warn ''
+      The deprecated `${lib.optionalString (loc != null) "type."}functor.wrapped` attribute ${
+        lib.optionalString (loc != null) "of the option `${showOption loc}` "
+      }is accessed, use `${lib.optionalString (loc != null) "type."}nestedTypes.elemType` instead.
+    '' payload.elemType;
+
   outer_types = rec {
     isType = type: x: (x._type or "") == type;
 
@@ -89,23 +114,43 @@ let
     defaultTypeMerge =
       f: f':
       let
-        wrapped = f.wrapped.typeMerge f'.wrapped.functor;
-        payload = f.binOp f.payload f'.payload;
+        mergedWrapped = f.wrapped.typeMerge f'.wrapped.functor;
+        mergedPayload = f.binOp f.payload f'.payload;
+
+        hasPayload =
+          assert (f'.payload != null) == (f.payload != null);
+          f.payload != null;
+        hasWrapped =
+          assert (f'.wrapped != null) == (f.wrapped != null);
+          f.wrapped != null;
+
+        typeFromPayload = if mergedPayload == null then null else f.type mergedPayload;
+        typeFromWrapped = if mergedWrapped == null then null else f.type mergedWrapped;
       in
-      # cannot merge different types
+      # Abort early: cannot merge different types
       if f.name != f'.name then
         null
-      # simple types
-      else if (f.wrapped == null && f'.wrapped == null) && (f.payload == null && f'.payload == null) then
-        f.type
-      # composed types
-      else if (f.wrapped != null && f'.wrapped != null) && (wrapped != null) then
-        f.type wrapped
-      # value types
-      else if (f.payload != null && f'.payload != null) && (payload != null) then
-        f.type payload
       else
-        null;
+
+      if hasPayload then
+        # Just return the payload if returning wrapped is deprecated
+        if f ? wrappedDeprecationMessage then
+          typeFromPayload
+        else if hasWrapped then
+          # Has both wrapped and payload
+          throw ''
+            Type ${f.name} defines both `functor.payload` and `functor.wrapped` at the same time, which is not supported.
+
+            Use either `functor.payload` or `functor.wrapped` but not both.
+
+            If your code worked before remove either `functor.wrapped` or `functor.payload` from the type definition.
+          ''
+        else
+          typeFromPayload
+      else if hasWrapped then
+        typeFromWrapped
+      else
+        f.type;
 
     # Default type functor
     defaultFunctor = name: {
@@ -204,11 +249,20 @@ let
           getSubModules
           substSubModules
           typeMerge
-          functor
           deprecationMessage
           nestedTypes
           descriptionClass
           ;
+        functor =
+          if functor ? wrappedDeprecationMessage then
+            functor
+            // {
+              wrapped = functor.wrappedDeprecationMessage {
+                loc = null;
+              };
+            }
+          else
+            functor;
         description = if description == null then name else description;
       };
 
@@ -235,6 +289,15 @@ let
     optionDescriptionPhrase =
       unparenthesize: t:
       if unparenthesize (t.descriptionClass or null) then t.description else "(${t.description})";
+
+    noCheckForDocsModule = {
+      # When generating documentation, our goal isn't to check anything.
+      # Quite the opposite in fact. Generating docs is somewhat of a
+      # challenge, evaluating modules in a *lacking* context. Anything
+      # that makes the docs avoid an error is a win.
+      config._module.check = lib.mkForce false;
+      _file = "<built-in module that disables checks for the purpose of documentation generation>";
+    };
 
     # When adding new types don't forget to document them in
     # nixos/doc/manual/development/option-types.section.md!
@@ -476,6 +539,11 @@ let
           descriptionClass = "noun";
           check = x: str.check x && builtins.match pattern x != null;
           inherit (str) merge;
+          functor = defaultFunctor "strMatching" // {
+            type = payload: strMatching payload.pattern;
+            payload = { inherit pattern; };
+            binOp = lhs: rhs: if lhs == rhs then lhs else null;
+          };
         };
 
       # Merge multiple definitions by concatenating them (with the given
@@ -493,8 +561,9 @@ let
           check = isString;
           merge = loc: defs: concatStringsSep sep (getValues defs);
           functor = (defaultFunctor name) // {
-            payload = sep;
-            binOp = sepLhs: sepRhs: if sepLhs == sepRhs then sepLhs else null;
+            payload = { inherit sep; };
+            type = payload: types.separatedString payload.sep;
+            binOp = lhs: rhs: if lhs.sep == rhs.sep then { inherit (lhs) sep; } else null;
           };
         };
 
@@ -572,20 +641,60 @@ let
         }
       ) (x: (x._type or null) == "pkgs");
 
-      path = mkOptionType {
-        name = "path";
-        descriptionClass = "noun";
-        check = x: isStringLike x && builtins.substring 0 1 (toString x) == "/";
-        merge = mergeEqualOption;
+      path = pathWith {
+        absolute = true;
       };
 
-      pathInStore = mkOptionType {
-        name = "pathInStore";
-        description = "path in the Nix store";
-        descriptionClass = "noun";
-        check = x: isStringLike x && builtins.match "${builtins.storeDir}/[^.].*" (toString x) != null;
-        merge = mergeEqualOption;
+      pathInStore = pathWith {
+        inStore = true;
       };
+
+      pathWith =
+        {
+          inStore ? null,
+          absolute ? null,
+        }:
+        throwIf (inStore != null && absolute != null && inStore && !absolute)
+          "In pathWith, inStore means the path must be absolute"
+          mkOptionType
+          {
+            name = "path";
+            description = (
+              (if absolute == null then "" else (if absolute then "absolute " else "relative "))
+              + "path"
+              + (
+                if inStore == null then "" else (if inStore then " in the Nix store" else " not in the Nix store")
+              )
+            );
+            descriptionClass = "noun";
+
+            merge = mergeEqualOption;
+            functor = defaultFunctor "path" // {
+              type = pathWith;
+              payload = { inherit inStore absolute; };
+              binOp = lhs: rhs: if lhs == rhs then lhs else null;
+            };
+
+            check =
+              x:
+              let
+                isInStore = lib.path.hasStorePathPrefix (
+                  if builtins.isPath x then
+                    x
+                  # Discarding string context is necessary to convert the value to
+                  # a path and safe as the result is never used in any derivation.
+                  else
+                    /. + builtins.unsafeDiscardStringContext x
+                );
+                isAbsolute = builtins.substring 0 1 (toString x) == "/";
+                isExpectedType = (
+                  if inStore == null || inStore then isStringLike x else isString x # Do not allow a true path, which could be copied to the store later on.
+                );
+              in
+              isExpectedType
+              && (inStore == null || inStore == isInStore)
+              && (absolute == null || absolute == isAbsolute);
+          };
 
       listOf =
         elemType:
@@ -622,8 +731,8 @@ let
           getSubOptions = prefix: elemType.getSubOptions (prefix ++ [ "*" ]);
           getSubModules = elemType.getSubModules;
           substSubModules = m: listOf (elemType.substSubModules m);
-          functor = (defaultFunctor name) // {
-            wrapped = elemType;
+          functor = (elemTypeFunctor name { inherit elemType; }) // {
+            type = payload: types.listOf payload.elemType;
           };
           nestedTypes.elemType = elemType;
         };
@@ -640,43 +749,7 @@ let
           substSubModules = m: nonEmptyListOf (elemType.substSubModules m);
         };
 
-      attrsOf =
-        elemType:
-        mkOptionType rec {
-          name = "attrsOf";
-          description = "attribute set of ${
-            optionDescriptionPhrase (class: class == "noun" || class == "composite") elemType
-          }";
-          descriptionClass = "composite";
-          check = isAttrs;
-          merge =
-            loc: defs:
-            mapAttrs (n: v: v.value) (
-              filterAttrs (n: v: v ? value) (
-                zipAttrsWith (name: defs: (mergeDefinitions (loc ++ [ name ]) elemType defs).optionalValue)
-                  # Push down position info.
-                  (
-                    map (
-                      def:
-                      mapAttrs (n: v: {
-                        inherit (def) file;
-                        value = v;
-                      }) def.value
-                    ) defs
-                  )
-              )
-            );
-          emptyValue = {
-            value = { };
-          };
-          getSubOptions = prefix: elemType.getSubOptions (prefix ++ [ "<name>" ]);
-          getSubModules = elemType.getSubModules;
-          substSubModules = m: attrsOf (elemType.substSubModules m);
-          functor = (defaultFunctor name) // {
-            wrapped = elemType;
-          };
-          nestedTypes.elemType = elemType;
-        };
+      attrsOf = elemType: attrsWith { inherit elemType; };
 
       # A version of attrsOf that's lazy in its values at the expense of
       # conditional definitions not working properly. E.g. defining a value with
@@ -685,43 +758,104 @@ let
       # error that it's not defined. Use only if conditional definitions don't make sense.
       lazyAttrsOf =
         elemType:
-        mkOptionType rec {
-          name = "lazyAttrsOf";
-          description = "lazy attribute set of ${
-            optionDescriptionPhrase (class: class == "noun" || class == "composite") elemType
-          }";
+        attrsWith {
+          inherit elemType;
+          lazy = true;
+        };
+
+      # base type for lazyAttrsOf and attrsOf
+      attrsWith =
+        let
+          # Push down position info.
+          pushPositions = map (
+            def:
+            mapAttrs (n: v: {
+              inherit (def) file;
+              value = v;
+            }) def.value
+          );
+          binOp =
+            lhs: rhs:
+            let
+              elemType = lhs.elemType.typeMerge rhs.elemType.functor;
+              lazy = if lhs.lazy == rhs.lazy then lhs.lazy else null;
+              placeholder =
+                if lhs.placeholder == rhs.placeholder then
+                  lhs.placeholder
+                else if lhs.placeholder == "name" then
+                  rhs.placeholder
+                else if rhs.placeholder == "name" then
+                  lhs.placeholder
+                else
+                  null;
+            in
+            if elemType == null || lazy == null || placeholder == null then
+              null
+            else
+              {
+                inherit elemType lazy placeholder;
+              };
+        in
+        {
+          elemType,
+          lazy ? false,
+          placeholder ? "name",
+        }:
+        mkOptionType {
+          name = if lazy then "lazyAttrsOf" else "attrsOf";
+          description =
+            (if lazy then "lazy attribute set" else "attribute set")
+            + " of ${optionDescriptionPhrase (class: class == "noun" || class == "composite") elemType}";
           descriptionClass = "composite";
           check = isAttrs;
           merge =
-            loc: defs:
-            zipAttrsWith
+            if lazy then
               (
-                name: defs:
-                let
-                  merged = mergeDefinitions (loc ++ [ name ]) elemType defs;
-                  # mergedValue will trigger an appropriate error when accessed
-                in
-                merged.optionalValue.value or elemType.emptyValue.value or merged.mergedValue
+                # Lazy merge Function
+                loc: defs:
+                zipAttrsWith
+                  (
+                    name: defs:
+                    let
+                      merged = mergeDefinitions (loc ++ [ name ]) elemType defs;
+                      # mergedValue will trigger an appropriate error when accessed
+                    in
+                    merged.optionalValue.value or elemType.emptyValue.value or merged.mergedValue
+                  )
+                  # Push down position info.
+                  (pushPositions defs)
               )
-              # Push down position info.
+            else
               (
-                map (
-                  def:
-                  mapAttrs (n: v: {
-                    inherit (def) file;
-                    value = v;
-                  }) def.value
-                ) defs
+                # Non-lazy merge Function
+                loc: defs:
+                mapAttrs (n: v: v.value) (
+                  filterAttrs (n: v: v ? value) (
+                    zipAttrsWith (name: defs: (mergeDefinitions (loc ++ [ name ]) elemType (defs)).optionalValue)
+                      # Push down position info.
+                      (pushPositions defs)
+                  )
+                )
               );
           emptyValue = {
             value = { };
           };
-          getSubOptions = prefix: elemType.getSubOptions (prefix ++ [ "<name>" ]);
+          getSubOptions = prefix: elemType.getSubOptions (prefix ++ [ "<${placeholder}>" ]);
           getSubModules = elemType.getSubModules;
-          substSubModules = m: lazyAttrsOf (elemType.substSubModules m);
-          functor = (defaultFunctor name) // {
-            wrapped = elemType;
-          };
+          substSubModules =
+            m:
+            attrsWith {
+              elemType = elemType.substSubModules m;
+              inherit lazy placeholder;
+            };
+          functor =
+            (elemTypeFunctor "attrsWith" {
+              inherit elemType lazy placeholder;
+            })
+            // {
+              # Custom type merging required because of the "placeholder" attribute
+              inherit binOp;
+            };
           nestedTypes.elemType = elemType;
         };
 
@@ -852,6 +986,15 @@ let
           };
         };
 
+      # A value produced by `lib.mkLuaInline`
+      luaInline = mkOptionType {
+        name = "luaInline";
+        description = "inline lua";
+        descriptionClass = "noun";
+        check = x: x._type or null == "lua-inline";
+        merge = mergeEqualOption;
+      };
+
       uniq = unique { message = ""; };
 
       unique =
@@ -868,8 +1011,8 @@ let
           getSubOptions = type.getSubOptions;
           getSubModules = type.getSubModules;
           substSubModules = m: uniq (type.substSubModules m);
-          functor = (defaultFunctor name) // {
-            wrapped = type;
+          functor = elemTypeFunctor name { elemType = type; } // {
+            type = payload: types.unique { inherit message; } payload.elemType;
           };
           nestedTypes.elemType = type;
         };
@@ -901,8 +1044,8 @@ let
           getSubOptions = elemType.getSubOptions;
           getSubModules = elemType.getSubModules;
           substSubModules = m: nullOr (elemType.substSubModules m);
-          functor = (defaultFunctor name) // {
-            wrapped = elemType;
+          functor = (elemTypeFunctor name { inherit elemType; }) // {
+            type = payload: types.nullOr payload.elemType;
           };
           nestedTypes.elemType = elemType;
         };
@@ -916,19 +1059,25 @@ let
           }";
           descriptionClass = "composite";
           check = isFunction;
-          merge =
-            loc: defs: fnArgs:
-            (mergeDefinitions (loc ++ [ "<function body>" ]) elemType (
-              map (fn: {
-                inherit (fn) file;
-                value = fn.value fnArgs;
-              }) defs
-            )).mergedValue;
+          merge = loc: defs: {
+            # An argument attribute has a default when it has a default in all definitions
+            __functionArgs = lib.zipAttrsWith (_: lib.all (x: x)) (
+              lib.map (fn: lib.functionArgs fn.value) defs
+            );
+            __functor =
+              _: callerArgs:
+              (mergeDefinitions (loc ++ [ "<function body>" ]) elemType (
+                map (fn: {
+                  inherit (fn) file;
+                  value = fn.value callerArgs;
+                }) defs
+              )).mergedValue;
+          };
           getSubOptions = prefix: elemType.getSubOptions (prefix ++ [ "<function body>" ]);
           getSubModules = elemType.getSubModules;
           substSubModules = m: functionTo (elemType.substSubModules m);
-          functor = (defaultFunctor "functionTo") // {
-            wrapped = elemType;
+          functor = (elemTypeFunctor "functionTo" { inherit elemType; }) // {
+            type = payload: types.functionTo payload.elemType;
           };
           nestedTypes.elemType = elemType;
         };
@@ -1076,7 +1225,14 @@ let
         in
         mkOptionType {
           inherit name;
-          description = if description != null then description else freeformType.description or name;
+          description =
+            if description != null then
+              description
+            else
+              let
+                docsEval = base.extendModules { modules = [ noCheckForDocsModule ]; };
+              in
+              docsEval._module.freeformType.description or name;
           check = x: isAttrs x || isFunction x || path.check x;
           merge =
             loc: defs:
@@ -1089,7 +1245,18 @@ let
           };
           getSubOptions =
             prefix:
-            (base.extendModules { inherit prefix; }).options
+            let
+              docsEval = (
+                base.extendModules {
+                  inherit prefix;
+                  modules = [ noCheckForDocsModule ];
+                }
+              );
+              # Intentionally shadow the freeformType from the possibly *checked*
+              # configuration. See `noCheckForDocsModule` comment.
+              inherit (docsEval._module) freeformType;
+            in
+            docsEval.options
             // optionalAttrs (freeformType != null) {
               # Expose the sub options of the freeform type. Note that the option
               # discovery doesn't care about the attribute name used here, so this
@@ -1195,8 +1362,9 @@ let
           check = flip elem values;
           merge = mergeEqualOption;
           functor = (defaultFunctor name) // {
-            payload = values;
-            binOp = a: b: unique (a ++ b);
+            payload = { inherit values; };
+            type = payload: types.enum payload.values;
+            binOp = a: b: { values = unique (a.values ++ b.values); };
           };
         };
 
@@ -1233,12 +1401,12 @@ let
           typeMerge =
             f':
             let
-              mt1 = t1.typeMerge (elemAt f'.wrapped 0).functor;
-              mt2 = t2.typeMerge (elemAt f'.wrapped 1).functor;
+              mt1 = t1.typeMerge (elemAt f'.payload.elemType 0).functor;
+              mt2 = t2.typeMerge (elemAt f'.payload.elemType 1).functor;
             in
             if (name == f'.name) && (mt1 != null) && (mt2 != null) then functor.type mt1 mt2 else null;
-          functor = (defaultFunctor name) // {
-            wrapped = [
+          functor = elemTypeFunctor name {
+            elemType = [
               t1
               t2
             ];
@@ -1282,7 +1450,7 @@ let
           substSubModules = m: coercedTo coercedType coerceFunc (finalType.substSubModules m);
           typeMerge = t: null;
           functor = (defaultFunctor name) // {
-            wrapped = finalType;
+            wrappedDeprecationMessage = makeWrappedDeprecationMessage { elemType = finalType; };
           };
           nestedTypes.coercedType = coercedType;
           nestedTypes.finalType = finalType;
@@ -1292,6 +1460,51 @@ let
       addCheck = elemType: check: elemType // { check = x: elemType.check x && check x; };
 
     };
+
+    /**
+      Merges two option types together.
+
+      :::{.note}
+      Uses the type merge function of the first type, to merge it with the second type.
+
+      Usually types can only be merged if they are of the same type
+      :::
+
+      # Inputs
+
+      : `a` (option type): The first option type.
+      : `b` (option type): The second option type.
+
+      # Returns
+
+      - The merged option type.
+      - `{ _type = "merge-error"; error = "Cannot merge types"; }` if the types can't be merged.
+
+      # Examples
+      :::{.example}
+      ## `lib.types.mergeTypes` usage example
+      ```nix
+      let
+        enumAB = lib.types.enum ["A" "B"];
+        enumXY = lib.types.enum ["X" "Y"];
+        # This operation could be notated as: [ A ] | [ B ] -> [ A B ]
+        merged = lib.types.mergeTypes enumAB enumXY; # -> enum [ "A" "B" "X" "Y" ]
+      in
+        assert merged.check "A"; # true
+        assert merged.check "B"; # true
+        assert merged.check "X"; # true
+        assert merged.check "Y"; # true
+        merged.check "C" # false
+      ```
+      :::
+    */
+    mergeTypes =
+      a: b:
+      assert isOptionType a && isOptionType b;
+      let
+        merged = a.typeMerge b.functor;
+      in
+      if merged == null then setType "merge-error" { error = "Cannot merge types"; } else merged;
   };
 
 in

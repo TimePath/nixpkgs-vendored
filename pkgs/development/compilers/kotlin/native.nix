@@ -8,7 +8,7 @@
 
 stdenv.mkDerivation rec {
   pname = "kotlin-native";
-  version = "1.9.23";
+  version = "2.1.0";
 
   src =
     let
@@ -22,14 +22,14 @@ stdenv.mkDerivation rec {
 
       getUrl =
         version: arch:
-        "https://github.com/JetBrains/kotlin/releases/download/v${version}/kotlin-native-${arch}-${version}.tar.gz";
+        "https://github.com/JetBrains/kotlin/releases/download/v${version}/kotlin-native-prebuilt-${arch}-${version}.tar.gz";
 
       getHash =
         arch:
         {
-          "macos-aarch64" = "1v1ld4nxa77vjxiz4jw5h29s8i4ghfbmq0d01r15i75pr46md8r7";
-          "macos-x86_64" = "05ywdhagj3qzjaw5sd94sgjk89dysky7d7lfqpwvc8s35v77rv8f";
-          "linux-x86_64" = "1j2lpl1r7r30dgard6ia29n3qrsr98wb3qwpc80z4jh6k42qn6id";
+          "macos-aarch64" = "sha256-FHXR5XA7B/fqox2GTIkCJ6BIaSKoufLY0yMLe2ZmoqM=";
+          "macos-x86_64" = "sha256-qXAnTdF9dkojOzb+vV08fZYYJUnQ43y8Yo0SxL6n2Ac=";
+          "linux-x86_64" = "sha256-5aAqD/ru6OGWitm+QGouXMNIc4xV8o4ltLWPc29t8P4=";
         }
         .${arch};
     in
@@ -65,6 +65,7 @@ stdenv.mkDerivation rec {
       backend for the Kotlin compiler and native implementation of the Kotlin
       standard library.
     '';
+    sourceProvenance = with lib.sourceTypes; [ binaryNativeCode ];
     license = lib.licenses.asl20;
     maintainers = with lib.maintainers; [ fabianhjr ];
     platforms = [ "x86_64-linux" ] ++ lib.platforms.darwin;

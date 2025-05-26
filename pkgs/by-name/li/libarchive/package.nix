@@ -33,13 +33,13 @@
 assert xarSupport -> libxml2 != null;
 stdenv.mkDerivation (finalAttrs: {
   pname = "libarchive";
-  version = "3.7.7";
+  version = "3.7.8";
 
   src = fetchFromGitHub {
     owner = "libarchive";
     repo = "libarchive";
     rev = "v${finalAttrs.version}";
-    hash = "sha256-maV2+Whi4aDG1VLAYpOTxluO9I0zNiZ8fA3w7epGlDg=";
+    hash = "sha256-fjE3b9rDHf1Xubpm9guvX6I8a2loYsGHj3epLceueUw=";
   };
 
   patches = [
@@ -156,10 +156,7 @@ stdenv.mkDerivation (finalAttrs: {
     '';
     changelog = "https://github.com/libarchive/libarchive/releases/tag/v${finalAttrs.version}";
     license = licenses.bsd3;
-    maintainers = with maintainers; [
-      jcumming
-      AndersonTorres
-    ];
+    maintainers = with maintainers; [ jcumming ];
     platforms = platforms.all;
     inherit (acl.meta) badPlatforms;
   };

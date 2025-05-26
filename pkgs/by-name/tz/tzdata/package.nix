@@ -3,6 +3,7 @@
   stdenv,
   fetchurl,
   buildPackages,
+  postgresql,
 }:
 
 stdenv.mkDerivation (finalAttrs: {
@@ -56,6 +57,13 @@ stdenv.mkDerivation (finalAttrs: {
       "CFLAGS+=-DHAVE_SETENV=0"
       "CFLAGS+=-DHAVE_SYMLINK=0"
       "CFLAGS+=-DRESERVE_STD_EXT_IDS"
+    ]
+    ++ lib.optionals stdenv.hostPlatform.isFreeBSD [
+      "CFLAGS+=-DNETBSD_INSPIRED=0"
+      "CFLAGS+=-DSTD_INSPIRED=0"
+      "CFLAGS+=-DUSE_TIMEX_T=1"
+      "CFLAGS+=-DMKTIME_FITS_IN\\(min,max\\)=0"
+      "CFLAGS+=-DEXTERN_TIMEOFF=1"
     ];
 
   enableParallelBuilding = true;
@@ -81,6 +89,11 @@ stdenv.mkDerivation (finalAttrs: {
   '';
 
   setupHook = ./tzdata-setup-hook.sh;
+
+  # PostgreSQL is sensitive to tzdata updates, because the test-suite often breaks.
+  # Upstream provides patches very quickly, we just need to apply them until the next
+  # minor releases.
+  passthru.tests = postgresql;
 
   meta = with lib; {
     homepage = "http://www.iana.org/time-zones";

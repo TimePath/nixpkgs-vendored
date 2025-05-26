@@ -353,9 +353,9 @@ in
       };
       description = ''
         Attrset of the LibreNMS configuration.
-        See https://docs.librenms.org/Support/Configuration/ for reference.
+        See <https://docs.librenms.org/Support/Configuration/> for reference.
         All possible options are listed [here](https://github.com/librenms/librenms/blob/master/misc/config_definitions.json).
-        See https://docs.librenms.org/Extensions/Authentication/ for setting other authentication methods.
+        See <https://docs.librenms.org/Extensions/Authentication/> for setting other authentication methods.
       '';
       default = { };
       example = {
@@ -370,7 +370,7 @@ in
       default = null;
       description = ''
         Additional config for LibreNMS that will be appended to the `config.php`. See
-        https://github.com/librenms/librenms/blob/master/misc/config_definitions.json
+        <https://github.com/librenms/librenms/blob/master/misc/config_definitions.json>
         for possible options. Useful if you want to use PHP-Functions in your config.
       '';
     };
@@ -596,7 +596,9 @@ in
           ${pkgs.envsubst}/bin/envsubst -i ${configJson} -o ${cfg.dataDir}/config.json
           export PHPRC=${phpIni}
 
+          INIT=false
           if [[ ! -s ${cfg.dataDir}/.env ]]; then
+            INIT=true
             # init .env file
             echo "APP_KEY=" > ${cfg.dataDir}/.env
             ${artisanWrapper}/bin/librenms-artisan key:generate --ansi
@@ -633,11 +635,11 @@ in
             ''
         )
         + ''
-          # clear cache after update
-          OLD_VERSION=$(cat ${cfg.dataDir}/version)
-          if [[ $OLD_VERSION != "${package.version}" ]]; then
+          # clear cache if package has changed (cache may contain cached paths
+          # to the old package)
+          OLD_PACKAGE=$(cat ${cfg.dataDir}/package)
+          if [[ $OLD_PACKAGE != "${package}" ]]; then
             rm -r ${cfg.dataDir}/cache/*
-            echo "${package.version}" > ${cfg.dataDir}/version
           fi
 
           # convert rrd files when the oneMinutePolling option is changed
@@ -647,8 +649,26 @@ in
             echo "${lib.boolToString cfg.enableOneMinutePolling}" > ${cfg.dataDir}/one_minute_enabled
           fi
 
-          # migrate db
-          ${artisanWrapper}/bin/librenms-artisan migrate --force --no-interaction
+          # migrate db if package version has changed
+          # not necessary for every package change
+          OLD_VERSION=$(cat ${cfg.dataDir}/version)
+          if [[ $OLD_VERSION != "${package.version}" ]]; then
+            ${artisanWrapper}/bin/librenms-artisan migrate --force --no-interaction
+            echo "${package.version}" > ${cfg.dataDir}/version
+          fi
+
+          if [[ $INIT == "true" ]]; then
+            ${artisanWrapper}/bin/librenms-artisan db:seed --force --no-interaction
+          fi
+
+          # regenerate cache if package has changed
+          if [[ $OLD_PACKAGE != "${package}" ]]; then
+            ${artisanWrapper}/bin/librenms-artisan view:clear
+            ${artisanWrapper}/bin/librenms-artisan optimize:clear
+            ${artisanWrapper}/bin/librenms-artisan view:cache
+            ${artisanWrapper}/bin/librenms-artisan optimize
+            echo "${package}" > ${cfg.dataDir}/package
+          fi
         '';
     };
 
@@ -722,6 +742,7 @@ in
         "d ${cfg.dataDir}                              0750 ${cfg.user} ${cfg.group} - -"
         "f ${cfg.dataDir}/.env                         0600 ${cfg.user} ${cfg.group} - -"
         "f ${cfg.dataDir}/version                      0600 ${cfg.user} ${cfg.group} - -"
+        "f ${cfg.dataDir}/package                      0600 ${cfg.user} ${cfg.group} - -"
         "f ${cfg.dataDir}/one_minute_enabled           0600 ${cfg.user} ${cfg.group} - -"
         "f ${cfg.dataDir}/config.json                  0600 ${cfg.user} ${cfg.group} - -"
         "d ${cfg.dataDir}/storage                      0700 ${cfg.user} ${cfg.group} - -"

@@ -17,7 +17,6 @@
   isocodes,
   libjpeg,
   libpng,
-  libvisual,
   tremor, # provides 'virbisidec'
   libGL,
   withIntrospection ?
@@ -36,10 +35,7 @@
   wayland-protocols,
   enableAlsa ? stdenv.hostPlatform.isLinux,
   alsa-lib,
-  # TODO: fix once x86_64-darwin sdk updated
-  enableCocoa ? (stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isAarch64),
-  Cocoa,
-  OpenGL,
+  enableCocoa ? stdenv.hostPlatform.isDarwin,
   enableGl ? (enableX11 || enableWayland || enableCocoa),
   enableCdparanoia ? (!stdenv.hostPlatform.isDarwin),
   cdparanoia,
@@ -48,11 +44,13 @@
   # Checks meson.is_cross_build(), so even canExecute isn't enough.
   enableDocumentation ? stdenv.hostPlatform == stdenv.buildPlatform,
   hotdoc,
+  directoryListingUpdater,
+  apple-sdk_gstreamer,
 }:
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "gst-plugins-base";
-  version = "1.24.10";
+  version = "1.26.0";
 
   outputs = [
     "out"
@@ -61,14 +59,10 @@ stdenv.mkDerivation (finalAttrs: {
 
   separateDebugInfo = true;
 
-  src =
-    let
-      inherit (finalAttrs) pname version;
-    in
-    fetchurl {
-      url = "https://gstreamer.freedesktop.org/src/${pname}/${pname}-${version}.tar.xz";
-      hash = "sha256-69V7G+kkxuJPMn3VW6udj7quvl4dyPynhBgqsrEtI+s=";
-    };
+  src = fetchurl {
+    url = "https://gstreamer.freedesktop.org/src/gst-plugins-base/gst-plugins-base-${finalAttrs.version}.tar.xz";
+    hash = "sha256-4jGJ++0uxIZpA4LRBVwZ7q9arj6V4ldvxMiE2WqQ5p4=";
+  };
 
   strictDeps = true;
   depsBuildBuild = [
@@ -111,10 +105,9 @@ stdenv.mkDerivation (finalAttrs: {
     ++ lib.optionals (!stdenv.hostPlatform.isDarwin) [
       libdrm
       libGL
-      libvisual
     ]
     ++ lib.optionals stdenv.hostPlatform.isDarwin [
-      OpenGL
+      apple-sdk_gstreamer
     ]
     ++ lib.optionals enableAlsa [
       alsa-lib
@@ -128,7 +121,6 @@ stdenv.mkDerivation (finalAttrs: {
       wayland
       wayland-protocols
     ]
-    ++ lib.optional enableCocoa Cocoa
     ++ lib.optional enableCdparanoia cdparanoia;
 
   propagatedBuildInputs =
@@ -141,6 +133,7 @@ stdenv.mkDerivation (finalAttrs: {
 
   mesonFlags =
     [
+      "-Dglib_debug=disabled" # cast checks should be disabled on stable releases
       "-Dexamples=disabled" # requires many dependencies and probably not useful for our users
       # See https://github.com/GStreamer/gst-plugins-base/blob/d64a4b7a69c3462851ff4dcfa97cc6f94cd64aef/meson_options.txt#L15 for a list of choices
       "-Dgl_winsys=${
@@ -152,19 +145,21 @@ stdenv.mkDerivation (finalAttrs: {
       }"
       (lib.mesonEnable "introspection" withIntrospection)
       (lib.mesonEnable "doc" enableDocumentation)
+      (lib.mesonEnable "libvisual" false)
     ]
     ++ lib.optionals (stdenv.buildPlatform != stdenv.hostPlatform) [
       "-Dtests=disabled"
     ]
-    ++ lib.optional (!enableX11) "-Dx11=disabled"
+    ++ lib.optionals (!enableX11) [
+      "-Dx11=disabled"
+      "-Dxi=disabled"
+      "-Dxvideo=disabled"
+    ]
     # TODO How to disable Wayland?
     ++ lib.optional (!enableGl) "-Dgl=disabled"
     ++ lib.optional (!enableAlsa) "-Dalsa=disabled"
     ++ lib.optional (!enableCdparanoia) "-Dcdparanoia=disabled"
-    ++ lib.optionals stdenv.hostPlatform.isDarwin [
-      "-Ddrm=disabled"
-      "-Dlibvisual=disabled"
-    ];
+    ++ lib.optional stdenv.hostPlatform.isDarwin "-Ddrm=disabled";
 
   postPatch = ''
     patchShebangs \
@@ -193,6 +188,8 @@ stdenv.mkDerivation (finalAttrs: {
     # vs what was built) and to make them easier to search for.
     glEnabled = enableGl;
     waylandEnabled = enableWayland;
+
+    updateScript = directoryListingUpdater { };
   };
 
   passthru.tests.pkg-config = testers.testMetaPkgConfig finalAttrs.finalPackage;

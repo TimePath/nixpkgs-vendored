@@ -13,11 +13,11 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "newlib";
-  version = "4.3.0.20230120";
+  version = "4.5.0.20241231";
 
   src = fetchurl {
     url = "ftp://sourceware.org/pub/newlib/newlib-${finalAttrs.version}.tar.gz";
-    sha256 = "sha256-g6Yqma9Z4465sMWO0JLuJNcA//Q6IsA+QzlVET7zUVA=";
+    sha256 = "sha256-M/EmBeAFSWWZbCXBOCs+RjsK+ReZAB9buMBjDy7IyFI=";
   };
 
   patches = lib.optionals nanoizeNewlib [
@@ -115,10 +115,14 @@ stdenv.mkDerivation (finalAttrs: {
       (
         cd $out${finalAttrs.passthru.libdir}
 
-        for f in librdimon.a libc.a libg.a; do
+        for f in librdimon.a libc.a libm.a libg.a libgloss.a; do
           # Some libraries are only available for specific architectures.
           # For example, librdimon.a is only available on ARM.
-          [ -f "$f" ] && cp "$f" "''${f%%\.a}_nano.a"
+          if [ -f "$f" ]; then
+            dst="''${f%%\.a}_nano.a"
+            >&2 echo "$f -> $dst"
+            cp "$f" "$dst"
+          fi
         done
       )
     ''

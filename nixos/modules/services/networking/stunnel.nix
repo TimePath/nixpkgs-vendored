@@ -4,16 +4,13 @@
   pkgs,
   ...
 }:
-
-with lib;
-
 let
 
   cfg = config.services.stunnel;
   yesNo = val: if val then "yes" else "no";
 
   verifyRequiredField = type: field: n: c: {
-    assertion = hasAttr field c;
+    assertion = lib.hasAttr field c;
     message = "stunnel: \"${n}\" ${type} configuration - Field ${field} is required.";
   };
 
@@ -24,7 +21,7 @@ let
       + "is not possible without either verifyChain or verifyPeer enabled";
   };
 
-  removeNulls = mapAttrs (_: filterAttrs (_: v: v != null));
+  removeNulls = lib.mapAttrs (_: lib.filterAttrs (_: v: v != null));
   mkValueString =
     v:
     if v == true then
@@ -32,11 +29,11 @@ let
     else if v == false then
       "no"
     else
-      generators.mkValueStringDefault { } v;
+      lib.generators.mkValueStringDefault { } v;
   generateConfig =
     c:
-    generators.toINI {
-      mkSectionName = id;
+    lib.generators.toINI {
+      mkSectionName = lib.id;
       mkKeyValue = k: v: "${k} = ${mkValueString v}";
     } (removeNulls c);
 
@@ -50,26 +47,26 @@ in
 
     services.stunnel = {
 
-      enable = mkOption {
-        type = types.bool;
+      enable = lib.mkOption {
+        type = lib.types.bool;
         default = false;
         description = "Whether to enable the stunnel TLS tunneling service.";
       };
 
-      user = mkOption {
-        type = with types; nullOr str;
+      user = lib.mkOption {
+        type = with lib.types; nullOr str;
         default = "nobody";
         description = "The user under which stunnel runs.";
       };
 
-      group = mkOption {
-        type = with types; nullOr str;
+      group = lib.mkOption {
+        type = with lib.types; nullOr str;
         default = "nogroup";
         description = "The group under which stunnel runs.";
       };
 
-      logLevel = mkOption {
-        type = types.enum [
+      logLevel = lib.mkOption {
+        type = lib.types.enum [
           "emerg"
           "alert"
           "crit"
@@ -83,26 +80,26 @@ in
         description = "Verbosity of stunnel output.";
       };
 
-      fipsMode = mkOption {
-        type = types.bool;
+      fipsMode = lib.mkOption {
+        type = lib.types.bool;
         default = false;
         description = "Enable FIPS 140-2 mode required for compliance.";
       };
 
-      enableInsecureSSLv3 = mkOption {
-        type = types.bool;
+      enableInsecureSSLv3 = lib.mkOption {
+        type = lib.types.bool;
         default = false;
         description = "Enable support for the insecure SSLv3 protocol.";
       };
 
-      servers = mkOption {
+      servers = lib.mkOption {
         description = ''
           Define the server configurations.
 
           See "SERVICE-LEVEL OPTIONS" in {manpage}`stunnel(8)`.
         '';
         type =
-          with types;
+          with lib.types;
           attrsOf (
             attrsOf (
               nullOr (oneOf [
@@ -122,16 +119,16 @@ in
         default = { };
       };
 
-      clients = mkOption {
+      clients = lib.mkOption {
         description = ''
           Define the client configurations.
 
-          By default, verifyChain and OCSPaia are enabled and a CAFile is provided from pkgs.cacert.
+          By default, verifyChain and OCSPaia are enabled and CAFile is set to `security.pki.caBundle`.
 
           See "SERVICE-LEVEL OPTIONS" in {manpage}`stunnel(8)`.
         '';
         type =
-          with types;
+          with lib.types;
           attrsOf (
             attrsOf (
               nullOr (oneOf [
@@ -147,7 +144,7 @@ in
             applyDefaults =
               c:
               {
-                CAFile = "${pkgs.cacert}/etc/ssl/certs/ca-bundle.crt";
+                CAFile = config.security.pki.caBundle;
                 OCSPaia = true;
                 verifyChain = true;
               }
@@ -163,7 +160,7 @@ in
               };
             forceClient = c: c // { client = true; };
           in
-          mapAttrs (_: c: forceClient (setCheckHostFromVerifyHostname (applyDefaults c)));
+          lib.mapAttrs (_: c: forceClient (setCheckHostFromVerifyHostname (applyDefaults c)));
 
         example = {
           foobar = {
@@ -179,32 +176,33 @@ in
 
   ###### implementation
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
 
-    assertions = concatLists [
-      (singleton {
-        assertion = (length (attrValues cfg.servers) != 0) || ((length (attrValues cfg.clients)) != 0);
+    assertions = lib.concatLists [
+      (lib.singleton {
+        assertion =
+          (lib.length (lib.attrValues cfg.servers) != 0) || ((lib.length (lib.attrValues cfg.clients)) != 0);
         message = "stunnel: At least one server- or client-configuration has to be present.";
       })
 
-      (mapAttrsToList verifyChainPathAssert cfg.clients)
-      (mapAttrsToList (verifyRequiredField "client" "accept") cfg.clients)
-      (mapAttrsToList (verifyRequiredField "client" "connect") cfg.clients)
-      (mapAttrsToList (verifyRequiredField "server" "accept") cfg.servers)
-      (mapAttrsToList (verifyRequiredField "server" "cert") cfg.servers)
-      (mapAttrsToList (verifyRequiredField "server" "connect") cfg.servers)
+      (lib.mapAttrsToList verifyChainPathAssert cfg.clients)
+      (lib.mapAttrsToList (verifyRequiredField "client" "accept") cfg.clients)
+      (lib.mapAttrsToList (verifyRequiredField "client" "connect") cfg.clients)
+      (lib.mapAttrsToList (verifyRequiredField "server" "accept") cfg.servers)
+      (lib.mapAttrsToList (verifyRequiredField "server" "cert") cfg.servers)
+      (lib.mapAttrsToList (verifyRequiredField "server" "connect") cfg.servers)
     ];
 
     environment.systemPackages = [ pkgs.stunnel ];
 
     environment.etc."stunnel.cfg".text = ''
-      ${optionalString (cfg.user != null) "setuid = ${cfg.user}"}
-      ${optionalString (cfg.group != null) "setgid = ${cfg.group}"}
+      ${lib.optionalString (cfg.user != null) "setuid = ${cfg.user}"}
+      ${lib.optionalString (cfg.group != null) "setgid = ${cfg.group}"}
 
       debug = ${cfg.logLevel}
 
-      ${optionalString cfg.fipsMode "fips = yes"}
-      ${optionalString cfg.enableInsecureSSLv3 "options = -NO_SSLv3"}
+      ${lib.optionalString cfg.fipsMode "fips = yes"}
+      ${lib.optionalString cfg.enableInsecureSSLv3 "options = -NO_SSLv3"}
 
       ; ----- SERVER CONFIGURATIONS -----
       ${generateConfig cfg.servers}
@@ -224,13 +222,13 @@ in
         Type = "forking";
       };
     };
-
-    meta.maintainers = with maintainers; [
-      # Server side
-      lschuermann
-      # Client side
-      das_j
-    ];
   };
+
+  meta.maintainers = with lib.maintainers; [
+    # Server side
+    lschuermann
+    # Client side
+    das_j
+  ];
 
 }

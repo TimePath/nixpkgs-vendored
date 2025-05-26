@@ -7,7 +7,7 @@
   cmake,
   mimalloc,
   ninja,
-  tbb,
+  tbb_2022_0,
   zlib,
   zstd,
 
@@ -20,17 +20,19 @@
   runCommandCC,
   testers,
   useMoldLinker,
+
+  versionCheckHook,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "mold";
-  version = "2.34.1";
+  version = "2.39.1";
 
   src = fetchFromGitHub {
     owner = "rui314";
     repo = "mold";
-    rev = "v${version}";
-    hash = "sha256-x5fQ+dJFcxwENyTpZpQsMqTLtYQ8uuhUHV8jDpmltWg=";
+    tag = "v${finalAttrs.version}";
+    hash = "sha256-uC6oakFfF0tpSiBeps5IO41Khk7VyCMSZhVh2Gmwlyc=";
   };
 
   nativeBuildInputs = [
@@ -40,7 +42,7 @@ stdenv.mkDerivation rec {
 
   buildInputs =
     [
-      tbb
+      tbb_2022_0
       zlib
       zstd
     ]
@@ -53,11 +55,9 @@ stdenv.mkDerivation rec {
     "-DMOLD_USE_SYSTEM_TBB:BOOL=ON"
   ];
 
-  env.NIX_CFLAGS_COMPILE = toString (
-    lib.optionals stdenv.hostPlatform.isDarwin [
-      "-faligned-allocation"
-    ]
-  );
+  doInstallCheck = true;
+  nativeInstallCheckInputs = [ versionCheckHook ];
+  versionCheckProgramArg = "--version";
 
   passthru = {
     updateScript = nix-update-script { };
@@ -116,7 +116,7 @@ stdenv.mkDerivation rec {
       };
   };
 
-  meta = with lib; {
+  meta = {
     description = "Faster drop-in replacement for existing Unix linkers (unwrapped)";
     longDescription = ''
       mold is a faster drop-in replacement for existing Unix linkers. It is
@@ -125,13 +125,14 @@ stdenv.mkDerivation rec {
       rapid debug-edit-rebuild cycles.
     '';
     homepage = "https://github.com/rui314/mold";
-    changelog = "https://github.com/rui314/mold/releases/tag/v${version}";
-    license = licenses.mit;
-    platforms = platforms.unix;
+    changelog = "https://github.com/rui314/mold/releases/tag/v${finalAttrs.version}";
+    license = lib.licenses.mit;
+    platforms = lib.platforms.unix;
+    broken = stdenv.hostPlatform.isDarwin;
     mainProgram = "mold";
-    maintainers = with maintainers; [
+    maintainers = with lib.maintainers; [
       azahi
       paveloom
     ];
   };
-}
+})

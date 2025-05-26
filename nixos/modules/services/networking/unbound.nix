@@ -49,18 +49,22 @@ let
   '';
   confFile =
     if cfg.checkconf then
-      pkgs.runCommandLocal "unbound-checkconf" { } ''
-        cp ${confFileUnchecked} unbound.conf
+      pkgs.runCommand "unbound-checkconf"
+        {
+          preferLocalBuild = true;
+        }
+        ''
+          cp ${confFileUnchecked} unbound.conf
 
-        # fake stateDir which is not accessible in the sandbox
-        mkdir -p $PWD/state
-        sed -i unbound.conf \
-          -e '/auto-trust-anchor-file/d' \
-          -e "s|${cfg.stateDir}|$PWD/state|"
-        ${cfg.package}/bin/unbound-checkconf unbound.conf
+          # fake stateDir which is not accessible in the sandbox
+          mkdir -p $PWD/state
+          sed -i unbound.conf \
+            -e '/auto-trust-anchor-file/d' \
+            -e "s|${cfg.stateDir}|$PWD/state|"
+          ${cfg.package}/bin/unbound-checkconf unbound.conf
 
-        cp ${confFileUnchecked} $out
-      ''
+          cp ${confFileUnchecked} $out
+        ''
     else
       confFileUnchecked;
 
@@ -236,7 +240,7 @@ in
           [ "127.0.0.0/8 allow" ] ++ (optional config.networking.enableIPv6 "::1/128 allow")
         );
         auto-trust-anchor-file = mkIf cfg.enableRootTrustAnchor rootTrustAnchorFile;
-        tls-cert-bundle = mkDefault "/etc/ssl/certs/ca-certificates.crt";
+        tls-cert-bundle = mkDefault config.security.pki.caBundle;
         # prevent race conditions on system startup when interfaces are not yet
         # configured
         ip-freebind = mkDefault true;

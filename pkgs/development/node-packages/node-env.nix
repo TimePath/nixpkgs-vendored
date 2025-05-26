@@ -4,7 +4,6 @@
   lib,
   stdenv,
   nodejs,
-  python2,
   pkgs,
   libtool,
   runCommand,
@@ -13,7 +12,7 @@
 }:
 
 let
-  python = if nodejs ? python then nodejs.python else python2;
+  inherit (nodejs) python;
 
   # Create a tar wrapper that filters all the 'Ignoring unknown extended header keyword' noise
   tarWrapper = runCommand "tarWrapper" { } ''

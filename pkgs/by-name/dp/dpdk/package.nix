@@ -18,6 +18,7 @@
   doxygen,
   python3,
   pciutils,
+  fetchpatch,
   withExamples ? [ ],
   shared ? false,
   machine ? (
@@ -32,11 +33,11 @@
 
 stdenv.mkDerivation rec {
   pname = "dpdk";
-  version = "23.11.3";
+  version = "25.03";
 
   src = fetchurl {
     url = "https://fast.dpdk.org/rel/dpdk-${version}.tar.xz";
-    hash = "sha256-jlGDa8ZSTgUS+J7sonUyAh/gzMf3ZM8jjuKD5/QWwYU=";
+    sha256 = "sha256-akCnMTKChuvXloWxj/pZkua3cME4Q9Zf0NEVfPzP9j0=";
   };
 
   nativeBuildInputs = [

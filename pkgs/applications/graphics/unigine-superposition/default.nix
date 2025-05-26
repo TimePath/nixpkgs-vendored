@@ -29,10 +29,11 @@
 }:
 
 let
+  pname = "unigine-superposition";
+  version = "1.1";
 
   superposition = stdenv.mkDerivation rec {
-    pname = "unigine-superposition";
-    version = "1.1";
+    inherit pname version;
 
     src = fetchurl {
       url = "https://assets.unigine.com/d/Unigine_Superposition-${version}.run";
@@ -86,7 +87,7 @@ let
 
   desktopItem = makeDesktopItem {
     name = "Superposition";
-    exec = "Superposition";
+    exec = "superposition";
     genericName = "A GPU Stress test tool from the UNIGINE";
     icon = "Superposition";
     desktopName = "Superposition Benchmark";
@@ -98,7 +99,7 @@ in
 # For that we need use a buildFHSEnv.
 
 buildFHSEnv {
-  name = "Superposition";
+  inherit pname version;
 
   targetPkgs = pkgs: [
     superposition

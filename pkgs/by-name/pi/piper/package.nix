@@ -18,7 +18,7 @@
 
 python3.pkgs.buildPythonApplication rec {
   pname = "piper";
-  version = "0.7";
+  version = "0.8";
 
   format = "other";
 
@@ -26,7 +26,7 @@ python3.pkgs.buildPythonApplication rec {
     owner = "libratbag";
     repo = "piper";
     rev = version;
-    sha256 = "0jsvfy0ihdcgnqljfgs41lys1nlz18qvsa0a8ndx3pyr41f8w8wf";
+    hash = "sha256-j58fL6jJAzeagy5/1FmygUhdBm+PAlIkw22Rl/fLff4=";
   };
 
   nativeBuildInputs = [
@@ -54,7 +54,6 @@ python3.pkgs.buildPythonApplication rec {
 
   mesonFlags = [
     "-Druntime-dependency-checks=false"
-    "-Dtests=false"
   ];
 
   postPatch = ''
@@ -62,12 +61,12 @@ python3.pkgs.buildPythonApplication rec {
     patchShebangs meson_install.sh data/generate-piper-gresource.xml.py
   '';
 
-  meta = with lib; {
+  meta = {
     description = "GTK frontend for ratbagd mouse config daemon";
     mainProgram = "piper";
     homepage = "https://github.com/libratbag/piper";
-    license = licenses.gpl2Only;
-    maintainers = with maintainers; [ mvnetbiz ];
-    platforms = platforms.linux;
+    license = lib.licenses.gpl2Only;
+    maintainers = with lib.maintainers; [ mvnetbiz ];
+    platforms = lib.platforms.linux;
   };
 }

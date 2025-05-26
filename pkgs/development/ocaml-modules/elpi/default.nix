@@ -6,6 +6,7 @@
   menhir,
   menhirLib,
   atdgen,
+  atdgen-runtime,
   stdlib-shims,
   re,
   perl,
@@ -17,7 +18,7 @@
   coqPackages,
   version ?
     if lib.versionAtLeast ocaml.version "4.13" then
-      "2.0.6"
+      "2.0.7"
     else if lib.versionAtLeast ocaml.version "4.08" then
       "1.20.0"
     else
@@ -33,8 +34,10 @@ in
 
 let
   fetched = coqPackages.metaFetch ({
+    release."2.0.7".sha256 = "sha256-gCM+vZK6vWlhSO1VMjiWHse23mvxVwRarhxwkIQK7e0=";
     release."2.0.6".sha256 = "sha256-tRUYXQZ0VXrjIZBZ1skdzieUsww4rSNEe5ik+iKpk3U=";
     release."2.0.5".sha256 = "sha256-cHgERFqrfSg5WtUX3UxR6L+QkzS7+t6n4V+wweiEacc=";
+    release."2.0.3".sha256 = "sha256-t2z0sWPiFgp6LuR6CsH/Zk9qfxW+3QjjFcYrB6qSPgc=";
     release."1.20.0".sha256 = "sha256-lctZAIQgOg5d+LfILtWsBVcsemV3zTZYfJfDlCxHtcA=";
     release."1.19.2".sha256 = "sha256-dBj5Ek7PWq/8Btq/dggJUqa8cUtfvbi6EWo/lJEDOU4=";
     release."1.18.2".sha256 = "sha256-usOYukHQ/h4YBxlhYrAkMTVjNm97hq4IArI9bvDzy/k=";
@@ -66,14 +69,13 @@ buildDunePackage {
 
   minimalOCamlVersion = "4.07";
 
-  # atdgen is both a library and executable
   nativeBuildInputs =
     [ perl ]
     ++ [ (if lib.versionAtLeast version "1.15" || version == "dev" then menhir else camlp5) ]
     ++ lib.optional (lib.versionAtLeast version "1.16" || version == "dev") atdgen;
   buildInputs = [
     ncurses
-  ] ++ lib.optional (lib.versionAtLeast version "1.16" || version == "dev") atdgen;
+  ] ++ lib.optional (lib.versionAtLeast version "1.16" || version == "dev") atdgen-runtime;
 
   propagatedBuildInputs =
     [
@@ -101,7 +103,11 @@ buildDunePackage {
     homepage = "https://github.com/LPCIC/elpi";
   };
 
-  postPatch = ''
-    substituteInPlace elpi_REPL.ml --replace-warn "tput cols" "${ncurses}/bin/tput cols"
-  '';
+  postPatch =
+    ''
+      substituteInPlace elpi_REPL.ml --replace-warn "tput cols" "${ncurses}/bin/tput cols"
+    ''
+    + lib.optionalString (lib.versionAtLeast version "1.16" || version == "dev") ''
+      substituteInPlace src/dune --replace-warn ' atdgen re' ' atdgen-runtime re'
+    '';
 }

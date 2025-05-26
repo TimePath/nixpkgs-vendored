@@ -15,12 +15,13 @@
 
 stdenv.mkDerivation rec {
   pname = "obs-input-overlay";
-  version = "5.0.5";
+  version = "5.0.6";
+
   src = fetchFromGitHub {
     owner = "univrsal";
     repo = "input-overlay";
-    rev = "v${version}";
-    hash = "sha256-9HqEz+KnTt8MyhwqFWjalbl3H/DCzumckXMctCGhs3o=";
+    rev = "refs/tags/${version}";
+    hash = "sha256-ju4u7hhx+hTuq7Oh0DBPV8RRM8zqyyvYV74KymU0+2c=";
     fetchSubmodules = true;
   };
 
@@ -28,6 +29,7 @@ stdenv.mkDerivation rec {
     cmake
     pkg-config
   ];
+
   buildInputs = [
     obs-studio
     libuiohook
@@ -53,21 +55,14 @@ stdenv.mkDerivation rec {
     sed -i '/set(CMAKE_CXX_FLAGS "-march=native")/d' 'source/CMakeLists.txt'
   '';
 
-  postInstall = ''
-    mkdir $out/lib $out/share
-    mv $out/obs-plugins/64bit $out/lib/obs-plugins
-    rm -rf $out/obs-plugins
-    mv $out/data $out/share/obs
-  '';
-
   dontWrapQtApps = true;
 
-  meta = with lib; {
+  meta = {
     description = "Show keyboard, gamepad and mouse input on stream";
     homepage = "https://github.com/univrsal/input-overlay";
-    maintainers = with maintainers; [ glittershark ];
-    license = licenses.gpl2;
-    platforms = platforms.linux;
+    maintainers = with lib.maintainers; [ glittershark ];
+    license = lib.licenses.gpl2;
+    platforms = lib.platforms.linux;
     # never built on aarch64-linux since first introduction in nixpkgs
     broken = stdenv.hostPlatform.isLinux && stdenv.hostPlatform.isAarch64;
   };

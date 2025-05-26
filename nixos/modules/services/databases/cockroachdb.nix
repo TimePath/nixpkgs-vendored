@@ -5,9 +5,6 @@
   utils,
   ...
 }:
-
-with lib;
-
 let
   cfg = config.services.cockroachdb;
   crdb = cfg.package;
@@ -39,14 +36,14 @@ let
   );
 
   addressOption = descr: defaultPort: {
-    address = mkOption {
-      type = types.str;
+    address = lib.mkOption {
+      type = lib.types.str;
       default = "localhost";
       description = "Address to bind to for ${descr}";
     };
 
-    port = mkOption {
-      type = types.port;
+    port = lib.mkOption {
+      type = lib.types.port;
       default = defaultPort;
       description = "Port to bind to for ${descr}";
     };
@@ -56,14 +53,14 @@ in
 {
   options = {
     services.cockroachdb = {
-      enable = mkEnableOption "CockroachDB Server";
+      enable = lib.mkEnableOption "CockroachDB Server";
 
       listen = addressOption "intra-cluster communication" 26257;
 
       http = addressOption "http-based Admin UI" 8080;
 
-      locality = mkOption {
-        type = types.nullOr types.str;
+      locality = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
         default = null;
         description = ''
           An ordered, comma-separated list of key-value pairs that describe the
@@ -84,44 +81,44 @@ in
         '';
       };
 
-      join = mkOption {
-        type = types.nullOr types.str;
+      join = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
         default = null;
         description = "The addresses for connecting the node to a cluster.";
       };
 
-      insecure = mkOption {
-        type = types.bool;
+      insecure = lib.mkOption {
+        type = lib.types.bool;
         default = false;
         description = "Run in insecure mode.";
       };
 
-      certsDir = mkOption {
-        type = types.nullOr types.path;
+      certsDir = lib.mkOption {
+        type = lib.types.nullOr lib.types.path;
         default = null;
         description = "The path to the certificate directory.";
       };
 
-      user = mkOption {
-        type = types.str;
+      user = lib.mkOption {
+        type = lib.types.str;
         default = "cockroachdb";
         description = "User account under which CockroachDB runs";
       };
 
-      group = mkOption {
-        type = types.str;
+      group = lib.mkOption {
+        type = lib.types.str;
         default = "cockroachdb";
         description = "User account under which CockroachDB runs";
       };
 
-      openPorts = mkOption {
-        type = types.bool;
+      openPorts = lib.mkOption {
+        type = lib.types.bool;
         default = false;
         description = "Open firewall ports for cluster communication by default";
       };
 
-      cache = mkOption {
-        type = types.str;
+      cache = lib.mkOption {
+        type = lib.types.str;
         default = "25%";
         description = ''
           The total size for caches.
@@ -136,8 +133,8 @@ in
         '';
       };
 
-      maxSqlMemory = mkOption {
-        type = types.str;
+      maxSqlMemory = lib.mkOption {
+        type = lib.types.str;
         default = "25%";
         description = ''
           The maximum in-memory storage capacity available to store temporary
@@ -152,7 +149,7 @@ in
         '';
       };
 
-      package = mkPackageOption pkgs "cockroachdb" {
+      package = lib.mkPackageOption pkgs "cockroachdb" {
         extraDescription = ''
           This would primarily be useful to enable Enterprise Edition features
           in your own custom CockroachDB build (Nixpkgs CockroachDB binaries
@@ -160,8 +157,8 @@ in
         '';
       };
 
-      extraArgs = mkOption {
-        type = types.listOf types.str;
+      extraArgs = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
         default = [ ];
         example = [
           "--advertise-addr"
@@ -175,7 +172,7 @@ in
     };
   };
 
-  config = mkIf config.services.cockroachdb.enable {
+  config = lib.mkIf config.services.cockroachdb.enable {
     assertions = [
       {
         assertion = !cfg.insecure -> cfg.certsDir != null;
@@ -185,7 +182,7 @@ in
 
     environment.systemPackages = [ crdb ];
 
-    users.users = optionalAttrs (cfg.user == "cockroachdb") {
+    users.users = lib.optionalAttrs (cfg.user == "cockroachdb") {
       cockroachdb = {
         description = "CockroachDB Server User";
         uid = config.ids.uids.cockroachdb;
@@ -193,7 +190,7 @@ in
       };
     };
 
-    users.groups = optionalAttrs (cfg.group == "cockroachdb") {
+    users.groups = lib.optionalAttrs (cfg.group == "cockroachdb") {
       cockroachdb.gid = config.ids.gids.cockroachdb;
     };
 

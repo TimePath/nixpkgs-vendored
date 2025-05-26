@@ -8,13 +8,13 @@
 
 stdenv.mkDerivation rec {
   pname = "mlkit";
-  version = "4.7.12";
+  version = "4.7.14";
 
   src = fetchFromGitHub {
     owner = "melsman";
     repo = "mlkit";
     rev = "v${version}";
-    sha256 = "sha256-9a2CbIOHdN+kTtm2Z001qOEO/nXuSLrzq0ovgHU1hTQ=";
+    sha256 = "sha256-0nAQHBcQgGdcWd4SFhDon7I0zi5U+YRTdGvG78tri6A=";
   };
 
   nativeBuildInputs = [
@@ -28,6 +28,10 @@ stdenv.mkDerivation rec {
   ];
 
   doCheck = true;
+
+  # MLKit intentionally has some of these in its test suite.
+  # Since the test suite is available in `$out/share/mlkit/test`, we must disable this check.
+  dontCheckForBrokenSymlinks = true;
 
   checkPhase = ''
     runHook preCheck

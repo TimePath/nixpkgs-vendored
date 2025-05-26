@@ -5,24 +5,26 @@
   callPackage,
   ensureNewerSourcesForZipFilesHook,
   python3,
+  makeWrapper,
   # optional list of extra waf tools, e.g. `[ "doxygen" "pytest" ]`
   extraTools ? [ ],
 }:
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "waf";
-  version = "2.1.4";
+  version = "2.1.5";
 
   src = fetchFromGitLab {
     owner = "ita1024";
     repo = "waf";
     rev = "waf-${finalAttrs.version}";
-    hash = "sha256-Dt8eo/rY6JRu6teTQM0y7bjMzQjOv3WSL6bcF9g0B8o=";
+    hash = "sha256-cZ8tt17m1KUGxYPJf+cHf9j8rzNCrGyY8rcZcSvebyY=";
   };
 
   nativeBuildInputs = [
     ensureNewerSourcesForZipFilesHook
     python3
+    makeWrapper
   ];
 
   buildInputs = [
@@ -51,14 +53,20 @@ stdenv.mkDerivation (finalAttrs: {
 
       python waf-light build ${extraToolsList}
 
+      substituteInPlace waf \
+        --replace "w = test(i + '/lib/' + dirname)" \
+                  "w = test('$out/${python3.sitePackages}')"
+
       runHook postBuild
     '';
 
   installPhase = ''
     runHook preInstall
 
-    install -D waf $out/bin/waf
-
+    install -D waf "$out"/bin/waf
+    wrapProgram "$out"/bin/waf --set PYTHONPATH "$out"/${python3.sitePackages}
+    mkdir -p "$out"/${python3.sitePackages}/
+    cp -r waflib "$out"/${python3.sitePackages}/
     runHook postInstall
   '';
 
@@ -75,7 +83,7 @@ stdenv.mkDerivation (finalAttrs: {
     changelog = "https://gitlab.com/ita1024/waf/blob/waf-${finalAttrs.version}/ChangeLog";
     license = lib.licenses.bsd3;
     mainProgram = "waf";
-    maintainers = with lib.maintainers; [ AndersonTorres ];
+    maintainers = with lib.maintainers; [ ];
     inherit (python3.meta) platforms;
     sourceProvenance = [ lib.sourceTypes.fromSource ];
   };

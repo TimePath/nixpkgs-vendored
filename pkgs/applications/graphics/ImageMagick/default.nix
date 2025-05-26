@@ -32,6 +32,8 @@
   libpng,
   liblqr1Support ? true,
   liblqr1,
+  libraqmSupport ? true,
+  libraqm,
   librawSupport ? true,
   libraw,
   librsvgSupport ? !stdenv.hostPlatform.isMinGW,
@@ -52,8 +54,6 @@
   potrace,
   coreutils,
   curl,
-  ApplicationServices,
-  Foundation,
   testers,
   nixos-icons,
   perlPackages,
@@ -61,6 +61,7 @@
 }:
 
 assert libXtSupport -> libX11Support;
+assert libraqmSupport -> freetypeSupport;
 
 let
   arch =
@@ -84,13 +85,13 @@ in
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "imagemagick";
-  version = "7.1.1-45";
+  version = "7.1.1-47";
 
   src = fetchFromGitHub {
     owner = "ImageMagick";
     repo = "ImageMagick";
     tag = finalAttrs.version;
-    hash = "sha256-7oE+fkozhTqTagcwpzttKLZoq4gT1nSib4JssRmz3YI=";
+    hash = "sha256-lRPGVGv86vH7Q1cLoLp8mOAkxcHTHgUrx0mmKgl1oEc=";
   };
 
   outputs = [
@@ -136,6 +137,7 @@ stdenv.mkDerivation (finalAttrs: {
     ++ lib.optional ghostscriptSupport ghostscript
     ++ lib.optional liblqr1Support liblqr1
     ++ lib.optional libpngSupport libpng
+    ++ lib.optional libraqmSupport libraqm
     ++ lib.optional librawSupport libraw
     ++ lib.optional libtiffSupport libtiff
     ++ lib.optional libxml2Support libxml2
@@ -147,11 +149,7 @@ stdenv.mkDerivation (finalAttrs: {
       librsvg
       pango
     ]
-    ++ lib.optional openjpegSupport openjpeg
-    ++ lib.optionals stdenv.hostPlatform.isDarwin [
-      ApplicationServices
-      Foundation
-    ];
+    ++ lib.optional openjpegSupport openjpeg;
 
   propagatedBuildInputs =
     [ curl ]
@@ -167,8 +165,13 @@ stdenv.mkDerivation (finalAttrs: {
   postInstall =
     ''
       (cd "$dev/include" && ln -s ImageMagick* ImageMagick)
+      # Q16HDRI = 16 bit quantum depth with HDRI support, and is the default ImageMagick configuration
+      # If the default is changed, or the derivation is modified to use a different configuration
+      # this will need to be changed below.
       moveToOutput "bin/*-config" "$dev"
       moveToOutput "lib/ImageMagick-*/config-Q16HDRI" "$dev" # includes configure params
+      configDestination=($out/share/ImageMagick-*)
+      grep -v '/nix/store' $dev/lib/ImageMagick-*/config-Q16HDRI/configure.xml > $configDestination/configure.xml
       for file in "$dev"/bin/*-config; do
         substituteInPlace "$file" --replace pkg-config \
           "PKG_CONFIG_PATH='$dev/lib/pkgconfig' '$(command -v $PKG_CONFIG)'"
@@ -199,7 +202,7 @@ stdenv.mkDerivation (finalAttrs: {
       "ImageMagick"
       "MagickWand"
     ];
-    platforms = platforms.linux ++ platforms.darwin;
+    platforms = platforms.unix;
     maintainers = with maintainers; [
       dotlambda
       rhendric

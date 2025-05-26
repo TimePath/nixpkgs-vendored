@@ -179,6 +179,22 @@ in
           ];
         };
 
+        linux_ham = callPackage ../os-specific/linux/kernel/mainline.nix {
+          branch = "6.13";
+          kernelPatches = [
+            kernelPatches.bridge_stp_helper
+            kernelPatches.request_key_helper
+            {
+              name = "ax25-ham";
+              patch = null;
+              extraStructuredConfig = {
+                HAMRADIO = lib.kernel.yes;
+                AX25 = lib.kernel.module;
+              };
+            }
+          ];
+        };
+
         linux_rt_6_1 = callPackage ../os-specific/linux/kernel/linux-rt-6.1.nix {
           kernelPatches = [
             kernelPatches.bridge_stp_helper
@@ -311,6 +327,7 @@ in
         linux_6_6_hardened = hardenedKernelFor kernels.linux_6_6 { };
         linux_6_12_hardened = hardenedKernelFor kernels.linux_6_12 { };
         linux_6_13_hardened = hardenedKernelFor kernels.linux_6_13 { };
+        linux_6_14_hardened = hardenedKernelFor kernels.linux_6_14 { };
 
       }
       // lib.optionalAttrs config.allowAliases {
@@ -361,7 +378,11 @@ in
 
         acpi_call = callPackage ../os-specific/linux/acpi-call { };
 
+        ajantv2 = callPackage ../os-specific/linux/ajantv2 { };
+
         akvcam = callPackage ../os-specific/linux/akvcam { };
+
+        amdgpu-i2c = callPackage ../os-specific/linux/amdgpu-i2c { };
 
         amneziawg = callPackage ../os-specific/linux/amneziawg { };
 
@@ -419,6 +440,12 @@ in
           else
             null;
 
+        iio-utils =
+          if lib.versionAtLeast kernel.version "4.1" then
+            callPackage ../os-specific/linux/iio-utils { }
+          else
+            null;
+
         intel-speed-select =
           if lib.versionAtLeast kernel.version "5.3" then
             callPackage ../os-specific/linux/intel-speed-select { }
@@ -473,6 +500,7 @@ in
 
         nvidia_x11 = nvidiaPackages.stable;
         nvidia_x11_beta = nvidiaPackages.beta;
+        nvidia_x11_latest = nvidiaPackages.latest;
         nvidia_x11_legacy340 = nvidiaPackages.legacy_340;
         nvidia_x11_legacy390 = nvidiaPackages.legacy_390;
         nvidia_x11_legacy470 = nvidiaPackages.legacy_470;
@@ -480,15 +508,18 @@ in
         nvidia_x11_production = nvidiaPackages.production;
         nvidia_x11_vulkan_beta = nvidiaPackages.vulkan_beta;
         nvidia_dc = nvidiaPackages.dc;
-        nvidia_dc_520 = nvidiaPackages.dc_520;
         nvidia_dc_535 = nvidiaPackages.dc_535;
+        nvidia_dc_565 = nvidiaPackages.dc_565;
 
         # this is not a replacement for nvidia_x11*
         # only the opensource kernel driver exposed for hydra to build
         nvidia_x11_beta_open = nvidiaPackages.beta.open;
+        nvidia_x11_latest_open = nvidiaPackages.latest.open;
         nvidia_x11_production_open = nvidiaPackages.production.open;
         nvidia_x11_stable_open = nvidiaPackages.stable.open;
         nvidia_x11_vulkan_beta_open = nvidiaPackages.vulkan_beta.open;
+
+        nxp-pn5xx = callPackage ../os-specific/linux/nxp-pn5xx { };
 
         openrazer = callPackage ../os-specific/linux/openrazer/driver.nix { };
 
@@ -647,16 +678,14 @@ in
 
         xpadneo = callPackage ../os-specific/linux/xpadneo { };
 
+        yt6801 = callPackage ../os-specific/linux/yt6801 { };
+
         ithc = callPackage ../os-specific/linux/ithc { };
 
         ryzen-smu = callPackage ../os-specific/linux/ryzen-smu { };
 
         zenpower = callPackage ../os-specific/linux/zenpower { };
 
-        zfs_2_1 = callPackage ../os-specific/linux/zfs/2_1.nix {
-          configFile = "kernel";
-          inherit pkgs kernel;
-        };
         zfs_2_2 = callPackage ../os-specific/linux/zfs/2_2.nix {
           configFile = "kernel";
           inherit pkgs kernel;
@@ -669,7 +698,6 @@ in
           configFile = "kernel";
           inherit pkgs kernel;
         };
-        zfs = zfs_2_2;
 
         can-isotp = callPackage ../os-specific/linux/can-isotp { };
 
@@ -689,8 +717,14 @@ in
 
         msi-ec = callPackage ../os-specific/linux/msi-ec { };
 
+        tsme-test = callPackage ../os-specific/linux/tsme-test { };
+
+        xpad-noone = callPackage ../os-specific/linux/xpad-noone { };
+
       }
       // lib.optionalAttrs config.allowAliases {
+        zfs = throw "linuxPackages.zfs has been removed, use zfs_* instead, or linuxPackages.\${pkgs.zfs.kernelModuleAttribute}"; # added 2025-01-23
+        zfs_2_1 = throw "zfs_2_1 has been removed"; # added 2024-12-25;
         ati_drivers_x11 = throw "ati drivers are no longer supported by any kernel >=4.1"; # added 2021-05-18;
         hid-nintendo = throw "hid-nintendo was added in mainline kernel version 5.16"; # Added 2023-07-30
         sch_cake = throw "sch_cake was added in mainline kernel version 4.19"; # Added 2023-06-14
@@ -699,8 +733,8 @@ in
         xmm7360-pci = throw "Support for the XMM7360 WWAN card was added to the iosm kmod in mainline kernel version 5.18";
         amdgpu-pro = throw "amdgpu-pro was removed due to lack of maintenance"; # Added 2024-06-16
         kvdo = throw "kvdo was removed, because it was added to mainline in kernel version 6.9"; # Added 2024-07-08
-        system76-power = lib.warn "kernelPackages.system76-power is now pkgs.system76-power" pkgs.system76-power; # Added 2024-10-16
-        system76-scheduler = lib.warn "kernelPackages.system76-scheduler is now pkgs.system76-scheduler" pkgs.system76-scheduler; # Added 2024-10-16
+        system76-power = lib.warnOnInstantiate "kernelPackages.system76-power is now pkgs.system76-power" pkgs.system76-power; # Added 2024-10-16
+        system76-scheduler = lib.warnOnInstantiate "kernelPackages.system76-scheduler is now pkgs.system76-scheduler" pkgs.system76-scheduler; # Added 2024-10-16
         tuxedo-keyboard = self.tuxedo-drivers; # Added 2024-09-28
       }
     );
@@ -760,6 +794,7 @@ in
       linux_6_6_hardened = recurseIntoAttrs (packagesFor kernels.linux_6_6_hardened);
       linux_6_12_hardened = recurseIntoAttrs (packagesFor kernels.linux_6_12_hardened);
       linux_6_13_hardened = recurseIntoAttrs (packagesFor kernels.linux_6_13_hardened);
+      linux_6_14_hardened = recurseIntoAttrs (packagesFor kernels.linux_6_14_hardened);
 
       linux_zen = recurseIntoAttrs (packagesFor kernels.linux_zen);
       linux_lqx = recurseIntoAttrs (packagesFor kernels.linux_lqx);
@@ -768,6 +803,8 @@ in
       linux_xanmod_latest = recurseIntoAttrs (packagesFor kernels.linux_xanmod_latest);
 
       linux_libre = recurseIntoAttrs (packagesFor kernels.linux_libre);
+
+      linux_ham = recurseIntoAttrs (packagesFor kernels.linux_ham);
 
       linux_latest_libre = recurseIntoAttrs (packagesFor kernels.linux_latest_libre);
       __recurseIntoDerivationForReleaseJobs = true;
@@ -780,14 +817,17 @@ in
     }
   );
 
-  packageAliases = {
-    linux_default = packages.linux_6_6;
-    # Update this when adding the newest kernel major version!
-    linux_latest = packages.linux_6_14;
-    linux_mptcp = throw "'linux_mptcp' has been moved to https://github.com/teto/mptcp-flake";
-    linux_rt_default = packages.linux_rt_5_15;
-    linux_rt_latest = packages.linux_rt_6_6;
-  };
+  packageAliases =
+    {
+      linux_default = packages.linux_6_12;
+      # Update this when adding the newest kernel major version!
+      linux_latest = packages.linux_6_14;
+      linux_rt_default = packages.linux_rt_5_15;
+      linux_rt_latest = packages.linux_rt_6_6;
+    }
+    // lib.optionalAttrs config.allowAliases {
+      linux_mptcp = throw "'linux_mptcp' has been moved to https://github.com/teto/mptcp-flake";
+    };
 
   manualConfig = callPackage ../os-specific/linux/kernel/manual-config.nix { };
 

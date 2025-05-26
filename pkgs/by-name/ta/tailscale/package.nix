@@ -24,7 +24,7 @@
 }:
 
 let
-  version = "1.80.3";
+  version = "1.82.5";
 in
 buildGoModule {
   pname = "tailscale";
@@ -39,19 +39,10 @@ buildGoModule {
     owner = "tailscale";
     repo = "tailscale";
     rev = "v${version}";
-    hash = "sha256-UOz2EAUlYZx2XBzw8hADO0ti9bgwz19MTg60rSefSB8=";
+    hash = "sha256-BFitj8A+TfNKTyXBB1YhsEs5NvLUfgJ2IbjB2ipf4xU=";
   };
 
-  patches = [
-    # Fix "tailscale ssh" when built with ts_include_cli tag
-    # https://github.com/tailscale/tailscale/pull/12109
-    (fetchpatch {
-      url = "https://github.com/tailscale/tailscale/commit/325ca13c4549c1af58273330744d160602218af9.patch";
-      hash = "sha256-SMwqZiGNVflhPShlHP+7Gmn0v4b6Gr4VZGIF/oJAY8M=";
-    })
-  ];
-
-  vendorHash = "sha256-81UOjoC5GJqhNs4vWcQ2/B9FMaDWtl0rbuFXmxbu5dI=";
+  vendorHash = "sha256-SiUkN6BQK1IQmLfkfPetzvYqRu9ENK6+6txtGxegF5Y=";
 
   nativeBuildInputs = [
     makeWrapper
@@ -62,11 +53,14 @@ buildGoModule {
     unixtools.netstat
   ];
 
-  CGO_ENABLED = 0;
+  env.CGO_ENABLED = 0;
 
   subPackages = [
     "cmd/derper"
+    "cmd/derpprobe"
     "cmd/tailscaled"
+    "cmd/tsidp"
+    "cmd/get-authkey"
   ];
 
   excludedPackages = [
@@ -141,6 +135,9 @@ buildGoModule {
           # test for a dev util which helps to fork golang.org/x/crypto/acme
           # not necessary and fails to match
           "TestSyncedToUpstream" # tempfork/acme
+
+          # flaky: https://github.com/tailscale/tailscale/issues/7030
+          "TestConcurrent"
         ]
         ++ lib.optionals stdenv.hostPlatform.isDarwin [
           # syscall default route interface en0 differs from netstat
@@ -152,6 +149,9 @@ buildGoModule {
 
           # portlist_test.go:81: didn't find ephemeral port in p2 53643
           "TestPoller" # portlist
+
+          # Fails only on Darwin, succeeds on other tested platforms.
+          "TestOnTailnetDefaultAutoUpdate"
         ];
     in
     [ "-skip=^${builtins.concatStringsSep "$|^" skippedTests}$" ];
@@ -160,6 +160,7 @@ buildGoModule {
     ''
       ln -s $out/bin/tailscaled $out/bin/tailscale
       moveToOutput "bin/derper" "$derper"
+      moveToOutput "bin/derpprobe" "$derper"
     ''
     + lib.optionalString stdenv.hostPlatform.isDarwin ''
       wrapProgram $out/bin/tailscaled \

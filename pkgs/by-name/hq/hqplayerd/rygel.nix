@@ -18,7 +18,7 @@
   gupnp-dlna,
   gst_all_1,
   libgee,
-  libsoup,
+  libsoup_2_4,
   gtk3,
   libmediaart,
   sqlite,
@@ -67,7 +67,7 @@ stdenv.mkDerivation rec {
       gupnp-av
       gupnp-dlna
       libgee
-      libsoup
+      libsoup_2_4
       gtk3
       libmediaart
       sqlite
@@ -109,7 +109,7 @@ stdenv.mkDerivation rec {
     description = "Home media solution (UPnP AV MediaServer) that allows you to easily share audio, video and pictures to other devices";
     homepage = "https://gitlab.gnome.org/GNOME/rygel";
     license = licenses.lgpl21Plus;
-    maintainers = teams.gnome.members;
+    teams = [ teams.gnome ];
     platforms = platforms.linux;
   };
 }

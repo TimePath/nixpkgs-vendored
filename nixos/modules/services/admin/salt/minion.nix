@@ -4,9 +4,6 @@
   lib,
   ...
 }:
-
-with lib;
-
 let
 
   cfg = config.services.salt.minion;
@@ -26,9 +23,9 @@ in
 {
   options = {
     services.salt.minion = {
-      enable = mkEnableOption "Salt configuration management system minion service";
-      configuration = mkOption {
-        type = types.attrs;
+      enable = lib.mkEnableOption "Salt configuration management system minion service";
+      configuration = lib.mkOption {
+        type = lib.types.attrs;
         default = { };
         description = ''
           Salt minion configuration as Nix attribute set.
@@ -39,7 +36,7 @@ in
     };
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     environment = {
       # Set this up in /etc/salt/minion so `salt-call`, etc. work.
       # The alternatives are

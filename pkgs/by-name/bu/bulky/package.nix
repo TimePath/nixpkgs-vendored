@@ -14,13 +14,13 @@
 
 stdenv.mkDerivation rec {
   pname = "bulky";
-  version = "3.4";
+  version = "3.6";
 
   src = fetchFromGitHub {
     owner = "linuxmint";
     repo = "bulky";
     rev = version;
-    hash = "sha256-YByzRDL/LuI/VwBHLRZ3+S2VnttYeuMgJpRLPhR/NCA=";
+    hash = "sha256-+mA8b1PEfp151hks4T/I+dMYlJa6yYz1wWnafe+w9y8=";
   };
 
   nativeBuildInputs = [
@@ -36,6 +36,7 @@ stdenv.mkDerivation rec {
         pygobject3
         magic
         setproctitle
+        unidecode
       ]
     ))
     gsettings-desktop-schemas
@@ -69,6 +70,6 @@ stdenv.mkDerivation rec {
     homepage = "https://github.com/linuxmint/bulky";
     license = licenses.gpl3Plus;
     platforms = platforms.linux;
-    maintainers = teams.cinnamon.members;
+    teams = [ teams.cinnamon ];
   };
 }

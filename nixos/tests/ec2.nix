@@ -12,7 +12,7 @@ with import common/ec2.nix { inherit makeTest pkgs; };
 let
   imageCfg =
     (import ../lib/eval-config.nix {
-      inherit system;
+      system = null;
       modules = [
         ../maintainers/scripts/ec2/amazon-image.nix
         ../modules/testing/test-instrumentation.nix
@@ -54,10 +54,12 @@ let
             apacheHttpd.man
             valgrind.doc
           ]);
+
+          nixpkgs.pkgs = pkgs;
         }
       ];
     }).config;
-  image = "${imageCfg.system.build.amazonImage}/${imageCfg.amazonImage.name}.qcow2";
+  image = "${imageCfg.system.build.amazonImage}/${imageCfg.image.imageFile}";
 
   sshKeys = import ./ssh-keys.nix pkgs;
   snakeOilPrivateKey = sshKeys.snakeOilPrivateKey.text;

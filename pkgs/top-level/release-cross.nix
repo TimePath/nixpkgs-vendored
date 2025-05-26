@@ -6,7 +6,7 @@
 
   e.g.
 
-  $ nix-build pkgs/top-level/release-cross.nix -A crossMingw32.nixUnstable --arg supportedSystems '[builtins.currentSystem]'
+  $ nix-build pkgs/top-level/release-cross.nix -A crossMingw32.nix --arg supportedSystems '[builtins.currentSystem]'
 
   To build all of the bootstrapFiles bundles on every enabled platform, use:
 
@@ -17,8 +17,8 @@
   # The platforms *from* which we cross compile.
   supportedSystems ? [
     "x86_64-linux"
-    "x86_64-darwin"
     "aarch64-linux"
+    "aarch64-darwin"
   ],
   # Strip most of attributes when evaluating to spare memory usage
   scrubJobs ? true,
@@ -79,7 +79,7 @@ let
     gmp = nativePlatforms;
     libcCross = nativePlatforms;
     nix = nativePlatforms;
-    nixUnstable = nativePlatforms;
+    nixVersions.git = nativePlatforms;
     mesa = nativePlatforms;
     rustc = nativePlatforms;
     cargo = nativePlatforms;
@@ -209,7 +209,7 @@ in
   fuloongminipc = mapTestOnCross systems.examples.fuloongminipc linuxCommon;
   ben-nanonote = mapTestOnCross systems.examples.ben-nanonote linuxCommon;
 
-  # Javacript
+  # Javascript
   ghcjs = mapTestOnCross systems.examples.ghcjs {
     haskell.packages.ghcjs.hello = nativePlatforms;
     haskell.packages.native-bignum.ghcHEAD.hello = nativePlatforms;
@@ -263,6 +263,7 @@ in
   or1k = mapTestOnCross systems.examples.or1k embedded;
   avr = mapTestOnCross systems.examples.avr embedded;
   arm-embedded = mapTestOnCross systems.examples.arm-embedded embedded;
+  arm-embedded-nano = mapTestOnCross systems.examples.arm-embedded-nano embedded;
   armhf-embedded = mapTestOnCross systems.examples.armhf-embedded embedded;
   aarch64-embedded = mapTestOnCross systems.examples.aarch64-embedded embedded;
   aarch64be-embedded = mapTestOnCross systems.examples.aarch64be-embedded embedded;

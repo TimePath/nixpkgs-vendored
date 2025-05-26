@@ -7,7 +7,7 @@
 
 let
   pname = "erigon";
-  version = "2.60.6";
+  version = "3.0.3";
 in
 buildGoModule {
   inherit pname version;
@@ -16,11 +16,11 @@ buildGoModule {
     owner = "ledgerwatch";
     repo = pname;
     rev = "v${version}";
-    hash = "sha256-208gJTLaVEikH92ZDEULPtfnKJyZhZCRCDfCxewABK4=";
+    hash = "sha256-gSgkdg7677OBOkAbsEjxX1QttuIbfve2A3luUZoZ5Ik=";
     fetchSubmodules = true;
   };
 
-  vendorHash = "sha256-TUK7obI1wOXroI1NE1GfIP+NMW909+z92Wpy9B/soY0=";
+  vendorHash = "sha256-8eyC3JkRcRlFw8CyTK5w1XySur2jAeFGXkEaY/3Oq0k=";
   proxyVendor = true;
 
   # Build errors in mdbx when format hardening is enabled:
@@ -45,7 +45,11 @@ buildGoModule {
   # Enabling silkworm also breaks the build as it requires dynamically linked libraries.
   # If we need it in the future, we should consider packaging silkworm and silkworm-go
   # as depenedencies explicitly.
-  tags = "-tags=nosqlite,noboltdb,nosilkworm";
+  tags = [
+    "nosqlite"
+    "noboltdb"
+    "nosilkworm"
+  ];
 
   passthru.updateScript = nix-update-script { };
 

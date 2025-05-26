@@ -12,18 +12,17 @@
   llvm,
   zlib,
   zstd,
-  apple-sdk_11,
 }:
 
 stdenv.mkDerivation rec {
   pname = "nvc";
-  version = "1.14.2";
+  version = "1.16.1";
 
   src = fetchFromGitHub {
     owner = "nickg";
     repo = "nvc";
     rev = "r${version}";
-    hash = "sha256-ppZ6rvSmny4wKCpdlJvvaLOTUn3/hUAiEhEkj33oF3c=";
+    hash = "sha256-7hTlY/WKJaw+ZMSn8A5F0p1vhg67NUY/CCjw7xdOg2M=";
   };
 
   nativeBuildInputs = [
@@ -43,9 +42,6 @@ stdenv.mkDerivation rec {
     ]
     ++ lib.optionals (lib.meta.availableOn stdenv.hostPlatform elfutils) [
       elfutils
-    ]
-    ++ lib.optionals stdenv.hostPlatform.isDarwin [
-      apple-sdk_11
     ];
 
   preConfigure = ''

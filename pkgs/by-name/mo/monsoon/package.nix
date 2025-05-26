@@ -7,16 +7,16 @@
 
 buildGoModule rec {
   pname = "monsoon";
-  version = "0.9.2";
+  version = "0.10.1";
 
   src = fetchFromGitHub {
     owner = "RedTeamPentesting";
     repo = "monsoon";
     tag = "v${version}";
-    hash = "sha256-5aV4/JEtaUEtE/csvch/JooeWNLpysqrI2hwVWMJhnI=";
+    hash = "sha256-vgwoW7jrcLVHDm1cYrIpFcfrgKImCAVOtHg8lMQ6aic=";
   };
 
-  vendorHash = "sha256-gdoOBW5MD94RiKINVtTDvBQRZaJ9tlgu0eh7MxuMezg=";
+  vendorHash = "sha256-hGEUO1sl8IKXo4rkS81Wlf7187lu2PrSujNlGNTLwmE=";
 
   # Tests fails on darwin
   doCheck = !stdenv.hostPlatform.isDarwin;

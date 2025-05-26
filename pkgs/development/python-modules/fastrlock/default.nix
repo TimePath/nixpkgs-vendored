@@ -9,7 +9,7 @@
 
 buildPythonPackage rec {
   pname = "fastrlock";
-  version = "0.8.2";
+  version = "0.8.3";
   format = "setuptools";
 
   disabled = pythonOlder "3.7";
@@ -18,7 +18,7 @@ buildPythonPackage rec {
     owner = "scoder";
     repo = pname;
     tag = "v${version}";
-    hash = "sha256-2h+rhP/EVMG3IkJVkE74p4GeBTwV3BS7fUkKpwedr2k=";
+    hash = "sha256-NB/AR6g1ZP5Atc0zwZNuXLsxg8BM67rWnx3Q6Pb0k5k=";
   };
 
   nativeBuildInputs = [ cython ];

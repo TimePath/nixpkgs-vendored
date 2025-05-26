@@ -1,10 +1,8 @@
 {
   lib,
   importCargoLock,
-  fetchCargoTarball,
   fetchCargoVendor,
   stdenv,
-  callPackage,
   cargoBuildHook,
   cargoCheckHook,
   cargoInstallHook,
@@ -24,7 +22,6 @@ lib.extendMkDerivation {
   excludeDrvArgNames = [
     "depsExtraArgs"
     "cargoUpdateHook"
-    "cargoDeps"
     "cargoLock"
   ];
 
@@ -44,6 +41,7 @@ lib.extendMkDerivation {
       cargoPatches ? [ ],
       patches ? [ ],
       sourceRoot ? null,
+      cargoRoot ? null,
       logLevel ? "",
       buildInputs ? [ ],
       nativeBuildInputs ? [ ],
@@ -51,7 +49,7 @@ lib.extendMkDerivation {
       cargoDepsHook ? "",
       buildType ? "release",
       meta ? { },
-      useFetchCargoVendor ? false,
+      useFetchCargoVendor ? true,
       cargoDeps ? null,
       cargoLock ? null,
       cargoVendorDir ? null,
@@ -73,24 +71,30 @@ lib.extendMkDerivation {
       ...
     }@args:
 
-    let
+    assert lib.assertMsg useFetchCargoVendor
+      "buildRustPackage: `useFetchCargoVendor` is non‐optional and enabled by default as of 25.05";
 
-      cargoDeps' =
+    lib.optionalAttrs (stdenv.hostPlatform.isDarwin && buildType == "debug") {
+      RUSTFLAGS = "-C split-debuginfo=packed " + (args.RUSTFLAGS or "");
+    }
+    // {
+      cargoDeps =
         if cargoVendorDir != null then
           null
         else if cargoDeps != null then
           cargoDeps
         else if cargoLock != null then
           importCargoLock cargoLock
-        else if (args.cargoHash or null == null) && (args.cargoSha256 or null == null) then
+        else if args.cargoHash or null == null then
           throw "cargoHash, cargoVendorDir, cargoDeps, or cargoLock must be set"
-        else if useFetchCargoVendor then
+        else
           fetchCargoVendor (
             {
               inherit
                 src
                 srcs
                 sourceRoot
+                cargoRoot
                 preUnpack
                 unpackPhase
                 postUnpack
@@ -98,41 +102,9 @@ lib.extendMkDerivation {
               name = cargoDepsName;
               patches = cargoPatches;
               hash = args.cargoHash;
-            }
-            // depsExtraArgs
-          )
-        else
-          fetchCargoTarball (
-            {
-              inherit
-                src
-                srcs
-                sourceRoot
-                preUnpack
-                unpackPhase
-                postUnpack
-                cargoUpdateHook
-                ;
-              name = cargoDepsName;
-              patches = cargoPatches;
-            }
-            // lib.optionalAttrs (args ? cargoHash) {
-              hash = args.cargoHash;
-            }
-            // lib.optionalAttrs (args ? cargoSha256) {
-              sha256 = lib.warn "cargoSha256 is deprecated. Please use cargoHash with SRI hash instead" args.cargoSha256;
             }
             // depsExtraArgs
           );
-
-      target = stdenv.hostPlatform.rust.rustcTargetSpec;
-      targetIsJSON = lib.hasSuffix ".json" target;
-    in
-    lib.optionalAttrs (stdenv.hostPlatform.isDarwin && buildType == "debug") {
-      RUSTFLAGS = "-C split-debuginfo=packed " + (args.RUSTFLAGS or "");
-    }
-    // {
-      cargoDeps = cargoDeps';
       inherit buildAndTestSubdir;
 
       cargoBuildType = buildType;
@@ -147,8 +119,6 @@ lib.extendMkDerivation {
 
       cargoCheckFeatures = checkFeatures;
 
-      patchRegistryDeps = ./patch-registry-deps;
-
       nativeBuildInputs =
         nativeBuildInputs
         ++ lib.optionals auditable [
@@ -162,6 +132,7 @@ lib.extendMkDerivation {
           cargoInstallHook
           cargoSetupHook
           rustc
+          cargo
         ];
 
       buildInputs =

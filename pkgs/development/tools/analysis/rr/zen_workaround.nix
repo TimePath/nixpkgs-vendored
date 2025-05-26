@@ -14,7 +14,7 @@ stdenv.mkDerivation {
   pname = "rr-zen_workaround";
 
   inherit (rr) src version;
-  sourceRoot = "source/third-party/zen-pmu-workaround";
+  sourceRoot = "${rr.src.name}/third-party/zen-pmu-workaround";
 
   hardeningDisable = [ "pic" ];
   nativeBuildInputs = kernel.moduleBuildDependencies;
@@ -23,7 +23,7 @@ stdenv.mkDerivation {
     "-C${kernel.dev}/lib/modules/${kernel.modDirVersion}/build"
   ];
   postConfigure = ''
-    makeFlags="$makeFlags M=$(pwd)"
+    appendToVar makeFlags "M=$(pwd)"
   '';
   buildFlags = [ "modules" ];
 

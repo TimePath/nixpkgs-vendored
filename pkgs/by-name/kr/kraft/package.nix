@@ -1,22 +1,38 @@
 {
   lib,
+  stdenv,
   buildGoModule,
   fetchFromGitHub,
+  pkg-config,
+  btrfs-progs,
+  gpgme,
   nix-update-script,
 }:
 
 buildGoModule rec {
   pname = "kraftkit";
-  version = "0.8.6";
+  version = "0.11.6";
 
   src = fetchFromGitHub {
     owner = "unikraft";
     repo = "kraftkit";
     rev = "v${version}";
-    hash = "sha256-lBvDKO2+MTSrmQM7szg5yulUi5OZKv7qKNQ75PIZgDo=";
+    hash = "sha256-a6c7g2cxrawE7BRpcrsefCQ7xQ56wVOGjFexdkOKnv0=";
   };
 
-  vendorHash = "sha256-JSE4k/JgWvYCfTUuf2pj4XCcdJ9+j7fY9aAiCipapIk=";
+  nativeBuildInputs = [
+    pkg-config
+  ];
+
+  buildInputs =
+    [
+      gpgme
+    ]
+    ++ lib.optionals stdenv.hostPlatform.isLinux [
+      btrfs-progs
+    ];
+
+  vendorHash = "sha256-lwgxedKLcuV6RucbU26sDO+9j+8uWkignJDomFHaSXU=";
 
   ldflags = [
     "-s"
@@ -39,7 +55,10 @@ buildGoModule rec {
     description = "Build and use highly customized and ultra-lightweight unikernel VMs";
     homepage = "https://github.com/unikraft/kraftkit";
     license = lib.licenses.bsd3;
-    maintainers = with lib.maintainers; [ dit7ya ];
+    maintainers = with lib.maintainers; [
+      dit7ya
+      cloudripper
+    ];
     mainProgram = "kraft";
   };
 }

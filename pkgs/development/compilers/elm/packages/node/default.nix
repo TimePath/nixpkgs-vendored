@@ -126,18 +126,6 @@ with elmLib;
       };
   };
 
-  elm-review = nodePkgs.elm-review // {
-    meta =
-      with lib;
-      nodePkgs.elm-review.meta
-      // {
-        description = "Analyzes Elm projects, to help find mistakes before your users find them";
-        homepage = "https://package.elm-lang.org/packages/jfmengels/elm-review/${nodePkgs.elm-review.version}";
-        license = licenses.bsd3;
-        maintainers = [ maintainers.turbomack ];
-      };
-  };
-
   elm-language-server = nodePkgs."@elm-tooling/elm-language-server" // {
     meta =
       with lib;
@@ -188,22 +176,7 @@ with elmLib;
       ;
   };
 
-  elm-land =
-    let
-      patched = patchNpmElm nodePkgs.elm-land;
-    in
-    patched.override (old: {
-      inherit ESBUILD_BINARY_PATH;
-      meta =
-        with lib;
-        nodePkgs."elm-land".meta
-        // {
-          description = "Production-ready framework for building Elm applications";
-          homepage = "https://elm.land/";
-          license = licenses.bsd3;
-          maintainers = [ maintainers.zupo ];
-        };
-    });
+  elm-land = pkgs.elm-land; # Alias
 
   elm-doc-preview = nodePkgs."elm-doc-preview".overrideAttrs (old: {
     nativeBuildInputs = (old.nativeBuildInputs or [ ]) ++ [ old.nodejs.pkgs.node-gyp-build ];

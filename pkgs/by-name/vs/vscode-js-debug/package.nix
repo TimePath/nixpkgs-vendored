@@ -6,8 +6,6 @@
   buildPackages,
   libsecret,
   xcbuild,
-  Security,
-  AppKit,
   pkg-config,
   node-gyp,
   runCommand,
@@ -17,28 +15,23 @@
 
 buildNpmPackage rec {
   pname = "vscode-js-debug";
-  version = "1.94.0";
+  version = "1.97.1";
 
   src = fetchFromGitHub {
     owner = "microsoft";
     repo = "vscode-js-debug";
     rev = "v${version}";
-    hash = "sha256-Mh4g0YBgZ3u0zLwfzbcc1/24dsgq/7l9fu/KdurhLks=";
+    hash = "sha256-MZY6gthj3q2ptAvV28hVvIYgBsW4dpsznasZmK1wVOU=";
   };
 
-  npmDepsHash = "sha256-s+kulnn4yE2rNPtm2MYJ36kFZStYgjePc7zdX7FwrNk=";
+  npmDepsHash = "sha256-Xvpb5KauM5BvybKPqUOF7vwDlbVBbpxGTuakx4TVyas=";
 
   nativeBuildInputs = [
     pkg-config
     node-gyp
   ] ++ lib.optionals stdenv.hostPlatform.isDarwin [ xcbuild ];
 
-  buildInputs =
-    lib.optionals (!stdenv.hostPlatform.isDarwin) [ libsecret ]
-    ++ lib.optionals stdenv.hostPlatform.isDarwin [
-      Security
-      AppKit
-    ];
+  buildInputs = lib.optionals (!stdenv.hostPlatform.isDarwin) [ libsecret ];
 
   postPatch = ''
     ${lib.getExe buildPackages.jq} '

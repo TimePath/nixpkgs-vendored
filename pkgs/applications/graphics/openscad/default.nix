@@ -3,9 +3,7 @@
   stdenv,
   fetchFromGitHub,
   fetchpatch,
-  qtbase,
-  qtmultimedia,
-  qscintilla,
+  libsForQt5,
   bison,
   flex,
   eigen,
@@ -14,7 +12,7 @@
   libGL,
   glew,
   opencsg,
-  cgal_4,
+  cgal,
   mpfr,
   gmp,
   glib,
@@ -26,21 +24,17 @@
   double-conversion,
   lib3mf,
   libzip,
-  mkDerivation,
-  qtmacextras,
-  qmake,
   spacenavSupport ? stdenv.hostPlatform.isLinux,
   libspnav,
   wayland,
   wayland-protocols,
   wrapGAppsHook3,
-  qtwayland,
   cairo,
   openscad,
   runCommand,
 }:
 
-mkDerivation rec {
+stdenv.mkDerivation rec {
   pname = "openscad";
   version = "2021.01";
 
@@ -62,14 +56,41 @@ mkDerivation rec {
       url = "https://github.com/openscad/openscad/commit/84addf3c1efbd51d8ff424b7da276400bbfa1a4b.patch";
       sha256 = "sha256-KNEVu10E2d4G2x+FJcuHo2tjD8ygMRuhUcW9NbN98bM=";
     })
+    (fetchpatch {
+      # needed for cgal_5
+      name = "cgalutils-tess.cc-cgal-5.patch";
+      url = "https://github.com/openscad/openscad/commit/3a81c1fb9b663ebbedd6eb044e7276357b1f30a1.patch";
+      hash = "sha256-JdBznXkewx5ybY92Ss0h7UnMZ7d3IQbFRaDCDjb1bRA=";
+    })
+    (fetchpatch {
+      # needed for cgal_5
+      name = "cgalutils-tess.cc-cgal-5_4.patch";
+      url = "https://github.com/openscad/openscad/commit/71f2831c0484c3f35cbf44e1d1dc2c857384100b.patch";
+      hash = "sha256-Fu8dnjNIwZKCI6ukOeHYK8NiJwoA0XtqT8dg8sVevG8=";
+    })
+    (fetchpatch {
+      # needed for cgal_5. Removes dead code
+      name = "cgalutils-polyhedron.cc-cgal-5_3.patch";
+      url = "https://github.com/openscad/openscad/commit/cc49ad8dac24309f5452d5dea9abd406615a52d9.patch";
+      hash = "sha256-B3i+o6lR5osRcVXTimDZUFQmm12JhmbFgG9UwOPebF4=";
+    })
   ];
+
+  postPatch = ''
+    substituteInPlace src/FileModule.cc \
+      --replace-fail 'fs::is_regular' 'fs::is_regular_file'
+
+    substituteInPlace src/openscad.cc \
+      --replace-fail 'boost::join' 'boost::algorithm::join'
+  '';
 
   nativeBuildInputs = [
     bison
     flex
     pkg-config
     gettext
-    qmake
+    libsForQt5.qmake
+    libsForQt5.wrapQtAppsHook
     wrapGAppsHook3
   ];
 
@@ -79,7 +100,7 @@ mkDerivation rec {
       boost
       glew
       opencsg
-      cgal_4
+      cgal
       mpfr
       gmp
       glib
@@ -89,9 +110,9 @@ mkDerivation rec {
       double-conversion
       freetype
       fontconfig
-      qtbase
-      qtmultimedia
-      qscintilla
+      libsForQt5.qtbase
+      libsForQt5.qtmultimedia
+      libsForQt5.qscintilla
       cairo
     ]
     ++ lib.optionals stdenv.hostPlatform.isLinux [
@@ -99,9 +120,9 @@ mkDerivation rec {
       libGL
       wayland
       wayland-protocols
-      qtwayland
+      libsForQt5.qtwayland
     ]
-    ++ lib.optional stdenv.hostPlatform.isDarwin qtmacextras
+    ++ lib.optional stdenv.hostPlatform.isDarwin libsForQt5.qtmacextras
     ++ lib.optional spacenavSupport libspnav;
 
   qmakeFlags =
@@ -152,7 +173,6 @@ mkDerivation rec {
     maintainers = with lib.maintainers; [
       bjornfor
       raskin
-      gebner
     ];
     mainProgram = "openscad";
   };

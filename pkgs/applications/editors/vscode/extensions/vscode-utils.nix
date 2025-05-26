@@ -7,6 +7,7 @@
   vscode,
   unzip,
   jq,
+  vscode-extension-update-script,
 }:
 let
   buildVscodeExtension = lib.extendMkDerivation {
@@ -40,9 +41,14 @@ let
       {
         pname = "vscode-extension-${pname}";
 
-        passthru = passthru // {
-          inherit vscodeExtPublisher vscodeExtName vscodeExtUniqueId;
-        };
+        passthru =
+          {
+            updateScript = vscode-extension-update-script { };
+          }
+          // passthru
+          // {
+            inherit vscodeExtPublisher vscodeExtName vscodeExtUniqueId;
+          };
 
         inherit
           configurePhase
@@ -93,8 +99,8 @@ let
       assert "" == name;
       assert null == src;
       {
+        inherit (mktplcRef) version;
         pname = "${mktplcRef.publisher}-${mktplcRef.name}";
-        version = mktplcRef.version;
         src = if (vsix != null) then vsix else fetchVsixFromVscodeMarketplace mktplcRef;
         vscodeExtPublisher = mktplcRef.publisher;
         vscodeExtName = mktplcRef.name;

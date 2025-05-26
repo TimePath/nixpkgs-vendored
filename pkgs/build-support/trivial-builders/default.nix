@@ -12,7 +12,11 @@
 let
   inherit (lib)
     optionalAttrs
+    optionalString
+    hasPrefix
     warn
+    map
+    isList
     ;
 in
 
@@ -322,6 +326,12 @@ rec {
         Type: AttrSet
       */
       derivationArgs ? { },
+      /*
+         Whether to inherit the current `$PATH` in the script.
+
+         Type: Bool
+      */
+      inheritPath ? true,
     }:
     writeTextFile {
       inherit
@@ -349,7 +359,7 @@ rec {
         )
         + lib.optionalString (runtimeInputs != [ ]) ''
 
-          export PATH="${lib.makeBinPath runtimeInputs}:$PATH"
+          export PATH="${lib.makeBinPath runtimeInputs}${lib.optionalString inheritPath ":$PATH"}"
         ''
         + ''
 
@@ -357,15 +367,14 @@ rec {
         '';
 
       checkPhase =
-        # GHC (=> shellcheck) isn't supported on some platforms (such as risc-v)
-        # but we still want to use writeShellApplication on those platforms
         let
-          shellcheckSupported = lib.meta.availableOn stdenv.buildPlatform shellcheck-minimal.compiler;
           excludeFlags = lib.optionals (excludeShellChecks != [ ]) [
             "--exclude"
             (lib.concatStringsSep "," excludeShellChecks)
           ];
-          shellcheckCommand = lib.optionalString shellcheckSupported ''
+          # GHC (=> shellcheck) isn't supported on some platforms (such as risc-v)
+          # but we still want to use writeShellApplication on those platforms
+          shellcheckCommand = lib.optionalString shellcheck-minimal.compiler.bootstrapAvailable ''
             # use shellcheck which does not include docs
             # pandoc takes long to build and documentation isn't needed for just running the cli
             ${lib.getExe shellcheck-minimal} ${
@@ -530,6 +539,25 @@ rec {
         |       `-- stack.fish -> /nix/store/6lzdpxshx78281vy056lbk553ijsdr44-stack-2.1.3.1/share/fish/vendor_completions.d/stack.fish
     ...
 
+    To create a directory structure from a specific subdirectory of input `paths` instead of their full trees,
+    you can either append the subdirectory path to each input path, or use the `stripPrefix` argument to
+    remove the common prefix during linking.
+
+    Example:
+
+    # create symlinks of tmpfiles.d rules from multiple packages
+    symlinkJoin { name = "tmpfiles.d"; paths = [ pkgs.lvm2 pkgs.nix ]; stripPrefix = "/lib/tmpfiles.d"; }
+
+    This creates a derivation with a directory structure like the following:
+
+    /nix/store/m5s775yicb763hfa133jwml5hwmwzv14-tmpfiles.d
+    |-- lvm2.conf -> /nix/store/k6js0l5f0zpvrhay49579fj939j77p2w-lvm2-2.03.29/lib/tmpfiles.d/lvm2.conf
+    `-- nix-daemon.conf -> /nix/store/z4v2s3s3y79fmabhps5hakb3c5dwaj5a-nix-1.33.7/lib/tmpfiles.d/nix-daemon.conf
+
+    By default, packages that don't contain the specified subdirectory are silently skipped.
+    Set `failOnMissing = true` to make the build fail if any input package is missing the subdirectory
+    (this is the default behavior when not using stripPrefix).
+
     symlinkJoin and linkFarm are similar functions, but they output
     derivations with different structure.
 
@@ -553,26 +581,51 @@ rec {
         ) "symlinkJoin requires either a `name` OR `pname` and `version`";
         "${args_.pname}-${args_.version}",
       paths,
+      stripPrefix ? "",
       preferLocalBuild ? true,
       allowSubstitutes ? false,
       postBuild ? "",
+      failOnMissing ? stripPrefix == "",
       ...
     }:
+    assert lib.assertMsg (stripPrefix != "" -> (hasPrefix "/" stripPrefix && stripPrefix != "/")) ''
+      stripPrefix must be either an empty string (disable stripping behavior), or relative path prefixed with /.
+
+      Ensure that the path starts with / and specifies path to the subdirectory.
+    '';
+
     let
+      mapPaths =
+        f: paths:
+        map (
+          path:
+          if path == null then
+            null
+          else if isList path then
+            mapPaths f path
+          else
+            f path
+        ) paths;
       args =
         removeAttrs args_ [
           "name"
           "postBuild"
+          "stripPrefix"
+          "paths"
+          "failOnMissing"
         ]
         // {
           inherit preferLocalBuild allowSubstitutes;
+          paths = mapPaths (path: "${path}${stripPrefix}") paths;
           passAsFile = [ "paths" ];
         }; # pass the defaults
     in
     runCommand name args ''
       mkdir -p $out
       for i in $(cat $pathsPath); do
-        ${lndir}/bin/lndir -silent $i $out
+        ${optionalString (!failOnMissing) "if test -d $i; then "}${lndir}/bin/lndir -silent $i $out${
+          optionalString (!failOnMissing) "; fi"
+        }
       done
       ${postBuild}
     '';
@@ -972,6 +1025,18 @@ rec {
     if patches == [ ] && prePatch == "" && postPatch == "" then
       src # nothing to do, so use original src to avoid additional drv
     else
+      let
+        keepAttrs = names: lib.filterAttrs (name: val: lib.elem name names);
+        # enables tools like nix-update to determine what src attributes to replace
+        extraPassthru = lib.optionalAttrs (lib.isAttrs src) (
+          keepAttrs [
+            "rev"
+            "tag"
+            "url"
+            "outputHash"
+          ] src
+        );
+      in
       stdenvNoCC.mkDerivation (
         {
           inherit
@@ -986,11 +1051,19 @@ rec {
           phases = "unpackPhase patchPhase installPhase";
           installPhase = "cp -R ./ $out";
         }
-        # Carry `meta` information from the underlying `src` if present.
-        // (optionalAttrs (src ? meta) { inherit (src) meta; })
+        # Carry and merge information from the underlying `src` if present.
+        // (optionalAttrs (src ? meta || args ? meta) {
+          meta = src.meta or { } // args.meta or { };
+        })
+        // (optionalAttrs (extraPassthru != { } || src ? passthru || args ? passthru) {
+          passthru = extraPassthru // src.passthru or { } // args.passthru or { };
+        })
+        # Forward any additional arguments to the derviation
         // (removeAttrs args [
           "src"
           "name"
+          "meta"
+          "passthru"
           "patches"
           "prePatch"
           "postPatch"

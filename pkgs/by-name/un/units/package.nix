@@ -14,11 +14,11 @@ let
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = "units";
-  version = "2.23";
+  version = "2.24";
 
   src = fetchurl {
     url = "mirror://gnu/units/units-${finalAttrs.version}.tar.gz";
-    hash = "sha256-2Ve0USRZJcnmFMRRM5dEljDq+SvWK4SVugm741Ghc3A=";
+    hash = "sha256-HlAsTt+s8gspKEcWxy5d21GklaI2XXsD55YElMSgyQI=";
   };
 
   outputs = [
@@ -72,7 +72,7 @@ stdenv.mkDerivation (finalAttrs: {
     '';
     license = with lib.licenses; [ gpl3Plus ];
     mainProgram = "units";
-    maintainers = with lib.maintainers; [ AndersonTorres ];
+    maintainers = with lib.maintainers; [ ];
     platforms = lib.platforms.all;
   };
 })

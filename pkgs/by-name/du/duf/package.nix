@@ -37,6 +37,7 @@ buildGoModule rec {
     maintainers = with maintainers; [
       figsoda
       penguwin
+      sigmasquadron
     ];
     mainProgram = "duf";
   };

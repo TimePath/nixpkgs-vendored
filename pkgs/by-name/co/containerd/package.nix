@@ -1,66 +1,102 @@
 {
   lib,
-  fetchFromGitHub,
-  buildGoModule,
+  stdenv,
+  pkgsCross,
   btrfs-progs,
+  buildGoModule,
+  fetchFromGitHub,
   go-md2man,
-  installShellFiles,
-  util-linux,
-  nixosTests,
   kubernetes,
+  nix-update-script,
+  nixosTests,
+  util-linux,
+  btrfsSupport ? btrfs-progs != null,
+  withMan ? stdenv.buildPlatform.canExecute stdenv.hostPlatform,
 }:
 
 buildGoModule rec {
   pname = "containerd";
-  version = "1.7.23";
+  version = "2.0.5";
+
+  outputs = [
+    "out"
+    "doc"
+  ] ++ lib.optional withMan "man";
 
   src = fetchFromGitHub {
     owner = "containerd";
     repo = "containerd";
-    rev = "v${version}";
-    hash = "sha256-vuOefU1cZr1pKCYHKyDBx/ohghgPlXhK3a38PQKH0pc=";
+    tag = "v${version}";
+    hash = "sha256-BY6lIzTlJbBbeIxCtSd7NcYVEWta3VNMmHmH97ksGsE=";
   };
+
+  postPatch = "patchShebangs .";
 
   vendorHash = null;
 
+  strictDeps = true;
+
   nativeBuildInputs = [
-    go-md2man
-    installShellFiles
     util-linux
+  ] ++ lib.optional withMan go-md2man;
+
+  buildInputs = lib.optional btrfsSupport btrfs-progs;
+
+  tags = lib.optional (!btrfsSupport) "no_btrfs";
+
+  makeFlags = [
+    "PREFIX=${placeholder "out"}"
+
+    "BUILDTAGS=${toString tags}"
+    "REVISION=${src.rev}"
+    "VERSION=v${version}"
   ];
 
-  buildInputs = [ btrfs-progs ];
-
-  BUILDTAGS = lib.optionals (btrfs-progs == null) [ "no_btrfs" ];
+  installTargets = [
+    "install"
+    "install-doc"
+  ] ++ lib.optional withMan "install-man";
 
   buildPhase = ''
     runHook preBuild
-    patchShebangs .
-    make binaries "VERSION=v${version}" "REVISION=${src.rev}"
+    make $makeFlags
     runHook postBuild
   '';
 
   installPhase = ''
     runHook preInstall
-    install -Dm555 bin/* -t $out/bin
-    installShellCompletion --bash contrib/autocomplete/ctr
-    installShellCompletion --zsh --name _ctr contrib/autocomplete/zsh_autocomplete
+    make $makeFlags $installTargets
     runHook postInstall
   '';
 
-  passthru.tests = {
-    inherit (nixosTests) docker;
-  } // kubernetes.tests;
+  passthru = {
+    tests = lib.optionalAttrs stdenv.hostPlatform.isLinux (
+      {
+        cross =
+          let
+            systemString = if stdenv.buildPlatform.isAarch64 then "gnu64" else "aarch64-multiplatform";
+          in
+          pkgsCross.${systemString}.containerd;
 
-  meta = with lib; {
-    changelog = "https://github.com/containerd/containerd/releases/tag/${src.rev}";
-    homepage = "https://containerd.io/";
+        inherit (nixosTests) docker;
+      }
+      // kubernetes.tests
+    );
+
+    updateScript = nix-update-script { };
+  };
+
+  meta = {
     description = "Daemon to control runC";
-    license = licenses.asl20;
-    maintainers = with maintainers; [
+    homepage = "https://containerd.io/";
+    changelog = "https://github.com/containerd/containerd/releases/tag/v${version}";
+    license = lib.licenses.asl20;
+    maintainers = with lib.maintainers; [
       offline
       vdemeester
+      getchoo
     ];
-    platforms = platforms.linux;
+    mainProgram = "containerd";
+    platforms = lib.platforms.linux;
   };
 }

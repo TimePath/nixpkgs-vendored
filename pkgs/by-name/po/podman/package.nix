@@ -18,7 +18,7 @@
   makeWrapper,
   runtimeShell,
   symlinkJoin,
-  substituteAll,
+  replaceVars,
   extraPackages ? [ ],
   crun,
   runc,
@@ -74,18 +74,17 @@ let
 in
 buildGoModule rec {
   pname = "podman";
-  version = "5.2.3";
+  version = "5.4.1";
 
   src = fetchFromGitHub {
     owner = "containers";
     repo = "podman";
     rev = "v${version}";
-    hash = "sha256-2FnUijeQhre7B4utsGGEGbMuuMVZlPDoM2di3z1d4vs=";
+    hash = "sha256-RirMBb45KeBLdBJrRa86WxI4FiXdBar+RnVQ2ezEEYc=";
   };
 
   patches = [
-    (substituteAll {
-      src = ./hardcode-paths.patch;
+    (replaceVars ./hardcode-paths.patch {
       bin_path = helpersBin;
     })
 
@@ -192,7 +191,7 @@ buildGoModule rec {
     '';
     changelog = "https://github.com/containers/podman/blob/v${version}/RELEASE_NOTES.md";
     license = licenses.asl20;
-    maintainers = with maintainers; [ ] ++ teams.podman.members;
+    teams = [ teams.podman ];
     mainProgram = "podman";
   };
 }

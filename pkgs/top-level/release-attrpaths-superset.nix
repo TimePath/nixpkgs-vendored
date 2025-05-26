@@ -81,7 +81,6 @@ let
     mkDerivation = true;
     overrideDerivation = true;
     overrideScope = true;
-    overrideScope' = true;
 
     # Special case: lib/types.nix leaks into a lot of nixos-related
     # derivations, and does not eval deeply.
@@ -151,10 +150,14 @@ let
           lib.pipe value [
             (builtins.mapAttrs (
               name: value:
-              if excluded-attrnames-at-any-depth.${name} or false then
-                [ ]
-              else
-                (justAttrNames (path ++ [ name ]) value)
+              builtins.addErrorContext
+                "while evaluating package set attribute path '${lib.showAttrPath (path ++ [ name ])}'"
+                (
+                  if excluded-attrnames-at-any-depth.${name} or false then
+                    [ ]
+                  else
+                    (justAttrNames (path ++ [ name ]) value)
+                )
             ))
             builtins.attrValues
             builtins.concatLists

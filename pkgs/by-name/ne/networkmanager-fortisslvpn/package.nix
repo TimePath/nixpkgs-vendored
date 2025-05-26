@@ -2,7 +2,7 @@
   stdenv,
   lib,
   fetchurl,
-  substituteAll,
+  replaceVars,
   openfortivpn,
   autoreconfHook,
   gettext,
@@ -31,18 +31,20 @@ stdenv.mkDerivation rec {
   };
 
   patches = [
-    (substituteAll {
-      src = ./fix-paths.patch;
+    (replaceVars ./fix-paths.patch {
       inherit openfortivpn;
     })
     ./support-ppp-2.5.0.patch
   ];
+
+  strictDeps = true;
 
   nativeBuildInputs = [
     autoreconfHook
     gettext
     pkg-config
     file
+    glib
   ];
 
   buildInputs =
@@ -84,7 +86,7 @@ stdenv.mkDerivation rec {
 
   meta = with lib; {
     description = "NetworkManager’s FortiSSL plugin";
-    inherit (networkmanager.meta) maintainers platforms;
+    inherit (networkmanager.meta) maintainers teams platforms;
     license = licenses.gpl2Plus;
   };
 }

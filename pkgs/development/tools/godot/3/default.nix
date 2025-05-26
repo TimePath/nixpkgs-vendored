@@ -28,15 +28,21 @@
 
 stdenv.mkDerivation (self: {
   pname = "godot3";
-  version = "3.5.2";
+  version = "3.6";
   godotBuildDescription = "X11 tools";
 
   src = fetchFromGitHub {
     owner = "godotengine";
     repo = "godot";
     rev = "${self.version}-stable";
-    sha256 = "sha256-C+1J5N0ETL1qKust+2xP9uB4x9NwrMqIm8aFAivVYQw=";
+    sha256 = "sha256-4WQYO1BBDK9+eyblpI8qRgbBG4+qPRVZMjeAFAtot+0=";
   };
+
+  # Fix PIE hardening: https://github.com/godotengine/godot/pull/50737
+  postPatch = ''
+    substituteInPlace platform/x11/detect.py \
+      --replace-fail 'env.Append(LINKFLAGS=["-no-pie"])' ""
+  '';
 
   nativeBuildInputs = [
     autoPatchelfHook
@@ -77,6 +83,9 @@ stdenv.mkDerivation (self: {
     # of the OS. This isn't as surgical as just fixing the PATH, but it seems to work, and
     # seems to be the Nix community's current strategy when using Scons.
     /SConstruct/dontClobberEnvironment.patch
+    # Fix compile error with mono 6.14
+    # https://github.com/godotengine/godot/pull/106578
+    /move-MonoGCHandle-into-gdmono-namespace.patch
   ];
 
   enableParallelBuilding = true;
@@ -84,7 +93,7 @@ stdenv.mkDerivation (self: {
   shouldBuildTools = true;
   godotBuildTarget = "release_debug";
 
-  shouldUseLinkTimeOptimization = self.godotBuildTarget == "release";
+  lto = if self.godotBuildTarget == "release" then "full" else "none";
 
   sconsFlags = [
     "arch=${stdenv.hostPlatform.linuxArch}"
@@ -92,7 +101,7 @@ stdenv.mkDerivation (self: {
     "tools=${lib.boolToString self.shouldBuildTools}"
     "target=${self.godotBuildTarget}"
     "bits=${toString stdenv.hostPlatform.parsed.cpu.bits}"
-    "use_lto=${lib.boolToString self.shouldUseLinkTimeOptimization}"
+    "lto=${self.lto}"
   ];
 
   shouldWrapBinary = self.shouldBuildTools;

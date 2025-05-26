@@ -10,24 +10,27 @@
 
 buildPythonPackage rec {
   pname = "poetry-plugin-up";
-  version = "0.7.3";
+  version = "0.9.0";
   format = "pyproject";
 
   src = fetchFromGitHub {
     owner = "MousaZeidBaker";
     repo = pname;
-    rev = "refs/tags/v${version}";
-    hash = "sha256-yhGoiuqPUzEPiq+zO/RD4pB1LvOo80yLIpM+rRQHOmY=";
+    tag = "v${version}";
+    hash = "sha256-gVhx8Vhk+yT/QjcEme8w0F+6BBpnEZOqzCkUJgM9eck=";
   };
 
-  nativeBuildInputs = [
+  build-system = [
     poetry-core
+  ];
+
+  buildInputs = [
+    poetry
   ];
 
   nativeCheckInputs = [
     pytestCheckHook
     pytest-mock
-    poetry
   ];
 
   preCheck = ''

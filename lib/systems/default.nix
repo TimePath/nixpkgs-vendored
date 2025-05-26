@@ -6,9 +6,9 @@ let
     filterAttrs
     foldl
     hasInfix
+    isAttrs
     isFunction
     isList
-    isString
     mapAttrs
     optional
     optionalAttrs
@@ -57,6 +57,11 @@ let
   */
   flakeExposed = import ./flake-systems.nix { };
 
+  # Turn localSystem or crossSystem, which could be system-string or attrset, into
+  # attrset.
+  systemToAttrs =
+    systemOrArgs: if isAttrs systemOrArgs then systemOrArgs else { system = systemOrArgs; };
+
   # Elaborate a `localSystem` or `crossSystem` so that it contains everything
   # necessary.
   #
@@ -64,9 +69,16 @@ let
   # clearly preferred, and to prevent cycles. A simpler fixed point where the RHS
   # always just used `final.*` would fail on both counts.
   elaborate =
-    args':
+    systemOrArgs:
     let
-      args = if isString args' then { system = args'; } else args';
+      allArgs = systemToAttrs systemOrArgs;
+
+      # Those two will always be derived from "config", if given, so they should NOT
+      # be overridden further down with "// args".
+      args = builtins.removeAttrs allArgs [
+        "parsed"
+        "system"
+      ];
 
       # TODO: deprecate args.rustc in favour of args.rust after 23.05 is EOL.
       rust = args.rust or args.rustc or { };
@@ -74,9 +86,11 @@ let
       final =
         {
           # Prefer to parse `config` as it is strictly more informative.
-          parsed = parse.mkSystemFromString (if args ? config then args.config else args.system);
-          # Either of these can be losslessly-extracted from `parsed` iff parsing succeeds.
+          parsed = parse.mkSystemFromString (args.config or allArgs.system);
+          # This can be losslessly-extracted from `parsed` iff parsing succeeds.
           system = parse.doubleFromSystem final.parsed;
+          # TODO: This currently can't be losslessly-extracted from `parsed`, for example
+          # because of -mingw32.
           config = parse.tripleFromSystem final.parsed;
           # Determine whether we can execute binaries built for the provided platform.
           canExecute =
@@ -193,6 +207,8 @@ let
                 "ppc${optionalString final.isLittleEndian "le"}"
               else if final.isMips64 then
                 "mips64" # endianness is *not* included on mips64
+              else if final.isDarwin then
+                final.darwinArch
               else
                 final.parsed.cpu.name;
 
@@ -287,6 +303,8 @@ let
           qemuArch =
             if final.isAarch32 then
               "arm"
+            else if final.isAarch64 then
+              "aarch64"
             else if final.isS390 && !final.isS390x then
               null
             else if final.isx86_64 then
@@ -313,12 +331,7 @@ let
             else
               final.parsed.cpu.name;
 
-          darwinArch =
-            {
-              armv7a = "armv7";
-              aarch64 = "arm64";
-            }
-            .${final.parsed.cpu.name} or final.parsed.cpu.name;
+          darwinArch = parse.darwinArch final.parsed.cpu;
 
           darwinPlatform =
             if final.isMacOS then
@@ -329,7 +342,7 @@ let
               null;
           # The canonical name for this attribute is darwinSdkVersion, but some
           # platforms define the old name "sdkVer".
-          darwinSdkVersion = final.sdkVer or (if final.isAarch64 then "11.0" else "10.12");
+          darwinSdkVersion = final.sdkVer or "11.3";
           darwinMinVersion = final.darwinSdkVersion;
           darwinMinVersionVariable =
             if final.isMacOS then
@@ -339,21 +352,9 @@ let
             else
               null;
 
-          # Remove before 25.05
-          androidSdkVersion =
-            if (args ? sdkVer && !args ? androidSdkVersion) then
-              throw "For android `sdkVer` has been renamed to `androidSdkVersion`"
-            else if (args ? androidSdkVersion) then
-              args.androidSdkVersion
-            else
-              null;
-          androidNdkVersion =
-            if (args ? ndkVer && !args ? androidNdkVersion) then
-              throw "For android `ndkVer` has been renamed to `androidNdkVersion`"
-            else if (args ? androidSdkVersion) then
-              args.androidNdkVersion
-            else
-              null;
+          # Handle Android SDK and NDK versions.
+          androidSdkVersion = args.androidSdkVersion or null;
+          androidNdkVersion = args.androidNdkVersion or null;
         }
         // (
           let
@@ -366,7 +367,7 @@ let
               # to an emulator program. That is, if an emulator requires additional
               # arguments, a wrapper should be used.
               if pkgs.stdenv.hostPlatform.canExecute final then
-                "${pkgs.execline}/bin/exec"
+                lib.getExe (pkgs.writeShellScriptBin "exec" ''exec "$@"'')
               else if final.isWindows then
                 "${wine}/bin/wine${optionalString (final.parsed.cpu.bits == 64) "64"}"
               else if final.isLinux && pkgs.stdenv.hostPlatform.isLinux && final.qemuArch != null then
@@ -472,8 +473,8 @@ let
                   }
                   .${cpu.name} or cpu.name;
                 vendor_ = final.rust.platform.vendor;
-                # TODO: deprecate args.rustc in favour of args.rust after 23.05 is EOL.
               in
+              # TODO: deprecate args.rustc in favour of args.rust after 23.05 is EOL.
               args.rust.rustcTarget or args.rustc.config or (
                 # Rust uses `wasm32-wasip?` rather than `wasm32-unknown-wasi`.
                 # We cannot know which subversion does the user want, and
@@ -518,6 +519,35 @@ let
               "-uefi"
             ];
           };
+        }
+        // {
+          go = {
+            # See https://pkg.go.dev/internal/platform for a list of known platforms
+            GOARCH =
+              {
+                "aarch64" = "arm64";
+                "arm" = "arm";
+                "armv5tel" = "arm";
+                "armv6l" = "arm";
+                "armv7l" = "arm";
+                "i686" = "386";
+                "loongarch64" = "loong64";
+                "mips" = "mips";
+                "mips64el" = "mips64le";
+                "mipsel" = "mipsle";
+                "powerpc64" = "ppc64";
+                "powerpc64le" = "ppc64le";
+                "riscv64" = "riscv64";
+                "s390x" = "s390x";
+                "x86_64" = "amd64";
+                "wasm32" = "wasm";
+              }
+              .${final.parsed.cpu.name} or (throw "Unknown CPU variant ${final.parsed.cpu.name} by Go");
+            GOOS = if final.isWasi then "wasip1" else final.parsed.kernel.name;
+
+            # See https://go.dev/wiki/GoArm
+            GOARM = toString (lib.intersectLists [ (final.parsed.cpu.version or "") ] [ "5" "6" "7" ]);
+          };
         };
     in
     assert final.useAndroidPrebuilt -> final.isAndroid;
@@ -540,5 +570,6 @@ in
     inspect
     parse
     platforms
+    systemToAttrs
     ;
 }

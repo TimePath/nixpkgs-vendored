@@ -300,7 +300,8 @@ let
         description = "Cryptographic library that implements the SSL and TLS protocols";
         license = lib.licenses.openssl;
         mainProgram = "openssl";
-        maintainers = with lib.maintainers; [ thillux ] ++ lib.teams.stridtech.members;
+        maintainers = with lib.maintainers; [ thillux ];
+        teams = [ lib.teams.stridtech ];
         pkgConfigModules = [
           "libcrypto"
           "libssl"
@@ -366,9 +367,9 @@ in
     };
   };
 
-  openssl_3_3 = common {
-    version = "3.3.3";
-    hash = "sha256-cSWQ/SCqpg7HXXeP5bgQ1rgpyn+x5TBXeRehMfkQVTk=";
+  openssl_3_4 = common {
+    version = "3.4.1";
+    hash = "sha256-ACotazC1i/S+pGxDvdljZar42qbEKHgqpP7uBtoZffM=";
 
     patches = [
       ./3.0/nix-ssl-cert-file.patch
@@ -379,9 +380,9 @@ in
 
       (
         if stdenv.hostPlatform.isDarwin then
-          ./3.3/use-etc-ssl-certs-darwin.patch
+          ./3.4/use-etc-ssl-certs-darwin.patch
         else
-          ./3.3/use-etc-ssl-certs.patch
+          ./3.4/use-etc-ssl-certs.patch
       )
     ];
 

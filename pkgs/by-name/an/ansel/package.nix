@@ -15,7 +15,7 @@
   libxml2,
   cmake,
   exiftool,
-  openexr_3,
+  openexr,
   glib,
   python3Packages,
   perlPackages,
@@ -45,7 +45,7 @@
   isocodes,
   libpsl,
   libepoxy,
-  libsoup,
+  libsoup_2_4,
   exiv2,
   libXtst,
   libthai,
@@ -71,20 +71,23 @@ let
     src = fetchFromGitHub {
       owner = "AOMediaCodec";
       repo = "libavif";
-      rev = "v${version}";
+      tag = "v${version}";
       hash = "sha256-mUi0DU99XV3FzUZ8/9uJZU+W3fc6Bk6+y6Z78IRZ9Qs=";
     };
+
+    patches = [ ];
+    doCheck = false;
   };
 in
 stdenv.mkDerivation {
   pname = "ansel";
-  version = "0-unstable-2024-09-29";
+  version = "0-unstable-2025-03-27";
 
   src = fetchFromGitHub {
     owner = "aurelienpierreeng";
     repo = "ansel";
-    rev = "0e942648c4f9b1fd89fee8ca91d6e9bd5e06344c";
-    hash = "sha256-gzIZwbTdGE0+uLScV/JfGW0ZxXIbnnSrYO1OxPS5Xz0=";
+    rev = "62f9a4c56b02deca9fda4aff4392e4f44dea379c";
+    hash = "sha256-T9go14/wMJbOzKjOnRzzmeklFPQMbrTUnXyPlVahpkQ=";
     fetchSubmodules = true;
   };
 
@@ -139,7 +142,7 @@ stdenv.mkDerivation {
     libsecret
     libselinux
     libsepol
-    libsoup
+    libsoup_2_4
     libsysprof-capture
     libthai
     libwebp
@@ -147,7 +150,7 @@ stdenv.mkDerivation {
     libxkbcommon
     libxslt
     libXtst
-    openexr_3
+    openexr
     openjpeg
     osm-gps-map
     pcre

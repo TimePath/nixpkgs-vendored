@@ -88,6 +88,7 @@ stdenv.mkDerivation rec {
   '';
 
   configureFlags = [
+    "--with-start-statd=${placeholder "out"}/bin/start-statd"
     "--enable-gss"
     "--enable-svcgss"
     "--with-statedir=/var/lib/nfs"
@@ -105,14 +106,24 @@ stdenv.mkDerivation rec {
       url = "https://raw.githubusercontent.com/alpinelinux/aports/cb880042d48d77af412d4688f24b8310ae44f55f/main/nfs-utils/musl-getservbyport.patch";
       sha256 = "1fqws9dz8n1d9a418c54r11y3w330qgy2652dpwcy96cm44sqyhf";
     })
+    (fetchpatch {
+      url = "https://raw.githubusercontent.com/void-linux/void-packages/bb636cdb1b274f44d92b1cb2fdf0dff6079f97aa/srcpkgs/nfs-utils/patches/nfs-utils-2.7.1-define_macros_for_musl.patch";
+      hash = "sha256-wsyioRjzs1PObMHwYgf5h/Ngv+s5MPsroAuUNGs9lR0=";
+    })
+    (fetchpatch {
+      url = "https://raw.githubusercontent.com/void-linux/void-packages/bb636cdb1b274f44d92b1cb2fdf0dff6079f97aa/srcpkgs/nfs-utils/patches/musl-svcgssd-sysconf.patch";
+      hash = "sha256-3TXgqswxlhFqXRPcjwo4MdqlTYl+dWVaa0E5r9Mnw18=";
+    })
+    (fetchpatch {
+      url = "https://raw.githubusercontent.com/void-linux/void-packages/bb636cdb1b274f44d92b1cb2fdf0dff6079f97aa/srcpkgs/nfs-utils/patches/musl-fix_long_unsigned_int.patch";
+      hash = "sha256-rS6sqqoGLIaPVq04+QiqP4qa88i1z4ZZCssM5k/XQ68=";
+    })
   ];
 
   postPatch = ''
     patchShebangs tests
     sed -i "s,/usr/sbin,$out/bin,g" utils/statd/statd.c
     sed -i "s,^PATH=.*,PATH=$out/bin:${statdPath}," utils/statd/start-statd
-
-    configureFlags="--with-start-statd=$out/bin/start-statd $configureFlags"
 
     substituteInPlace systemd/nfs-utils.service \
       --replace "/bin/true" "${coreutils}/bin/true"

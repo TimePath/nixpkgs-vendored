@@ -11,11 +11,13 @@
   libnftnl,
   libmnl,
   libwg,
+  darwin,
   enableOpenvpn ? true,
   openvpn-mullvad,
   shadowsocks-rust,
   installShellFiles,
   writeShellScriptBin,
+  versionCheckHook,
 }:
 let
   # NOTE(cole-h): This is necessary because wireguard-go-rs executes go in its build.rs (whose goal
@@ -28,24 +30,23 @@ let
 in
 rustPlatform.buildRustPackage rec {
   pname = "mullvad";
-  version = "2024.8";
+  version = "2025.3";
 
   src = fetchFromGitHub {
     owner = "mullvad";
     repo = "mullvadvpn-app";
-    rev = version;
+    tag = version;
     fetchSubmodules = true;
-    hash = "sha256-mDQRIlu1wslgLhYlH87i9yntfPwTd7UQK2c6IoHuIqU=";
+    hash = "sha256-IpGTqi0gSE2yXXou5fp+CryHfIKx0n3y/V4K2+ZO3k8=";
   };
 
-  cargoLock = {
-    lockFile = ./Cargo.lock;
-    outputHashes = {
-      "udp-over-tcp-0.3.0" = "sha256-5PeaM7/zhux1UdlaKpnQ2yIdmFy1n2weV/ux9lSRha4=";
-    };
-  };
+  useFetchCargoVendor = true;
+  cargoHash = "sha256-EJ8yk11H1QB+7CGjJYY5BjBAFTDK4d02/DJOQTVGFho=";
 
-  checkFlags = "--skip=version_check";
+  checkFlags = [
+    "--skip=version_check"
+    "--skip=config_resolver::test"
+  ];
 
   nativeBuildInputs = [
     pkg-config
@@ -56,11 +57,15 @@ rustPlatform.buildRustPackage rec {
     fakeGoCopyLibwg
   ];
 
-  buildInputs = [
-    dbus.dev
-    libnftnl
-    libmnl
-  ];
+  buildInputs =
+    lib.optionals stdenv.hostPlatform.isLinux [
+      dbus.dev
+      libnftnl
+      libmnl
+    ]
+    ++ lib.optionals stdenv.hostPlatform.isDarwin [
+      darwin.libpcap
+    ];
 
   postInstall = ''
     compdir=$(mktemp -d)
@@ -100,15 +105,25 @@ rustPlatform.buildRustPackage rec {
           --set-default MULLVAD_RESOURCE_DIR "$out/share/mullvad"
       '';
 
+  __darwinAllowLocalNetworking = true;
+
+  nativeInstallCheckInputs = [
+    versionCheckHook
+  ];
+  versionCheckProgramArg = "--version";
+  doInstallCheck = true;
+
   passthru = {
     inherit libwg;
     inherit openvpn-mullvad;
   };
 
-  meta = with lib; {
+  meta = {
     description = "Mullvad VPN command-line client tools";
     homepage = "https://github.com/mullvad/mullvadvpn-app";
-    license = licenses.gpl3Only;
-    maintainers = with maintainers; [ cole-h ];
+    changelog = "https://github.com/mullvad/mullvadvpn-app/blob/2025.2/CHANGELOG.md";
+    license = lib.licenses.gpl3Only;
+    maintainers = with lib.maintainers; [ cole-h ];
+    mainProgram = "mullvad";
   };
 }

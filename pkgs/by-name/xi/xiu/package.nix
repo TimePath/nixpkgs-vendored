@@ -1,7 +1,6 @@
 {
   lib,
   cmake,
-  darwin,
   fetchFromGitHub,
   libopus,
   openssl,
@@ -21,7 +20,8 @@ rustPlatform.buildRustPackage rec {
     hash = "sha256-EjyvCwqcPkOe69YnDiAExtBNPhsqqGa95ao+bn6wcyA=";
   };
 
-  cargoHash = "sha256-pW1VvnK7WDRvSVFOMUibtsPn+dhcFp64EpTW5beaJ+s=";
+  useFetchCargoVendor = true;
+  cargoHash = "sha256-IEIZM27zQZrq63ZsCVAeOl2exuFR5tUG3Gwipjg4+oo=";
 
   nativeBuildInputs = [
     cmake
@@ -34,9 +34,6 @@ rustPlatform.buildRustPackage rec {
     ]
     ++ lib.optionals stdenv.hostPlatform.isLinux [
       openssl
-    ]
-    ++ lib.optionals stdenv.hostPlatform.isDarwin [
-      darwin.apple_sdk.frameworks.SystemConfiguration
     ];
 
   OPENSSL_NO_VENDOR = 1;

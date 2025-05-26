@@ -4,41 +4,39 @@
   pkgs,
   ...
 }:
-
-with lib;
 let
   cfg = config.services.hadoop;
   hadoopConf = "${import ./conf.nix { inherit cfg pkgs lib; }}/";
-  mkIfNotNull = x: mkIf (x != null) x;
+  mkIfNotNull = x: lib.mkIf (x != null) x;
   # generic hbase role options
   hbaseRoleOption =
     name: extraOpts:
     {
-      enable = mkEnableOption "HBase ${name}";
+      enable = lib.mkEnableOption "HBase ${name}";
 
-      openFirewall = mkOption {
-        type = types.bool;
+      openFirewall = lib.mkOption {
+        type = lib.types.bool;
         default = false;
         description = "Open firewall ports for HBase ${name}.";
       };
 
-      restartIfChanged = mkOption {
-        type = types.bool;
+      restartIfChanged = lib.mkOption {
+        type = lib.types.bool;
         default = false;
         description = "Restart ${name} con config change.";
       };
 
-      extraFlags = mkOption {
-        type = with types; listOf str;
+      extraFlags = lib.mkOption {
+        type = with lib.types; listOf str;
         default = [ ];
-        example = literalExpression ''[ "--backup" ]'';
+        example = lib.literalExpression ''[ "--backup" ]'';
         description = "Extra flags for the ${name} service.";
       };
 
-      environment = mkOption {
-        type = with types; attrsOf str;
+      environment = lib.mkOption {
+        type = with lib.types; attrsOf str;
         default = { };
-        example = literalExpression ''
+        example = lib.literalExpression ''
           {
             HBASE_MASTER_OPTS = "-Dcom.sun.management.jmxremote.ssl=true";
           }
@@ -50,18 +48,20 @@ let
   # generic hbase role configs
   hbaseRoleConfig =
     name: ports:
-    (mkIf cfg.hbase."${name}".enable {
+    (lib.mkIf cfg.hbase."${name}".enable {
       services.hadoop.gatewayRole = {
         enable = true;
-        enableHbaseCli = mkDefault true;
+        enableHbaseCli = lib.mkDefault true;
       };
 
-      systemd.services."hbase-${toLower name}" = {
+      systemd.services."hbase-${lib.toLower name}" = {
         description = "HBase ${name}";
         wantedBy = [ "multi-user.target" ];
-        path = with cfg; [ hbase.package ] ++ optional (with cfg.hbase.master; enable && initHDFS) package;
-        preStart = mkIf (with cfg.hbase.master; enable && initHDFS) (
-          concatStringsSep "\n" (
+        path =
+          with cfg;
+          [ hbase.package ] ++ lib.optional (with cfg.hbase.master; enable && initHDFS) package;
+        preStart = lib.mkIf (with cfg.hbase.master; enable && initHDFS) (
+          lib.concatStringsSep "\n" (
             map (x: "HADOOP_USER_NAME=hdfs hdfs --config /etc/hadoop-conf ${x}") [
               "dfsadmin -safemode wait"
               "dfs -mkdir -p ${cfg.hbase.rootdir}"
@@ -71,14 +71,14 @@ let
         );
 
         inherit (cfg.hbase."${name}") environment;
-        script = concatStringsSep " " (
+        script = lib.concatStringsSep " " (
           [
             "hbase --config /etc/hadoop-conf/"
-            "${toLower name} start"
+            "${lib.toLower name} start"
           ]
           ++ cfg.hbase."${name}".extraFlags
-          ++ map (x: "--${toLower x} ${toString cfg.hbase.${name}.${x}}") (
-            filter (x: hasAttr x cfg.hbase.${name}) [
+          ++ map (x: "--${lib.toLower x} ${toString cfg.hbase.${name}.${x}}") (
+            lib.filter (x: lib.hasAttr x cfg.hbase.${name}) [
               "port"
               "infoPort"
             ]
@@ -87,7 +87,7 @@ let
 
         serviceConfig = {
           User = "hbase";
-          SyslogIdentifier = "hbase-${toLower name}";
+          SyslogIdentifier = "hbase-${lib.toLower name}";
           Restart = "always";
         };
       };
@@ -95,10 +95,10 @@ let
       services.hadoop.hbaseSiteInternal."hbase.rootdir" = cfg.hbase.rootdir;
 
       networking = {
-        firewall.allowedTCPPorts = mkIf cfg.hbase."${name}".openFirewall ports;
-        hosts = mkIf (with cfg.hbase.regionServer; enable && overrideHosts) {
-          "127.0.0.2" = mkForce [ ];
-          "::1" = mkForce [ ];
+        firewall.allowedTCPPorts = lib.mkIf cfg.hbase."${name}".openFirewall ports;
+        hosts = lib.mkIf (with cfg.hbase.regionServer; enable && overrideHosts) {
+          "127.0.0.2" = lib.mkForce [ ];
+          "::1" = lib.mkForce [ ];
         };
       };
 
@@ -107,9 +107,9 @@ in
 {
   options.services.hadoop = {
 
-    gatewayRole.enableHbaseCli = mkEnableOption "HBase CLI tools";
+    gatewayRole.enableHbaseCli = lib.mkEnableOption "HBase CLI tools";
 
-    hbaseSiteDefault = mkOption {
+    hbaseSiteDefault = lib.mkOption {
       default = {
         "hbase.regionserver.ipc.address" = "0.0.0.0";
         "hbase.master.ipc.address" = "0.0.0.0";
@@ -118,15 +118,15 @@ in
 
         "hbase.cluster.distributed" = "true";
       };
-      type = types.attrsOf types.anything;
+      type = lib.types.attrsOf lib.types.anything;
       description = ''
         Default options for hbase-site.xml
       '';
     };
-    hbaseSite = mkOption {
+    hbaseSite = lib.mkOption {
       default = { };
-      type = with types; attrsOf anything;
-      example = literalExpression ''
+      type = with lib.types; attrsOf anything;
+      example = lib.literalExpression ''
         {
           "hbase.hregion.max.filesize" = 20*1024*1024*1024;
           "hbase.table.normalization.enabled" = "true";
@@ -137,9 +137,9 @@ in
         <https://github.com/apache/hbase/blob/rel/2.4.11/hbase-common/src/main/resources/hbase-default.xml>
       '';
     };
-    hbaseSiteInternal = mkOption {
+    hbaseSiteInternal = lib.mkOption {
       default = { };
-      type = with types; attrsOf anything;
+      type = with lib.types; attrsOf anything;
       internal = true;
       description = ''
         Internal option to add configs to hbase-site.xml based on module options
@@ -149,9 +149,9 @@ in
     hbase =
       {
 
-        package = mkPackageOption pkgs "hbase" { };
+        package = lib.mkPackageOption pkgs "hbase" { };
 
-        rootdir = mkOption {
+        rootdir = lib.mkOption {
           description = ''
             This option will set "hbase.rootdir" in hbase-site.xml and determine
             the directory shared by region servers and into which HBase persists.
@@ -161,16 +161,16 @@ in
 
             Filesystems other than HDFS (like S3, QFS, Swift) are also supported.
           '';
-          type = types.str;
+          type = lib.types.str;
           example = "hdfs://nameservice1/hbase";
           default = "/hbase";
         };
-        zookeeperQuorum = mkOption {
+        zookeeperQuorum = lib.mkOption {
           description = ''
             This option will set "hbase.zookeeper.quorum" in hbase-site.xml.
             Comma separated list of servers in the ZooKeeper ensemble.
           '';
-          type = with types; nullOr commas;
+          type = with lib.types; nullOr commas;
           example = "zk1.internal,zk2.internal,zk3.internal";
           default = null;
         };
@@ -178,22 +178,22 @@ in
       // (
         let
           ports = port: infoPort: {
-            port = mkOption {
-              type = types.int;
+            port = lib.mkOption {
+              type = lib.types.int;
               default = port;
               description = "RPC port";
             };
-            infoPort = mkOption {
-              type = types.int;
+            infoPort = lib.mkOption {
+              type = lib.types.int;
               default = infoPort;
               description = "web UI port";
             };
           };
         in
-        mapAttrs hbaseRoleOption {
-          master.initHDFS = mkEnableOption "initialization of the hbase directory on HDFS";
-          regionServer.overrideHosts = mkOption {
-            type = types.bool;
+        lib.mapAttrs hbaseRoleOption {
+          master.initHDFS = lib.mkEnableOption "initialization of the hbase directory on HDFS";
+          regionServer.overrideHosts = lib.mkOption {
+            type = lib.types.bool;
             default = true;
             description = ''
               Remove /etc/hosts entries for "127.0.0.2" and "::1" defined in nixos/modules/config/networking.nix
@@ -207,12 +207,12 @@ in
       );
   };
 
-  config = mkMerge (
+  config = lib.mkMerge (
     [
 
-      (mkIf cfg.gatewayRole.enable {
+      (lib.mkIf cfg.gatewayRole.enable {
 
-        environment.systemPackages = mkIf cfg.gatewayRole.enableHbaseCli [ cfg.hbase.package ];
+        environment.systemPackages = lib.mkIf cfg.gatewayRole.enableHbaseCli [ cfg.hbase.package ];
 
         services.hadoop.hbaseSiteInternal = with cfg.hbase; {
           "hbase.zookeeper.quorum" = mkIfNotNull zookeeperQuorum;
@@ -225,7 +225,7 @@ in
         };
       })
     ]
-    ++ (mapAttrsToList hbaseRoleConfig {
+    ++ (lib.mapAttrsToList hbaseRoleConfig {
       master = [
         16000
         16010

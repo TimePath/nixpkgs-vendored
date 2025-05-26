@@ -2,7 +2,6 @@
   lib,
   stdenv,
   alsa-lib,
-  apple-sdk_11,
   config,
   dbus,
   fetchFromGitHub,
@@ -44,13 +43,13 @@ rustPlatform.buildRustPackage rec {
     hash = "sha256-4zeBTi1WBy9tXowsehUo4qou6bhznWPeCXFg+R3akho=";
   };
 
-  cargoHash = "sha256-afyO4JMhqGW4GQW8n+M6cgKkOr7//A1bNv28xGHyYTE=";
+  useFetchCargoVendor = true;
+  cargoHash = "sha256-c16qw2khbMXTA8IbYQnMKqivO63DwyAWKfV2P1aD7dU=";
 
   nativeBuildInputs = [ pkg-config ] ++ lib.optional withClipboard python3;
 
   buildInputs =
     [ ncurses ]
-    ++ lib.optional stdenv.hostPlatform.isDarwin apple-sdk_11
     ++ lib.optional stdenv.hostPlatform.isLinux openssl
     ++ lib.optional (withALSA || withRodio) alsa-lib
     ++ lib.optional withClipboard libxcb

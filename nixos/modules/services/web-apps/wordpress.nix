@@ -625,7 +625,7 @@ in
         enable = true;
         virtualHosts = mapAttrs' (
           hostName: cfg:
-          (nameValuePair "http://${hostName}" {
+          (nameValuePair hostName {
             extraConfig = ''
               root    * /${pkg hostName cfg}/share/wordpress
               file_server

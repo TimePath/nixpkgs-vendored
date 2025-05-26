@@ -30,7 +30,8 @@
 let
   shared_meta = lib: {
     homepage = "https://www.picotech.com/downloads/linux";
-    maintainers = with lib.maintainers; [ wirew0rm ] ++ lib.teams.lumiguide.members;
+    maintainers = with lib.maintainers; [ wirew0rm ];
+    teams = [ lib.teams.lumiguide ];
     platforms = [ "x86_64-linux" ];
     license = lib.licenses.unfree;
   };
@@ -43,7 +44,7 @@ let
       autoPatchelfHook,
       dpkg,
     }:
-    stdenv.mkDerivation rec {
+    stdenv.mkDerivation {
       pname = "libpicoipp";
       inherit (sources.libpicoipp) version;
       src = fetchurl { inherit (sources.libpicoipp) url sha256; };
@@ -52,8 +53,7 @@ let
         autoPatchelfHook
       ];
       buildInputs = [ (lib.getLib stdenv.cc.cc) ];
-      sourceRoot = ".";
-      unpackCmd = "dpkg-deb -x $src .";
+
       installPhase = ''
         runHook preInstall
         mkdir -p $out/lib
@@ -80,14 +80,12 @@ let
       version,
       sha256,
     }:
-    stdenv.mkDerivation rec {
+    stdenv.mkDerivation {
       pname = "lib${name}";
       inherit version;
       src = fetchurl { inherit url sha256; };
       # picoscope does a signature check, so we can't patchelf these
       nativeBuildInputs = [ dpkg ];
-      sourceRoot = ".";
-      unpackCmd = "dpkg-deb -x $src .";
       installPhase = ''
         runHook preInstall
         mkdir -p $out/lib
@@ -123,8 +121,6 @@ stdenv.mkDerivation rec {
     zlib
   ];
 
-  unpackCmd = "dpkg-deb -x $src .";
-  sourceRoot = ".";
   scopeLibs = lib.attrVals (map (x: "lib${x}") scopes) scopePkgs;
   MONO_PATH =
     "${gtk-sharp-3_0}/lib/mono/gtk-sharp-3.0:"

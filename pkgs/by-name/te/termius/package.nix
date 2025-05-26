@@ -8,7 +8,7 @@
   stdenv,
   lib,
   libsecret,
-  mesa,
+  libgbm,
   udev,
   wrapGAppsHook3,
   writeScript,
@@ -16,8 +16,8 @@
 
 stdenv.mkDerivation rec {
   pname = "termius";
-  version = "9.7.2";
-  revision = "205";
+  version = "9.19.4";
+  revision = "225";
 
   src = fetchurl {
     # find the latest version with
@@ -27,7 +27,7 @@ stdenv.mkDerivation rec {
     # and the sha512 with
     # curl -H 'X-Ubuntu-Series: 16' https://api.snapcraft.io/api/v1/snaps/details/termius-app | jq '.download_sha512' -r
     url = "https://api.snapcraft.io/api/v1/snaps/download/WkTBXwoX81rBe3s3OTt3EiiLKBx2QhuS_${revision}.snap";
-    hash = "sha512-LihbkFIFpulewNIHl1oiXJF1npuqNLvVjN8CAmDDf46PAXdpaiMMluHWIJ4NljAACh6d4Uw6m2pKgEDfFN1y6g==";
+    hash = "sha512-lArp7yoQrQKc84zh8/EdLv5FuKbwQka9uy1JgeZzA7kbZzV3evcpav67HNSqp+BhUxp9ViD8TK1USGViJN5Tpg==";
   };
 
   desktopItem = makeDesktopItem {
@@ -56,7 +56,7 @@ stdenv.mkDerivation rec {
   buildInputs = [
     alsa-lib
     libsecret
-    mesa
+    libgbm
   ];
 
   unpackPhase = ''
@@ -116,6 +116,7 @@ stdenv.mkDerivation rec {
     maintainers = with maintainers; [
       Br1ght0ne
       th0rgal
+      Rishik-Y
     ];
     platforms = [ "x86_64-linux" ];
     mainProgram = "termius-app";

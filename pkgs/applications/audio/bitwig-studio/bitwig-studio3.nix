@@ -36,11 +36,6 @@ stdenv.mkDerivation rec {
     wrapGAppsHook3
   ];
 
-  unpackCmd = ''
-    mkdir -p root
-    dpkg-deb -x $curSrc root
-  '';
-
   dontBuild = true;
   dontWrapGApps = true; # we only want $gappsWrapperArgs here
 

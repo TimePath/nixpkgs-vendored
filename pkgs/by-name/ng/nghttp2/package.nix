@@ -32,7 +32,7 @@
 
   # downstream dependencies, for testing
   curl,
-  libsoup,
+  libsoup_3,
 }:
 
 # Note: this package is used for bootstrapping fetchurl, and thus cannot use fetchpatch!
@@ -46,11 +46,11 @@ assert enableJemalloc -> enableApp;
 
 stdenv.mkDerivation rec {
   pname = "nghttp2";
-  version = "1.64.0";
+  version = "1.65.0";
 
   src = fetchurl {
     url = "https://github.com/${pname}/${pname}/releases/download/v${version}/${pname}-${version}.tar.bz2";
-    sha256 = "sha256-OmcN83joUrhaIpXyXk9RzCj1bg/MSWQIuMN2QpBTevU=";
+    sha256 = "sha256-C9u3jcIYcEhP1URJBnZXtg47G3Im4RdM9WQBbG0zB/U=";
   };
 
   outputs = [
@@ -88,14 +88,6 @@ stdenv.mkDerivation rec {
     (lib.enableFeature enableHttp3 "http3")
   ];
 
-  env.NIX_CFLAGS_COMPILE = toString (
-    lib.optionals
-      (stdenv.hostPlatform.isDarwin && lib.versionOlder stdenv.hostPlatform.darwinMinVersion "10.13")
-      [
-        "-faligned-allocation"
-      ]
-  );
-
   # Unit tests require CUnit and setting TZDIR environment variable
   doCheck = enableTests;
   nativeCheckInputs = lib.optionals (enableTests) [
@@ -127,7 +119,7 @@ stdenv.mkDerivation rec {
     '';
 
   passthru.tests = {
-    inherit curl libsoup;
+    inherit curl libsoup_3;
   };
 
   meta = with lib; {

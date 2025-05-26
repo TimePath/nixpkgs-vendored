@@ -3,7 +3,6 @@
   stdenv,
   fetchFromGitHub,
   fetchurl,
-  fetchpatch2,
   aqbanking,
   boost,
   cmake,
@@ -17,6 +16,7 @@
   libdbi,
   libdbiDrivers,
   libofx,
+  libsecret,
   libxml2,
   libxslt,
   makeWrapper,
@@ -25,16 +25,18 @@
   swig,
   webkitgtk_4_0,
   wrapGAppsHook3,
+  python3,
+  replaceVars,
 }:
 
 stdenv.mkDerivation rec {
   pname = "gnucash";
-  version = "5.9";
+  version = "5.11";
 
   # raw source code doesn't work out of box; fetchFromGitHub not usable
   src = fetchurl {
     url = "https://github.com/Gnucash/gnucash/releases/download/${version}/gnucash-${version}.tar.bz2";
-    hash = "sha256-W+LlNk/DZGT8Msdo4qtGCmMPdNtq631EJm49q5giL9A=";
+    hash = "sha256-a6QjE6qqmbXwf/bk28WLM/v19L5ukRN2cB1lwm/U3r4=";
   };
 
   nativeBuildInputs = [
@@ -43,6 +45,11 @@ stdenv.mkDerivation rec {
     makeWrapper
     wrapGAppsHook3
     pkg-config
+  ];
+
+  cmakeFlags = [
+    "-DWITH_PYTHON=\"ON\""
+    "-DPYTHON_SYSCONFIG_BUILD=\"$out\""
   ];
 
   buildInputs =
@@ -58,10 +65,12 @@ stdenv.mkDerivation rec {
       libdbi
       libdbiDrivers
       libofx
+      libsecret
       libxml2
       libxslt
       swig
       webkitgtk_4_0
+      python3
     ]
     ++ (with perlPackages; [
       JSONParse
@@ -78,13 +87,15 @@ stdenv.mkDerivation rec {
     ./0003-remove-valgrind.patch
     # this patch makes gnucash exec the Finance::Quote wrapper directly
     ./0004-exec-fq-wrapper.patch
-    # this patch fixes gnucah-cli -Q dump, remove on next release
-    (fetchpatch2 {
-      name = "0005-fix-quote-report.patch";
-      url = "https://github.com/Gnucash/gnucash/commit/711554ecd5505004aee4808519d9d8e4e4ed7c9a.patch?full_index=1";
-      hash = "sha256-uRaUdSJu2LnYVp/3DqrK0rTnCpr7oZRtrgTPbKAHThk=";
-    })
+    # this patch adds in env vars to the Python lib that makes it able to find required resource files
+    ./0005-python-env.patch
   ];
+
+  postPatch = ''
+    substituteInPlace bindings/python/__init__.py \
+      --subst-var-by gnc_dbd_dir "${libdbiDrivers}/lib/dbd" \
+      --subst-var-by gsettings_schema_dir ${glib.makeSchemaPath "$out" "gnucash-${version}"};
+  '';
 
   # this needs to be an environment variable and not a cmake flag to suppress
   # guile warning
@@ -178,7 +189,6 @@ stdenv.mkDerivation rec {
     license = licenses.gpl2Plus;
     maintainers = with maintainers; [
       domenkozar
-      AndersonTorres
       rski
       nevivurn
     ];

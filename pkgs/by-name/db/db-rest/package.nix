@@ -2,7 +2,7 @@
   lib,
   buildNpmPackage,
   fetchFromGitHub,
-  nodejs_18,
+  nodejs,
   nix-update-script,
   nixosTests,
 }:
@@ -10,11 +10,11 @@ buildNpmPackage rec {
   pname = "db-rest";
   version = "6.1.0";
 
-  nodejs = nodejs_18;
+  inherit nodejs;
 
   src = fetchFromGitHub {
     owner = "derhuerst";
-    repo = pname;
+    repo = "db-rest";
     rev = version;
     hash = "sha256-1iJ26l6C6GevNkoDVMztPHiH3YsutJa3xWAsfYvgR9U=";
   };

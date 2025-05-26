@@ -24,18 +24,18 @@ let
 in
 buildGoModule rec {
   pname = "faas-cli";
-  version = "0.16.37";
+  version = "0.17.4";
 
   src = fetchFromGitHub {
     owner = "openfaas";
     repo = "faas-cli";
     rev = version;
-    sha256 = "sha256-DGtIoX0cvhnHYD+xBV6lW703onupLpF/QYH75rt23Q4=";
+    sha256 = "sha256-GM2gRfrdfUhfBn2atG21H7bNbW1HtgwQ7d7kMXvyMAs=";
   };
 
   vendorHash = null;
 
-  CGO_ENABLED = 0;
+  env.CGO_ENABLED = 0;
 
   subPackages = [ "." ];
 

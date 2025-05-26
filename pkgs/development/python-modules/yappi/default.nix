@@ -10,7 +10,7 @@
 
 buildPythonPackage rec {
   pname = "yappi";
-  version = "1.6.4";
+  version = "1.6.10";
   pyproject = true;
 
   disabled = pythonOlder "3.7";
@@ -19,7 +19,7 @@ buildPythonPackage rec {
     owner = "sumerc";
     repo = "yappi";
     tag = version;
-    hash = "sha256-3lGbFDu7sk83KrSHo6qZxHT2dxPWtT8yfXXQO1GbteU=";
+    hash = "sha256-RVa8IzyRuIQMfI0DhKdybJBBwqmyc2KI8XjD0PKQ8M8=";
   };
 
   patches = [ ./tests.patch ];

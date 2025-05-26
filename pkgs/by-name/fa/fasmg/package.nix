@@ -14,11 +14,11 @@
 
 stdenv.mkDerivation rec {
   pname = "fasmg";
-  version = "kl0e";
+  version = "kp60";
 
   src = fetchzip {
     url = "https://flatassembler.net/fasmg.${version}.zip";
-    sha256 = "sha256-qUhsUMwxgUduGz+D8+Dm4EXyh7aiE9lJ1mhvTjHP6Tw=";
+    sha256 = "sha256-gOkAVi3hoHer7Buzu6O8Y66cXVys6CI+tqwEPtTOO9U=";
     stripRoot = false;
   };
 
@@ -92,7 +92,7 @@ stdenv.mkDerivation rec {
     license = licenses.bsd3;
     maintainers = with maintainers; [
       orivej
-      luc65r
+      clevor
     ];
     platforms = with platforms; intersectLists (linux ++ darwin) x86;
   };

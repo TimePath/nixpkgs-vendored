@@ -13,8 +13,16 @@
   imports = [
     ./lxc-instance-common.nix
 
-    (lib.mkRemovedOptionModule [ "virtualisation" "lxc" "nestedContainer" ] "")
-    (lib.mkRemovedOptionModule [ "virtualisation" "lxc" "privilegedContainer" ] "")
+    (lib.mkRemovedOptionModule [
+      "virtualisation"
+      "lxc"
+      "nestedContainer"
+    ] "")
+    (lib.mkRemovedOptionModule [
+      "virtualisation"
+      "lxc"
+      "privilegedContainer"
+    ] "")
   ];
 
   options = { };
@@ -37,7 +45,29 @@
         ${config.nix.package.out}/bin/nix-env -p /nix/var/nix/profiles/system --set /run/current-system
       '';
 
+      # supplement 99-ethernet-default-dhcp which excludes veth
+      systemd.network = lib.mkIf config.networking.useDHCP {
+        networks."99-lxc-veth-default-dhcp" = {
+          matchConfig = {
+            Type = "ether";
+            Kind = "veth";
+            Name = [
+              "en*"
+              "eth*"
+            ];
+          };
+          DHCP = "yes";
+          networkConfig.IPv6PrivacyExtensions = "kernel";
+        };
+      };
+
+      system.nixos.tags = lib.mkOverride 99 [ "lxc" ];
+      image.extension = "tar.xz";
+      image.filePath = "tarball/${config.image.fileName}";
+      system.build.image = lib.mkOverride 99 config.system.build.tarball;
+
       system.build.tarball = pkgs.callPackage ../../lib/make-system-tarball.nix {
+        fileName = config.image.baseName;
         extraArgs = "--owner=0";
 
         storeContents = [

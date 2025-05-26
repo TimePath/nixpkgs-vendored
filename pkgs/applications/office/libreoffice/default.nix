@@ -1,5 +1,6 @@
 {
   stdenv,
+  runCommand,
   fetchurl,
   fetchgit,
   fetchpatch2,
@@ -9,7 +10,7 @@
   libxslt,
   perl,
   perlPackages,
-  box2d,
+  box2d_2,
   gettext,
   zlib,
   libjpeg,
@@ -35,12 +36,12 @@
   which,
   icu,
   boost,
-  jdk17,
+  jdk21,
   ant,
   cups,
   xorg,
   fontforge,
-  jre17_minimal,
+  jre21_minimal,
   openssl,
   gperf,
   cppunit,
@@ -141,8 +142,9 @@
   kio ? null,
   kwindowsystem ? null,
   variant ? "fresh",
+  debugLogging ? variant == "still",
   symlinkJoin,
-  postgresql,
+  libpq,
   makeFontsConf,
   amiri,
   caladea,
@@ -155,6 +157,7 @@
   libertine,
   libertine-g,
   noto-fonts,
+  noto-fonts-lgc-plus,
   noto-fonts-cjk-sans,
   rhino,
   lp_solve,
@@ -198,6 +201,15 @@ let
     optionalString
     ;
 
+  notoSubset =
+    suffixes:
+    runCommand "noto-fonts-subset" { } ''
+      mkdir -p "$out/share/fonts/noto/"
+      ${concatMapStrings (x: ''
+        cp "${noto-fonts}/share/fonts/noto/NotoSans${x}["*.[ot]tf "$out/share/fonts/noto/"
+      '') suffixes}
+    '';
+
   fontsConf = makeFontsConf {
     fontDirectories = [
       amiri
@@ -210,12 +222,14 @@ let
       liberation_ttf_v2
       libertine
       libertine-g
-      noto-fonts
+      # Font priority issues in some tests in Still
+      noto-fonts-lgc-plus
+      (if variant == "fresh" then noto-fonts else (notoSubset [ "Arabic" ]))
       noto-fonts-cjk-sans
     ];
   };
 
-  jre' = jre17_minimal.override {
+  jre' = jre21_minimal.override {
     modules = [
       "java.base"
       "java.desktop"
@@ -329,6 +343,14 @@ stdenv.mkDerivation (finalAttrs: {
 
       # Revert part of https://github.com/LibreOffice/core/commit/6f60670877208612b5ea320b3677480ef6508abb that broke zlib linking
       ./readd-explicit-zlib-link.patch
+
+      # Backport patch to fix build with Poppler 25.05
+      # FIXME: conditionalize/remove as upstream updates
+      (fetchpatch2 {
+        url = "https://github.com/LibreOffice/core/commit/0ee2636304ac049f21415c67e92040f7d6c14d35.patch";
+        includes = [ "sdext/*" ];
+        hash = "sha256-8yipl5ln1yCNfVM8SuWowsw1Iy/SXIwbdT1ZfNw4cJA=";
+      })
     ]
     ++ lib.optionals (lib.versionOlder version "24.8") [
       (fetchpatch2 {
@@ -362,7 +384,7 @@ stdenv.mkDerivation (finalAttrs: {
     bison
     fontforge
     gdb
-    jdk17
+    jdk21
     libtool
     pkg-config
   ];
@@ -382,7 +404,7 @@ stdenv.mkDerivation (finalAttrs: {
       ant
       bluez5
       boost
-      box2d
+      box2d_2
       cairo
       clucene_core_2
       cppunit
@@ -461,7 +483,7 @@ stdenv.mkDerivation (finalAttrs: {
       pam
       perl
       poppler
-      postgresql
+      libpq
       python311
       sane-backends
       unixODBC
@@ -531,7 +553,7 @@ stdenv.mkDerivation (finalAttrs: {
       "--enable-dbus"
       "--enable-release-build"
       "--enable-epm"
-      "--with-ant-home=${getLib ant}/lib/ant"
+      "--with-ant-home=${ant.home}"
 
       # Without these, configure does not finish
       "--without-junit"
@@ -598,10 +620,12 @@ stdenv.mkDerivation (finalAttrs: {
       "--enable-gtk3-kde5"
     ]
     ++ (
-      if variant == "fresh" then
+      if variant == "fresh" || variant == "collabora" then
         [
           "--with-system-rhino"
           "--with-rhino-jar=${rhino}/share/java/js.jar"
+
+          "--without-system-java-websocket"
         ]
       else
         [
@@ -613,7 +637,9 @@ stdenv.mkDerivation (finalAttrs: {
   env = {
     # FIXME: this is a hack, because the right cflags are not being picked up
     # from rasqal's .pc file. Needs more investigation.
-    NIX_CFLAGS_COMPILE = "-I${librdf_rasqal}/include/rasqal";
+    NIX_CFLAGS_COMPILE =
+      "-I${librdf_rasqal}/include/rasqal"
+      + (lib.optionalString debugLogging " -DSAL_LOG_WARN=1 -DSAL_LOG_INFO=1 ");
 
     # Provide all the fonts used in tests.
     FONTCONFIG_FILE = fontsConf;
@@ -735,15 +761,19 @@ stdenv.mkDerivation (finalAttrs: {
 
   requiredSystemFeatures = [ "big-parallel" ];
 
-  meta = with lib; {
+  meta = {
     changelog = "https://wiki.documentfoundation.org/ReleaseNotes/${lib.versions.majorMinor version}";
     description = "Comprehensive, professional-quality productivity suite, a variant of openoffice.org";
     homepage = "https://libreoffice.org/";
     # at least one jar in dependencies
-    sourceProvenance = with sourceTypes; [ binaryBytecode ];
-    license = licenses.lgpl3;
-    maintainers = with maintainers; [ raskin ];
-    platforms = platforms.linux;
+    sourceProvenance = with lib.sourceTypes; [ binaryBytecode ];
+    license = with lib.licenses; [
+      mpl20
+      lgpl3Plus
+      asl20
+    ];
+    maintainers = with lib.maintainers; [ raskin ];
+    platforms = lib.platforms.linux;
     mainProgram = "libreoffice";
   };
 })

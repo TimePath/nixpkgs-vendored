@@ -3,38 +3,31 @@
   fetchFromGitHub,
   rustPlatform,
 
-  darwin,
   openssl,
   pkg-config,
-  stdenv,
 }:
 
 rustPlatform.buildRustPackage rec {
   pname = "smartcat";
-  version = "2.1.0";
+  version = "2.2.0";
 
   src = fetchFromGitHub {
     owner = "efugier";
     repo = "smartcat";
     tag = version;
-    hash = "sha256-QoMBQ/Xjh/xbsE9HthUKwm5v2tiN1tC2u6I/aOeO6ws=";
+    hash = "sha256-nXuMyHV5Sln3qWXIhIDdV0thSY4YbvzGqNWGIw4QLdM=";
   };
 
-  cargoHash = "sha256-SAv2tgo5jBSsVhLM2FR5S9Sg0yZBghSKKSV9hhUCvCk=";
+  useFetchCargoVendor = true;
+  cargoHash = "sha256-AiOVIDfARztwQxOzBFWc8NXEEsxEvKAStCokcRrJyOE=";
 
   nativeBuildInputs = [
     pkg-config
   ];
 
-  buildInputs =
-    [
-      openssl
-    ]
-    ++ lib.optionals stdenv.hostPlatform.isDarwin [
-      darwin.apple_sdk.frameworks.AppKit
-      darwin.apple_sdk.frameworks.Security
-      darwin.apple_sdk.frameworks.SystemConfiguration
-    ];
+  buildInputs = [
+    openssl
+  ];
 
   meta = {
     description = "Integrate large language models into the command line";

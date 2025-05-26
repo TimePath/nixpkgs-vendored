@@ -1,7 +1,7 @@
 {
   lib,
   stdenv,
-  substituteAll,
+  replaceVars,
   fetchFromGitHub,
   autoreconfHook,
   gettext,
@@ -61,20 +61,25 @@ in
 
 stdenv.mkDerivation rec {
   pname = "ibus";
-  version = "1.5.30";
+  version = "1.5.31";
 
   src = fetchFromGitHub {
     owner = "ibus";
     repo = "ibus";
     rev = version;
-    sha256 = "sha256-VgSjeKF9DCkDfE9lHEaWpgZb6ibdgoDf/I6qeJf8Ah4=";
+    sha256 = "sha256-YMCtLIK/9iUdS37Oiow7WMhFFPKhomNXvzWbLzlUkdQ=";
   };
 
   patches = [
-    (substituteAll {
-      src = ./fix-paths.patch;
+    (replaceVars ./fix-paths.patch {
       pythonInterpreter = python3Runtime.interpreter;
       pythonSitePackages = python3.sitePackages;
+      # patch context
+      prefix = null;
+      datarootdir = null;
+      localedir = null;
+      # removed line only
+      PYTHON = null;
     })
     ./build-without-dbus-launch.patch
   ];

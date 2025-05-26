@@ -18,18 +18,29 @@ let
     ++ cfg.extraArgs
   );
 
+  mhsendmail = pkgs.writeShellScriptBin "mailhog-sendmail" ''
+    exec ${lib.getExe pkgs.mailhog} sendmail $@
+  '';
 in
 {
   ###### interface
 
   imports = [
-    (lib.mkRemovedOptionModule [ "services" "mailhog" "user" ] "")
+    (lib.mkRemovedOptionModule [
+      "services"
+      "mailhog"
+      "user"
+    ] "")
   ];
 
   options = {
 
     services.mailhog = {
       enable = lib.mkEnableOption "MailHog, web and API based SMTP testing";
+
+      setSendmail = lib.mkEnableOption "set the system sendmail to mailhogs's" // {
+        default = true;
+      };
 
       storage = lib.mkOption {
         type = lib.types.enum [
@@ -76,11 +87,21 @@ in
       wantedBy = [ "multi-user.target" ];
       serviceConfig = {
         Type = "exec";
-        ExecStart = "${pkgs.mailhog}/bin/MailHog ${args}";
+        ExecStart = "${lib.getExe pkgs.mailhog} ${args}";
         DynamicUser = true;
         Restart = "on-failure";
         StateDirectory = "mailhog";
       };
     };
+
+    services.mail.sendmailSetuidWrapper = lib.mkIf cfg.setSendmail {
+      program = "sendmail";
+      source = lib.getExe mhsendmail;
+      # Communication happens through the network, no data is written to disk
+      owner = "nobody";
+      group = "nogroup";
+    };
   };
+
+  meta.maintainers = with lib.maintainers; [ RTUnreal ];
 }

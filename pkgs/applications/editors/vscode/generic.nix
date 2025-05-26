@@ -11,7 +11,7 @@
   at-spi2-atk,
   autoPatchelfHook,
   alsa-lib,
-  mesa,
+  libgbm,
   nss,
   nspr,
   xorg,
@@ -23,6 +23,7 @@
   wayland,
   libglvnd,
   libkrb5,
+  openssl,
 
   # Populate passthru.tests
   tests,
@@ -33,6 +34,7 @@
 
   # Attributes inherit from specific versions
   version,
+  vscodeVersion ? version,
   src,
   meta,
   sourceRoot,
@@ -41,6 +43,8 @@
   longName,
   shortName,
   pname,
+  libraryName ? "vscode",
+  iconName ? "vs${executableName}",
   updateScript,
   dontFixup ? false,
   rev ? null,
@@ -48,6 +52,7 @@
   sourceExecutableName ? executableName,
   useVSCodeRipgrep ? false,
   ripgrep,
+  hasVsceSign ? false,
 }:
 
 stdenv.mkDerivation (
@@ -69,7 +74,8 @@ stdenv.mkDerivation (
       }:
       buildFHSEnv {
         # also determines the name of the wrapped command
-        name = executableName;
+        pname = executableName;
+        inherit version;
 
         # additional libraries which are commonly needed for extensions
         targetPkgs =
@@ -152,7 +158,7 @@ stdenv.mkDerivation (
         comment = "Code Editing. Redefined.";
         genericName = "Text Editor";
         exec = "${executableName} %F";
-        icon = "vs${executableName}";
+        icon = iconName;
         startupNotify = true;
         startupWMClass = shortName;
         categories = [
@@ -165,7 +171,7 @@ stdenv.mkDerivation (
         actions.new-empty-window = {
           name = "New Empty Window";
           exec = "${executableName} --new-window %F";
-          icon = "vs${executableName}";
+          icon = iconName;
         };
       })
       (makeDesktopItem {
@@ -174,7 +180,7 @@ stdenv.mkDerivation (
         comment = "Code Editing. Redefined.";
         genericName = "Text Editor";
         exec = executableName + " --open-url %U";
-        icon = "vs${executableName}";
+        icon = iconName;
         startupNotify = true;
         startupWMClass = shortName;
         categories = [
@@ -183,7 +189,7 @@ stdenv.mkDerivation (
           "Development"
           "IDE"
         ];
-        mimeTypes = [ "x-scheme-handler/vs${executableName}" ];
+        mimeTypes = [ "x-scheme-handler/${iconName}" ];
         keywords = [ "vscode" ];
         noDisplay = true;
       })
@@ -199,7 +205,7 @@ stdenv.mkDerivation (
         alsa-lib
         at-spi2-atk
         libkrb5
-        mesa
+        libgbm
         nss
         nspr
         systemd
@@ -229,6 +235,11 @@ stdenv.mkDerivation (
     dontConfigure = true;
     noDumpEnvVars = true;
 
+    stripExclude = lib.optional hasVsceSign [
+      # vsce-sign is a single executable application built with Node.js, and it becomes non-functional if stripped
+      "lib/vscode/resources/app/node_modules/@vscode/vsce-sign/bin/vsce-sign"
+    ];
+
     installPhase =
       ''
         runHook preInstall
@@ -242,23 +253,23 @@ stdenv.mkDerivation (
           ''
         else
           ''
-            mkdir -p "$out/lib/vscode" "$out/bin"
-            cp -r ./* "$out/lib/vscode"
+            mkdir -p "$out/lib/${libraryName}" "$out/bin"
+            cp -r ./* "$out/lib/${libraryName}"
 
-            ln -s "$out/lib/vscode/bin/${sourceExecutableName}" "$out/bin/${executableName}"
+            ln -s "$out/lib/${libraryName}/bin/${sourceExecutableName}" "$out/bin/${executableName}"
 
             # These are named vscode.png, vscode-insiders.png, etc to match the name in upstream *.deb packages.
             mkdir -p "$out/share/pixmaps"
-            cp "$out/lib/vscode/resources/app/resources/linux/code.png" "$out/share/pixmaps/vs${executableName}.png"
+            cp "$out/lib/${libraryName}/resources/app/resources/linux/code.png" "$out/share/pixmaps/${iconName}.png"
 
             # Override the previously determined VSCODE_PATH with the one we know to be correct
-            sed -i "/ELECTRON=/iVSCODE_PATH='$out/lib/vscode'" "$out/bin/${executableName}"
-            grep -q "VSCODE_PATH='$out/lib/vscode'" "$out/bin/${executableName}" # check if sed succeeded
+            sed -i "/ELECTRON=/iVSCODE_PATH='$out/lib/${libraryName}'" "$out/bin/${executableName}"
+            grep -q "VSCODE_PATH='$out/lib/${libraryName}'" "$out/bin/${executableName}" # check if sed succeeded
 
             # Remove native encryption code, as it derives the key from the executable path which does not work for us.
             # The credentials should be stored in a secure keychain already, so the benefit of this is questionable
             # in the first place.
-            rm -rf $out/lib/vscode/resources/app/node_modules/vscode-encrypt
+            rm -rf $out/lib/${libraryName}/resources/app/node_modules/vscode-encrypt
           ''
       )
       + ''
@@ -274,7 +285,7 @@ stdenv.mkDerivation (
           }
         # Add gio to PATH so that moving files to the trash works when not using a desktop environment
         --prefix PATH : ${glib.bin}/bin
-        --add-flags "\''${NIXOS_OZONE_WL:+\''${WAYLAND_DISPLAY:+--ozone-platform-hint=auto --enable-features=WaylandWindowDecorations}}"
+        --add-flags "\''${NIXOS_OZONE_WL:+\''${WAYLAND_DISPLAY:+--ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime=true}}"
         --add-flags ${lib.escapeShellArg commandLineArgs}
       )
     '';
@@ -302,7 +313,7 @@ stdenv.mkDerivation (
         let
           vscodeRipgrep =
             if stdenv.hostPlatform.isDarwin then
-              if lib.versionAtLeast version "1.94.0" then
+              if lib.versionAtLeast vscodeVersion "1.94.0" then
                 "Contents/Resources/app/node_modules/@vscode/ripgrep/bin/rg"
               else
                 "Contents/Resources/app/node_modules.asar.unpacked/@vscode/ripgrep/bin/rg"
@@ -320,13 +331,20 @@ stdenv.mkDerivation (
           ''
       );
 
-    postFixup = lib.optionalString stdenv.hostPlatform.isLinux ''
-      patchelf \
-        --add-needed ${libglvnd}/lib/libGLESv2.so.2 \
-        --add-needed ${libglvnd}/lib/libGL.so.1 \
-        --add-needed ${libglvnd}/lib/libEGL.so.1 \
-        $out/lib/vscode/${executableName}
-    '';
+    postFixup = lib.optionalString stdenv.hostPlatform.isLinux (
+      ''
+        patchelf \
+          --add-needed ${libglvnd}/lib/libGLESv2.so.2 \
+          --add-needed ${libglvnd}/lib/libGL.so.1 \
+          --add-needed ${libglvnd}/lib/libEGL.so.1 \
+          $out/lib/${libraryName}/${executableName}
+      ''
+      + (lib.optionalString hasVsceSign ''
+        patchelf \
+          --add-needed ${lib.getLib openssl}/lib/libssl.so \
+          $out/lib/vscode/resources/app/node_modules/@vscode/vsce-sign/bin/vsce-sign
+      '')
+    );
 
     inherit meta;
   }

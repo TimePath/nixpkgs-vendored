@@ -1,22 +1,9 @@
 {
   lib,
   newScope,
-  stdenv,
   fetchurl,
 }:
 lib.makeScope newScope (self: rec {
-
-  fetchAkku =
-    {
-      name,
-      url,
-      sha256,
-      ...
-    }:
-    fetchurl {
-      inherit url sha256;
-    };
-
   akkuDerivation = self.callPackage ./akkuDerivation.nix { };
   akku = self.callPackage ./akku.nix { };
 
@@ -37,11 +24,11 @@ lib.makeScope newScope (self: rec {
           homepage ? "",
           ...
         }:
-        (akkuDerivation rec {
-          inherit version pname;
-          src = fetchAkku {
+        (akkuDerivation {
+          pname = "akku-${pname}";
+          inherit version;
+          src = fetchurl {
             inherit url sha256;
-            name = pname;
           };
           buildInputs = builtins.map (x: akkuself.${x}) dependencies;
           r7rs = source == "snow-fort";

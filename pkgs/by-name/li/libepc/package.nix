@@ -11,7 +11,7 @@
   avahi,
   gnutls,
   libuuid,
-  libsoup,
+  libsoup_2_4,
   gtk3,
   gnome,
 }:
@@ -53,7 +53,7 @@ stdenv.mkDerivation (finalAttrs: {
   propagatedBuildInputs = [
     avahi
     gnutls
-    libsoup
+    libsoup_2_4
   ];
 
   enableParallelBuilding = true;
@@ -69,7 +69,7 @@ stdenv.mkDerivation (finalAttrs: {
     description = "Easy Publish and Consume Library";
     homepage = "https://gitlab.gnome.org/Archive/libepc";
     license = licenses.lgpl21Plus;
-    maintainers = teams.gnome.members;
+    maintainers = [ maintainers.bot-wxt1221 ];
     platforms = platforms.linux;
   };
 })

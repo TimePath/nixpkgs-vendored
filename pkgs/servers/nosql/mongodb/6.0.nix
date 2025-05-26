@@ -4,8 +4,6 @@
   fetchpatch,
   sasl,
   boost,
-  Security,
-  CoreFoundation,
   cctools,
   avxSupport ? stdenv.hostPlatform.avxSupport,
 }:
@@ -15,8 +13,6 @@ let
     inherit
       sasl
       boost
-      Security
-      CoreFoundation
       cctools
       stdenv
       ;
@@ -24,8 +20,8 @@ let
 in
 buildMongoDB {
   inherit avxSupport;
-  version = "6.0.17";
-  sha256 = "sha256-rGGAu2B0gAAE/n0NSdVm7Me2YeChZhDGWehvzcBJTi8=";
+  version = "6.0.19";
+  sha256 = "sha256-qcf+6hMg0LASeOoZJPoRCQ9ajCJBqSsBDg2Wp+2SMKY=";
   patches = [
     # Patches a bug that it couldn't build MongoDB 6.0 on gcc 13 because a include in ctype.h was missing
     ./fix-gcc-13-ctype-6_0.patch

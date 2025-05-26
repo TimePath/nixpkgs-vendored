@@ -242,6 +242,7 @@ in
             SystemCallFilter = [
               "@system-service"
               "~@privileged"
+              "mincore"
             ];
             UMask = "0077";
           }
@@ -249,17 +250,22 @@ in
 
         preStart =
           let
-            createBotsScript = pkgs.runCommandLocal "ASF-bots" { } ''
-              mkdir -p $out
-              # clean potential removed bots
-              rm -rf $out/*.json
-              for i in ${
-                lib.concatStringsSep " " (map (x: "${lib.getName x},${x}") (lib.mapAttrsToList mkBot cfg.bots))
-              }; do IFS=",";
-                set -- $i
-                ln -fs $2 $out/$1
-              done
-            '';
+            createBotsScript =
+              pkgs.runCommand "ASF-bots"
+                {
+                  preferLocalBuild = true;
+                }
+                ''
+                  mkdir -p $out
+                  # clean potential removed bots
+                  rm -rf $out/*.json
+                  for i in ${
+                    lib.concatStringsSep " " (map (x: "${lib.getName x},${x}") (lib.mapAttrsToList mkBot cfg.bots))
+                  }; do IFS=",";
+                    set -- $i
+                    ln -fs $2 $out/$1
+                  done
+                '';
             replaceSecretBin = "${pkgs.replace-secret}/bin/replace-secret";
           in
           ''

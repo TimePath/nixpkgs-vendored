@@ -191,12 +191,14 @@ let
         alderlake = versionAtLeast ccVersion "12.0";
         sapphirerapids = versionAtLeast ccVersion "11.0";
         emeraldrapids = versionAtLeast ccVersion "13.0";
+        sierraforest = versionAtLeast ccVersion "13.0";
 
         # AMD
         znver1 = true;
         znver2 = versionAtLeast ccVersion "9.0";
         znver3 = versionAtLeast ccVersion "11.0";
         znver4 = versionAtLeast ccVersion "13.0";
+        znver5 = versionAtLeast ccVersion "14.0";
       }
       .${arch} or true
     else if isClang then
@@ -220,6 +222,7 @@ let
         znver2 = versionAtLeast ccVersion "9.0";
         znver3 = versionAtLeast ccVersion "12.0";
         znver4 = versionAtLeast ccVersion "16.0";
+        znver5 = versionAtLeast ccVersion "19.1";
       }
       .${arch} or true
     else
@@ -293,7 +296,7 @@ let
 
   machineFlags =
     # Always add -march based on cpu in triple. Sometimes there is a
-    # discrepency (x86_64 vs. x86-64), so we provide an "arch" arg in
+    # discrepancy (x86_64 vs. x86-64), so we provide an "arch" arg in
     # that case.
     optional (
       targetPlatform ? gcc.arch
@@ -403,6 +406,10 @@ stdenvNoCC.mkDerivation {
   dontBuild = true;
   dontConfigure = true;
   enableParallelBuilding = true;
+
+  # TODO(@connorbaker):
+  # This is a quick fix unblock builds broken by https://github.com/NixOS/nixpkgs/pull/370750.
+  dontCheckForBrokenSymlinks = true;
 
   unpackPhase = ''
     src=$PWD
@@ -728,6 +735,28 @@ stdenvNoCC.mkDerivation {
       echo " -L${libcxx_solib}" >> $out/nix-support/cc-ldflags
     ''
 
+    ## Prevent clang from seeing /usr/include. There is a desire to achieve this
+    ## through alternate means because it breaks -sysroot and related functionality.
+    #
+    # This flag prevents global system header directories from
+    # leaking through on non‐NixOS Linux. However, on macOS, the
+    # SDK path is used as the sysroot, and forcing `-nostdlibinc`
+    # breaks `-isysroot` with an unwrapped compiler. As macOS has
+    # no `/usr/include`, there’s essentially no risk to dropping
+    # the flag there. See discussion in NixOS/nixpkgs#191152.
+    #
+    +
+      optionalString
+        (
+          (cc.isClang or false)
+          && !(cc.isROCm or false)
+          && !targetPlatform.isDarwin
+          && !targetPlatform.isAndroid
+        )
+        ''
+          echo " -nostdlibinc" >> $out/nix-support/cc-cflags
+        ''
+
     ##
     ## Man page and info support
     ##
@@ -792,10 +821,6 @@ stdenvNoCC.mkDerivation {
       done
     ''
 
-    + optionalString targetPlatform.isDarwin ''
-      echo "-arch ${targetPlatform.darwinArch}" >> $out/nix-support/cc-cflags
-    ''
-
     + optionalString targetPlatform.isAndroid ''
       echo "-D__ANDROID_API__=${targetPlatform.androidSdkVersion}" >> $out/nix-support/cc-cflags
     ''
@@ -855,6 +880,7 @@ stdenvNoCC.mkDerivation {
       cc = optionalString (!nativeTools) cc;
       wrapperName = "CC_WRAPPER";
       inherit suffixSalt coreutils_bin bintools;
+      bintools_targetPrefix = bintools.targetPrefix;
       inherit libc_bin libc_dev libc_lib;
       inherit darwinPlatformForCC;
       default_hardening_flags_str = builtins.toString defaultHardeningFlags;
@@ -863,7 +889,7 @@ stdenvNoCC.mkDerivation {
       # These will become empty strings when not targeting Darwin.
       inherit (targetPlatform) darwinMinVersion darwinMinVersionVariable;
     }
-    // lib.optionalAttrs (apple-sdk != null && stdenvNoCC.targetPlatform.isDarwin) {
+    // lib.optionalAttrs (stdenvNoCC.targetPlatform.isDarwin && apple-sdk != null) {
       # Wrapped compilers should do something useful even when no SDK is provided at `DEVELOPER_DIR`.
       fallback_sdk = apple-sdk.__spliced.buildTarget or apple-sdk;
     };

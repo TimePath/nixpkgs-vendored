@@ -15,22 +15,22 @@
   SDL2_ttf,
   xercesc,
   xdg-utils,
-  hicolor-icon-theme,
 }:
-stdenv.mkDerivation rec {
+
+stdenv.mkDerivation (finalAttrs: {
   pname = "enigma";
   version = "1.30";
 
   src = fetchurl {
-    url = "https://github.com/Enigma-Game/Enigma/releases/download/${version}/Enigma-${version}-src.tar.gz";
-    sha256 = "rmS5H7wrEJcAcdDXjtW07enuOGjeLm6VaVRvxYQ3+K8=";
+    url = "https://github.com/Enigma-Game/Enigma/releases/download/${finalAttrs.version}/Enigma-${finalAttrs.version}-src.tar.gz";
+    hash = "sha256-rmS5H7wrEJcAcdDXjtW07enuOGjeLm6VaVRvxYQ3+K8=";
   };
 
   patches = [
     # fix format string security warning (turned into error)
     (fetchpatch {
       url = "https://github.com/Enigma-Game/Enigma/pull/70/commits/d25051eb6228c885e779a9674f8ee3979da30663.patch";
-      sha256 = "L5C4NCZDDUKji9Tg4geKaiw3CkSY6rCoawqGKqR4dFM=";
+      hash = "sha256-L5C4NCZDDUKji9Tg4geKaiw3CkSY6rCoawqGKqR4dFM=";
     })
   ];
 
@@ -71,7 +71,7 @@ stdenv.mkDerivation rec {
     description = "Puzzle game inspired by Oxyd on the Atari ST and Rock'n'Roll on the Amiga";
     mainProgram = "enigma";
     license = with licenses; [
-      gpl2Plus
+      gpl2
       free
     ]; # source + bundles libs + art
     platforms = platforms.unix;
@@ -79,4 +79,4 @@ stdenv.mkDerivation rec {
     maintainers = with maintainers; [ iblech ];
     homepage = "https://www.nongnu.org/enigma/";
   };
-}
+})

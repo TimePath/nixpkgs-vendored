@@ -2,6 +2,7 @@
   lib,
   stdenv,
   callPackage,
+  ctestCheckHook,
   fetchFromGitHub,
   testers,
 
@@ -18,7 +19,7 @@
   libxml2,
   openscenegraph,
   pkg-config,
-  postgresql,
+  libpq,
   proj,
   sqlite,
   tiledb,
@@ -29,13 +30,13 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "pdal";
-  version = "2.8.1";
+  version = "2.8.4";
 
   src = fetchFromGitHub {
     owner = "PDAL";
     repo = "PDAL";
     rev = finalAttrs.version;
-    hash = "sha256-aRWVBCMGr/FX3g8tF7PP3sarN2DHx7AG3vvGAkQTuAM=";
+    hash = "sha256-52v7oDmvq820mJ91XAZI1rQEwssWcHagcd2QNVV6zPA=";
   };
 
   nativeBuildInputs = [
@@ -51,9 +52,9 @@ stdenv.mkDerivation (finalAttrs: {
       laszip
       libgeotiff
       libtiff
-      (libxml2.override { enableHttp = true; })
+      libxml2
       openscenegraph
-      postgresql
+      libpq
       proj
       sqlite
       tiledb
@@ -64,6 +65,8 @@ stdenv.mkDerivation (finalAttrs: {
     ++ lib.optionals enableE57 [
       libe57format
     ];
+
+  strictDeps = true;
 
   cmakeFlags = [
     "-DBUILD_PLUGIN_E57=${if enableE57 then "ON" else "OFF"}"
@@ -90,6 +93,9 @@ stdenv.mkDerivation (finalAttrs: {
   ];
 
   doCheck = true;
+  # tests are flaky and they seem to fail less often when they don't run in
+  # parallel
+  enableParallelChecking = false;
 
   disabledTests = [
     # Tests failing due to TileDB library implementation, disabled also
@@ -110,14 +116,18 @@ stdenv.mkDerivation (finalAttrs: {
 
     # Failure
     "pdal_app_plugin_test"
+
+    # Removed in GDAL 3.11
+    "pdal_io_gdal_writer_test"
   ];
 
-  checkPhase = ''
-    runHook preCheck
-    # tests are flaky and they seem to fail less often when they don't run in
-    # parallel
-    ctest -j 1 --output-on-failure -E '^${lib.concatStringsSep "|" finalAttrs.disabledTests}$'
-    runHook postCheck
+  nativeCheckInputs = [
+    gdal # gdalinfo
+    ctestCheckHook
+  ];
+
+  postInstall = ''
+    patchShebangs --update --build $out/bin/pdal-config
   '';
 
   passthru.tests = {
@@ -136,7 +146,7 @@ stdenv.mkDerivation (finalAttrs: {
     description = "PDAL is Point Data Abstraction Library. GDAL for point cloud data";
     homepage = "https://pdal.io";
     license = licenses.bsd3;
-    maintainers = teams.geospatial.members;
+    teams = [ teams.geospatial ];
     platforms = platforms.all;
     pkgConfigModules = [ "pdal" ];
   };

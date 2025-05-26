@@ -7,7 +7,7 @@
   libglvnd,
   libinput,
   libxkbcommon,
-  mesa,
+  libgbm,
   versionCheckHook,
   nix-update-script,
   pango,
@@ -23,15 +23,15 @@
   withSystemd ? true,
 }:
 
-rustPlatform.buildRustPackage rec {
+rustPlatform.buildRustPackage (finalAttrs: {
   pname = "niri";
-  version = "25.02";
+  version = "25.05";
 
   src = fetchFromGitHub {
     owner = "YaLTeR";
     repo = "niri";
-    tag = "v${version}";
-    hash = "sha256-mTTHA0RAaQcdYe+9A3Jx77cmmyLFHmRoZdd8RpWa+m8=";
+    tag = "v${finalAttrs.version}";
+    hash = "sha256-ngQ+iTHmBJkEbsjYfCWTJdV8gHhOCTkV8K0at6Y+YHI=";
   };
 
   postPatch = ''
@@ -41,7 +41,7 @@ rustPlatform.buildRustPackage rec {
   '';
 
   useFetchCargoVendor = true;
-  cargoHash = "sha256-xUjBQ65INi5qD7s5SpPw9TISgY6I3bjjUBmpubvM43I=";
+  cargoHash = "sha256-tZp7AhhddEhKWzEUTgosxXMEzALbv6FxqnJEb9MBhzc=";
 
   strictDeps = true;
 
@@ -56,7 +56,7 @@ rustPlatform.buildRustPackage rec {
       libglvnd # For libEGL
       libinput
       libxkbcommon
-      mesa # For libgbm
+      libgbm
       pango
       seatd
       wayland # For libwayland-client
@@ -115,7 +115,7 @@ rustPlatform.buildRustPackage rec {
   meta = {
     description = "Scrollable-tiling Wayland compositor";
     homepage = "https://github.com/YaLTeR/niri";
-    changelog = "https://github.com/YaLTeR/niri/releases/tag/v${version}";
+    changelog = "https://github.com/YaLTeR/niri/releases/tag/v${finalAttrs.version}";
     license = lib.licenses.gpl3Only;
     maintainers = with lib.maintainers; [
       iogamaster
@@ -126,4 +126,4 @@ rustPlatform.buildRustPackage rec {
     mainProgram = "niri";
     platforms = lib.platforms.linux;
   };
-}
+})

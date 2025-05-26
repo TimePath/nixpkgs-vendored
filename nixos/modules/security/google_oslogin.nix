@@ -4,9 +4,6 @@
   pkgs,
   ...
 }:
-
-with lib;
-
 let
 
   cfg = config.security.googleOsLogin;
@@ -18,8 +15,8 @@ in
 
   options = {
 
-    security.googleOsLogin.enable = mkOption {
-      type = types.bool;
+    security.googleOsLogin.enable = lib.mkOption {
+      type = lib.types.bool;
       default = false;
       description = ''
         Whether to enable Google OS Login.
@@ -37,7 +34,7 @@ in
 
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     security.pam.services.sshd = {
       makeHomeDir = true;
       googleOsLoginAccountVerification = true;

@@ -18,8 +18,7 @@
   python3,
 
   # Qt5
-  libqt5pas,
-  qt5,
+  libsForQt5,
 
   widgetset ? "qt5",
   # See https://github.com/Alexey-T/CudaText-lexers
@@ -65,7 +64,7 @@ stdenv.mkDerivation rec {
   nativeBuildInputs = [
     lazarus
     fpc
-  ] ++ lib.optional (widgetset == "qt5") qt5.wrapQtAppsHook;
+  ] ++ lib.optional (widgetset == "qt5") libsForQt5.wrapQtAppsHook;
 
   buildInputs =
     [ libX11 ]
@@ -78,7 +77,7 @@ stdenv.mkDerivation rec {
     ]
     ++ lib.optional (widgetset == "gtk2") gtk2
     ++ lib.optional (widgetset == "gtk3") gtk3
-    ++ lib.optional (widgetset == "qt5") libqt5pas;
+    ++ lib.optional (widgetset == "qt5") libsForQt5.libqtpas;
 
   NIX_LDFLAGS = "--as-needed -rpath ${lib.makeLibraryPath buildInputs}";
 

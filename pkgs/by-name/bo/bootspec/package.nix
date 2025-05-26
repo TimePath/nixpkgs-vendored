@@ -10,7 +10,7 @@ rustPlatform.buildRustPackage rec {
 
   src = fetchFromGitHub {
     owner = "DeterminateSystems";
-    repo = pname;
+    repo = "bootspec";
     rev = "v${version}";
     hash = "sha256-5IGSMHeL0eKfl7teDejAckYQjc8aeLwfwIQSzQ8YaAg=";
   };
@@ -26,13 +26,14 @@ rustPlatform.buildRustPackage rec {
 
   ];
 
-  cargoHash = "sha256-eGSKVHjPnHK7WyGkO5LIjocNGHawahYQR3H5Lgk1C9s=";
+  useFetchCargoVendor = true;
+  cargoHash = "sha256-65jk8UlXZgQoxuwRcGlMnI4e+LpCJuP2TaqK+Kn4GnQ=";
 
   meta = with lib; {
     description = "Implementation of RFC-0125's datatype and synthesis tooling";
     homepage = "https://github.com/DeterminateSystems/bootspec";
     license = licenses.mit;
-    maintainers = teams.determinatesystems.members;
+    teams = [ teams.determinatesystems ];
     platforms = platforms.unix;
   };
 }

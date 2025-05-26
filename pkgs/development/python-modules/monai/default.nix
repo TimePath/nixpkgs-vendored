@@ -2,7 +2,6 @@
   lib,
   buildPythonPackage,
   fetchFromGitHub,
-  fetchpatch,
   pythonOlder,
   ninja,
   numpy,
@@ -44,6 +43,8 @@ buildPythonPackage rec {
     packaging
     torch
   ];
+
+  pythonRelaxDeps = [ "numpy" ]; # supported; see https://github.com/Project-MONAI/MONAI/pull/7857
 
   env.BUILD_MONAI = 1;
 

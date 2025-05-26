@@ -43,6 +43,8 @@ let
       "x86_64"
     else if stdenv.hostPlatform.isx86_32 then
       "i386"
+    else if stdenv.hostPlatform.isAarch64 then
+      "aarch64"
     else
       null;
 

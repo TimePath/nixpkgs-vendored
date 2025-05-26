@@ -2,40 +2,40 @@
   lib,
   rustPlatform,
   fetchFromGitHub,
-  testers,
+  versionCheckHook,
   nix-update-script,
-  typos,
 }:
 
 rustPlatform.buildRustPackage rec {
   pname = "typos";
-  version = "1.27.3";
+  version = "1.32.0";
 
   src = fetchFromGitHub {
     owner = "crate-ci";
-    repo = pname;
-    rev = "v${version}";
-    hash = "sha256-4vIRhhBvK2R0nAdG4zDTJ+6F3WOI9sAB/ongBMnzsWk=";
+    repo = "typos";
+    tag = "v${version}";
+    hash = "sha256-1IILk52HyeGMZC+oD2tIUApEgV8RAojmAlVP/uQIng0=";
   };
 
-  cargoHash = "sha256-cn1jy8kQ6R+JU6w/sqcNP+uzSKKg3V4H97qnJAIESd0=";
+  useFetchCargoVendor = true;
+  cargoHash = "sha256-HKJ9ndh23ho3PtWUpGPaGOaECQC2dEfKp0D1N2PY9Ew=";
 
-  passthru = {
-    tests.version = testers.testVersion { package = typos; };
+  passthru.updateScript = nix-update-script { };
 
-    updateScript = nix-update-script { };
-  };
+  nativeInstallCheckInputs = [ versionCheckHook ];
+  doInstallCheck = true;
+  versionCheckProgramArg = "--version";
 
-  meta = with lib; {
+  meta = {
     description = "Source code spell checker";
     mainProgram = "typos";
     homepage = "https://github.com/crate-ci/typos";
-    changelog = "https://github.com/crate-ci/typos/blob/${src.rev}/CHANGELOG.md";
-    license = with licenses; [
+    changelog = "https://github.com/crate-ci/typos/blob/v${version}/CHANGELOG.md";
+    license = with lib.licenses; [
       asl20 # or
       mit
     ];
-    maintainers = with maintainers; [
+    maintainers = with lib.maintainers; [
       figsoda
       mgttlinger
     ];

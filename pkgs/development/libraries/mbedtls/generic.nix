@@ -38,6 +38,9 @@ stdenv.mkDerivation rec {
 
   strictDeps = true;
 
+  # trivialautovarinit on clang causes test failures
+  hardeningDisable = lib.optional stdenv.cc.isClang "trivialautovarinit";
+
   postConfigure = lib.optionalString enableThreading ''
     perl scripts/config.pl set MBEDTLS_THREADING_C    # Threading abstraction layer
     perl scripts/config.pl set MBEDTLS_THREADING_PTHREAD    # POSIX thread wrapper layer for the threading layer.
@@ -52,12 +55,6 @@ stdenv.mkDerivation rec {
     # https://github.com/Mbed-TLS/mbedtls/releases/tag/v3.3.0 below "Requirement changes".
     "-DGEN_FILES=off"
   ];
-
-  env =
-    lib.optionalAttrs (stdenv.cc.isGNU && (lib.versionAtLeast (lib.getVersion stdenv.cc.cc) "14"))
-      {
-        NIX_CFLAGS_COMPILE = "-Wno-error=calloc-transposed-args";
-      };
 
   doCheck = true;
 

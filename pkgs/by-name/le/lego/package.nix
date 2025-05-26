@@ -7,16 +7,16 @@
 
 buildGoModule rec {
   pname = "lego";
-  version = "4.19.2";
+  version = "4.23.1";
 
   src = fetchFromGitHub {
     owner = "go-acme";
-    repo = pname;
-    rev = "v${version}";
-    hash = "sha256-O4lzOZUiicmahxcbzPsEU2+tPDTCUun2JLeWZjpTZIQ=";
+    repo = "lego";
+    tag = "v${version}";
+    hash = "sha256-lFsxUPFFZpsGqcya70El04AefFPBubqA/abhY7Egz8Q=";
   };
 
-  vendorHash = "sha256-BcE/8pxQdJp9vttLo4wDSUswJnaBhIn/mlt3ZcOf2wA=";
+  vendorHash = "sha256-L9fjkSrWoP4vs+BlWyEgK+SF3tWQFiEJjd0fJqcruVM=";
 
   doCheck = false;
 
@@ -32,9 +32,12 @@ buildGoModule rec {
     description = "Let's Encrypt client and ACME library written in Go";
     license = licenses.mit;
     homepage = "https://go-acme.github.io/lego/";
-    maintainers = teams.acme.members;
+    teams = [ teams.acme ];
     mainProgram = "lego";
   };
 
-  passthru.tests.lego = nixosTests.acme;
+  passthru.tests = {
+    lego-http = nixosTests.acme.http01-builtin;
+    lego-dns = nixosTests.acme.dns01;
+  };
 }

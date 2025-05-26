@@ -2,7 +2,7 @@
   lib,
   stdenv,
   fetchurl,
-  alsa-lib,
+  alsa-lib-with-plugins,
   alsa-utils,
   fltk,
   libjack2,
@@ -33,7 +33,7 @@ stdenv.mkDerivation rec {
   ];
 
   buildInputs = [
-    alsa-lib
+    alsa-lib-with-plugins
     alsa-utils
     fltk
     libjack2

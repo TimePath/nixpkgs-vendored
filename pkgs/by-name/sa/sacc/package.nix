@@ -23,8 +23,8 @@ stdenv.mkDerivation rec {
     libressl
   ];
 
-  CFLAGS = lib.optionals stdenv.hostPlatform.isDarwin [
-    "-D_DARWIN_C_SOURCE"
+  makeFlags = lib.optionals stdenv.hostPlatform.isDarwin [
+    "OSCFLAGS=-D_DARWIN_C_SOURCE"
   ];
 
   postPatch = ''

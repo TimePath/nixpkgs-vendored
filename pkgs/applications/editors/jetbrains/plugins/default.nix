@@ -6,6 +6,7 @@
   callPackage,
   autoPatchelfHook,
   glib,
+  darwin,
 }:
 
 let
@@ -66,7 +67,6 @@ let
       value = byId."${id}";
     }) ids
   );
-
 in
 {
   # Only use if you know what youre doing
@@ -77,7 +77,6 @@ in
   addPlugins =
     ide: unprocessedPlugins:
     let
-
       processPlugin =
         plugin:
         if lib.isDerivation plugin then
@@ -90,58 +89,57 @@ in
           throw "Could not resolve plugin ${plugin}";
 
       plugins = map processPlugin unprocessedPlugins;
-
     in
     stdenv.mkDerivation rec {
       pname = meta.mainProgram + "-with-plugins";
       version = ide.version;
       src = ide;
       dontInstall = true;
-      dontFixup = true;
+      dontStrip = true;
       passthru.plugins = plugins ++ (ide.plugins or [ ]);
       newPlugins = plugins;
       disallowedReferences = [ ide ];
       nativeBuildInputs =
-        (lib.optional stdenv.hostPlatform.isLinux autoPatchelfHook) ++ (ide.nativeBuildInputs or [ ]);
+        (lib.optional stdenv.hostPlatform.isLinux autoPatchelfHook)
+        # The buildPhase hook rewrites the binary, which invaliates the code
+        # signature. Add the fixup hook to sign the output.
+        ++ (lib.optional stdenv.hostPlatform.isDarwin darwin.autoSignDarwinBinariesHook)
+        ++ (ide.nativeBuildInputs or [ ]);
       buildInputs = lib.unique ((ide.buildInputs or [ ]) ++ [ glib ]);
 
       inherit (ide) meta;
 
       buildPhase =
         let
-          rootDir =
-            if stdenv.hostPlatform.isDarwin then
-              "Applications/${ide.product}.app/Contents"
-            else
-              meta.mainProgram;
+          appDir = lib.optionalString stdenv.hostPlatform.isDarwin "Applications/${lib.escapeShellArg ide.product}.app";
+          rootDir = if stdenv.hostPlatform.isDarwin then "${appDir}/Contents" else meta.mainProgram;
         in
         ''
           cp -r ${ide} $out
           chmod +w -R $out
           rm -f $out/${rootDir}/plugins/plugin-classpath.txt
-          IFS=' ' read -ra pluginArray <<< "$newPlugins"
-          for plugin in "''${pluginArray[@]}"
-          do
-            pluginfiles=$(ls $plugin);
-            if [ $(echo $pluginfiles | wc -l) -eq 1 ] && echo $pluginfiles | grep -E "\.jar" 1> /dev/null; then
-              # if the plugin contains a single jar file, link it directly into the plugins folder
-              ln -s "$plugin/$(echo $pluginfiles | head -1)" $out/${rootDir}/plugins/
-            else
-              # otherwise link the plugin directory itself
-              ln -s "$plugin" -t $out/${rootDir}/plugins/
-            fi
-          done
-          sed "s|${ide.outPath}|$out|" \
-            -i $(realpath $out/bin/${meta.mainProgram})
 
-          if test -f "$out/bin/${meta.mainProgram}-remote-dev-server"; then
-            sed "s|${ide.outPath}|$out|" \
-              -i $(realpath $out/bin/${meta.mainProgram}-remote-dev-server)
-          fi
+          (
+            shopt -s nullglob
 
-        ''
-        + lib.optionalString stdenv.hostPlatform.isLinux ''
-          autoPatchelf $out
+            IFS=' ' read -ra pluginArray <<< "$newPlugins"
+            for plugin in "''${pluginArray[@]}"; do
+              pluginfiles=($plugin)
+              if [[ "$plugin" == *.jar ]]; then
+                # if the plugin contains a single jar file, link it directly into the plugins folder
+                ln -s "$plugin" $out/${rootDir}/plugins/
+              else
+                # otherwise link the plugin directory itself
+                ln -s "$plugin" -t $out/${rootDir}/plugins/
+              fi
+            done
+
+            for exe in $out/bin/${meta.mainProgram}*; do
+              if [[ -x "$exe" ]]; then
+                substituteInPlace $(realpath "$exe") --replace-warn '${ide.outPath}' $out
+              fi
+            done
+          )
         '';
     };
 }

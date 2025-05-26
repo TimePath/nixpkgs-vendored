@@ -22,10 +22,11 @@ stdenv.mkDerivation rec {
   patches = [
     # This fix is included upstream, remove with next upgrade
     ./cmake-h5free.patch
+    ./netcdf.patch
   ];
 
   preConfigure = ''
-    cmakeFlags+="-Dabs_top_srcdir=$(readlink -f ./)"
+    appendToVar cmakeFlags "-Dabs_top_srcdir=$(readlink -f ./)"
   '';
 
   nativeBuildInputs = [

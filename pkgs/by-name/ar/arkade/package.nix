@@ -7,16 +7,16 @@
 
 buildGoModule rec {
   pname = "arkade";
-  version = "0.11.29";
+  version = "0.11.38";
 
   src = fetchFromGitHub {
     owner = "alexellis";
     repo = "arkade";
     rev = version;
-    hash = "sha256-B5MgBX8GPjBsfOCa1OoZRhQAUQxKH7GXYKMaH6TsUV4=";
+    hash = "sha256-V6ms3Av0/g2S7Q2NLltz7CnnvE1m+cemmwoHKL1e0tM=";
   };
 
-  CGO_ENABLED = 0;
+  env.CGO_ENABLED = 0;
 
   nativeBuildInputs = [ installShellFiles ];
 

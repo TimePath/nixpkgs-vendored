@@ -13,7 +13,7 @@
 
 buildPythonPackage rec {
   pname = "aiolifx-themes";
-  version = "0.5.6";
+  version = "0.6.10";
   pyproject = true;
 
   disabled = pythonOlder "3.9";
@@ -22,7 +22,7 @@ buildPythonPackage rec {
     owner = "Djelibeybi";
     repo = "aiolifx-themes";
     tag = "v${version}";
-    hash = "sha256-q3PAQbx3ch3Cq3634wxR1V3sLQom17V+oiJyjU2F7wY=";
+    hash = "sha256-fn8of81RvNWyCgobF/QuI7lXvv/AdCSHXlbmGXPoMRA=";
   };
 
   build-system = [ poetry-core ];
@@ -41,7 +41,7 @@ buildPythonPackage rec {
   meta = with lib; {
     description = "Color themes for LIFX lights running on aiolifx";
     homepage = "https://github.com/Djelibeybi/aiolifx-themes";
-    changelog = "https://github.com/Djelibeybi/aiolifx-themes/releases/tag/v${version}";
+    changelog = "https://github.com/Djelibeybi/aiolifx-themes/releases/tag/${src.tag}";
     license = licenses.mit;
     maintainers = with maintainers; [ lukegb ];
   };

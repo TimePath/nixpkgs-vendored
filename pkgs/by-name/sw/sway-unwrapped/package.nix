@@ -2,7 +2,7 @@
   lib,
   stdenv,
   fetchFromGitHub,
-  substituteAll,
+  replaceVars,
   swaybg,
   meson,
   ninja,
@@ -35,7 +35,7 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "sway-unwrapped";
-  version = "1.10";
+  version = "1.10.1";
 
   inherit
     enableXWayland
@@ -47,18 +47,16 @@ stdenv.mkDerivation (finalAttrs: {
     owner = "swaywm";
     repo = "sway";
     rev = finalAttrs.version;
-    hash = "sha256-PzeU/niUdqI6sf2TCG19G2vNgAZJE5JCyoTwtO9uFTk=";
+    hash = "sha256-uBtQk8uhW/i8lSbv6zwsRyiiImFBw1YCQHVWQ8jot5w=";
   };
 
   patches =
     [
       ./load-configuration-from-etc.patch
 
-      (substituteAll {
-        src = ./fix-paths.patch;
+      (replaceVars ./fix-paths.patch {
         inherit swaybg;
       })
-
     ]
     ++ lib.optionals (!finalAttrs.isNixOS) [
       # References to /nix/store/... will get GC'ed which causes problems when

@@ -4,18 +4,18 @@
   pkgs,
   lib,
   node-pre-gyp,
-  nodejs_18,
+  nodejs_20,
   pkg-config,
   libjpeg,
   pixman,
   cairo,
   pango,
   which,
-  postgresql,
+  libpq,
 }:
 
 let
-  nodejs = nodejs_18;
+  nodejs = nodejs_20;
 
   version = "0.1.1";
 
@@ -47,7 +47,7 @@ myNodePackages.package.override {
     pixman
     cairo
     pango
-    postgresql
+    libpq
   ];
 
   postRebuild = ''
@@ -72,7 +72,8 @@ myNodePackages.package.override {
     maintainers = [ ];
     platforms = platforms.unix;
     # never built on aarch64-darwin since first introduction in nixpkgs
-    broken = stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isAarch64;
+    # Depends on nodejs_18 that has been removed.
+    broken = true;
     mainProgram = "mx-puppet-discord";
   };
 }

@@ -2,17 +2,16 @@
   lib,
   fetchFromGitHub,
   buildGoModule,
-  fetchpatch,
 }:
 buildGoModule rec {
   pname = "ssm-session-manager-plugin";
-  version = "1.2.677.0";
+  version = "1.2.707.0";
 
   src = fetchFromGitHub {
     owner = "aws";
     repo = "session-manager-plugin";
     rev = version;
-    hash = "sha256-bfj3LFUYgtrspFsLb46TuIOC3bj/WEamMUa47Q7kATI=";
+    hash = "sha256-4DPwFKt5pNNl4AczgIhZA7CuBHx7q41jMZKenDFYmwg=";
   };
 
   patches = [

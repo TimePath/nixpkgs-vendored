@@ -8,18 +8,20 @@
   gdb,
   freetype,
   freetypeSupport ? true,
-  extensions ? [ ],
+  withExtensions ? true,
+  extraFlags ? "",
+  pluginsFile ? null,
 }:
 
 stdenv.mkDerivation {
   pname = "gf";
-  version = "unstable-2023-08-09";
+  version = "0-unstable-2025-02-04";
 
   src = fetchFromGitHub {
     repo = "gf";
     owner = "nakst";
-    rev = "4190211d63c1e5378a9e841d22fa2b96a1099e68";
-    hash = "sha256-28Xgw/KxwZ94r/TXsdISeUtXHSips4irB0D+tEefMYE=";
+    rev = "9c1686439f97ae6e1ca8f1fb785b545303adfebc";
+    hash = "sha256-0uABsjAVn+wAN8hMkM38CepSV4gYtIL0WHDq25TohZ0=";
   };
 
   nativeBuildInputs = [
@@ -35,9 +37,14 @@ stdenv.mkDerivation {
     ./build-use-optional-freetype-with-pkg-config.patch
   ];
 
-  postPatch = lib.forEach extensions (ext: ''
-    cp ${ext} ./${ext.name or (builtins.baseNameOf ext)}
-  '');
+  postPatch = [
+    (lib.optionalString withExtensions ''
+      cp ./extensions_v5/extensions.cpp .
+    '')
+    (lib.optionalString (pluginsFile != null) ''
+      cp ${pluginsFile} ./plugins.cpp
+    '')
+  ];
 
   preConfigure = ''
     patchShebangs build.sh
@@ -45,7 +52,7 @@ stdenv.mkDerivation {
 
   buildPhase = ''
     runHook preBuild
-    extra_flags=-DUI_FREETYPE_SUBPIXEL ./build.sh
+    extra_flags="${extraFlags} -DUI_FREETYPE_SUBPIXEL" ./build.sh
     runHook postBuild
   '';
 

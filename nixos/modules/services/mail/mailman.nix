@@ -102,6 +102,9 @@ in
     (lib.mkRemovedOptionModule [ "services" "mailman" "package" ] ''
       Didn't have an effect for several years.
     '')
+    (lib.mkRemovedOptionModule [ "services" "mailman" "extraPythonPackages" ] ''
+      Didn't have an effect for several years.
+    '')
   ];
 
   options = {
@@ -314,12 +317,6 @@ in
         };
       };
 
-      extraPythonPackages = lib.mkOption {
-        description = "Packages to add to the python environment used by mailman and mailman-web";
-        type = lib.types.listOf lib.types.package;
-        default = [ ];
-      };
-
       settings = lib.mkOption {
         description = "Settings for mailman.cfg";
         type = lib.types.attrsOf (lib.types.attrsOf lib.types.str);
@@ -519,7 +516,7 @@ in
       enable = lib.mkDefault true;
       virtualHosts = lib.genAttrs cfg.webHosts (webHost: {
         locations = {
-          ${cfg.serve.virtualRoot}.extraConfig = "uwsgi_pass unix:/run/mailman-web.socket;";
+          ${cfg.serve.virtualRoot}.uwsgiPass = "unix:/run/mailman-web.socket";
           "${lib.removeSuffix "/" cfg.serve.virtualRoot}/static/".alias = webSettings.STATIC_ROOT + "/";
         };
       });
@@ -664,8 +661,14 @@ in
 
         mailman-web-setup = {
           description = "Prepare mailman-web files and database";
-          before = [ "mailman-uwsgi.service" ];
-          requiredBy = [ "mailman-uwsgi.service" ];
+          before = [
+            "hyperkitty.service"
+            "mailman-uwsgi.service"
+          ];
+          requiredBy = [
+            "hyperkitty.service"
+            "mailman-uwsgi.service"
+          ];
           restartTriggers = [ config.environment.etc."mailman3/settings.py".source ];
           script = ''
             [[ -e "${webSettings.STATIC_ROOT}" ]] && find "${webSettings.STATIC_ROOT}/" -mindepth 1 -delete

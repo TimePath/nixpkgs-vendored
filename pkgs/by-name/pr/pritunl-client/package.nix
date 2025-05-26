@@ -19,12 +19,12 @@
   electron,
 }:
 let
-  version = "1.3.4066.51";
+  version = "1.3.4220.57";
   src = fetchFromGitHub {
     owner = "pritunl";
     repo = "pritunl-client-electron";
     rev = version;
-    sha256 = "sha256-yoPpDOcTv3kBTHscYn//KseZpfj1HArInODSxPKOFXY=";
+    sha256 = "sha256-AqolwsGHDxVQMjgQdWz24BmM+uMT/XII1vtDjA3fFcQ=";
   };
 
   cli = buildGoModule {
@@ -45,7 +45,7 @@ let
     inherit version src;
 
     modRoot = "service";
-    vendorHash = "sha256-uy8+R4l3e4YAWMxWWbVHhkwxvbOsY5PF7fs1dVyMIAg=";
+    vendorHash = "sha256-WWvROYvw8JuidZHKOO0xiNcxlyRCZkw9j/eI6C5HJhU=";
 
     nativeBuildInputs = [ makeWrapper ];
 

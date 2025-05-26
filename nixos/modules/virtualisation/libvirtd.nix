@@ -18,7 +18,12 @@ let
   '';
   qemuConfigFile = pkgs.writeText "qemu.conf" ''
     ${optionalString cfg.qemu.ovmf.enable ''
-      nvram = [ "/run/libvirt/nix-ovmf/AAVMF_CODE.fd:/run/libvirt/nix-ovmf/AAVMF_VARS.fd", "/run/libvirt/nix-ovmf/OVMF_CODE.fd:/run/libvirt/nix-ovmf/OVMF_VARS.fd" ]
+      nvram = [
+        "/run/libvirt/nix-ovmf/AAVMF_CODE.fd:/run/libvirt/nix-ovmf/AAVMF_VARS.fd",
+        "/run/libvirt/nix-ovmf/AAVMF_CODE.ms.fd:/run/libvirt/nix-ovmf/AAVMF_VARS.ms.fd",
+        "/run/libvirt/nix-ovmf/OVMF_CODE.fd:/run/libvirt/nix-ovmf/OVMF_VARS.fd",
+        "/run/libvirt/nix-ovmf/OVMF_CODE.ms.fd:/run/libvirt/nix-ovmf/OVMF_VARS.ms.fd"
+      ]
     ''}
     ${optionalString (!cfg.qemu.runAsRoot) ''
       user = "qemu-libvirtd"
@@ -179,7 +184,7 @@ let
         type = types.attrsOf types.path;
         default = { };
         description = ''
-          Hooks that will be placed under /var/lib/libvirt/hooks/lxc.d/
+          Hooks that will be placed under /var/lib/libvirt/hooks/network.d/
           and called for networks begin/end events.
           Please see https://libvirt.org/hooks.html for documentation.
         '';
@@ -377,7 +382,7 @@ in
       type = types.bool;
       default = true;
       description = ''
-        Weither to configure OpenSSH to use the [SSH Proxy](https://libvirt.org/ssh-proxy.html).
+        Whether to configure OpenSSH to use the [SSH Proxy](https://libvirt.org/ssh-proxy.html).
       '';
     };
   };
@@ -405,7 +410,7 @@ in
       etc."qemu/bridge.conf".text = lib.concatMapStringsSep "\n" (e: "allow ${e}") cfg.allowedBridges;
       systemPackages = with pkgs; [
         libressl.nc
-        iptables
+        config.networking.firewall.package
         cfg.package
         cfg.qemu.package
       ];
@@ -472,10 +477,10 @@ in
             };
           in
           ''
-            ln -s --force ${ovmfpackage}/FV/AAVMF_CODE.fd /run/${dirName}/nix-ovmf/
-            ln -s --force ${ovmfpackage}/FV/OVMF_CODE.fd /run/${dirName}/nix-ovmf/
-            ln -s --force ${ovmfpackage}/FV/AAVMF_VARS.fd /run/${dirName}/nix-ovmf/
-            ln -s --force ${ovmfpackage}/FV/OVMF_VARS.fd /run/${dirName}/nix-ovmf/
+            ln -s --force ${ovmfpackage}/FV/AAVMF_CODE{,.ms}.fd /run/${dirName}/nix-ovmf/
+            ln -s --force ${ovmfpackage}/FV/OVMF_CODE{,.ms}.fd /run/${dirName}/nix-ovmf/
+            ln -s --force ${ovmfpackage}/FV/AAVMF_VARS{,.ms}.fd /run/${dirName}/nix-ovmf/
+            ln -s --force ${ovmfpackage}/FV/OVMF_VARS{,.ms}.fd /run/${dirName}/nix-ovmf/
           ''
         )}
 

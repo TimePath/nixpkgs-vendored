@@ -11,7 +11,7 @@ stdenv.mkDerivation rec {
 
   src = fetchFromGitHub {
     owner = "3proxy";
-    repo = pname;
+    repo = "3proxy";
     rev = version;
     sha256 = "sha256-uy6flZ1a7o02pr5O0pgl9zCjh8mE9W5JxotJeBMB16A=";
   };
@@ -34,6 +34,9 @@ stdenv.mkDerivation rec {
   postInstall = ''
     rm -fr $out/var
   '';
+
+  # common.c:208:9: error: initialization of 'int (*)(struct pollfd *, unsigned int,  int)' from incompatible pointer type 'int (*)(struct pollfd *, nfds_t,  int)' {aka 'int (*)(struct pollfd *, long unsigned int,  int)'}
+  env.NIX_CFLAGS_COMPILE = "-Wno-error=incompatible-pointer-types";
 
   passthru.tests = {
     smoke-test = nixosTests._3proxy;

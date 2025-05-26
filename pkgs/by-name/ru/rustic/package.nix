@@ -2,9 +2,6 @@
   lib,
   fetchFromGitHub,
   rustPlatform,
-  stdenv,
-  Security,
-  SystemConfiguration,
   installShellFiles,
   nix-update-script,
 }:
@@ -16,18 +13,14 @@ rustPlatform.buildRustPackage rec {
   src = fetchFromGitHub {
     owner = "rustic-rs";
     repo = "rustic";
-    rev = "refs/tags/v${version}";
+    tag = "v${version}";
     hash = "sha256-HYPzgynCeWDRRNyACHqnzkjn6uZWS0TDHuJE9STJxbQ=";
   };
 
-  cargoHash = "sha256-0EiegC1eP77sUaruB9wnSViWSKHJcJiMjeEf8r4TqwU=";
+  useFetchCargoVendor = true;
+  cargoHash = "sha256-+BlLVnvI2qBfwEtyxmZFNhR9MEzs0/a1Ce6ALOKtoPU=";
 
   nativeBuildInputs = [ installShellFiles ];
-
-  buildInputs = lib.optionals stdenv.hostPlatform.isDarwin [
-    Security
-    SystemConfiguration
-  ];
 
   postInstall = ''
     for shell in {ba,fi,z}sh; do

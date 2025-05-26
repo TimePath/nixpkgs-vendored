@@ -10,7 +10,7 @@ import ./make-test-python.nix (
       {
         services.komga = {
           enable = true;
-          port = 1234;
+          settings.server.port = 1234;
         };
       };
 

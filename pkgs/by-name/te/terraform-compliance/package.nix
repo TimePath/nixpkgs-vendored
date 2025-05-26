@@ -6,14 +6,14 @@
 
 python3.pkgs.buildPythonApplication rec {
   pname = "terraform-compliance";
-  version = "1.3.48";
+  version = "1.3.50";
   format = "setuptools";
 
   src = fetchFromGitHub {
     owner = "terraform-compliance";
     repo = "cli";
     tag = version;
-    hash = "sha256-2nf/EJcC4KYTBItByX47UqTSs2EOgsUAgRbLEdB4Iyg=";
+    hash = "sha256-FwePzXXxwiV5tWY1a+mG5pcv6XB801qG6Lx+XUe662E=";
   };
 
   postPatch = ''
@@ -55,7 +55,7 @@ python3.pkgs.buildPythonApplication rec {
     description = "BDD test framework for terraform";
     mainProgram = "terraform-compliance";
     homepage = "https://github.com/terraform-compliance/cli";
-    changelog = "https://github.com/terraform-compliance/cli/releases/tag/${version}";
+    changelog = "https://github.com/terraform-compliance/cli/releases/tag/${src.tag}";
     license = licenses.mit;
     maintainers = with maintainers; [
       kalbasit

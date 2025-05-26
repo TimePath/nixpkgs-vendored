@@ -2,6 +2,7 @@
   lib,
   stdenv,
   fetchFromGitHub,
+  nix-update-script,
   autoreconfHook,
   pkg-config,
   curl,
@@ -11,21 +12,17 @@
   libtiff,
   icu,
   pango,
-  opencl-headers,
-  Accelerate,
-  CoreGraphics,
-  CoreVideo,
 }:
 
 stdenv.mkDerivation rec {
   pname = "tesseract";
-  version = "5.3.4";
+  version = "5.5.0";
 
   src = fetchFromGitHub {
     owner = "tesseract-ocr";
     repo = "tesseract";
     rev = version;
-    sha256 = "sha256-IKxzDhSM+BPsKyQP3mADAkpRSGHs4OmdFIA+Txt084M=";
+    sha256 = "sha256-qyckAQZs3gR1NBqWgE+COSKXhv3kPF+iHVQrt6OPi8s=";
   };
 
   enableParallelBuilding = true;
@@ -35,28 +32,22 @@ stdenv.mkDerivation rec {
     autoreconfHook
   ];
 
-  buildInputs =
-    [
-      curl
-      leptonica
-      libarchive
-      libpng
-      libtiff
-      icu
-      pango
-      opencl-headers
-    ]
-    ++ lib.optionals stdenv.hostPlatform.isDarwin [
-      Accelerate
-      CoreGraphics
-      CoreVideo
-    ];
+  buildInputs = [
+    curl
+    leptonica
+    libarchive
+    libpng
+    libtiff
+    icu
+    pango
+  ];
 
+  passthru.updateScript = nix-update-script { };
   meta = {
     description = "OCR engine";
     homepage = "https://github.com/tesseract-ocr/tesseract";
     license = lib.licenses.asl20;
-    maintainers = [ ];
+    maintainers = with lib.maintainers; [ patrickdag ];
     platforms = lib.platforms.unix;
     mainProgram = "tesseract";
   };

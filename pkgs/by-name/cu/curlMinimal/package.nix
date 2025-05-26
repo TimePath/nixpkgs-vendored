@@ -2,10 +2,10 @@
   lib,
   stdenv,
   fetchurl,
-  darwin,
   pkg-config,
   perl,
   nixosTests,
+  autoreconfHook,
   brotliSupport ? false,
   brotli,
   c-aresSupport ? false,
@@ -34,6 +34,7 @@
   http3Support ? false,
   nghttp3,
   ngtcp2,
+  quictls,
   websocketSupport ? false,
   idnSupport ? false,
   libidn2,
@@ -84,9 +85,13 @@ assert
     ]) > 1
   );
 
+let
+  openssl' = if http3Support then quictls else openssl;
+in
+
 stdenv.mkDerivation (finalAttrs: {
   pname = "curl";
-  version = "8.12.1";
+  version = "8.13.0";
 
   src = fetchurl {
     urls = [
@@ -95,8 +100,13 @@ stdenv.mkDerivation (finalAttrs: {
         builtins.replaceStrings [ "." ] [ "_" ] finalAttrs.version
       }/curl-${finalAttrs.version}.tar.xz"
     ];
-    hash = "sha256-A0Hx7ZeibIEauuvTfWK4M5VnkrdgfqPxXQAWE8dt4gI=";
+    hash = "sha256-Sgk5eaPC0C3i+8AFSaMncQB/LngDLG+qXs0vep4VICU=";
   };
+
+  patches = [
+    # Backport of https://github.com/curl/curl/commit/5fbd78eb2dc4afbd8884e8eed27147fc3d4318f6
+    ./0001-http2-fix-stream-window-size-after-unpausing.patch
+  ];
 
   # this could be accomplished by updateAutotoolsGnuConfigScriptsHook, but that causes infinite recursion
   # necessary for FreeBSD code path in configure
@@ -127,7 +137,7 @@ stdenv.mkDerivation (finalAttrs: {
   nativeBuildInputs = [
     pkg-config
     perl
-  ];
+  ] ++ lib.optionals stdenv.hostPlatform.isOpenBSD [ autoreconfHook ];
 
   # Zlib and OpenSSL must be propagated because `libcurl.la' contains
   # "-lz -lssl", which aren't necessary direct build inputs of
@@ -145,35 +155,20 @@ stdenv.mkDerivation (finalAttrs: {
     ]
     ++ lib.optional idnSupport libidn2
     ++ lib.optional ldapSupport openldap
-    ++ lib.optional opensslSupport openssl
+    ++ lib.optional opensslSupport openssl'
     ++ lib.optional pslSupport libpsl
     ++ lib.optional rtmpSupport rtmpdump
     ++ lib.optional scpSupport libssh2
     ++ lib.optional wolfsslSupport wolfssl
     ++ lib.optional rustlsSupport rustls-ffi
     ++ lib.optional zlibSupport zlib
-    ++ lib.optional zstdSupport zstd
-    ++ lib.optionals stdenv.hostPlatform.isDarwin (
-      with darwin.apple_sdk.frameworks;
-      [
-        CoreFoundation
-        CoreServices
-        SystemConfiguration
-      ]
-    );
+    ++ lib.optional zstdSupport zstd;
 
   # for the second line see https://curl.haxx.se/mail/tracker-2014-03/0087.html
-  preConfigure =
-    ''
-      sed -e 's|/usr/bin|/no-such-path|g' -i.bak configure
-      rm src/tool_hugehelp.c
-    ''
-    + lib.optionalString (pslSupport && stdenv.hostPlatform.isStatic) ''
-      # curl doesn't understand that libpsl2 has deps because it doesn't use
-      # pkg-config.
-      # https://github.com/curl/curl/pull/12919
-      configureFlagsArray+=("LIBS=-lidn2 -lunistring")
-    '';
+  preConfigure = ''
+    sed -e 's|/usr/bin|/no-such-path|g' -i.bak configure
+    rm src/tool_hugehelp.c
+  '';
 
   configureFlags =
     [
@@ -195,7 +190,7 @@ stdenv.mkDerivation (finalAttrs: {
       (lib.withFeatureAs brotliSupport "brotli" (lib.getDev brotli))
       (lib.withFeatureAs gnutlsSupport "gnutls" (lib.getDev gnutls))
       (lib.withFeatureAs idnSupport "libidn2" (lib.getDev libidn2))
-      (lib.withFeatureAs opensslSupport "openssl" (lib.getDev openssl))
+      (lib.withFeatureAs opensslSupport "openssl" (lib.getDev openssl'))
       (lib.withFeatureAs scpSupport "libssh2" (lib.getDev libssh2))
       (lib.withFeatureAs wolfsslSupport "wolfssl" (lib.getDev wolfssl))
     ]
@@ -262,7 +257,8 @@ stdenv.mkDerivation (finalAttrs: {
       useThisCurl = attr: attr.override { curl = finalAttrs.finalPackage; };
     in
     {
-      inherit opensslSupport openssl;
+      inherit opensslSupport;
+      openssl = openssl';
       tests = {
         withCheck = finalAttrs.finalPackage.overrideAttrs (_: {
           doCheck = true;

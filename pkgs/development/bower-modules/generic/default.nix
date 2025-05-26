@@ -22,8 +22,6 @@ pkgs.stdenv.mkDerivation (
     inherit bowerPackages;
 
     builder = builtins.toFile "builder.sh" ''
-      source $stdenv/setup
-
       # The project's bower.json is required
       cp $src/bower.json .
 

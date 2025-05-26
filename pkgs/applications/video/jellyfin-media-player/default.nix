@@ -3,10 +3,6 @@
   fetchFromGitHub,
   mkDerivation,
   stdenv,
-  Cocoa,
-  CoreAudio,
-  CoreFoundation,
-  MediaPlayer,
   SDL2,
   cmake,
   libGL,
@@ -28,13 +24,13 @@
 
 mkDerivation rec {
   pname = "jellyfin-media-player";
-  version = "1.11.1";
+  version = "1.12.0";
 
   src = fetchFromGitHub {
     owner = "jellyfin";
     repo = "jellyfin-media-player";
     rev = "v${version}";
-    sha256 = "sha256-Jsn4kWQzUaQI9MpbsLJr6JSJk9ZSnMEcrebQ2DYegSU=";
+    sha256 = "sha256-IXinyenadnW+a+anQ9e61h+N8vG2r77JPboHm5dN4Iw=";
   };
 
   patches = [
@@ -59,12 +55,6 @@ mkDerivation rec {
     ]
     ++ lib.optionals stdenv.hostPlatform.isLinux [
       qtwayland
-    ]
-    ++ lib.optionals stdenv.hostPlatform.isDarwin [
-      Cocoa
-      CoreAudio
-      CoreFoundation
-      MediaPlayer
     ];
 
   nativeBuildInputs = [
@@ -88,7 +78,7 @@ mkDerivation rec {
     ln -s ${jellyfin-web}/share/jellyfin-web .
   '';
 
-  postInstall = lib.optionalString stdenv.isDarwin ''
+  postInstall = lib.optionalString stdenv.hostPlatform.isDarwin ''
     mkdir -p $out/bin $out/Applications
     mv "$out/Jellyfin Media Player.app" $out/Applications
     ln -s "$out/Applications/Jellyfin Media Player.app/Contents/MacOS/Jellyfin Media Player" $out/bin/jellyfinmediaplayer

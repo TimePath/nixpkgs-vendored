@@ -14,7 +14,6 @@
   pkg-config,
   portaudio,
   rustPlatform,
-  spotifyd,
   testers,
   withALSA ? stdenv.hostPlatform.isLinux,
   withJack ? stdenv.hostPlatform.isLinux,
@@ -23,19 +22,19 @@
   withPulseAudio ? config.pulseaudio or stdenv.hostPlatform.isLinux,
 }:
 
-rustPlatform.buildRustPackage rec {
+rustPlatform.buildRustPackage (finalAttrs: {
   pname = "spotifyd";
-  version = "0.4.0";
+  version = "0.4.1";
 
   src = fetchFromGitHub {
     owner = "Spotifyd";
     repo = "spotifyd";
-    tag = "v${version}";
-    hash = "sha256-YBh5lcHXqYjyo/MjNNxnycY5AXjvlu+2gAzG6gM4Gjc=";
+    tag = "v${finalAttrs.version}";
+    hash = "sha256-IqJlqcau0AZAqQjlaEKzinqTdVUA48/m2Y3ioFP/4Zw=";
   };
 
   useFetchCargoVendor = true;
-  cargoHash = "sha256-waZ9XNYZ/scyMsNT7bZYqN4Ch4GbuQtwxAYaWTjNZwg=";
+  cargoHash = "sha256-wZ/JJZDo+Iz5vg4XawcZFvjOEqpD5I0jTfg1JyH3+MA=";
 
   nativeBuildInputs = [
     cmake
@@ -72,14 +71,14 @@ rustPlatform.buildRustPackage rec {
   ];
 
   passthru = {
-    tests.version = testers.testVersion { package = spotifyd; };
+    tests.version = testers.testVersion { package = finalAttrs.finalPackage; };
     updateScript = nix-update-script { };
   };
 
   meta = {
     description = "Open source Spotify client running as a UNIX daemon";
     homepage = "https://spotifyd.rs/";
-    changelog = "https://github.com/Spotifyd/spotifyd/releases/tag/${src.tag}";
+    changelog = "https://github.com/Spotifyd/spotifyd/releases/tag/${toString finalAttrs.src.tag}";
     license = lib.licenses.gpl3Plus;
     maintainers = with lib.maintainers; [
       anderslundstedt
@@ -89,4 +88,4 @@ rustPlatform.buildRustPackage rec {
     platforms = lib.platforms.unix;
     mainProgram = "spotifyd";
   };
-}
+})

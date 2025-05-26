@@ -16,11 +16,12 @@
   glib-testing,
   python3,
   nixosTests,
+  malcontent-ui,
 }:
 
 stdenv.mkDerivation rec {
   pname = "malcontent";
-  version = "0.12.0";
+  version = "0.13.0";
 
   outputs = [
     "bin"
@@ -37,7 +38,7 @@ stdenv.mkDerivation rec {
     owner = "pwithnall";
     repo = "malcontent";
     rev = version;
-    hash = "sha256-UK/WVqDMkwIqkTFFjzh7PRCA/Ej8Iyu33FasnAEApRs=";
+    hash = "sha256-DVoTJrpXk5AoRMz+TxEP3NIAA/OOGRzZurLyGp0UBUo=";
   };
 
   patches = [
@@ -82,10 +83,10 @@ stdenv.mkDerivation rec {
 
   postPatch = ''
     substituteInPlace libmalcontent/tests/app-filter.c \
-      --replace "/usr/bin/true" "${coreutils}/bin/true" \
-      --replace "/bin/true" "${coreutils}/bin/true" \
-      --replace "/usr/bin/false" "${coreutils}/bin/false" \
-      --replace "/bin/false" "${coreutils}/bin/false"
+      --replace-fail "/usr/bin/true" "${coreutils}/bin/true" \
+      --replace-fail "/bin/true" "${coreutils}/bin/true" \
+      --replace-fail "/usr/bin/false" "${coreutils}/bin/false" \
+      --replace-fail "/bin/false" "${coreutils}/bin/false"
   '';
 
   postInstall = ''
@@ -98,6 +99,7 @@ stdenv.mkDerivation rec {
   passthru = {
     tests = {
       installedTests = nixosTests.installed-tests.malcontent;
+      inherit malcontent-ui;
     };
   };
 
@@ -115,6 +117,6 @@ stdenv.mkDerivation rec {
     homepage = "https://gitlab.freedesktop.org/pwithnall/malcontent";
     license = licenses.lgpl21Plus;
     maintainers = with maintainers; [ jtojnar ];
-    platforms = platforms.unix;
+    inherit (polkit.meta) platforms badPlatforms;
   };
 }

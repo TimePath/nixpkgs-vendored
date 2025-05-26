@@ -20,22 +20,18 @@
   curl,
   openssl,
   file,
-  darwin,
   gitUpdater,
 }:
 
-let
-  inherit (darwin.apple_sdk.frameworks) Cocoa;
-in
 stdenv.mkDerivation rec {
   pname = "pwsafe";
-  version = "1.18.0"; # do NOT update to 3.x Windows releases
+  version = "1.21.0fp"; # do NOT update to 3.x Windows releases
 
   src = fetchFromGitHub {
     owner = pname;
     repo = pname;
     rev = version;
-    hash = "sha256-2n3JJ/DPhJpNOyviYpqQQl83IAZnmnH5w7b/pOGU8K8=";
+    hash = "sha256-pPKUFX6NNGtGGjHL3g0Y6xzj+bHU2KDNMhYCnpP9wgM=";
   };
 
   strictDeps = true;
@@ -66,9 +62,6 @@ stdenv.mkDerivation rec {
       libuuid
       libyubikey
       yubikey-personalization
-    ]
-    ++ lib.optionals stdenv.hostPlatform.isDarwin [
-      Cocoa
     ];
 
   cmakeFlags =

@@ -2,7 +2,6 @@
   config,
   lib,
   pkgs,
-  options,
   ...
 }:
 
@@ -20,6 +19,7 @@ in
 {
   port = 9154;
   extraOpts = {
+    package = lib.mkPackageOption pkgs "prometheus-postfix-exporter" { };
     group = mkOption {
       type = types.str;
       description = ''
@@ -94,7 +94,7 @@ in
       RestrictAddressFamilies = [ "AF_UNIX" ];
       SupplementaryGroups = mkIf cfg.systemd.enable [ "systemd-journal" ];
       ExecStart = ''
-        ${pkgs.prometheus-postfix-exporter}/bin/postfix_exporter \
+        ${lib.getExe cfg.package} \
           --web.listen-address ${cfg.listenAddress}:${toString cfg.port} \
           --web.telemetry-path ${cfg.telemetryPath} \
           --postfix.showq_path ${escapeShellArg cfg.showqPath} \

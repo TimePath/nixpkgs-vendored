@@ -2,7 +2,7 @@
   stdenv,
   lib,
   fetchurl,
-  substituteAll,
+  replaceVars,
   vpnc,
   pkg-config,
   networkmanager,
@@ -28,8 +28,7 @@ stdenv.mkDerivation rec {
   };
 
   patches = [
-    (substituteAll {
-      src = ./fix-paths.patch;
+    (replaceVars ./fix-paths.patch {
       inherit vpnc kmod;
     })
   ];
@@ -37,13 +36,13 @@ stdenv.mkDerivation rec {
   nativeBuildInputs = [
     pkg-config
     file
+    glib
   ];
 
   buildInputs =
     [
       vpnc
       networkmanager
-      glib
     ]
     ++ lib.optionals withGnome [
       gtk3
@@ -59,6 +58,8 @@ stdenv.mkDerivation rec {
     "--enable-absolute-paths"
   ];
 
+  strictDeps = true;
+
   passthru = {
     updateScript = gnome.updateScript {
       packageName = pname;
@@ -70,7 +71,7 @@ stdenv.mkDerivation rec {
 
   meta = with lib; {
     description = "NetworkManager's VPNC plugin";
-    inherit (networkmanager.meta) maintainers platforms;
+    inherit (networkmanager.meta) maintainers teams platforms;
     license = licenses.gpl2Plus;
   };
 }

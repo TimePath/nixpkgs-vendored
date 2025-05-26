@@ -7,7 +7,7 @@
   libGL,
   lv2,
   libjack2,
-  mesa,
+  libgbm,
   pkg-config,
 }:
 
@@ -17,7 +17,7 @@ stdenv.mkDerivation rec {
 
   src = fetchFromGitHub {
     owner = "jpcima";
-    repo = pname;
+    repo = "stone-phaser";
     rev = "v${version}";
     sha256 = "180b32z8h9zi8p0q55r1dzxfckamnngm52zjypjjvvy7qdj3mfcd";
     fetchSubmodules = true;
@@ -30,7 +30,7 @@ stdenv.mkDerivation rec {
     libGL
     lv2
     libjack2
-    mesa
+    libgbm
   ];
 
   postPatch = ''

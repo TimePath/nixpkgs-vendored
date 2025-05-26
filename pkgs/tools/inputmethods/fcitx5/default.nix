@@ -4,6 +4,7 @@
   fetchurl,
   fetchFromGitHub,
   pkg-config,
+  buildPackages,
   cmake,
   extra-cmake-modules,
   wayland-scanner,
@@ -29,12 +30,12 @@
   libthai,
   libdatrie,
   xcbutilkeysyms,
-  pcre,
   xcbutil,
   xcbutilwm,
   xcb-imdkit,
   libxkbfile,
   nixosTests,
+  gettext,
 }:
 let
   enDictVer = "20121020";
@@ -45,13 +46,13 @@ let
 in
 stdenv.mkDerivation rec {
   pname = "fcitx5";
-  version = "5.1.11";
+  version = "5.1.12";
 
   src = fetchFromGitHub {
     owner = "fcitx";
     repo = pname;
     rev = version;
-    hash = "sha256-8J2gr2quZvJELd3zzhgwZUowjkOylpM6VZGJ1G3VomI=";
+    hash = "sha256-Jk7YY6nrY1Yn9KeNlRJbMF/fCMIlUVg/Elt7SymlK84=";
   };
 
   prePatch = ''
@@ -63,6 +64,7 @@ stdenv.mkDerivation rec {
     extra-cmake-modules
     pkg-config
     wayland-scanner
+    gettext
   ];
 
   buildInputs = [
@@ -86,7 +88,6 @@ stdenv.mkDerivation rec {
     libsepol
     libXdmcp
     libxkbcommon
-    pcre
     xcbutil
     xcbutilwm
     xcbutilkeysyms
@@ -94,6 +95,12 @@ stdenv.mkDerivation rec {
     xkeyboard_config
     libxkbfile
   ];
+
+  cmakeFlags = lib.optionals (!stdenv.buildPlatform.canExecute stdenv.hostPlatform) [
+    (lib.cmakeFeature "CMAKE_CROSSCOMPILING_EMULATOR" (stdenv.hostPlatform.emulator buildPackages))
+  ];
+
+  strictDeps = true;
 
   passthru = {
     updateScript = ./update.py;

@@ -2,7 +2,7 @@ import ./make-test-python.nix (
   { lib, ... }:
   {
     name = "tandoor-recipes";
-    meta.maintainers = with lib.maintainers; [ ambroisie ];
+    meta.maintainers = with lib.maintainers; [ ];
 
     nodes.machine =
       { pkgs, ... }:

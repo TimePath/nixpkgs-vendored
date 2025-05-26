@@ -1,6 +1,6 @@
 {
   lib,
-  mkDerivation,
+  stdenv,
   fetchFromGitHub,
   boost,
   cmake,
@@ -11,7 +11,7 @@
   qtbase,
   qtx11extras,
   qttools,
-  taglib,
+  taglib_1,
   fftw,
   glew,
   qjson,
@@ -24,22 +24,20 @@
   gvfs,
   libcdio,
   pcre,
-  projectm,
+  projectm_3,
   protobuf,
   qca-qt5,
   pkg-config,
   sparsehash,
   config,
-  makeWrapper,
+  wrapQtAppsHook,
   gst_plugins,
-
   util-linux,
   libunwind,
   libselinux,
   elfutils,
   libsepol,
   orc,
-
   alsa-lib,
 }:
 
@@ -49,22 +47,21 @@ let
   withCD = config.clementine.cd or true;
   withCloud = config.clementine.cloud or true;
 in
-mkDerivation {
+stdenv.mkDerivation (finalAttrs: {
   pname = "clementine";
-  version = "1.4.rc2-unstable-2024-05-12";
+  version = "1.4.1-38-g1fc7fe0e1";
 
   src = fetchFromGitHub {
     owner = "clementine-player";
     repo = "Clementine";
-    rev = "7607ddcb96e79d373c4b60d9de21f3315719c7d8";
-    sha256 = "sha256-yOG/Je6N8YEsu5AOtxOFgDl3iqb97assYMZYMSwQqqk=";
+    tag = finalAttrs.version;
+    hash = "sha256-KV3au25iZ2W9tufNbaI0+UCeLjoJR5Um1U3Gmlk0O2s=";
   };
 
   nativeBuildInputs = [
     cmake
     pkg-config
-    makeWrapper
-
+    wrapQtAppsHook
     util-linux
     libunwind
     libselinux
@@ -87,7 +84,7 @@ mkDerivation {
       liblastfm
       libpulseaudio
       pcre
-      projectm
+      projectm_3
       protobuf
       qca-qt5
       qjson
@@ -95,8 +92,7 @@ mkDerivation {
       qtx11extras
       qttools
       sqlite
-      taglib
-
+      taglib_1
       alsa-lib
     ]
     # gst_plugins needed for setup-hooks
@@ -129,16 +125,18 @@ mkDerivation {
     "-DSPOTIFY_BLOB=OFF"
   ];
 
+  dontWrapQtApps = true;
+
   postInstall = ''
-    wrapProgram $out/bin/clementine \
+    wrapQtApp $out/bin/clementine \
       --prefix GST_PLUGIN_SYSTEM_PATH_1_0 : "$GST_PLUGIN_SYSTEM_PATH_1_0"
   '';
 
-  meta = with lib; {
+  meta = {
     homepage = "https://www.clementine-player.org";
     description = "Multiplatform music player";
-    license = licenses.gpl3Plus;
-    platforms = platforms.linux;
-    maintainers = [ maintainers.ttuegel ];
+    license = lib.licenses.gpl3Plus;
+    platforms = lib.platforms.linux;
+    maintainers = with lib.maintainers; [ ttuegel ];
   };
-}
+})

@@ -25,7 +25,10 @@ in
       type = types.bool;
       default = false;
       description = ''
-        Whether to enable Network Address Translation (NAT).
+        Whether to enable Network Address Translation (NAT). A
+        properly configured firewall or a trusted L2 on all network
+        interfaces is required to prevent unauthorized access to
+        the internal network.
       '';
     };
 
@@ -87,7 +90,8 @@ in
         The public IP address to which packets from the local
         network are to be rewritten.  If this is left empty, the
         IP address associated with the external interface will be
-        used.
+        used.  Only connections made to this IP address will be
+        forwarded to the internal network when using forwardPorts.
       '';
     };
 
@@ -99,7 +103,8 @@ in
         The public IPv6 address to which packets from the local
         network are to be rewritten.  If this is left empty, the
         IP address associated with the external interface will be
-        used.
+        used.  Only connections made to this IP address will be
+        forwarded to the internal network when using forwardPorts.
       '';
     };
 

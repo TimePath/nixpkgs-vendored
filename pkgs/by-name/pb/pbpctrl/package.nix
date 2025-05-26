@@ -9,16 +9,17 @@
 
 rustPlatform.buildRustPackage rec {
   pname = "pbpctrl";
-  version = "0.1.6";
+  version = "0.1.8";
 
   src = fetchFromGitHub {
     owner = "qzed";
-    repo = "${pname}";
+    repo = "pbpctrl";
     rev = "v${version}";
-    hash = "sha256-V7wfEXJ0tVQNsi1OFU1Dk2d9ImsNFRriGutpJzh2tV8=";
+    hash = "sha256-XSRJytPrRKKWhFTBQd3Kd1R3amdecGNTmJS4PmFL6kg=";
   };
 
-  cargoHash = "sha256-8D+WD5bOxoUhw4a7SUr+D2gn1NA7OkmoCcALO9HY8Qk=";
+  useFetchCargoVendor = true;
+  cargoHash = "sha256-eDR/Z4v8G7/XPzWjJdZ5Fg2qULdn/SuNmvE/GVqSVJ8=";
 
   nativeBuildInputs = [
     pkg-config
@@ -33,7 +34,10 @@ rustPlatform.buildRustPackage rec {
       asl20
       mit
     ];
-    maintainers = [ maintainers.vanilla ];
+    maintainers = with maintainers; [
+      vanilla
+      cafkafk
+    ];
     platforms = platforms.linux;
     mainProgram = "pbpctrl";
   };

@@ -13,28 +13,34 @@
   pkg-config,
   boost,
   libtool,
-  perlPackages,
   pythonBindings ? true,
   tclBindings ? true,
-  perlBindings ? true,
+  perlBindings ? stdenv.buildPlatform == stdenv.hostPlatform,
+  buildPackages,
 }:
 let
   python3 = python311; # needs distutils and imp
 in
 stdenv.mkDerivation rec {
   pname = "hamlib";
-  version = "4.5.5";
+  version = "4.6.2";
 
   src = fetchurl {
-    url = "mirror://sourceforge/${pname}/${pname}-${version}.tar.gz";
-    sha256 = "sha256-YByJ8y7SJelSet49ZNDQXSMgLAWuIf+nflnXDuRZf80=";
+    url = "mirror://sourceforge/hamlib/hamlib-${version}.tar.gz";
+    hash = "sha256-sqxz9E3RFh6V/e5slSdhRHV2R7+S1/2zae4v5B7Ueug=";
   };
 
-  nativeBuildInputs = [
-    swig
-    pkg-config
-    libtool
-  ];
+  strictDeps = true;
+  depsBuildBuild = [ buildPackages.stdenv.cc ];
+  nativeBuildInputs =
+    [
+      swig
+      pkg-config
+      libtool
+    ]
+    ++ lib.optionals pythonBindings [ python3 ]
+    ++ lib.optionals tclBindings [ tcl ]
+    ++ lib.optionals perlBindings [ perl ];
 
   buildInputs =
     [
@@ -47,14 +53,13 @@ stdenv.mkDerivation rec {
       python3
       ncurses
     ]
-    ++ lib.optionals tclBindings [ tcl ]
-    ++ lib.optionals perlBindings [
-      perl
-      perlPackages.ExtUtilsMakeMaker
-    ];
+    ++ lib.optionals tclBindings [ tcl ];
 
   configureFlags =
-    lib.optionals perlBindings [ "--with-perl-binding" ]
+    [
+      "CC_FOR_BUILD=${stdenv.cc.targetPrefix}cc"
+    ]
+    ++ lib.optionals perlBindings [ "--with-perl-binding" ]
     ++ lib.optionals tclBindings [
       "--with-tcl-binding"
       "--with-tcl=${tcl}/lib/"

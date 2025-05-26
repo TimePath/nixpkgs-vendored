@@ -16,7 +16,7 @@ let
     tag = "v${version}";
     hash = "sha256-456kMO7KappYI2FuHA8g+uhkJNCGCxb/9zmleZqu6SQ=";
   };
-  web-bundle = buildNpmPackage rec {
+  web-bundle = buildNpmPackage {
     inherit version;
     pname = "glasskube-web-bundle";
 
@@ -45,7 +45,7 @@ buildGo123Module rec {
 
   vendorHash = "sha256-oly6SLgXVyvKQQuPrb76LYngoDPNLjTAs4gWCT3/kew=";
 
-  CGO_ENABLED = 0;
+  env.CGO_ENABLED = 0;
 
   ldflags = [
     "-s"

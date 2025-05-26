@@ -1,13 +1,27 @@
 # Do not edit manually, run ./update-providers.py
 
 {
-  version = "2.2.6";
+  version = "2.5.2";
   providers = {
     airplay = ps: [
     ];
     apple_music = ps: [
     ]; # missing pywidevine
+    audible =
+      ps: with ps; [
+        audible
+      ];
+    audiobookshelf =
+      ps: with ps; [
+        aioaudiobookshelf
+      ];
+    bluesound =
+      ps: with ps; [
+        pyblu
+      ];
     builtin = ps: [
+    ];
+    builtin_player = ps: [
     ];
     chromecast =
       ps: with ps; [
@@ -15,8 +29,9 @@
       ];
     deezer =
       ps: with ps; [
+        deezer-python-async
         pycryptodome
-      ]; # missing deezer-python-async
+      ];
     dlna =
       ps: with ps; [
         async-upnp-client
@@ -31,52 +46,76 @@
       ps: with ps; [
         python-fullykiosk
       ];
+    gpodder = ps: [
+    ];
     hass =
       ps: with ps; [
         hass-client
       ];
     hass_players = ps: [
     ];
+    ibroadcast = ps: [
+    ]; # missing ibroadcastaio
+    itunes_podcasts = ps: [
+    ];
     jellyfin =
       ps: with ps; [
         aiojellyfin
       ];
+    lastfm_scrobble =
+      ps: with ps; [
+        pylast
+      ];
+    listenbrainz_scrobble = ps: [
+    ]; # missing liblistenbrainz
     musicbrainz = ps: [
     ];
     opensubsonic =
       ps: with ps; [
         py-opensonic
       ];
+    player_group = ps: [
+    ];
     plex =
       ps: with ps; [
         plexapi
       ];
+    podcastfeed = ps: [
+    ];
     qobuz = ps: [
     ];
     radiobrowser =
       ps: with ps; [
         radios
       ];
-    slimproto =
-      ps: with ps; [
-        aioslimproto
-      ];
+    siriusxm = ps: [
+    ]; # missing sxm
     snapcast =
       ps: with ps; [
         bidict
         snapcast
+        websocket-client
       ];
     sonos =
       ps: with ps; [
+        aiosonos
+      ];
+    sonos_s1 =
+      ps: with ps; [
         defusedxml
         soco
-        sonos-websocket
       ];
     soundcloud = ps: [
     ]; # missing soundcloudpy
     spotify =
       ps: with ps; [
         pkce
+      ];
+    spotify_connect = ps: [
+    ];
+    squeezelite =
+      ps: with ps; [
+        aioslimproto
       ];
     template_player_provider = ps: [
     ];
@@ -86,16 +125,15 @@
     ];
     tidal =
       ps: with ps; [
-        tidalapi
+        pkce
       ];
     tunein = ps: [
     ];
-    ugp = ps: [
-    ];
     ytmusic =
       ps: with ps; [
+        duration-parser
         yt-dlp
         ytmusicapi
-      ]; # missing yt-dlp-youtube-accesstoken
+      ]; # missing bgutil-ytdlp-pot-provider
   };
 }

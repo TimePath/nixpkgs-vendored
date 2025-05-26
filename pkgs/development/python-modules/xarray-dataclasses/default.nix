@@ -12,7 +12,7 @@
 
 buildPythonPackage rec {
   pname = "xarray-dataclasses";
-  version = "1.8.0";
+  version = "1.9.1";
   pyproject = true;
 
   disabled = pythonOlder "3.8";
@@ -21,7 +21,7 @@ buildPythonPackage rec {
     owner = "astropenguin";
     repo = "xarray-dataclasses";
     tag = "v${version}";
-    hash = "sha256-NZBWq1G63yef6h9TjRBfCqPzhaks0Cm7bUCJfIIpmcE=";
+    hash = "sha256-p9xV9Mpk5fsWR8X6VWNaeRi66OqK4QQWA8pwD2aYqOU=";
   };
 
   nativeBuildInputs = [

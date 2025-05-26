@@ -6,9 +6,8 @@
   cryptopp,
   curl,
   fetchFromGitHub,
-  # build fails with latest ffmpeg, see https://github.com/meganz/MEGAcmd/issues/523.
-  # to be re-enabled when patch available
-  # , ffmpeg
+  ffmpeg,
+  freeimage,
   gcc-unwrapped,
   icu,
   libmediainfo,
@@ -20,19 +19,35 @@
   pkg-config,
   readline,
   sqlite,
+  withFreeImage ? false, # default to false because freeimage is insecure
 }:
 
-stdenv.mkDerivation rec {
+let
   pname = "megacmd";
   version = "1.7.0";
+  srcOptions =
+    if stdenv.hostPlatform.isLinux then
+      {
+        tag = "${version}_Linux";
+        hash = "sha256-UlSqwM8GQKeG8/K0t5DbM034NQOeBg+ujNi/MMsVCuM=";
+      }
+    else
+      {
+        tag = "${version}_macOS";
+        hash = "sha256-UlSqwM8GQKeG8/K0t5DbM034NQOeBg+ujNi/MMsVCuM=";
+      };
+in
+stdenv.mkDerivation {
+  inherit pname version;
 
-  src = fetchFromGitHub {
-    owner = "meganz";
-    repo = "MEGAcmd";
-    rev = "${version}_Linux";
-    hash = "sha256-UlSqwM8GQKeG8/K0t5DbM034NQOeBg+ujNi/MMsVCuM=";
-    fetchSubmodules = true;
-  };
+  src = fetchFromGitHub (
+    srcOptions
+    // {
+      owner = "meganz";
+      repo = "MEGAcmd";
+      fetchSubmodules = true;
+    }
+  );
 
   enableParallelBuilding = true;
   nativeBuildInputs = [
@@ -40,31 +55,31 @@ stdenv.mkDerivation rec {
     pkg-config
   ];
 
-  buildInputs = [
-    c-ares
-    cryptopp
-    curl
-    # ffmpeg
-    icu
-    gcc-unwrapped
-    libmediainfo
-    libraw
-    libsodium
-    libuv
-    libzen
-    pcre-cpp
-    readline
-    sqlite
-  ];
+  buildInputs =
+    lib.optionals stdenv.hostPlatform.isLinux [ gcc-unwrapped ] # fix: ld: cannot find lib64/libstdc++fs.a
+    ++ [
+      c-ares
+      cryptopp
+      curl
+      ffmpeg
+      icu
+      libmediainfo
+      libraw
+      libsodium
+      libuv
+      libzen
+      pcre-cpp
+      readline
+      sqlite
+    ]
+    ++ lib.optionals withFreeImage [ freeimage ];
 
   configureFlags = [
-    "--disable-curl-checks"
     "--disable-examples"
     "--with-cares"
     "--with-cryptopp"
     "--with-curl"
-    # "--with-ffmpeg"
-    "--without-freeimage" # disabled as freeimage is insecure
+    "--with-ffmpeg"
     "--with-icu"
     "--with-libmediainfo"
     "--with-libuv"
@@ -73,19 +88,29 @@ stdenv.mkDerivation rec {
     "--with-readline"
     "--with-sodium"
     "--with-termcap"
+  ] ++ (if withFreeImage then [ "--with-freeimage" ] else [ "--without-freeimage" ]);
+
+  # On darwin, some macros defined in AssertMacros.h (from apple-sdk) are conflicting.
+  postConfigure = ''
+    echo '#define __ASSERT_MACROS_DEFINE_VERSIONS_WITHOUT_UNDERSCORES 0' >> sdk/include/mega/config.h
+  '';
+
+  patches = [
+    ./fix-ffmpeg.patch # https://github.com/meganz/sdk/issues/2635#issuecomment-1495405085
+    ./fix-darwin.patch # fix: libtool tag not found; MacFileSystemAccess not declared; server cannot init
   ];
 
-  meta = with lib; {
+  meta = {
     description = "MEGA Command Line Interactive and Scriptable Application";
     homepage = "https://mega.io/cmd";
-    license = with licenses; [
+    license = with lib.licenses; [
       bsd2
       gpl3Only
     ];
-    platforms = [
-      "i686-linux"
-      "x86_64-linux"
+    platforms = lib.platforms.linux ++ lib.platforms.darwin;
+    maintainers = with lib.maintainers; [
+      lunik1
+      ulysseszhan
     ];
-    maintainers = with maintainers; [ lunik1 ];
   };
 }

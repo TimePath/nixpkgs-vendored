@@ -35,7 +35,7 @@ stdenv.mkDerivation rec {
     license = licenses.gpl2Plus;
     maintainers = with maintainers; [
       siraben
-      luc65r
+      clevor
     ];
     platforms = with platforms; linux ++ darwin;
   };

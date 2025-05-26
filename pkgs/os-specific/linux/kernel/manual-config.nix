@@ -102,6 +102,7 @@ lib.makeOverridable (
       optionalString
       optionalAttrs
       maintainers
+      teams
       platforms
       ;
 
@@ -411,9 +412,17 @@ lib.makeOverridable (
             if kernelConf.target == "uImage" && stdenv.hostPlatform.linuxArch == "arm" then
               "uinstall"
             else if
-              kernelConf.target == "zImage"
-              || kernelConf.target == "Image.gz"
-              || kernelConf.target == "vmlinuz.efi"
+              (
+                kernelConf.target == "zImage"
+                || kernelConf.target == "Image.gz"
+                || kernelConf.target == "vmlinuz.efi"
+              )
+              && builtins.elem stdenv.hostPlatform.linuxArch [
+                "arm"
+                "arm64"
+                "parisc"
+                "riscv"
+              ]
             then
               "zinstall"
             else
@@ -421,6 +430,10 @@ lib.makeOverridable (
           )
           )
         ];
+
+        # We remove a bunch of stuff that is symlinked from other places to save space,
+        # which trips the broken symlink check. So, just skip it. We'll know if it explodes.
+        dontCheckForBrokenSymlinks = true;
 
         postInstall = optionalString isModular ''
           mkdir -p $dev
@@ -510,9 +523,8 @@ lib.makeOverridable (
             );
           license = lib.licenses.gpl2Only;
           homepage = "https://www.kernel.org/";
-          maintainers = lib.teams.linux-kernel.members ++ [
-            maintainers.thoughtpolice
-          ];
+          maintainers = [ maintainers.thoughtpolice ];
+          teams = [ teams.linux-kernel ];
           platforms = platforms.linux;
           badPlatforms =
             lib.optionals (lib.versionOlder version "4.15") [
@@ -527,13 +539,15 @@ lib.makeOverridable (
     # Absolute paths for compilers avoid any PATH-clobbering issues.
     commonMakeFlags =
       [
-        "CC=${stdenv.cc}/bin/${stdenv.cc.targetPrefix}cc"
-        "HOSTCC=${buildPackages.stdenv.cc}/bin/${buildPackages.stdenv.cc.targetPrefix}cc"
-        "HOSTLD=${buildPackages.stdenv.cc.bintools}/bin/${buildPackages.stdenv.cc.targetPrefix}ld"
         "ARCH=${stdenv.hostPlatform.linuxArch}"
-      ]
-      ++ lib.optionals (stdenv.hostPlatform != stdenv.buildPlatform) [
         "CROSS_COMPILE=${stdenv.cc.targetPrefix}"
+      ]
+      ++ lib.optionals (stdenv.isx86_64 && stdenv.cc.bintools.isLLVM) [
+        # The wrapper for ld.lld breaks linking the kernel. We use the
+        # unwrapped linker as workaround. See:
+        #
+        # https://github.com/NixOS/nixpkgs/issues/321667
+        "LD=${stdenv.cc.bintools.bintools}/bin/${stdenv.cc.targetPrefix}ld"
       ]
       ++ (stdenv.hostPlatform.linux-kernel.makeFlags or [ ])
       ++ extraMakeFlags;

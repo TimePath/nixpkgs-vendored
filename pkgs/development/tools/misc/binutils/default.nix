@@ -9,14 +9,13 @@ in
   libtool,
   bison,
   buildPackages,
-  fetchFromGitHub,
   fetchurl,
   gettext,
   lib,
   noSysDirs,
   perl,
+  runCommand,
   zlib,
-  CoreServices,
 
   enableGold ? withGold stdenv.targetPlatform,
   enableGoldDefault ? false,
@@ -33,7 +32,7 @@ assert enableGoldDefault -> enableGold;
 let
   inherit (stdenv) buildPlatform hostPlatform targetPlatform;
 
-  version = "2.43.1";
+  version = "2.44";
 
   #INFO: The targetPrefix prepended to binary names to allow multiple binuntils
   # on the PATH to both be usable.
@@ -45,8 +44,8 @@ stdenv.mkDerivation (finalAttrs: {
   inherit version;
 
   src = fetchurl {
-    url = "mirror://gnu/binutils/binutils-${version}.tar.bz2";
-    hash = "sha256-vsqsXSleA3WHtjpC+tV/49nXuD9HjrJLZ/nuxdDxhy8=";
+    url = "mirror://gnu/binutils/binutils-with-gold-${version}.tar.bz2";
+    hash = "sha256-NHM+pJXMDlDnDbTliQ3sKKxB8OFMShZeac8n+5moxMg=";
   };
 
   # WARN: this package is used for bootstrapping fetchurl, and thus cannot use
@@ -122,7 +121,7 @@ stdenv.mkDerivation (finalAttrs: {
   buildInputs = [
     zlib
     gettext
-  ] ++ lib.optionals hostPlatform.isDarwin [ CoreServices ];
+  ];
 
   inherit noSysDirs;
 
@@ -279,11 +278,18 @@ stdenv.mkDerivation (finalAttrs: {
     inherit targetPrefix;
     hasGold = enableGold;
     isGNU = true;
-    # Having --enable-plugins is not enough, system has to support
-    # dlopen() or equivalent. See config/plugins.m4 and configure.ac
-    # (around PLUGINS) for cases that support or not support plugins.
-    # No platform specific filters yet here.
-    hasPluginAPI = enableGold;
+
+    # The plugin API is not a function of any targets. Expose it separately,
+    # currently only used by LLVM for enabling BFD to do LTO with LLVM bitcode.
+    # (Tar will exit with an error if there are no matches).
+    plugin-api-header = runCommand "libbfd-plugin-api-header" { } ''
+      mkdir -p $out
+      tar --directory=$out \
+      --extract \
+      --file=${finalAttrs.src} \
+      --strip-components=1 \
+        --wildcards '*'/include/plugin-api.h
+    '';
   };
 
   meta = with lib; {

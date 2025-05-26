@@ -6,7 +6,7 @@
 }:
 
 let
-  version = "0.5.1";
+  version = "0.5.4";
 in
 rustPlatform.buildRustPackage {
   pname = "sd-switch";
@@ -16,10 +16,11 @@ rustPlatform.buildRustPackage {
     owner = "~rycee";
     repo = "sd-switch";
     rev = version;
-    hash = "sha256-Kns49Qv3oWNmbLoLTKIcWIewDz4cR7uyMA3IHnhKyxA=";
+    hash = "sha256-lP65PrMFhbNoWyObFsJK06Hgv9w83hyI/YiKcL5rXhY=";
   };
 
-  cargoHash = "sha256-r20dJMF+0q3XLm2hn9/LTv43ApmhjJNgeiMCLfwBnOk=";
+  useFetchCargoVendor = true;
+  cargoHash = "sha256-sWYKJz/wfx0XG150cTOguvhdN3UEn8QE0P0+2lSeVkc=";
 
   passthru = {
     updateScript = nix-update-script { };

@@ -191,6 +191,7 @@ in
         Restart = "always";
         User = "spiped";
       };
+      stopIfChanged = false;
 
       scriptArgs = "%i";
       script = "exec ${pkgs.spiped}/bin/spiped -F `cat /etc/spiped/$1.spec`";

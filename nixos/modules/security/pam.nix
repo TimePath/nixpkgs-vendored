@@ -145,6 +145,11 @@ let
           description = "Name of the PAM service.";
         };
 
+        enable = lib.mkEnableOption "this PAM service" // {
+          default = true;
+          example = false;
+        };
+
         rules = lib.mkOption {
           # This option is experimental and subject to breaking changes without notice.
           visible = false;
@@ -1566,6 +1571,8 @@ let
         Defaults env_keep+=SSH_AUTH_SOCK
       '';
 
+  enabledServices = lib.filterAttrs (name: svc: svc.enable) config.security.pam.services;
+
 in
 
 {
@@ -1844,7 +1851,10 @@ in
           be changed using {option}`security.pam.u2f.authFile` option.
 
           File format is:
-          `username:first_keyHandle,first_public_key: second_keyHandle,second_public_key`
+          ```
+          <username1>:<KeyHandle1>,<UserKey1>,<CoseType1>,<Options1>:<KeyHandle2>,<UserKey2>,<CoseType2>,<Options2>:...
+          <username2>:<KeyHandle1>,<UserKey1>,<CoseType1>,<Options1>:<KeyHandle2>,<UserKey2>,<CoseType2>,<Options2>:...
+          ```
           This file can be generated using {command}`pamu2fcfg` command.
 
           More information can be found [here](https://developers.yubico.com/pam-u2f/).
@@ -2123,7 +2133,7 @@ in
           the YubiCloud.
 
           Use "challenge-response" for offline validation using YubiKeys with HMAC-SHA-1
-          Challenge-Response configurations. See the man-page ykpamcfg(1) for further
+          Challenge-Response configurations. See the man-page {manpage}`ykpamcfg(1)` for further
           details on how to configure offline Challenge-Response validation.
 
           More information can be found [here](https://developers.yubico.com/yubico-pam/Authentication_Using_Challenge-Response.html).
@@ -2279,7 +2289,7 @@ in
       };
     };
 
-    environment.etc = lib.mapAttrs' makePAMService config.security.pam.services;
+    environment.etc = lib.mapAttrs' makePAMService enabledServices;
 
     security.pam.services =
       {
@@ -2295,11 +2305,11 @@ in
         '';
 
         # Most of these should be moved to specific modules.
-        i3lock = { };
-        i3lock-color = { };
-        vlock = { };
-        xlock = { };
-        xscreensaver = { };
+        i3lock.enable = lib.mkDefault config.programs.i3lock.enable;
+        i3lock-color.enable = lib.mkDefault config.programs.i3lock.enable;
+        vlock.enable = lib.mkDefault config.console.enable;
+        xlock.enable = lib.mkDefault config.services.xserver.enable;
+        xscreensaver.enable = lib.mkDefault config.services.xscreensaver.enable;
 
         runuser = {
           rootOK = true;
@@ -2324,25 +2334,23 @@ in
 
     security.apparmor.includes."abstractions/pam" =
       lib.concatMapStrings (name: "r ${config.environment.etc."pam.d/${name}".source},\n") (
-        lib.attrNames config.security.pam.services
+        lib.attrNames enabledServices
       )
       + (
         with lib;
-        pipe config.security.pam.services [
+        pipe enabledServices [
           lib.attrValues
           (catAttrs "rules")
           (lib.concatMap lib.attrValues)
           (lib.concatMap lib.attrValues)
           (lib.filter (rule: rule.enable))
           (lib.catAttrs "modulePath")
-          # TODO(@uninsane): replace this warning + lib.filter with just an assertion
           (map (
             modulePath:
-            lib.warnIfNot (lib.hasPrefix "/" modulePath)
-              ''non-absolute PAM modulePath "${modulePath}" is unsupported by apparmor and will be treated as an error by future versions of nixpkgs; see <https://github.com/NixOS/nixpkgs/pull/314791>''
+            lib.throwIfNot (lib.hasPrefix "/" modulePath)
+              ''non-absolute PAM modulePath "${modulePath}" is unsupported by apparmor''
               modulePath
           ))
-          (lib.filter (lib.hasPrefix "/"))
           lib.unique
           (map (module: "mr ${module},"))
           concatLines

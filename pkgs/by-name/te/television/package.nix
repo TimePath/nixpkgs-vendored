@@ -6,18 +6,19 @@
   television,
   nix-update-script,
 }:
-rustPlatform.buildRustPackage rec {
+rustPlatform.buildRustPackage (finalAttrs: {
   pname = "television";
-  version = "0.9.4";
+  version = "0.11.9";
 
   src = fetchFromGitHub {
     owner = "alexpasmantier";
     repo = "television";
-    tag = version;
-    hash = "sha256-S0at9qiPaHtFSag/DjJxczcjuQwPIWQBqxrRwrWIPk0=";
+    tag = finalAttrs.version;
+    hash = "sha256-9ug3MFBAvdOpA7Cw5eqCjS2gWK0InqlfUAOItE0o40s=";
   };
 
-  cargoHash = "sha256-eWy1MnduirMyPeOhNYelDV+4J4+9Qf9jSaW772p7t1k=";
+  useFetchCargoVendor = true;
+  cargoHash = "sha256-n417hrDLpBD7LhtHfqHPgr9N+gkdC9nw+iDnNRcTqQQ=";
 
   passthru = {
     tests.version = testers.testVersion {
@@ -36,7 +37,7 @@ rustPlatform.buildRustPackage rec {
       fuzzy matching algorithm and is designed to be easily extensible.
     '';
     homepage = "https://github.com/alexpasmantier/television";
-    changelog = "https://github.com/alexpasmantier/television/releases/tag/${version}";
+    changelog = "https://github.com/alexpasmantier/television/releases/tag/${finalAttrs.version}";
     license = lib.licenses.mit;
     mainProgram = "tv";
     maintainers = with lib.maintainers; [
@@ -44,4 +45,4 @@ rustPlatform.buildRustPackage rec {
       getchoo
     ];
   };
-}
+})

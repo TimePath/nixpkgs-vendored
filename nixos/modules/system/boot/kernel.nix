@@ -332,9 +332,6 @@ in
           "pcips2"
           "atkbd"
           "i8042"
-
-          # x86 RTC needed by the stage 2 init script.
-          "rtc_cmos"
         ]
       );
 

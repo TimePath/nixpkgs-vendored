@@ -1,6 +1,11 @@
 # Vagrant + VirtualBox
 
-{ config, pkgs, ... }:
+{
+  config,
+  pkgs,
+  lib,
+  ...
+}:
 
 {
   imports = [
@@ -22,9 +27,12 @@
 
   # generate the box v1 format which is much easier to generate
   # https://www.vagrantup.com/docs/boxes/format.html
-  system.build.vagrantVirtualbox = pkgs.runCommand "virtualbox-vagrant.box" { } ''
-    mkdir workdir
-    cd workdir
+  image.extension = lib.mkOverride 999 "${config.image.baseName}.box";
+  system.nixos.tags = [ "vagrant" ];
+  system.build.image = lib.mkOverride 999 config.system.build.vagrantVirtualbox;
+  system.build.vagrantVirtualbox = pkgs.runCommand config.image.fileName { } ''
+      mkdir workdir
+      cd workdir
 
     # 1. create that metadata.json file
     echo '{"provider":"virtualbox"}' > metadata.json

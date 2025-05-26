@@ -39,6 +39,7 @@ let
     composeManyExtensions
     concatLines
     concatMapAttrs
+    concatMapAttrsStringSep
     concatMapStrings
     concatStrings
     concatStringsSep
@@ -432,6 +433,14 @@ runTests {
     expected = "a,b,c";
   };
 
+  testConcatMapAttrsStringSepExamples = {
+    expr = concatMapAttrsStringSep "\n" (name: value: "${name}: foo-${value}") {
+      a = "0.1.0";
+      b = "0.2.0";
+    };
+    expected = "a: foo-0.1.0\nb: foo-0.2.0";
+  };
+
   testConcatLines = {
     expr = concatLines [
       "a"
@@ -622,6 +631,101 @@ runTests {
     ];
   };
 
+  testSplitStringBySimpleDelimiter = {
+    expr = strings.splitStringBy (
+      prev: curr:
+      builtins.elem curr [
+        "."
+        "-"
+      ]
+    ) false "foo.bar-baz";
+    expected = [
+      "foo"
+      "bar"
+      "baz"
+    ];
+  };
+
+  testSplitStringByLeadingDelimiter = {
+    expr = strings.splitStringBy (prev: curr: builtins.elem curr [ "." ]) false ".foo.bar.baz";
+    expected = [
+      ""
+      "foo"
+      "bar"
+      "baz"
+    ];
+  };
+
+  testSplitStringByTrailingDelimiter = {
+    expr = strings.splitStringBy (prev: curr: builtins.elem curr [ "." ]) false "foo.bar.baz.";
+    expected = [
+      "foo"
+      "bar"
+      "baz"
+      ""
+    ];
+  };
+
+  testSplitStringByMultipleConsecutiveDelimiters = {
+    expr = strings.splitStringBy (prev: curr: builtins.elem curr [ "." ]) false "foo...bar";
+    expected = [
+      "foo"
+      ""
+      ""
+      "bar"
+    ];
+  };
+
+  testSplitStringByKeepingSplitChar = {
+    expr = strings.splitStringBy (prev: curr: builtins.elem curr [ "." ]) true "foo.bar.baz";
+    expected = [
+      "foo"
+      ".bar"
+      ".baz"
+    ];
+  };
+
+  testSplitStringByCaseTransition = {
+    expr = strings.splitStringBy (
+      prev: curr: builtins.match "[a-z]" prev != null && builtins.match "[A-Z]" curr != null
+    ) true "fooBarBaz";
+    expected = [
+      "foo"
+      "Bar"
+      "Baz"
+    ];
+  };
+
+  testSplitStringByEmptyString = {
+    expr = strings.splitStringBy (prev: curr: builtins.elem curr [ "." ]) false "";
+    expected = [ "" ];
+  };
+
+  testSplitStringByComplexPredicate = {
+    expr = strings.splitStringBy (
+      prev: curr:
+      prev != ""
+      && curr != ""
+      && builtins.match "[0-9]" prev != null
+      && builtins.match "[a-z]" curr != null
+    ) true "123abc456def";
+    expected = [
+      "123"
+      "abc456"
+      "def"
+    ];
+  };
+
+  testSplitStringByUpperCaseStart = {
+    expr = strings.splitStringBy (prev: curr: builtins.match "[A-Z]" curr != null) true "FooBarBaz";
+    expected = [
+      ""
+      "Foo"
+      "Bar"
+      "Baz"
+    ];
+  };
+
   testEscapeShellArg = {
     expr = strings.escapeShellArg "esc'ape\nme";
     expected = "'esc'\\''ape\nme'";
@@ -702,6 +806,7 @@ runTests {
     expr =
       let
         goodPath = "${builtins.storeDir}/d945ibfx9x185xf04b890y4f9g3cbb63-python-2.7.11";
+        goodCAPath = "/1121rp0gvr1qya7hvy925g5kjwg66acz6sn1ra1hca09f1z5dsab";
       in
       {
         storePath = isStorePath goodPath;
@@ -710,6 +815,11 @@ runTests {
         nonAbsolute = isStorePath (concatStrings (tail (stringToCharacters goodPath)));
         asPath = isStorePath (/. + goodPath);
         otherPath = isStorePath "/something/else";
+
+        caPath = isStorePath goodCAPath;
+        caPathAppendix = isStorePath "${goodCAPath}/bin/python";
+        caAsPath = isStorePath (/. + goodCAPath);
+
         otherVals = {
           attrset = isStorePath { };
           list = isStorePath [ ];
@@ -722,6 +832,9 @@ runTests {
       storePathAppendix = false;
       nonAbsolute = false;
       asPath = true;
+      caPath = true;
+      caPathAppendix = false;
+      caAsPath = true;
       otherPath = false;
       otherVals = {
         attrset = false;
@@ -833,8 +946,8 @@ runTests {
   };
 
   testEscapeC = {
-    expr = strings.escapeC [ " " ] "Hello World";
-    expected = "Hello\\x20World";
+    expr = strings.escapeC [ "\n" " " ] "Hello World\n";
+    expected = "Hello\\x20World\\x0a";
   };
 
   testEscapeURL = testAllTrue [
@@ -848,6 +961,13 @@ runTests {
       == strings.escapeURL " ?&=#+%!<>#\"{}|\\^[]`\t:/@$'()*,;"
     )
   ];
+
+  testToSentenceCase = {
+    expr = strings.toSentenceCase "hello world";
+    expected = "Hello world";
+  };
+
+  testToSentenceCasePath = testingThrow (strings.toSentenceCase ./.);
 
   testToInt = testAllTrue [
     # Naive
@@ -1236,6 +1356,69 @@ runTests {
       ])
     )
   ];
+
+  testTakeEnd =
+    let
+      inherit (lib) takeEnd;
+    in
+    testAllTrue [
+      (
+        takeEnd 0 [
+          1
+          2
+          3
+        ] == [ ]
+      )
+      (
+        takeEnd 1 [
+          1
+          2
+          3
+        ] == [ 3 ]
+      )
+      (
+        takeEnd 2 [
+          1
+          2
+          3
+        ] == [
+          2
+          3
+        ]
+      )
+      (
+        takeEnd 3 [
+          1
+          2
+          3
+        ] == [
+          1
+          2
+          3
+        ]
+      )
+      (
+        takeEnd 4 [
+          1
+          2
+          3
+        ] == [
+          1
+          2
+          3
+        ]
+      )
+      (takeEnd 0 [ ] == [ ])
+      (takeEnd 1 [ ] == [ ])
+      (
+        takeEnd (-1) [
+          1
+          2
+          3
+        ] == [ ]
+      )
+      (takeEnd (-1) [ ] == [ ])
+    ];
 
   testDrop =
     let
@@ -2512,7 +2695,7 @@ runTests {
     expected = "«foo»";
   };
 
-  testToPlist = {
+  testToPlistUnescaped = {
     expr = mapAttrs (const (generators.toPlist { })) {
       value = {
         nested.values = {
@@ -2535,11 +2718,44 @@ runTests {
             "foo b/ar" = "baz";
           };
           emptyattrs = { };
+          "keys are not <escaped>" = "and < neither are string values";
         };
       };
     };
     expected = {
-      value = builtins.readFile ./test-to-plist-expected.plist;
+      value = builtins.readFile ./test-to-plist-unescaped-expected.plist;
+    };
+  };
+
+  testToPlistEscaped = {
+    expr = mapAttrs (const (generators.toPlist { escape = true; })) {
+      value = {
+        nested.values = {
+          int = 42;
+          float = 0.1337;
+          bool = true;
+          emptystring = "";
+          string = "fn\${o}\"r\\d";
+          newlinestring = "\n";
+          path = /. + "/foo";
+          null_ = null;
+          list = [
+            3
+            4
+            "test"
+          ];
+          emptylist = [ ];
+          attrs = {
+            foo = null;
+            "foo b/ar" = "baz";
+          };
+          emptyattrs = { };
+          "keys are <escaped>" = "and < so are string values";
+        };
+      };
+    };
+    expected = {
+      value = builtins.readFile ./test-to-plist-escaped-expected.plist;
     };
   };
 
@@ -2772,6 +2988,42 @@ runTests {
     expected = "unknown";
   };
 
+  # https://github.com/NixOS/nixpkgs/issues/396849
+  "test: submodule definitions aren't unchecked when evaluating submodule documentation" = {
+    expr =
+      let
+        module =
+          { lib, ... }:
+          {
+            options.foo = lib.mkOption { type = lib.types.submodule submodule; };
+          };
+
+        submodule = {
+          options.bar = lib.mkOption { type = lib.types.int; };
+          config.submoduleWrong = throw "yikes";
+        };
+
+        options = (evalModules { modules = [ module ]; }).options;
+
+        renderableOpts = filter (o: !o.internal) (optionAttrSetToDocList options);
+        # Evaluate the whole docs
+      in
+      builtins.deepSeq renderableOpts
+        # Return the locations
+        (map (o: o.loc) renderableOpts);
+    expected = [
+      [
+        "_module"
+        "args"
+      ]
+      [ "foo" ]
+      [
+        "foo"
+        "bar"
+      ]
+    ];
+  };
+
   testFreeformOptions = {
     expr =
       let
@@ -2818,6 +3070,50 @@ runTests {
         "bar"
       ]
     ];
+  };
+
+  testAttrsWithName = {
+    expr =
+      let
+        eval = evalModules {
+          modules = [
+            {
+              options = {
+                foo = lib.mkOption {
+                  type = lib.types.attrsWith {
+                    placeholder = "MyCustomPlaceholder";
+                    elemType = lib.types.submodule {
+                      options.bar = lib.mkOption {
+                        type = lib.types.int;
+                        default = 42;
+                      };
+                    };
+                  };
+                };
+              };
+            }
+          ];
+        };
+        opt = eval.options.foo;
+      in
+      (opt.type.getSubOptions opt.loc).bar.loc;
+    expected = [
+      "foo"
+      "<MyCustomPlaceholder>"
+      "bar"
+    ];
+  };
+
+  testShowOptionWithPlaceholder = {
+    # <name>, *, should not be escaped. It is used as a placeholder by convention.
+    # Other symbols should be escaped. `{}`
+    expr = lib.showOption [
+      "<name>"
+      "<myName>"
+      "*"
+      "{foo}"
+    ];
+    expected = "<name>.<myName>.*.\"{foo}\"";
   };
 
   testCartesianProductOfEmptySet = {
@@ -3710,6 +4006,37 @@ runTests {
     expr = (with types; either int (listOf (either bool str))).description;
     expected = "signed integer or list of (boolean or string)";
   };
+  testTypeFunctionToPropagateFunctionArgs = {
+    expr = lib.functionArgs (
+      (types.functionTo types.null).merge
+        [ ]
+        [
+          {
+            value =
+              {
+                a,
+                b ? false,
+                ...
+              }:
+              null;
+          }
+          {
+            value =
+              {
+                b,
+                c ? false,
+                ...
+              }:
+              null;
+          }
+        ]
+    );
+    expected = {
+      a = false;
+      b = false;
+      c = true;
+    };
+  };
 
   # Meta
   testGetExe'Output = {
@@ -3778,7 +4105,7 @@ runTests {
   testPackagesFromDirectoryRecursive = {
     expr = packagesFromDirectoryRecursive {
       callPackage = path: overrides: import path overrides;
-      directory = ./packages-from-directory;
+      directory = ./packages-from-directory/plain;
     };
     expected = {
       a = "a";
@@ -3803,8 +4130,96 @@ runTests {
   testPackagesFromDirectoryRecursiveTopLevelPackageNix = {
     expr = packagesFromDirectoryRecursive {
       callPackage = path: overrides: import path overrides;
-      directory = ./packages-from-directory/c;
+      directory = ./packages-from-directory/plain/c;
     };
     expected = "c";
   };
+
+  testMergeTypesSimple =
+    let
+      mergedType = types.mergeTypes types.str types.str;
+    in
+    {
+      expr = mergedType.name;
+      expected = "str";
+    };
+
+  testMergeTypesFail =
+    let
+      mergedType = types.mergeTypes types.str types.int;
+    in
+    {
+      expr = types.isType "merge-error" mergedType;
+      expected = true;
+    };
+
+  testMergeTypesEnum =
+    let
+      enumAB = lib.types.enum [
+        "A"
+        "B"
+      ];
+      enumXY = lib.types.enum [
+        "X"
+        "Y"
+      ];
+      merged = lib.types.mergeTypes enumAB enumXY; # -> enum [ "A" "B" "X" "Y" ]
+    in
+    {
+      expr = {
+        checkA = merged.check "A";
+        checkB = merged.check "B";
+        checkX = merged.check "X";
+        checkY = merged.check "Y";
+        checkC = merged.check "C";
+      };
+      expected = {
+        checkA = true;
+        checkB = true;
+        checkX = true;
+        checkY = true;
+        checkC = false;
+      };
+    };
+
+  # Check that `packagesFromDirectoryRecursive` can be used to create scopes
+  # for sub-directories
+  testPackagesFromDirectoryNestedScopes =
+    let
+      inherit (lib) makeScope recurseIntoAttrs;
+      emptyScope = makeScope lib.callPackageWith (_: { });
+    in
+    {
+      expr =
+        lib.filterAttrsRecursive
+          (
+            name: value:
+            !lib.elem name [
+              "callPackage"
+              "newScope"
+              "overrideScope"
+              "packages"
+            ]
+          )
+          (packagesFromDirectoryRecursive {
+            inherit (emptyScope) callPackage newScope;
+            directory = ./packages-from-directory/scope;
+          });
+      expected = lib.recurseIntoAttrs {
+        a = "a";
+        b = "b";
+        # Note: Other files/directories in `./test-data/c/` are ignored and can be
+        # used by `package.nix`.
+        c = "c";
+        my-namespace = lib.recurseIntoAttrs {
+          d = "d";
+          e = "e";
+          f = "f";
+          my-sub-namespace = lib.recurseIntoAttrs {
+            g = "g";
+            h = "h";
+          };
+        };
+      };
+    };
 }

@@ -36,7 +36,7 @@
   libxshmfence,
   libdrm,
   libxkbcommon,
-  mesa,
+  libgbm,
   nixosTests,
 }:
 
@@ -76,7 +76,7 @@ let
     libxshmfence
     libdrm
     libxkbcommon
-    mesa
+    libgbm
   ];
 
 in
@@ -90,12 +90,6 @@ stdenv.mkDerivation rec {
   };
 
   nativeBuildInputs = [ dpkg ];
-
-  unpackPhase = ''
-    mkdir pkg
-    dpkg-deb -x $src pkg
-    sourceRoot=pkg
-  '';
 
   installPhase = ''
     mkdir -p "$out/bin"

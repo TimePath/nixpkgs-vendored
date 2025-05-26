@@ -188,6 +188,7 @@ let
                         [ "--docker-image ${service.dockerImage}" ]
                         ++ optional service.dockerDisableCache "--docker-disable-cache"
                         ++ optional service.dockerPrivileged "--docker-privileged"
+                        ++ optional (service.dockerPullPolicy != null) "--docker-pull-policy ${service.dockerPullPolicy}"
                         ++ map (v: "--docker-volumes ${escapeShellArg v}") service.dockerVolumes
                         ++ map (v: "--docker-extra-hosts ${escapeShellArg v}") service.dockerExtraHosts
                         ++ map (v: "--docker-allowed-images ${escapeShellArg v}") service.dockerAllowedImages
@@ -482,6 +483,19 @@ in
                 Docker image to be used.
               '';
             };
+            dockerPullPolicy = mkOption {
+              type = types.nullOr (
+                types.enum [
+                  "always"
+                  "never"
+                  "if-not-present"
+                ]
+              );
+              default = null;
+              description = ''
+                Default pull-policy for Docker images
+              '';
+            };
             dockerVolumes = mkOption {
               type = types.listOf types.str;
               default = [ ];
@@ -539,21 +553,21 @@ in
               '';
             };
             preGetSourcesScript = mkOption {
-              type = types.nullOr types.path;
+              type = types.nullOr (types.either types.str types.path);
               default = null;
               description = ''
                 Runner-specific command script executed before code is pulled.
               '';
             };
             postGetSourcesScript = mkOption {
-              type = types.nullOr types.path;
+              type = types.nullOr (types.either types.str types.path);
               default = null;
               description = ''
                 Runner-specific command script executed after code is pulled.
               '';
             };
             preBuildScript = mkOption {
-              type = types.nullOr types.path;
+              type = types.nullOr (types.either types.str types.path);
               default = null;
               description = ''
                 Runner-specific command script executed after code is pulled,
@@ -561,7 +575,7 @@ in
               '';
             };
             postBuildScript = mkOption {
-              type = types.nullOr types.path;
+              type = types.nullOr (types.either types.str types.path);
               default = null;
               description = ''
                 Runner-specific command script executed after code is pulled

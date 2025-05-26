@@ -1,11 +1,14 @@
 {
   lib,
   stdenv,
+  llvmPackages,
   SDL2,
   callPackage,
   cmake,
+  cpuinfo,
   cubeb,
   curl,
+  discord-rpc,
   extra-cmake-modules,
   libXrandr,
   libbacktrace,
@@ -16,6 +19,7 @@
   qt6,
   vulkan-loader,
   wayland,
+  wayland-scanner,
 }:
 
 let
@@ -28,7 +32,7 @@ let
     wrapQtAppsHook
     ;
 in
-stdenv.mkDerivation (finalAttrs: {
+llvmPackages.stdenv.mkDerivation (finalAttrs: {
   inherit (sources.duckstation) pname version src;
 
   patches = [
@@ -36,27 +40,35 @@ stdenv.mkDerivation (finalAttrs: {
     ./001-fix-test-inclusion.diff
     # Patching yet another script that fills data based on git commands . . .
     ./002-hardcode-vars.diff
+    # Fix NEON intrinsics usage
+    ./003-fix-NEON-intrinsics.patch
   ];
 
   nativeBuildInputs = [
     cmake
+    extra-cmake-modules
     ninja
     pkg-config
     qttools
+    wayland-scanner
     wrapQtAppsHook
   ];
 
   buildInputs = [
     SDL2
+    cpuinfo
     curl
-    extra-cmake-modules
     libXrandr
     libbacktrace
     libwebp
     qtbase
     qtsvg
     qtwayland
+    sources.discord-rpc-patched
+    sources.lunasvg
     sources.shaderc-patched
+    sources.soundtouch-patched
+    sources.spirv-cross-patched
     wayland
   ] ++ cubeb.passthru.backendLibs;
 
@@ -105,6 +117,8 @@ stdenv.mkDerivation (finalAttrs: {
     let
       libPath = lib.makeLibraryPath (
         [
+          sources.shaderc-patched
+          sources.spirv-cross-patched
           vulkan-loader
         ]
         ++ cubeb.passthru.backendLibs
@@ -129,7 +143,6 @@ stdenv.mkDerivation (finalAttrs: {
     mainProgram = "duckstation-qt";
     maintainers = with lib.maintainers; [
       guibou
-      AndersonTorres
     ];
     platforms = lib.platforms.linux;
   };

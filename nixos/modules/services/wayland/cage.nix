@@ -47,6 +47,8 @@ in
     '';
   };
 
+  options.services.cage.package = mkPackageOption pkgs "cage" { };
+
   config = mkIf cfg.enable {
 
     # The service is partially based off of the one provided in the
@@ -74,7 +76,7 @@ in
       unitConfig.ConditionPathExists = "/dev/tty1";
       serviceConfig = {
         ExecStart = ''
-          ${pkgs.cage}/bin/cage \
+          ${cfg.package}/bin/cage \
             ${escapeShellArgs cfg.extraArguments} \
             -- ${cfg.program}
         '';

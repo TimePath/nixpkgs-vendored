@@ -6,6 +6,7 @@
   pytest-asyncio,
   pytest-mock,
   pytestCheckHook,
+  python-dateutil,
   python-socks,
   pythonOlder,
   tldextract,
@@ -14,7 +15,7 @@
 
 buildPythonPackage rec {
   pname = "asyncwhois";
-  version = "1.1.5";
+  version = "1.1.10";
   pyproject = true;
 
   disabled = pythonOlder "3.9";
@@ -23,12 +24,13 @@ buildPythonPackage rec {
     owner = "pogzyb";
     repo = "asyncwhois";
     tag = "v${version}";
-    hash = "sha256-y5JmAbrk9qJeNYejNcz5nI5bghaetUw1xkD8qgwOkao=";
+    hash = "sha256-vNXz8a0tXMxgcJ3xGKyJFgxQuIxpBg/xUeeG1TPXB0E=";
   };
 
   build-system = [ hatchling ];
 
   dependencies = [
+    python-dateutil
     python-socks
     tldextract
     whodap

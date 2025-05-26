@@ -15,7 +15,7 @@
   sqlite,
   gnome,
   clutter-gtk,
-  libsoup,
+  libsoup_2_4,
   libsoup_3,
   gobject-introspection, # , libmemphis
   withLibsoup3 ? false,
@@ -51,7 +51,7 @@ stdenv.mkDerivation rec {
 
   buildInputs = [
     sqlite
-    (if withLibsoup3 then libsoup_3 else libsoup)
+    (if withLibsoup3 then libsoup_3 else libsoup_2_4)
   ];
 
   propagatedBuildInputs = [
@@ -88,7 +88,10 @@ stdenv.mkDerivation rec {
        OpenCycleMap, OpenAerialMap, and Maps for free.
     '';
 
-    maintainers = teams.gnome.members ++ teams.pantheon.members;
+    teams = [
+      teams.gnome
+      teams.pantheon
+    ];
     platforms = platforms.unix;
   };
 }

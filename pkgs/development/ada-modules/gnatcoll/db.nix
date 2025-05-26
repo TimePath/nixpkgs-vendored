@@ -15,7 +15,7 @@
   gnatcoll-iconv,
   gnatcoll-readline,
   sqlite,
-  postgresql,
+  libpq,
 }:
 
 let
@@ -30,7 +30,7 @@ let
     ];
     postgres = [
       gnatcoll-sql
-      postgresql
+      libpq
     ];
     sqlite = [
       gnatcoll-sql
@@ -56,13 +56,13 @@ stdenv.mkDerivation rec {
       builtins.replaceStrings [ "_" ] [ "-" ] component
     else
       "gnatcoll-${component}";
-  version = "24.0.0";
+  version = "25.0.0";
 
   src = fetchFromGitHub {
     owner = "AdaCore";
     repo = "gnatcoll-db";
     rev = "v${version}";
-    sha256 = "0jq76s4s7q2x93jh8la6r0i3jkpvgsfj12vbbaqabh410xccyr3p";
+    sha256 = "0q35ii0aa4hh59v768l5cilg1b30a4ckcvlbfy0lkcbp3rcfnbz3";
   };
 
   # Link executables dynamically unless specified by the platform,

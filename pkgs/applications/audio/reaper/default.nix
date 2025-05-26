@@ -38,17 +38,17 @@ let
 in
 stdenv.mkDerivation rec {
   pname = "reaper";
-  version = "7.24";
+  version = "7.38";
 
   src = fetchurl {
     url = url_for_platform version stdenv.hostPlatform.qemuArch;
     hash =
       if stdenv.hostPlatform.isDarwin then
-        "sha256-g+Bh7M9r/NfkWGH6NSTw2s3Whoh7eP80rmAosdfj0Bg="
+        "sha256-2DmwbOQ1sNVL3krlG27KOdhuwalZRjafuWzWFYiWpng="
       else
         {
-          x86_64-linux = "sha256-3suK57NKevCLTGclJmbX/Mm01pRzH/rb8CSByfKHUvM=";
-          aarch64-linux = "sha256-bCJSSc5d9doc86aqvpas42gHuP3eyWKJQSumKR+oZoY=";
+          x86_64-linux = "sha256-GiN20Dj+kBNbOI1CASCDJFIUbOYfBc5K/bwf42Pc3Zk=";
+          aarch64-linux = "sha256-CziepFXytiMJ7eMtCziaYphYgYQJywQ9JtrLHzBU5Cw=";
         }
         .${stdenv.hostPlatform.system};
   };
@@ -85,6 +85,7 @@ stdenv.mkDerivation rec {
     ++ lib.optional pulseaudioSupport libpulseaudio;
 
   dontBuild = true;
+  dontStrip = true;
 
   installPhase =
     if stdenv.hostPlatform.isDarwin then
@@ -145,6 +146,7 @@ stdenv.mkDerivation rec {
       "aarch64-darwin"
     ];
     maintainers = with maintainers; [
+      atinba
       ilian
       orivej
       uniquepointer

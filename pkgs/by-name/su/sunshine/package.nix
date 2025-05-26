@@ -22,7 +22,7 @@
   wayland-scanner,
   libffi,
   libcap,
-  mesa,
+  libgbm,
   curl,
   pcre,
   pcre2,
@@ -47,6 +47,7 @@
   miniupnpc,
   nlohmann_json,
   config,
+  coreutils,
   cudaSupport ? config.cudaSupport,
   cudaPackages ? { },
 }:
@@ -94,6 +95,8 @@ stdenv'.mkDerivation rec {
     ]
     ++ lib.optionals cudaSupport [
       autoAddDriverRunpath
+      cudaPackages.cuda_nvcc
+      (lib.getDev cudaPackages.cuda_cudart)
     ];
 
   buildInputs =
@@ -130,7 +133,7 @@ stdenv'.mkDerivation rec {
       libva
       libvdpau
       numactl
-      mesa
+      libgbm
       amf-headers
       svt-av1
       libappindicator
@@ -140,6 +143,7 @@ stdenv'.mkDerivation rec {
     ]
     ++ lib.optionals cudaSupport [
       cudaPackages.cudatoolkit
+      cudaPackages.cuda_cudart
     ]
     ++ lib.optionals stdenv.hostPlatform.isx86_64 [
       intel-media-sdk
@@ -147,7 +151,7 @@ stdenv'.mkDerivation rec {
 
   runtimeDependencies = [
     avahi
-    mesa
+    libgbm
     xorg.libXrandr
     libxcb
     libglvnd
@@ -197,7 +201,8 @@ stdenv'.mkDerivation rec {
 
     substituteInPlace packaging/linux/sunshine.service.in \
       --subst-var-by PROJECT_DESCRIPTION 'Self-hosted game stream host for Moonlight' \
-      --subst-var-by SUNSHINE_EXECUTABLE_PATH $out/bin/sunshine
+      --subst-var-by SUNSHINE_EXECUTABLE_PATH $out/bin/sunshine \
+      --replace-fail '/bin/sleep' '${lib.getExe' coreutils "sleep"}'
   '';
 
   preBuild = ''

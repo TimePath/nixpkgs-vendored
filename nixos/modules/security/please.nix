@@ -4,24 +4,21 @@
   pkgs,
   ...
 }:
-
-with lib;
-
 let
   cfg = config.security.please;
   ini = pkgs.formats.ini { };
 in
 {
   options.security.please = {
-    enable = mkEnableOption ''
+    enable = lib.mkEnableOption ''
       please, a Sudo clone which allows a users to execute a command or edit a
       file as another user
     '';
 
-    package = mkPackageOption pkgs "please" { };
+    package = lib.mkPackageOption pkgs "please" { };
 
-    wheelNeedsPassword = mkOption {
-      type = types.bool;
+    wheelNeedsPassword = lib.mkOption {
+      type = lib.types.bool;
       default = true;
       description = ''
         Whether users of the `wheel` group must provide a password to run
@@ -30,7 +27,7 @@ in
       '';
     };
 
-    settings = mkOption {
+    settings = lib.mkOption {
       type = ini.type;
       default = { };
       example = {
@@ -58,7 +55,7 @@ in
     };
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     security.wrappers =
       let
         owner = "root";
@@ -124,7 +121,5 @@ in
       sshAgentAuth = true;
       usshAuth = true;
     };
-
-    meta.maintainers = with maintainers; [ azahi ];
   };
 }

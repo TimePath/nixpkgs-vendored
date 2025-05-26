@@ -51,16 +51,16 @@
   withAribcaption ? withFullDeps && lib.versionAtLeast version "6.1", # ARIB STD-B24 Caption Decoder/Renderer
   withAss ? withHeadlessDeps && stdenv.hostPlatform == stdenv.buildPlatform, # (Advanced) SubStation Alpha subtitle rendering
   withAvisynth ? withFullDeps, # AviSynth script files reading
-  withBluray ? withFullDeps, # BluRay reading
+  withBluray ? withHeadlessDeps, # BluRay reading
   withBs2b ? withFullDeps, # bs2b DSP library
   withBzlib ? withHeadlessDeps,
   withCaca ? withFullDeps, # Textual display (ASCII art)
   withCdio ? withFullDeps && withGPL, # Audio CD grabbing
-  withCelt ? withHeadlessDeps, # CELT decoder
+  withCelt ? withFullDeps, # CELT decoder
   withChromaprint ? withFullDeps, # Audio fingerprinting
   withCodec2 ? withFullDeps, # codec2 en/decoding
   withCuda ? withFullDeps && withNvcodec,
-  withCudaLLVM ? withFullDeps,
+  withCudaLLVM ? withHeadlessDeps,
   withCudaNVCC ? withFullDeps && withUnfree && config.cudaSupport,
   withCuvid ? withHeadlessDeps && withNvcodec,
   withDav1d ? withHeadlessDeps, # AV1 decoder (focused on speed and correctness)
@@ -72,13 +72,18 @@
   withNvcodec ?
     withHeadlessDeps
     && (
-      with stdenv; !isDarwin && !isAarch32 && !hostPlatform.isRiscV && hostPlatform == buildPlatform
+      with stdenv;
+      !isDarwin
+      && !isAarch32
+      && !hostPlatform.isLoongArch64
+      && !hostPlatform.isRiscV
+      && hostPlatform == buildPlatform
     ), # dynamically linked Nvidia code
   withFlite ? withFullDeps, # Voice Synthesis
   withFontconfig ? withHeadlessDeps, # Needed for drawtext filter
   withFreetype ? withHeadlessDeps, # Needed for drawtext filter
   withFrei0r ? withFullDeps && withGPL, # frei0r video filtering
-  withFribidi ? withFullDeps, # Needed for drawtext filter
+  withFribidi ? withHeadlessDeps, # Needed for drawtext filter
   withGme ? withFullDeps, # Game Music Emulator
   withGnutls ? withHeadlessDeps,
   withGsm ? withFullDeps, # GSM de/encoder
@@ -102,13 +107,13 @@
   withNvdec ? withHeadlessDeps && withNvcodec,
   withNvenc ? withHeadlessDeps && withNvcodec,
   withOpenal ? withFullDeps, # OpenAL 1.1 capture support
-  withOpencl ? withFullDeps,
+  withOpencl ? withHeadlessDeps,
   withOpencoreAmrnb ? withFullDeps && withVersion3, # AMR-NB de/encoder
   withOpencoreAmrwb ? withFullDeps && withVersion3, # AMR-WB decoder
   withOpengl ? withFullDeps && !stdenv.hostPlatform.isDarwin, # OpenGL rendering
   withOpenh264 ? withFullDeps, # H.264/AVC encoder
   withOpenjpeg ? withHeadlessDeps, # JPEG 2000 de/encoder
-  withOpenmpt ? withFullDeps, # Tracked music files decoder
+  withOpenmpt ? withHeadlessDeps, # Tracked music files decoder
   withOpus ? withHeadlessDeps, # Opus de/encoder
   withPlacebo ? withFullDeps && !stdenv.hostPlatform.isDarwin, # libplacebo video processing library
   withPulse ? withSmallDeps && stdenv.hostPlatform.isLinux, # Pulseaudio input support
@@ -117,7 +122,7 @@
   withRav1e ? withFullDeps, # AV1 encoder (focused on speed and safety)
   withRist ? withHeadlessDeps, # Reliable Internet Stream Transport (RIST) protocol
   withRtmp ? withFullDeps, # RTMP[E] support
-  withRubberband ? withFullDeps && withGPL, # Rubberband filter
+  withRubberband ? withFullDeps && withGPL && !stdenv.hostPlatform.isFreeBSD, # Rubberband filter
   withSamba ? withFullDeps && !stdenv.hostPlatform.isDarwin && withGPLv3, # Samba protocol
   withSdl2 ? withSmallDeps,
   withShaderc ? withFullDeps && !stdenv.hostPlatform.isDarwin && lib.versionAtLeast version "5.0",
@@ -142,7 +147,7 @@
   withVorbis ? withHeadlessDeps, # Vorbis de/encoding, native encoder exists
   withVpl ? false, # Hardware acceleration via intel libvpl
   withVpx ? withHeadlessDeps && stdenv.buildPlatform == stdenv.hostPlatform, # VP8 & VP9 de/encoding
-  withVulkan ? withSmallDeps && !stdenv.hostPlatform.isDarwin,
+  withVulkan ? withHeadlessDeps && !stdenv.hostPlatform.isDarwin,
   withVvenc ? withFullDeps && lib.versionAtLeast version "7.1", # H.266/VVC encoding
   withWebp ? withHeadlessDeps, # WebP encoder
   withX264 ? withHeadlessDeps && withGPL, # H.264/AVC encoder
@@ -155,12 +160,12 @@
   withXevd ? withFullDeps && lib.versionAtLeast version "7.1" && !xevd.meta.broken, # MPEG-5 EVC decoding
   withXeve ? withFullDeps && lib.versionAtLeast version "7.1" && !xeve.meta.broken, # MPEG-5 EVC encoding
   withXlib ? withFullDeps, # Xlib support
-  withXml2 ? withFullDeps, # libxml2 support, for IMF and DASH demuxers
+  withXml2 ? withHeadlessDeps, # libxml2 support, for IMF and DASH demuxers
   withXvid ? withHeadlessDeps && withGPL, # Xvid encoder, native encoder exists
   withZimg ? withHeadlessDeps,
   withZlib ? withHeadlessDeps,
   withZmq ? withFullDeps, # Message passing
-  withZvbi ? withFullDeps, # Teletext support
+  withZvbi ? withHeadlessDeps, # Teletext support
 
   # Licensing options (yes some are listed twice, filters and such are not listed)
   withGPL ? true,
@@ -335,7 +340,7 @@
   xeve,
   xvidcore,
   xz,
-  zeromq4,
+  zeromq,
   zimg,
   zlib,
   zvbi,
@@ -424,6 +429,13 @@ stdenv.mkDerivation (
 
     patches =
       [ ]
+      ++ optionals (lib.versionOlder version "5") [
+        (fetchpatch2 {
+          name = "rename_iszero";
+          url = "https://git.ffmpeg.org/gitweb/ffmpeg.git/patch/b27ae2c0b704e83f950980102bc3f12f9ec17cb0";
+          hash = "sha256-l1t4LcUDSW757diNu69NzvjenW5Mxb5aYtXz64Yl9gs=";
+        })
+      ]
       ++ optionals (lib.versionAtLeast version "6.1" && lib.versionOlder version "6.2") [
         (fetchpatch2 {
           # this can be removed post 6.1
@@ -462,9 +474,24 @@ stdenv.mkDerivation (
           hash = "sha256-sqUUSOPTPLwu2h8GbAw4SfEf+0oWioz52BcpW1n4v3Y=";
         })
       ]
-      ++ optionals (lib.versionAtLeast version "7.1") [
+      ++ optionals (lib.versionOlder version "7.1.1") [
+        (fetchpatch2 {
+          name = "texinfo-7.1.patch";
+          url = "https://git.ffmpeg.org/gitweb/ffmpeg.git/patch/4d9cdf82ee36a7da4f065821c86165fe565aeac2";
+          hash = "sha256-BZsq1WI6OgtkCQE8koQu0CNcb5c8WgTu/LzQzu6ZLuo=";
+        })
+      ]
+      ++ optionals (lib.versionOlder version "7" && stdenv.hostPlatform.isAarch32) [
+        (fetchpatch2 {
+          name = "binutils-2-43-compat.patch";
+          url = "https://git.ffmpeg.org/gitweb/ffmpeg.git/patch/654bd47716c4f36719fb0f3f7fd8386d5ed0b916";
+          hash = "sha256-OLiQHKBNp2p63ZmzBBI4GEGz3WSSP+rMd8ITfZSVRgY=";
+        })
+      ]
+      ++ optionals (lib.versionAtLeast version "7.1" && lib.versionOlder version "7.1.1") [
         ./fix-fate-ffmpeg-spec-disposition-7.1.patch
-
+      ]
+      ++ optionals (lib.versionAtLeast version "7.1.1") [
         # Expose a private API for Chromium / Qt WebEngine.
         (fetchpatch2 {
           url = "https://gitlab.archlinux.org/archlinux/packaging/packages/ffmpeg/-/raw/a02c1a15706ea832c0d52a4d66be8fb29499801a/add-av_stream_get_first_dts-for-chromium.patch";
@@ -731,8 +758,8 @@ stdenv.mkDerivation (
         "--host-cc=${buildPackages.stdenv.cc}/bin/cc"
       ]
       ++ optionals stdenv.cc.isClang [
-        "--cc=clang"
-        "--cxx=clang++"
+        "--cc=${stdenv.cc.targetPrefix}clang"
+        "--cxx=${stdenv.cc.targetPrefix}clang++"
       ]
       ++ optionals withMetal [
         "--metalcc=${xcode}/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/metal"
@@ -793,10 +820,7 @@ stdenv.mkDerivation (
         cuda_nvcc
       ]
       ++ optionals withDav1d [ dav1d ]
-      ++ optionals withDc1394 [
-        libdc1394
-        libraw1394
-      ]
+      ++ optionals withDc1394 ([ libdc1394 ] ++ (lib.optional stdenv.hostPlatform.isLinux libraw1394))
       ++ optionals withDrm [ libdrm ]
       ++ optionals withDvdnav [ libdvdnav ]
       ++ optionals withDvdread [ libdvdread ]
@@ -901,7 +925,7 @@ stdenv.mkDerivation (
       ++ optionals withXvid [ xvidcore ]
       ++ optionals withZimg [ zimg ]
       ++ optionals withZlib [ zlib ]
-      ++ optionals withZmq [ zeromq4 ]
+      ++ optionals withZmq [ zeromq ]
       ++ optionals withZvbi [ zvbi ];
 
     buildFlags = [ "all" ] ++ optional buildQtFaststart "tools/qt-faststart"; # Build qt-faststart executable
@@ -1014,6 +1038,10 @@ stdenv.mkDerivation (
   }
   // lib.optionalAttrs withCudaLLVM {
     # remove once https://github.com/NixOS/nixpkgs/issues/318674 is addressed properly
-    hardeningDisable = [ "zerocallusedregs" ];
+    hardeningDisable = [
+      "pacret"
+      "shadowstack"
+      "zerocallusedregs"
+    ];
   }
 )

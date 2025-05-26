@@ -19,13 +19,13 @@
 
 buildGoModule rec {
   pname = "skopeo";
-  version = "1.16.1";
+  version = "1.18.0";
 
   src = fetchFromGitHub {
     rev = "v${version}";
     owner = "containers";
     repo = "skopeo";
-    hash = "sha256-RsFfShru4ujB+x0hju8Xju43JJk/+PAevIPjjDC5YbQ=";
+    hash = "sha256-Ws01dYx2Jq/zB8rWiWSnV4ZgcxyBWHWvE3DfG7gvFOc=";
   };
 
   outputs = [
@@ -89,13 +89,11 @@ buildGoModule rec {
     description = "Command line utility for various operations on container images and image repositories";
     mainProgram = "skopeo";
     homepage = "https://github.com/containers/skopeo";
-    maintainers =
-      with maintainers;
-      [
-        lewo
-        developer-guy
-      ]
-      ++ teams.podman.members;
+    maintainers = with maintainers; [
+      lewo
+      developer-guy
+    ];
+    teams = [ teams.podman ];
     license = licenses.asl20;
   };
 }

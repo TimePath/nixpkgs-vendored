@@ -9,25 +9,28 @@
   copyDesktopItems,
   runtimeShell,
   unzip,
+  wrapGAppsHook3,
 }:
 
 stdenv.mkDerivation rec {
   pname = "fiji";
-  version = "20240614-2117";
+  version = "20250408-1717";
 
   src = fetchurl {
     url = "https://downloads.imagej.net/fiji/archive/${version}/fiji-nojre.zip";
-    sha256 = "sha256-OCNnN8CYniNEIfKRHRBoJ3Fo+u5AwXoPJAzUCc4P+f0=";
+    sha256 = "sha256-bqVrTBKII58E7WSlQfRPE0Dxd4h/oJALFvIOdAAFZoI=";
   };
 
   dontBuild = true;
 
   nativeBuildInputs = [
     autoPatchelfHook
+    wrapGAppsHook3
     makeWrapper
     copyDesktopItems
     unzip
   ];
+
   buildInputs = [ (lib.getLib stdenv.cc.cc) ];
 
   desktopItems = [
@@ -50,6 +53,8 @@ stdenv.mkDerivation rec {
     })
   ];
 
+  dontWrapGApps = true;
+
   installPhase = ''
     runHook preInstall
 
@@ -68,7 +73,8 @@ stdenv.mkDerivation rec {
 
     makeWrapper $out/bin/.fiji-launcher-hack $out/bin/fiji \
       --prefix PATH : ${lib.makeBinPath [ jdk11 ]} \
-      --set JAVA_HOME ${jdk11.home}
+      --set JAVA_HOME ${jdk11.home} \
+      ''${gappsWrapperArgs[@]}
 
     ln $out/fiji/images/icon.png $out/share/pixmaps/fiji.png
 

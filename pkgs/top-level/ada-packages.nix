@@ -28,6 +28,9 @@ makeScopeWithSplicing' {
       gnatcoll-core = self.callPackage ../development/ada-modules/gnatcoll/core.nix { };
 
       # gnatcoll-bindings repository
+      gnatcoll-cpp = self.callPackage ../development/ada-modules/gnatcoll/bindings.nix {
+        component = "cpp";
+      };
       gnatcoll-gmp = self.callPackage ../development/ada-modules/gnatcoll/bindings.nix {
         component = "gmp";
       };
@@ -42,7 +45,7 @@ makeScopeWithSplicing' {
       };
       gnatcoll-python3 = self.callPackage ../development/ada-modules/gnatcoll/bindings.nix {
         component = "python3";
-        python3 = pkgs.python39;
+        python3 = pkgs.python312;
       };
       gnatcoll-readline = self.callPackage ../development/ada-modules/gnatcoll/bindings.nix {
         component = "readline";

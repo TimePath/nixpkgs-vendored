@@ -6,14 +6,15 @@
 
 rustPlatform.buildRustPackage rec {
   pname = "cargo-hack";
-  version = "0.6.32";
+  version = "0.6.36";
 
   src = fetchCrate {
     inherit pname version;
-    hash = "sha256-XjubvjK+FySm0nqlzFsRhDQOI9M0enonwwPhZ/KFFlk=";
+    hash = "sha256-AO4bB+aqAzGxFyPhuwaEQDAbL+fCIWY2rv3QFdBAq7s=";
   };
 
-  cargoHash = "sha256-sWXeGohH9iLMkmBgNjSfg25eDzZHSzWrOGgccuWPBLM=";
+  useFetchCargoVendor = true;
+  cargoHash = "sha256-fWKrHo5WdeEhnPxATbZ9Cjv+aiSxOh0pRDeeHHDk8u4=";
 
   # some necessary files are absent in the crate version
   doCheck = false;

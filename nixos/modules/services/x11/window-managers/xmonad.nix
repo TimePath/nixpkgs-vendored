@@ -39,8 +39,9 @@ let
         inherit (cfg) ghcArgs;
       } cfg.config;
     in
-    pkgs.runCommandLocal "xmonad"
+    pkgs.runCommand "xmonad"
       {
+        preferLocalBuild = true;
         nativeBuildInputs = [ pkgs.makeWrapper ];
       }
       (

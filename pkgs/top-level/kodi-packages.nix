@@ -18,6 +18,7 @@ let
   inherit (libretro)
     fuse
     genesis-plus-gx
+    gw
     mgba
     nestopia
     snes9x
@@ -80,6 +81,8 @@ let
 
     arteplussept = callPackage ../applications/video/kodi/addons/arteplussept { };
 
+    bluetooth-manager = callPackage ../applications/video/kodi/addons/bluetooth-manager { };
+
     controller-topology-project =
       callPackage ../applications/video/kodi/addons/controller-topology-project
         { };
@@ -101,6 +104,8 @@ let
     libretro-genplus = callPackage ../applications/video/kodi/addons/libretro-genplus {
       inherit genesis-plus-gx;
     };
+
+    libretro-gw = callPackage ../applications/video/kodi/addons/libretro-gw { inherit gw; };
 
     libretro-mgba = callPackage ../applications/video/kodi/addons/libretro-mgba { inherit mgba; };
 
@@ -130,6 +135,8 @@ let
 
     raiplay = callPackage ../applications/video/kodi/addons/raiplay { };
 
+    robotocjksc = callPackage ../applications/video/kodi/addons/robotocjksc { };
+
     skyvideoitalia = callPackage ../applications/video/kodi/addons/skyvideoitalia { };
 
     svtplay = callPackage ../applications/video/kodi/addons/svtplay { };
@@ -153,6 +160,8 @@ let
     pvr-vdr-vnsi = callPackage ../applications/video/kodi/addons/pvr-vdr-vnsi { };
 
     osmc-skin = callPackage ../applications/video/kodi/addons/osmc-skin { };
+
+    texturemaker = callPackage ../applications/video/kodi/addons/texturemaker { };
 
     upnext = callPackage ../applications/video/kodi/addons/upnext { };
 
@@ -209,6 +218,8 @@ let
     inputstream-rtmp = callPackage ../applications/video/kodi/addons/inputstream-rtmp { };
 
     inputstreamhelper = callPackage ../applications/video/kodi/addons/inputstreamhelper { };
+
+    jurialmunkey = callPackage ../applications/video/kodi/addons/jurialmunkey { };
 
     kodi-six = callPackage ../applications/video/kodi/addons/kodi-six { };
 

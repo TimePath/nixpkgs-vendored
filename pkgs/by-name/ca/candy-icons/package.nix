@@ -2,18 +2,19 @@
   lib,
   stdenvNoCC,
   fetchFromGitHub,
+  unstableGitUpdater,
   gtk3,
 }:
 
 stdenvNoCC.mkDerivation {
   pname = "candy-icons";
-  version = "0-unstable-2024-10-22";
+  version = "0-unstable-2025-04-23";
 
   src = fetchFromGitHub {
     owner = "EliverLara";
     repo = "candy-icons";
-    rev = "f8a4125d338d86a58723ab36f9f827248d07c85c";
-    hash = "sha256-Bv91a5NglKWwddqx0kPgdCrik9SOPtcfQFJDWOdcQG4=";
+    rev = "1763fc1f476e6c2ba7ca8df878645815b808ebca";
+    hash = "sha256-aXAtVtsJC9MdkhUJWZnOQteaR005+KnPxFrEepfomCk=";
   };
 
   nativeBuildInputs = [ gtk3 ];
@@ -29,6 +30,8 @@ stdenvNoCC.mkDerivation {
 
     runHook postInstall
   '';
+
+  passthru.updateScript = unstableGitUpdater { };
 
   meta = with lib; {
     homepage = "https://github.com/EliverLara/candy-icons";

@@ -14,9 +14,11 @@
   dbus,
   expat,
   glib,
+  glibc,
   gtk3,
   libsecret,
-  mesa,
+  libgbm,
+  musl,
   nss,
   pango,
   udev,
@@ -26,11 +28,11 @@
 
 stdenv.mkDerivation rec {
   pname = "publii";
-  version = "0.45.2";
+  version = "0.46.5";
 
   src = fetchurl {
     url = "https://getpublii.com/download/Publii-${version}.deb";
-    hash = "sha256-NGS5ovaJ6XskCimN48mqvUdoA+N9eDlIpazV0GDEs3E=";
+    hash = "sha256-VymAHQNv3N7Mqe8wiUfYawi1BooczLFClxuwaW8NetA=";
   };
 
   dontConfigure = true;
@@ -53,9 +55,11 @@ stdenv.mkDerivation rec {
     dbus
     expat
     glib
+    glibc
     gtk3
     libsecret
-    mesa
+    libgbm
+    musl
     nss
     pango
     xorg.libX11
@@ -73,7 +77,7 @@ stdenv.mkDerivation rec {
 
     mv usr/share $out
     substituteInPlace $out/share/applications/Publii.desktop \
-      --replace 'Exec=/opt/Publii/Publii' 'Exec=Publii'
+      --replace-fail 'Exec=/opt/Publii/Publii' 'Exec=Publii'
 
     mv opt $out
 

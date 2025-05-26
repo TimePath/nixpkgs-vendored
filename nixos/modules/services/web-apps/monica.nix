@@ -16,6 +16,8 @@ let
   user = cfg.user;
   group = cfg.group;
 
+  php = lib.getExe cfg.phpPackage;
+
   # shell script for local administration
   artisan = pkgs.writeScriptBin "monica" ''
     #! ${pkgs.runtimeShell}
@@ -27,7 +29,7 @@ let
         exec "$@"
       fi
     }
-    sudo ${pkgs.php}/bin/php artisan "$@"
+    sudo ${php} artisan "$@"
   '';
 
   tlsEnabled = cfg.nginx.addSSL || cfg.nginx.forceSSL || cfg.nginx.onlySSL || cfg.nginx.enableACME;
@@ -35,6 +37,8 @@ in
 {
   options.services.monica = {
     enable = mkEnableOption "monica";
+
+    phpPackage = mkPackageOption pkgs "php83" { };
 
     user = mkOption {
       default = "monica";
@@ -307,7 +311,7 @@ in
       DB_USERNAME = db.user;
       MAIL_DRIVER = mail.driver;
       MAIL_FROM_NAME = mail.fromName;
-      MAIL_FROM = mail.from;
+      MAIL_FROM_ADDRESS = mail.from;
       MAIL_HOST = mail.host;
       MAIL_PORT = mail.port;
       MAIL_USERNAME = mail.user;
@@ -340,6 +344,7 @@ in
 
     services.phpfpm.pools.monica = {
       inherit user group;
+      phpPackage = cfg.phpPackage;
       phpOptions = ''
         log_errors = on
         post_max_size = ${cfg.maxUploadSize}
@@ -448,8 +453,8 @@ in
           fi
 
           # migrate & seed db
-          ${pkgs.php}/bin/php artisan key:generate --force
-          ${pkgs.php}/bin/php artisan setup:production -v --force
+          ${php} artisan key:generate --force
+          ${php} artisan setup:production -v --force
         '';
     };
 
@@ -461,7 +466,7 @@ in
         Type = "oneshot";
         User = user;
         WorkingDirectory = "${monica}";
-        ExecStart = "${pkgs.php}/bin/php ${monica}/artisan schedule:run -v";
+        ExecStart = "${php} ${monica}/artisan schedule:run -v";
       };
     };
 

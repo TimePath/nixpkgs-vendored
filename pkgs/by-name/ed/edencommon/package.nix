@@ -15,15 +15,13 @@
   wangle,
   fbthrift,
   gtest,
-  apple-sdk_11,
-  darwinMinVersionHook,
 
   nix-update-script,
 }:
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "edencommon";
-  version = "2024.11.18.00";
+  version = "2025.04.21.00";
 
   outputs = [
     "out"
@@ -34,13 +32,17 @@ stdenv.mkDerivation (finalAttrs: {
     owner = "facebookexperimental";
     repo = "edencommon";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-pVPkH80vowdpwWv/h6ovEk335OeI6/0k0cAFhhFqSDM=";
+    hash = "sha256-WlLQb4O4rGhXp+bQrJA12CvrwcIS6vzO4W6bX04vKMM=";
   };
 
-  patches = lib.optionals (stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isx86_64) [
-    # Test discovery timeout is bizarrely flaky on `x86_64-darwin`
-    ./increase-test-discovery-timeout.patch
-  ];
+  patches =
+    [
+      ./glog-0.7.patch
+    ]
+    ++ lib.optionals (stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isx86_64) [
+      # Test discovery timeout is bizarrely flaky on `x86_64-darwin`
+      ./increase-test-discovery-timeout.patch
+    ];
 
   nativeBuildInputs = [
     cmake
@@ -48,20 +50,15 @@ stdenv.mkDerivation (finalAttrs: {
     removeReferencesTo
   ];
 
-  buildInputs =
-    [
-      glog
-      gflags
-      folly
-      fb303
-      wangle
-      fbthrift
-      gtest
-    ]
-    ++ lib.optionals stdenv.hostPlatform.isDarwin [
-      apple-sdk_11
-      (darwinMinVersionHook "11.0")
-    ];
+  buildInputs = [
+    glog
+    gflags
+    folly
+    fb303
+    wangle
+    fbthrift
+    gtest
+  ];
 
   cmakeFlags = [
     (lib.cmakeBool "BUILD_SHARED_LIBS" (!stdenv.hostPlatform.isStatic))
@@ -74,6 +71,22 @@ stdenv.mkDerivation (finalAttrs: {
   ];
 
   doCheck = true;
+
+  checkPhase = ''
+    runHook preCheck
+
+    # Skip flaky test
+    ctest -j $NIX_BUILD_CORES --output-on-failure ${
+      lib.escapeShellArgs [
+        "--exclude-regex"
+        (lib.concatMapStringsSep "|" (test: "^${lib.escapeRegex test}$") [
+          "ProcessInfoCache.addFromMultipleThreads"
+        ])
+      ]
+    }
+
+    runHook postCheck
+  '';
 
   postPatch = ''
     # The CMake build requires the FBThrift Python support even though

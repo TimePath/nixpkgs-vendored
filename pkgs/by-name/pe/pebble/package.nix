@@ -25,7 +25,8 @@ buildGoModule rec {
   ];
 
   passthru.tests = {
-    smoke-test = nixosTests.acme;
+    smoke-test-http = nixosTests.acme.http01-builtin;
+    smoke-test-dns = nixosTests.acme.dns01;
   };
 
   meta = {
@@ -34,6 +35,6 @@ buildGoModule rec {
     longDescription = "Miniature version of Boulder, Pebble is a small RFC 8555 ACME test server not suited for a production CA";
     license = [ lib.licenses.mpl20 ];
     mainProgram = "pebble";
-    maintainers = lib.teams.acme.members;
+    teams = [ lib.teams.acme ];
   };
 }

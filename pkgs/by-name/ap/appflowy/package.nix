@@ -17,11 +17,11 @@ let
     rec {
       x86_64-linux = {
         urlSuffix = "linux-x86_64.tar.gz";
-        hash = "sha256-fn1UK8+7+vFL4nTnnRbfjCgttVYSw6pmmqabeHqTY3g=";
+        hash = "sha256-c6iawG2GqdF4HRfOhcJM0gPNo7I8DHP1SVQffDzW9wc=";
       };
       x86_64-darwin = {
         urlSuffix = "macos-universal.zip";
-        hash = "sha256-MoK6GlGmRVRp6feH8hab4CYpP4bXJN3XH7eHHSnhpS4=";
+        hash = "sha256-5d/JkAuNT1OT0MOUQU7mhst/lOXv7T17rJVeIABMUKw=";
       };
       aarch64-darwin = x86_64-darwin;
     }
@@ -30,7 +30,7 @@ let
 in
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "appflowy";
-  version = "0.7.1";
+  version = "0.9.1";
 
   src = fetchzip {
     url = "https://github.com/AppFlowy-IO/appflowy/releases/download/${finalAttrs.version}/AppFlowy-${finalAttrs.version}-${dist.urlSuffix}";
@@ -93,9 +93,10 @@ stdenvNoCC.mkDerivation (finalAttrs: {
       name = "appflowy";
       desktopName = "AppFlowy";
       comment = finalAttrs.meta.description;
-      exec = "appflowy";
+      exec = "appflowy %U";
       icon = "appflowy";
       categories = [ "Office" ];
+      mimeTypes = [ "x-scheme-handler/appflowy-flutter" ];
     })
   ];
 

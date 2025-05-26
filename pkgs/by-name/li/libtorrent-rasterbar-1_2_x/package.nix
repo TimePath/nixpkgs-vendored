@@ -3,27 +3,36 @@
   stdenv,
   fetchFromGitHub,
   pkg-config,
-  automake,
-  autoconf,
+  autoreconfHook,
   zlib,
-  boost,
+  boost186,
   openssl,
-  libtool,
   python311,
   libiconv,
   ncurses,
-  darwin,
+  boost-build,
 }:
 
 let
-  version = "1.2.11";
+  version = "1.2.19";
 
   # Make sure we override python, so the correct version is chosen
   # for the bindings, if overridden
-  boostPython = boost.override {
+  boostPython = boost186.override (_: {
     enablePython = true;
     python = python311;
-  };
+    enableStatic = true;
+    enableShared = false;
+    enableSingleThreaded = false;
+    enableMultiThreaded = true;
+    # So that libraries will be named like 'libboost_system.a' instead
+    # of 'libboost_system-x64.a'.
+    taggedLayout = false;
+  });
+
+  opensslStatic = openssl.override (_: {
+    static = true;
+  });
 
 in
 stdenv.mkDerivation {
@@ -34,28 +43,35 @@ stdenv.mkDerivation {
     owner = "arvidn";
     repo = "libtorrent";
     rev = "v${version}";
-    hash = "sha256-KxyJmG7PdOjGPe18Dd3nzKI5X7B0MovWN8vq7llFFRc=";
+    hash = "sha256-HkpaOCBL+0Kc7M9DmnW2dUGC+b60a7n5n3i1SyRfkb4=";
   };
 
   enableParallelBuilding = true;
 
   nativeBuildInputs = [
-    automake
-    autoconf
-    libtool
+    autoreconfHook
+    boost-build
     pkg-config
+    python311.pkgs.setuptools
   ];
 
   buildInputs = [
     boostPython
-    openssl
+    opensslStatic
     zlib
     python311
     libiconv
     ncurses
-  ] ++ lib.optionals stdenv.hostPlatform.isDarwin [ darwin.apple_sdk.frameworks.SystemConfiguration ];
+  ];
 
-  preConfigure = "./autotool.sh";
+  preAutoreconf = ''
+    mkdir -p build-aux
+    cp m4/config.rpath build-aux
+  '';
+
+  preConfigure = ''
+    configureFlagsArray+=('PYTHON_INSTALL_PARAMS=--prefix=$(DESTDIR)$(prefix) --single-version-externally-managed --record=installed-files.txt')
+  '';
 
   postInstall = ''
     moveToOutput "include" "$dev"

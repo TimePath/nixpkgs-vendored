@@ -4,8 +4,6 @@
   pkgs,
   ...
 }:
-
-with lib;
 let
   cfg = config.services.osquery;
   dirname =
@@ -21,8 +19,8 @@ let
   # flagfile is the file containing osquery command line flags to be
   # provided to the application using the special --flagfile option.
   flagfile = pkgs.writeText "osquery.flags" (
-    concatStringsSep "\n" (
-      mapAttrsToList (name: value: "--${name}=${value}")
+    lib.concatStringsSep "\n" (
+      lib.mapAttrsToList (name: value: "--${name}=${value}")
         # Use the conf derivation if not otherwise specified.
         ({ config_path = conf; } // cfg.flags)
     )
@@ -36,31 +34,31 @@ let
 in
 {
   options.services.osquery = {
-    enable = mkEnableOption "osqueryd daemon";
+    enable = lib.mkEnableOption "osqueryd daemon";
 
-    settings = mkOption {
+    settings = lib.mkOption {
       default = { };
       description = ''
         Configuration to be written to the osqueryd JSON configuration file.
-        To understand the configuration format, refer to https://osquery.readthedocs.io/en/stable/deployment/configuration/#configuration-components.
+        To understand the configuration format, refer to <https://osquery.readthedocs.io/en/stable/deployment/configuration/#configuration-components>.
       '';
       example = {
         options.utc = false;
       };
-      type = types.attrs;
+      type = lib.types.attrs;
     };
 
-    flags = mkOption {
+    flags = lib.mkOption {
       default = { };
       description = ''
         Attribute set of flag names and values to be written to the osqueryd flagfile.
-        For more information, refer to https://osquery.readthedocs.io/en/stable/installation/cli-flags.
+        For more information, refer to <https://osquery.readthedocs.io/en/stable/installation/cli-flags>.
       '';
       example = {
         config_refresh = "10";
       };
       type =
-        with types;
+        with lib.types;
         submodule {
           freeformType = attrsOf str;
           options = {
@@ -90,7 +88,7 @@ in
               '';
               type = path;
             };
-            pidfile = mkOption {
+            pidfile = lib.mkOption {
               default = "/run/osquery/osqueryd.pid";
               readOnly = true;
               description = "Path used for pid file.";
@@ -101,7 +99,7 @@ in
     };
   };
 
-  config = mkIf cfg.enable {
+  config = lib.mkIf cfg.enable {
     environment.systemPackages = [ osqueryi ];
     systemd.services.osqueryd = {
       after = [

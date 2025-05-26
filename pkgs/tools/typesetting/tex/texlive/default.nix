@@ -7,6 +7,7 @@
   lib,
   #, stdenv
   gcc12Stdenv,
+  fetchpatch,
   fetchurl,
   runCommand,
   writeShellScript,
@@ -69,6 +70,7 @@ let
         inherit
           stdenv
           lib
+          fetchpatch
           bin
           tlpdb
           tlpdbxz
@@ -99,9 +101,9 @@ let
     # day of the snapshot being taken
     year = "2024";
     month = "03";
-    day = "16";
+    day = "09";
     # TeX Live version
-    texliveYear = 2023;
+    texliveYear = 2024;
     # final (historic) release or snapshot
     final = true;
   };
@@ -112,23 +114,25 @@ let
   # should be switching to the tlnet-final versions
   # (https://tug.org/historic/).
   mirrors =
-    lib.optionals version.final [
-      # tlnet-final snapshot; used when texlive.tlpdb is frozen
-      # the TeX Live yearly freeze typically happens in mid-March
-      "http://ftp.math.utah.edu/pub/tex/historic/systems/texlive/${toString version.texliveYear}/tlnet-final"
-      "ftp://tug.org/texlive/historic/${toString version.texliveYear}/tlnet-final"
-    ]
-    ++ [
-      # CTAN mirrors
-      "https://mirror.ctan.org/systems/texlive/tlnet"
-      # daily snapshots hosted by one of the texlive release managers;
-      # used for packages that in the meanwhile have been updated or removed from CTAN
-      # and for packages that have not reached yet the historic mirrors
-      # please note that this server is not meant for large scale deployment
-      # https://tug.org/pipermail/tex-live/2019-November/044456.html
-      # https://texlive.info/ MUST appear last (see tlpdbxz)
-      "https://texlive.info/tlnet-archive/${version.year}/${version.month}/${version.day}/tlnet"
-    ];
+    if version.final then
+      [
+        # tlnet-final snapshot; used when texlive.tlpdb is frozen
+        # the TeX Live yearly freeze typically happens in mid-March
+        "http://ftp.math.utah.edu/pub/tex/historic/systems/texlive/${toString version.texliveYear}/tlnet-final"
+        "ftp://tug.org/texlive/historic/${toString version.texliveYear}/tlnet-final"
+      ]
+    else
+      [
+        # CTAN mirrors
+        "https://mirror.ctan.org/systems/texlive/tlnet"
+        # daily snapshots hosted by one of the texlive release managers;
+        # used for packages that in the meanwhile have been updated or removed from CTAN
+        # and for packages that have not reached yet the historic mirrors
+        # please note that this server is not meant for large scale deployment
+        # https://tug.org/pipermail/tex-live/2019-November/044456.html
+        # https://texlive.info/ MUST appear last (see tlpdbxz)
+        "https://texlive.info/tlnet-archive/${version.year}/${version.month}/${version.day}/tlnet"
+      ];
 
   tlpdbxz = fetchurl {
     urls =
@@ -136,7 +140,7 @@ let
         # use last mirror for daily snapshots as texlive.tlpdb.xz changes every day
         # TODO make this less hacky
         (if version.final then mirrors else [ (lib.last mirrors) ]);
-    hash = "sha256-w+04GBFDk/P/XvW7T9PotGD0nQslMkV9codca2urNK4=";
+    hash = "sha256-YLn4+Ik9WR0iDS9Pjdo/aGyqFl7+eKoMzI3sgNSHmao=";
   };
 
   tlpdbNix =
@@ -283,13 +287,14 @@ let
       tlpdbVersion.frozen == version.final
     ) "TeX Live final status in texlive does not match tlpdb.nix, refusing to evaluate";
 
-  # Pre-defined evironment packages for TeX Live schemes,
+  # Pre-defined environment packages for TeX Live schemes,
   # to make nix-env usage more comfortable and build selected on Hydra.
 
   # these license lists should be the sorted union of the licenses of the packages the schemes contain.
   # The correctness of this collation is tested by tests.texlive.licenses
   licenses = with lib.licenses; {
     scheme-basic = [
+      cc-by-sa-40
       free
       gfl
       gpl1Only
@@ -307,6 +312,7 @@ let
       artistic2
       asl20
       bsd3
+      cc-by-sa-40
       fdl13Only
       free
       gfl
@@ -317,7 +323,6 @@ let
       lgpl21
       lppl1
       lppl12
-      lppl13a
       lppl13c
       mit
       ofl
@@ -327,6 +332,7 @@ let
       bsd2
       bsd3
       cc-by-sa-40
+      eupl12
       free
       gfl
       gfsl
@@ -361,6 +367,7 @@ let
       cc-by-sa-30
       cc-by-sa-40
       cc0
+      eupl12
       fdl13Only
       free
       gfl
@@ -392,6 +399,7 @@ let
       cc-by-40
       cc-by-sa-40
       cc0
+      eupl12
       fdl13Only
       free
       gfl
@@ -406,7 +414,6 @@ let
       lgpl21
       lppl1
       lppl12
-      lppl13a
       lppl13c
       mit
       ofl
@@ -427,6 +434,7 @@ let
       cc-by-sa-30
       cc-by-sa-40
       cc0
+      eupl12
       fdl13Only
       free
       gfl
@@ -450,6 +458,7 @@ let
       x11
     ];
     scheme-minimal = [
+      cc-by-sa-40
       free
       gpl1Only
       gpl2Plus
@@ -466,6 +475,7 @@ let
       cc-by-40
       cc-by-sa-40
       cc0
+      eupl12
       fdl13Only
       free
       gfl
@@ -479,7 +489,6 @@ let
       lgpl21
       lppl1
       lppl12
-      lppl13a
       lppl13c
       mit
       ofl
@@ -498,6 +507,7 @@ let
       cc-by-sa-30
       cc-by-sa-40
       cc0
+      eupl12
       fdl13Only
       free
       gfl

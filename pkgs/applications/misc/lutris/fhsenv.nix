@@ -14,13 +14,14 @@ let
       qtbase
       qtmultimedia
     ];
+  qt6Deps = pkgs: with pkgs.qt6; [ qtbase ];
   gnomeDeps =
     pkgs: with pkgs; [
       zenity
       gtksourceview
       gnome-desktop
       libgnome-keyring
-      webkitgtk_4_0
+      webkitgtk_4_1
     ];
   xorgDeps =
     pkgs: with pkgs.xorg; [
@@ -58,7 +59,8 @@ let
 
 in
 buildFHSEnv {
-  name = "lutris";
+  pname = "lutris";
+  inherit (lutris-unwrapped) version;
 
   runScript = "lutris";
 
@@ -70,6 +72,9 @@ buildFHSEnv {
     with pkgs;
     [
       lutris-unwrapped
+
+      # Appimages
+      fuse
 
       # Adventure Game Studio
       allegro
@@ -93,7 +98,7 @@ buildFHSEnv {
 
       # Dolphin
       bluez
-      ffmpeg
+      ffmpeg_6
       gettext
       portaudio
       miniupnpc
@@ -107,6 +112,7 @@ buildFHSEnv {
       gmp
       pcre
       vulkan-loader
+      zstd
 
       # DOSBox
       SDL_net
@@ -120,7 +126,7 @@ buildFHSEnv {
       # Libretro
       fluidsynth
       hidapi
-      mesa
+      libgbm
       libdrm
 
       # MAME
@@ -150,8 +156,10 @@ buildFHSEnv {
 
       # Redream // "redream is not available for the x86_64 architecture"
 
-      # rpcs3 // TODO: "error while loading shared libraries: libz.so.1..."
+      # RPCS3
       llvm
+      e2fsprogs
+      libgpg-error
 
       # ScummVM
       nasm
@@ -184,6 +192,7 @@ buildFHSEnv {
       game-music-emu
     ]
     ++ qt5Deps pkgs
+    ++ qt6Deps pkgs
     ++ gnomeDeps pkgs
     ++ lib.optional steamSupport pkgs.steam
     ++ extraPkgs pkgs;
@@ -206,7 +215,7 @@ buildFHSEnv {
       udev
       libgcrypt
       libxml2
-      libusb-compat-0_1
+      libusb1
       libpng
       libmpeg2
       libv4l

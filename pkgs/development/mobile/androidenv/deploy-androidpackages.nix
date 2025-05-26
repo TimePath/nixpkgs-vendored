@@ -3,14 +3,15 @@
   lib,
   unzip,
   mkLicenses,
+  os,
+  arch,
+  meta,
 }:
 {
   packages,
-  os ? null,
   nativeBuildInputs ? [ ],
   buildInputs ? [ ],
   patchesInstructions ? { },
-  meta ? { },
   ...
 }@args:
 
@@ -90,17 +91,18 @@ stdenv.mkDerivation (
     inherit buildInputs;
     pname = "android-sdk-${lib.concatMapStringsSep "-" (package: package.name) sortedPackages}";
     version = lib.concatMapStringsSep "-" (package: package.revision) sortedPackages;
-    src = map (
-      package:
-      if os != null && builtins.hasAttr os package.archives then
-        package.archives.${os}
-      else
-        package.archives.all
-    ) packages;
+    src = lib.flatten (map (package: package.archives) packages);
+    inherit os arch;
     nativeBuildInputs = [ unzip ] ++ nativeBuildInputs;
     preferLocalBuild = true;
 
     unpackPhase = ''
+      runHook preUnpack
+      if [ -z "$src" ]; then
+        echo "$pname did not have any sources available for os=$os, arch=$arch." >&2
+        echo "Are packages available for this architecture?" >&2
+        exit 1
+      fi
       buildDir=$PWD
       i=0
       for srcArchive in $src; do
@@ -111,42 +113,48 @@ stdenv.mkDerivation (
         cd "$extractedZip"
         unpackFile "$srcArchive"
       done
+      runHook postUnpack
     '';
 
-    installPhase = lib.concatStrings (
-      lib.imap0 (i: package: ''
-        cd $buildDir/extractedzip-${toString i}
+    installPhase =
+      ''
+        runHook preInstall
+      ''
+      + lib.concatStrings (
+        lib.imap0 (i: package: ''
+          cd $buildDir/extractedzip-${toString i}
 
-        # Most Android Zip packages have a root folder, but some don't. We unpack
-        # the zip file in a folder and we try to discover whether it has a single root
-        # folder. If this is the case, we adjust the current working folder.
-        if [ "$(find . -mindepth 1 -maxdepth 1 -type d | wc -l)" -eq 1 ]; then
-            cd "$(find . -mindepth 1 -maxdepth 1 -type d)"
-        fi
-        extractedZip="$PWD"
+          # Most Android Zip packages have a root folder, but some don't. We unpack
+          # the zip file in a folder and we try to discover whether it has a single root
+          # folder. If this is the case, we adjust the current working folder.
+          if [ "$(find . -mindepth 1 -maxdepth 1 -type d | wc -l)" -eq 1 ]; then
+              cd "$(find . -mindepth 1 -maxdepth 1 -type d)"
+          fi
+          extractedZip="$PWD"
 
-        packageBaseDir=$out/libexec/android-sdk/${package.path}
-        mkdir -p $packageBaseDir
-        cd $packageBaseDir
-        cp -a $extractedZip/* .
-        ${patchesInstructions.${package.name}}
+          packageBaseDir=$out/libexec/android-sdk/${package.path}
+          mkdir -p $packageBaseDir
+          cd $packageBaseDir
+          cp -a $extractedZip/* .
+          ${patchesInstructions.${package.name}}
 
-        if [ ! -f $packageBaseDir/package.xml ]; then
-          cat << EOF > $packageBaseDir/package.xml
-        ${mkXmlPackage package}
-        EOF
-        fi
-      '') packages
-    );
+          if [ ! -f $packageBaseDir/package.xml ]; then
+            cat << EOF > $packageBaseDir/package.xml
+          ${mkXmlPackage package}
+          EOF
+          fi
+        '') packages
+      )
+      + ''
+        runHook postInstall
+      '';
 
     # Some executables that have been patched with patchelf may not work any longer after they have been stripped.
     dontStrip = true;
     dontPatchELF = true;
     dontAutoPatchelf = true;
 
-    meta = {
-      description = lib.concatMapStringsSep "\n" (package: package.displayName) packages;
-    } // meta;
+    inherit meta;
   }
   // extraParams
 )

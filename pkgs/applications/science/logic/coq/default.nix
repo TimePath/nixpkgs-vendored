@@ -27,6 +27,7 @@
   makeDesktopItem,
   copyDesktopItems,
   csdp ? null,
+  rocq-core, # for versions >= 9.0 that are transition shims on top of Rocq
   version,
   coq-version ? null,
 }@args:
@@ -75,6 +76,7 @@ let
     "8.19.2".sha256 = "sha256-q+i07JsMZp83Gqav6v1jxsgPLN7sPvp5/oszVnavmz0=";
     "8.20.0".sha256 = "sha256-WFpZlA6CzFVAruPhWcHQI7VOBVhrGLdFzWrHW0DTSl0=";
     "8.20.1".sha256 = "sha256-nRaLODPG4E3gUDzGrCK40vhl4+VhPyd+/fXFK/HC3Ig=";
+    "9.0.0".sha256 = "sha256-GRwYSvrJGiPD+I82gLOgotb+8Ra5xHZUJGcNwxWqZkU=";
   };
   releaseRev = v: "V${v}";
   fetched =
@@ -145,6 +147,7 @@ let
   self = stdenv.mkDerivation {
     pname = "coq";
     inherit (fetched) version src;
+    exact-version = args.version;
 
     passthru = {
       inherit coq-version;
@@ -296,10 +299,6 @@ let
       + ''
         ln -s $out/lib/coq${suffix} $OCAMLFIND_DESTDIR/coq${suffix}
       ''
-      + lib.optionalString (coqAtLeast "8.21") ''
-        ln -s $out/lib/rocq-runtime $OCAMLFIND_DESTDIR/rocq-runtime
-        ln -s $out/lib/rocq-core $OCAMLFIND_DESTDIR/rocq-core
-      ''
       + lib.optionalString (coqAtLeast "8.14") ''
         ln -s $out/lib/coqide-server $OCAMLFIND_DESTDIR/coqide-server
       ''
@@ -331,17 +330,26 @@ let
   };
 in
 if coqAtLeast "8.21" then
-  self.overrideAttrs (_: {
+  self.overrideAttrs (o: {
     # coq-core is now a shim for rocq
+    propagatedBuildInputs = o.propagatedBuildInputs ++ [
+      (rocq-core.override { version = o.exact-version; })
+    ];
     buildPhase = ''
       runHook preBuild
-      make dunestrap
-      dune build -p rocq-runtime,rocq-core,coq-core,coqide-server${lib.optionalString buildIde ",rocqide"} -j $NIX_BUILD_CORES
+      dune build -p coq-core,coqide-server${lib.optionalString buildIde ",rocqide"} -j $NIX_BUILD_CORES
       runHook postBuild
     '';
     installPhase = ''
       runHook preInstall
-      dune install --prefix $out rocq-runtime rocq-core coq-core coqide-server${lib.optionalString buildIde " rocqide"}
+      dune install --prefix $out coq-core coqide-server${lib.optionalString buildIde " rocqide"}
+      # coq and rocq are now in different directories, which sometimes confuses coq_makefile
+      # which expects both in the same /nix/store/.../bin/ directory
+      # adding symlinks to content it
+      ROCQBIN=$(dirname ''$(command -v rocq))
+      for b in csdpcert ocamllibdep rocq rocq.byte rocqchk votour ; do
+        ln -s ''${ROCQBIN}/''${b} $out/bin/
+      done
       runHook postInstall
     '';
   })

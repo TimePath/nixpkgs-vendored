@@ -14,7 +14,7 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "liblouis";
-  version = "3.32.0";
+  version = "3.33.0";
 
   outputs =
     [
@@ -30,7 +30,7 @@ stdenv.mkDerivation (finalAttrs: {
     owner = "liblouis";
     repo = "liblouis";
     rev = "v${finalAttrs.version}";
-    hash = "sha256-gub/XUwbM7wzeQ0eXtpqaWxPDhlksVW7xSnFB6oXNyQ=";
+    hash = "sha256-+p/2eLbQ5aYtxQIkoHaVE1xDqstveedf+56aRNX9C7M=";
   };
 
   strictDeps = true;

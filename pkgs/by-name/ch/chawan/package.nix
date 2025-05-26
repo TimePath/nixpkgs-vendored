@@ -11,29 +11,28 @@
   pkg-config,
   zlib,
   unstableGitUpdater,
-  libseccomp,
-  substituteAll,
+  replaceVars,
 }:
 
 stdenv.mkDerivation {
   pname = "chawan";
-  version = "0-unstable-2024-10-25";
+  version = "0-unstable-2025-04-18";
 
   src = fetchFromSourcehut {
     owner = "~bptato";
     repo = "chawan";
-    rev = "28bf2922a33dd987a0a3095bc461589ef23ad37d";
-    hash = "sha256-Bxt9uovo69whyAtrpCDz3DyAYjCYaZfMZknnFW0WDao=";
-    fetchSubmodules = true;
+    rev = "656092f399d36c13a551b4a2474c8aded3388b1a";
+    hash = "sha256-GYCmRIswHFM+VehBlf8NSAt0ewrl7SVD0y9lLhFYkvo=";
   };
 
-  patches = [
-    # Include chawan's man pages in mancha's search path
-    (substituteAll {
-      src = ./mancha-augment-path.diff;
-      out = placeholder "out";
-    })
-  ];
+  patches = [ ./mancha-augment-path.diff ];
+
+  # Include chawan's man pages in mancha's search path
+  postPatch = ''
+    # As we need the $out reference, we can't use `replaceVars` here.
+    substituteInPlace adapter/protocol/man.nim \
+      --replace-fail '@out@' "$out"
+  '';
 
   env.NIX_CFLAGS_COMPILE = toString (
     lib.optional stdenv.cc.isClang "-Wno-error=implicit-function-declaration"
@@ -48,7 +47,6 @@ stdenv.mkDerivation {
 
   buildInputs = [
     curlMinimal
-    libseccomp
     ncurses
     zlib
   ];
@@ -83,6 +81,5 @@ stdenv.mkDerivation {
     platforms = lib.platforms.unix;
     maintainers = with lib.maintainers; [ jtbx ];
     mainProgram = "cha";
-    broken = stdenv.hostPlatform.isDarwin; # pending PR #292043
   };
 }

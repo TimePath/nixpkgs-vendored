@@ -23,13 +23,13 @@ let
     if extension == "zip" then fetchzip args else fetchurl args;
 
   pname = "1password-cli";
-  version = "2.30.3";
+  version = "2.31.0";
   sources = rec {
-    aarch64-linux = fetch "linux_arm64" "sha256-dXhmRl48Uk4T4947Dwz6ZkaRkZlmcADXKt/m6d1VNe8=" "zip";
-    i686-linux = fetch "linux_386" "sha256-+B4fZ41DBe9TnIHOntBQDAvTYOckVwK5B+wwsIU6fAI=" "zip";
-    x86_64-linux = fetch "linux_amd64" "sha256-MsBSjJi7hJbS1wU3lVeywRrhGAZkoqxRb4FTg8fFN00=" "zip";
+    aarch64-linux = fetch "linux_arm64" "sha256-l42h6mGqcb7Wy1ryXM0gxnt2fUUDr8+4nc9qIG0nDgc=" "zip";
+    i686-linux = fetch "linux_386" "sha256-3oxBu0SAbWNgHZxirmKXm0Mk/uRZRPX/qCfYvkANTfM=" "zip";
+    x86_64-linux = fetch "linux_amd64" "sha256-hlktdQCGMtTIbd2j9x0aHKCIoIAydDj/caKaIWJfJTI=" "zip";
     aarch64-darwin =
-      fetch "apple_universal" "sha256-RVng7huZfRRR99TLKwmmun6woSiIhM5YnaEfWgdPJr4="
+      fetch "apple_universal" "sha256-PahPWQ4HpaOvEC1zda8X1Bft+8l/0qGWSJUEcfuWlxg="
         "pkg";
     x86_64-darwin = aarch64-darwin;
   };
@@ -45,15 +45,16 @@ stdenv.mkDerivation {
     else
       throw "Source for ${pname} is not available for ${system}";
 
-  nativeBuildInputs = [
-    installShellFiles
-    versionCheckHook
-  ] ++ lib.optional stdenv.hostPlatform.isLinux autoPatchelfHook;
-
-  buildInputs = lib.optionals stdenv.hostPlatform.isDarwin [
-    xar
-    cpio
-  ];
+  nativeBuildInputs =
+    [
+      installShellFiles
+      versionCheckHook
+    ]
+    ++ lib.optional stdenv.hostPlatform.isLinux autoPatchelfHook
+    ++ lib.optional stdenv.hostPlatform.isDarwin [
+      xar
+      cpio
+    ];
 
   unpackPhase = lib.optionalString stdenv.hostPlatform.isDarwin ''
     xar -xf $src
@@ -79,7 +80,7 @@ stdenv.mkDerivation {
   doInstallCheck = true;
 
   versionCheckProgram = "${builtins.placeholder "out"}/bin/${mainProgram}";
-  versionCheckProgramArg = [ "--version" ];
+  versionCheckProgramArg = "--version";
 
   passthru = {
     updateScript = ./update.sh;

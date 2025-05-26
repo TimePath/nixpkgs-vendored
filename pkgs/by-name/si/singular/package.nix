@@ -30,7 +30,7 @@
 
 stdenv.mkDerivation rec {
   pname = "singular";
-  version = "4.4.0p6";
+  version = "4.4.1";
 
   # since the tarball does not contain tests, we fetch from GitHub.
   src = fetchFromGitHub {
@@ -40,7 +40,7 @@ stdenv.mkDerivation rec {
     # if a release is tagged (which sometimes does not happen), it will
     # be in the format below.
     rev = "Release-${lib.replaceStrings [ "." ] [ "-" ] version}";
-    hash = "sha256-QxMMMnXaWe+0ogA6+3eOtdROb0RolSveya6DIx97/YY=";
+    hash = "sha256-vrRIirWQLbbe1l07AqqHK/StWo0egKuivdKT5R8Rx58=";
 
     # the repository's .gitattributes file contains the lines "/Tst/
     # export-ignore" and "/doc/ export-ignore" so some directories are
@@ -60,7 +60,12 @@ stdenv.mkDerivation rec {
 
   prePatch = ''
     # don't let the tests depend on `hostname`
-    substituteInPlace Tst/regress.cmd --replace 'mysystem_catch("hostname")' 'nix_test_runner'
+    substituteInPlace Tst/regress.cmd \
+      --replace-fail 'mysystem_catch("hostname")' 'nix_test_runner'
+
+    # ld: file not found: @rpath/libquadmath.0.dylib
+    substituteInPlace m4/p-procs.m4 \
+      --replace-fail "-flat_namespace" ""
 
     patchShebangs .
   '';
@@ -173,10 +178,11 @@ stdenv.mkDerivation rec {
   '';
 
   enableParallelBuilding = true;
+  __darwinAllowLocalNetworking = true;
 
   meta = with lib; {
     description = "CAS for polynomial computations";
-    maintainers = teams.sage.members;
+    teams = [ teams.sage ];
     # 32 bit x86 fails with some link error: `undefined reference to `__divmoddi4@GCC_7.0.0'`
     # https://www.singular.uni-kl.de:8002/trac/ticket/837
     platforms = subtractLists platforms.i686 platforms.unix;

@@ -3,6 +3,7 @@
   stdenv,
   lib,
   fetchurl,
+  fetchpatch2,
   pkg-config,
   zlib,
   expat,
@@ -63,18 +64,24 @@ let
 in
 stdenv.mkDerivation rec {
   pname = "ghostscript${lib.optionalString x11Support "-with-X"}";
-  version = "10.05.0";
+  version = "10.05.1";
 
   src = fetchurl {
     url = "https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/gs${
       lib.replaceStrings [ "." ] [ "" ] version
     }/ghostscript-${version}.tar.xz";
-    hash = "sha256-qsnE/fYYBadvYiABJzXBroMoE3iDFL/AQFXMDIlZuaM=";
+    hash = "sha256-IvK9yhXCiDDJcVzdxcKW6maJi/2rC2BKTgvP6wOvbK0=";
   };
 
   patches = [
     ./urw-font-files.patch
     ./doc-no-ref.diff
+
+    # Support SOURCE_DATE_EPOCH for reproducible builds
+    (fetchpatch2 {
+      url = "https://salsa.debian.org/debian/ghostscript/-/raw/01e895fea033cc35054d1b68010de9818fa4a8fc/debian/patches/2010_add_build_timestamp_setting.patch";
+      hash = "sha256-XTKkFKzMR2QpcS1YqoxzJnyuGk/l/Y2jdevsmbMtCXA=";
+    })
   ];
 
   outputs = [
@@ -125,18 +132,30 @@ stdenv.mkDerivation rec {
     ]
     ++ lib.optional cupsSupport cups;
 
-  preConfigure = ''
-    # https://ghostscript.com/doc/current/Make.htm
-    export CCAUX=$CC_FOR_BUILD
-    ${lib.optionalString cupsSupport ''export CUPSCONFIG="${cups.dev}/bin/cups-config"''}
+  preConfigure =
+    ''
+      # https://ghostscript.com/doc/current/Make.htm
+      export CCAUX=$CC_FOR_BUILD
+      ${lib.optionalString cupsSupport ''export CUPSCONFIG="${cups.dev}/bin/cups-config"''}
 
-    rm -rf jpeg libpng zlib jasper expat tiff lcms2mt jbig2dec freetype cups/libs ijs openjpeg
+      rm -rf jpeg libpng zlib jasper expat tiff lcms2mt jbig2dec freetype cups/libs ijs openjpeg
 
-    sed "s@if ( test -f \$(INCLUDE)[^ ]* )@if ( true )@; s@INCLUDE=/usr/include@INCLUDE=/no-such-path@" -i base/unix-aux.mak
-    sed "s@^ZLIBDIR=.*@ZLIBDIR=${zlib.dev}/include@" -i configure.ac
+      sed "s@if ( test -f \$(INCLUDE)[^ ]* )@if ( true )@; s@INCLUDE=/usr/include@INCLUDE=/no-such-path@" -i base/unix-aux.mak
+      sed "s@^ZLIBDIR=.*@ZLIBDIR=${zlib.dev}/include@" -i configure.ac
 
-    autoconf
-  '';
+      # Sidestep a bug in autoconf-2.69 that sets the compiler for all checks to
+      # $CXX after the part for the vendored copy of tesseract.
+      # `--without-tesseract` is already passed to the outer ./configure, here we
+      # make sure it is also passed to its recursive invocation for buildPlatform
+      # checks when cross-compiling.
+      substituteInPlace configure.ac \
+        --replace-fail "--without-x" "--without-x --without-tesseract"
+
+      autoconf
+    ''
+    + lib.optionalString stdenv.hostPlatform.isDarwin ''
+      export DARWIN_LDFLAGS_SO_PREFIX=$out/lib/
+    '';
 
   configureFlags =
     [
@@ -173,14 +192,6 @@ stdenv.mkDerivation rec {
     mkdir -p $fonts/share/fonts
     cp -rv ${fonts}/* "$fonts/share/fonts/"
     ln -s "$fonts/share/fonts" "$out/share/ghostscript/fonts"
-  '';
-
-  # dynamic library name only contains major version number, eg. '10'
-  dylib_version = lib.versions.major version;
-  preFixup = lib.optionalString stdenv.hostPlatform.isDarwin ''
-    for file in $out/bin/{gs,gsc,gsx}; do
-      install_name_tool -change libgs.$dylib_version.dylib $out/lib/libgs.$dylib_version.dylib $file
-    done
   '';
 
   # validate dynamic linkage

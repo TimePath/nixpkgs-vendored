@@ -1,6 +1,7 @@
 {
   lib,
   llvmPackages,
+  llvmPackages_16,
   fetchFromGitHub,
   fetchpatch,
   cmake,
@@ -16,7 +17,6 @@
 
   rustSupport ? true,
 
-  corrosion,
   rustc,
   cargo,
   rustPlatform,
@@ -25,12 +25,7 @@
 let
   inherit (llvmPackages) stdenv;
   mkDerivation =
-    (
-      if stdenv.hostPlatform.isDarwin then
-        darwin.apple_sdk_11_0.llvmPackages_16.stdenv
-      else
-        llvmPackages.stdenv
-    ).mkDerivation;
+    (if stdenv.hostPlatform.isDarwin then llvmPackages_16.stdenv else llvmPackages.stdenv).mkDerivation;
 in
 mkDerivation rec {
   pname = "clickhouse";
@@ -120,21 +115,21 @@ mkDerivation rec {
       null;
   corrosionDeps =
     if rustSupport then
-      rustPlatform.fetchCargoTarball {
+      rustPlatform.fetchCargoVendor {
         src = corrosionSrc;
         name = "corrosion-deps";
         preBuild = "cd generator";
-        hash = "sha256-dhUgpwSjE9NZ2mCkhGiydI51LIOClA5wwk1O3mnnbM8=";
+        hash = "sha256-ok1QLobiGBccmbEEWQxHz3ivvuT6FrOgG6wLK4gIbgU=";
       }
     else
       null;
   rustDeps =
     if rustSupport then
-      rustPlatform.fetchCargoTarball {
+      rustPlatform.fetchCargoVendor {
         inherit src;
         name = "rust-deps";
         preBuild = "cd rust";
-        hash = "sha256-rbEfCRB2QAZ2WBgSLYYUqeYtI4Y5d9oQ2G8/mPirIp4=";
+        hash = "sha256-nX5wBM8rVMbaf/IrPsqkdT2KQklQbBIGomeWSTjclR4=";
       }
     else
       null;

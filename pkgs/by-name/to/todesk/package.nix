@@ -72,7 +72,7 @@ let
 in
 buildFHSEnv {
   inherit version;
-  name = "todesk";
+  pname = "todesk";
   targetPkgs = pkgs: [
     todesk-unwrapped
     pulseaudio

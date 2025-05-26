@@ -368,7 +368,14 @@ let
             question can be created again.
           '';
         };
-
+        allowners_muc = mkOption {
+          type = types.bool;
+          default = false;
+          description = ''
+            Add module allowners, any user in chat is able to
+            kick other. Usefull in jitsi-meet to kick ghosts.
+          '';
+        };
         vcard_muc = mkOption {
           type = types.bool;
           default = true;
@@ -932,7 +939,7 @@ in
 
         ${lib.concatMapStrings (muc: ''
           Component ${toLua muc.domain} "muc"
-              modules_enabled = { "muc_mam"; ${optionalString muc.vcard_muc ''"vcard_muc";''} }
+              modules_enabled = { "muc_mam"; ${optionalString muc.vcard_muc ''"vcard_muc";''} ${optionalString muc.allowners_muc ''"muc_allowners";''}  }
               name = ${toLua muc.name}
               restrict_room_creation = ${toLua muc.restrictRoomCreation}
               max_history_messages = ${toLua muc.maxHistoryMessages}

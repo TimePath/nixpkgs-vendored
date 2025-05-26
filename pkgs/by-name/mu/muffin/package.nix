@@ -2,7 +2,7 @@
   stdenv,
   lib,
   fetchFromGitHub,
-  substituteAll,
+  replaceVars,
   cairo,
   cinnamon-desktop,
   dbus,
@@ -15,6 +15,7 @@
   json-glib,
   libcanberra,
   libdrm,
+  libgbm,
   libgnomekbd,
   libgudev,
   libinput,
@@ -24,7 +25,7 @@
   libXdamage,
   libxkbcommon,
   libXtst,
-  mesa,
+  mesa-gl-headers,
   meson,
   ninja,
   pipewire,
@@ -42,7 +43,7 @@
 
 stdenv.mkDerivation rec {
   pname = "muffin";
-  version = "6.2.0";
+  version = "6.4.1";
 
   outputs = [
     "out"
@@ -54,19 +55,17 @@ stdenv.mkDerivation rec {
     owner = "linuxmint";
     repo = pname;
     rev = version;
-    hash = "sha256-k8hUYA4/OzL2TB8s5DJpa2nFXV2U9eY09TLkqBDq9WE=";
+    hash = "sha256-cGC1yGft3uEqefm2DvZrMaROoZKYd6LNY0IJ+58f6vs=";
   };
 
   patches = [
-    (substituteAll {
-      src = ./fix-paths.patch;
+    (replaceVars ./fix-paths.patch {
       inherit zenity;
     })
   ];
 
   nativeBuildInputs = [
     desktop-file-utils
-    mesa # needed for gbm
     meson
     ninja
     pkg-config
@@ -86,6 +85,7 @@ stdenv.mkDerivation rec {
     gtk3
     libcanberra
     libdrm
+    libgbm
     libgnomekbd
     libgudev
     libinput
@@ -106,6 +106,7 @@ stdenv.mkDerivation rec {
     json-glib
     libXtst
     graphene
+    mesa-gl-headers
   ];
 
   mesonFlags = [
@@ -125,6 +126,6 @@ stdenv.mkDerivation rec {
     mainProgram = "muffin";
     license = licenses.gpl2Plus;
     platforms = platforms.linux;
-    maintainers = teams.cinnamon.members;
+    teams = [ teams.cinnamon ];
   };
 }

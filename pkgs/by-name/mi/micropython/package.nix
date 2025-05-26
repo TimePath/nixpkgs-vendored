@@ -10,13 +10,13 @@
 
 stdenv.mkDerivation rec {
   pname = "micropython";
-  version = "1.24.0";
+  version = "1.25.0";
 
   src = fetchFromGitHub {
     owner = "micropython";
     repo = "micropython";
     rev = "v${version}";
-    hash = "sha256-cFoUa4ZpPy1MldlTeY9ISXi9ilulmhmaH5mapUDBzE8=";
+    hash = "sha256-yH5omiYs07ZKECI+DAnpYq4T+r2O/RuGdtN+dhYxePc=";
     fetchSubmodules = true;
 
     # remove unused libraries from rp2 port's SDK. we leave this and the other
@@ -85,5 +85,6 @@ stdenv.mkDerivation rec {
       prusnak
       sgo
     ];
+    mainProgram = "micropython";
   };
 }

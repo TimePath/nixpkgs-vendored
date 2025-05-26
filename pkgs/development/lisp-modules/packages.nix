@@ -16,6 +16,7 @@ let
     setAttr
     hasAttr
     optionals
+    optionalAttrs
     isDerivation
     hasSuffix
     splitString
@@ -70,7 +71,8 @@ let
   ql = quicklispPackagesFor spec;
 
   packages = ql.overrideScope (
-    self: super: {
+    self: super:
+    {
 
       cl-unicode = build-with-compile-into-pwd {
         inherit (super.cl-unicode)
@@ -246,47 +248,14 @@ let
         lispLibs = super.mathkit.lispLibs ++ [ super.sb-cga ];
       };
 
-      stumpwm = super.stumpwm.overrideLispAttrs (o: rec {
-        version = "22.11";
-        src = pkgs.fetchFromGitHub {
-          owner = "stumpwm";
-          repo = "stumpwm";
-          rev = version;
-          hash = "sha256-zXj17ucgyFhv7P0qEr4cYSVRPGrL1KEIofXWN2trr/M=";
+      stumpwm = super.stumpwm.overrideLispAttrs {
+        inherit (pkgs.stumpwm) src version;
+        meta = {
+          inherit (pkgs.stumpwm.meta) description license homepage;
         };
-        buildScript = pkgs.writeText "build-stumpwm.lisp" ''
-          (load "${super.stumpwm.asdfFasl}/asdf.${super.stumpwm.faslExt}")
+      };
 
-          (asdf:load-system 'stumpwm)
-
-          ;; Prevents package conflict error
-          (when (uiop:version<= "3.1.5" (asdf:asdf-version))
-            (uiop:symbol-call '#:asdf '#:register-immutable-system :stumpwm)
-            (dolist (system-name (uiop:symbol-call '#:asdf
-                                                   '#:system-depends-on
-                                                   (asdf:find-system :stumpwm)))
-              (uiop:symbol-call '#:asdf '#:register-immutable-system system-name)))
-
-          ;; Prevents "cannot create /homeless-shelter" error
-          (asdf:disable-output-translations)
-
-          (sb-ext:save-lisp-and-die
-            "stumpwm"
-            :executable t
-            :purify t
-            #+sb-core-compression :compression
-            #+sb-core-compression t
-            :toplevel #'stumpwm:stumpwm)
-        '';
-        installPhase = ''
-          mkdir -p $out/bin
-          cp -v stumpwm $out/bin
-        '';
-      });
-
-      stumpwm-unwrapped = super.stumpwm;
-
-      clfswm = super.clfswm.overrideAttrs (o: rec {
+      clfswm = super.clfswm.overrideAttrs (o: {
         buildScript = pkgs.writeText "build-clfswm.lisp" ''
           (load "${o.asdfFasl}/asdf.${o.faslExt}")
           (asdf:load-system 'clfswm)
@@ -315,8 +284,6 @@ let
         nativeBuildInputs = [ pkgs.gfortran ];
         nativeLibs = [ pkgs.openblas ];
       };
-
-      cl-glib_dot_gio = throw "cl-glib_dot_gio was replaced by cl-gio";
 
       cl-gtk4 = build-asdf-system {
         pname = "cl-gtk4";
@@ -357,8 +324,6 @@ let
           pkgs.libadwaita
         ];
       };
-
-      cl-gtk4_dot_webkit2 = throw "cl-gtk4_dot_webkit2 was replaced by cl-gtk4_dot_webkit";
 
       cl-gtk4_dot_webkit = build-asdf-system {
         pname = "cl-gtk4.webkit";
@@ -447,7 +412,7 @@ let
         ];
       };
 
-      kons-9 = build-asdf-system rec {
+      kons-9 = build-asdf-system {
         pname = "kons-9";
         version = "trunk";
         src = pkgs.fetchFromGitHub {
@@ -575,6 +540,11 @@ let
         };
       });
 
+    }
+    // optionalAttrs pkgs.config.allowAliases {
+      cl-glib_dot_gio = throw "cl-glib_dot_gio was replaced by cl-gio";
+      cl-gtk4_dot_webkit2 = throw "cl-gtk4_dot_webkit2 was replaced by cl-gtk4_dot_webkit";
+      stumpwm-unwrapped = throw "stumpwm-unwrapped is now just stumpwm";
     }
   );
 

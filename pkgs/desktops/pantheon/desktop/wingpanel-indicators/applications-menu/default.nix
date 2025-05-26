@@ -2,12 +2,10 @@
   lib,
   stdenv,
   fetchFromGitHub,
-  fetchpatch,
   nix-update-script,
-  substituteAll,
+  replaceVars,
   meson,
   ninja,
-  python3,
   pkg-config,
   vala,
   granite,
@@ -15,10 +13,7 @@
   gettext,
   gtk3,
   json-glib,
-  elementary-dock,
-  bamf,
   switchboard-with-plugs,
-  libsoup,
   wingpanel,
   zeitgeist,
   bc,
@@ -27,27 +22,18 @@
 
 stdenv.mkDerivation rec {
   pname = "wingpanel-applications-menu";
-  version = "2.11.1";
+  version = "8.0.1";
 
   src = fetchFromGitHub {
     owner = "elementary";
     repo = "applications-menu";
     rev = version;
-    sha256 = "sha256-WlRrEkX0DGIHYWvUc9G4BbvofzWJwqkiJaJFwQ43GPE=";
+    sha256 = "sha256-bwQI41Znm75GFoXxSbWkY9daAJTMvUo+UHyyPmvzOUA=";
   };
 
   patches = [
-    (substituteAll {
-      src = ./fix-paths.patch;
+    (replaceVars ./fix-paths.patch {
       bc = "${bc}/bin/bc";
-    })
-
-    # Build against switchboard-3
-    # https://github.com/elementary/applications-menu/pull/580
-    (fetchpatch {
-      url = "https://github.com/elementary/applications-menu/commit/9191ee5a2ee33477515d331b96945d51a13074a9.patch";
-      excludes = [ ".github/workflows/githubci.yml" ];
-      hash = "sha256-/LOIEOg9fVfKv/BWFsP1VyuUOIFYem9Gk+3e49M2b9E=";
     })
   ];
 
@@ -56,20 +42,16 @@ stdenv.mkDerivation rec {
     meson
     ninja
     pkg-config
-    python3
     vala
   ];
 
   buildInputs =
     [
-      bamf
-      elementary-dock
       granite
       gtk3
       json-glib
       libgee
       libhandy
-      libsoup
       switchboard-with-plugs
       wingpanel
       zeitgeist
@@ -86,11 +68,6 @@ stdenv.mkDerivation rec {
     "--sysconfdir=${placeholder "out"}/etc"
   ];
 
-  postPatch = ''
-    chmod +x meson/post_install.py
-    patchShebangs meson/post_install.py
-  '';
-
   doCheck = true;
 
   passthru = {
@@ -102,6 +79,6 @@ stdenv.mkDerivation rec {
     homepage = "https://github.com/elementary/applications-menu";
     license = licenses.gpl3Plus;
     platforms = platforms.linux;
-    maintainers = teams.pantheon.members;
+    teams = [ teams.pantheon ];
   };
 }

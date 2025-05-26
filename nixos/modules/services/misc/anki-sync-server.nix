@@ -17,23 +17,23 @@ let
   usersWithIndexesNoFile = filter (
     x: x.user.passwordFile == null && x.user.password != null
   ) usersWithIndexes;
-  anki-sync-server-run = pkgs.writeShellScriptBin "anki-sync-server-run" ''
+  anki-sync-server-run = pkgs.writeShellScript "anki-sync-server-run" ''
     # When services.anki-sync-server.users.passwordFile is set,
     # each password file is passed as a systemd credential, which is mounted in
     # a file system exposed to the service. Here we read the passwords from
     # the credential files to pass them as environment variables to the Anki
     # sync server.
-    ${concatMapStringsSep "\n" (
-      x:
-      ''export SYNC_USER${toString x.i}=${escapeShellArg x.user.username}:"''$(cat "''${CREDENTIALS_DIRECTORY}/"${escapeShellArg x.user.username})"''
-    ) usersWithIndexesFile}
+    ${concatMapStringsSep "\n" (x: ''
+      read -r pass < "''${CREDENTIALS_DIRECTORY}/"${escapeShellArg x.user.username}
+      export SYNC_USER${toString x.i}=${escapeShellArg x.user.username}:"$pass"
+    '') usersWithIndexesFile}
     # For users where services.anki-sync-server.users.password isn't set,
     # export passwords in environment variables in plaintext.
     ${concatMapStringsSep "\n" (
       x:
       ''export SYNC_USER${toString x.i}=${escapeShellArg x.user.username}:${escapeShellArg x.user.password}''
     ) usersWithIndexesNoFile}
-    exec ${cfg.package}/bin/anki-sync-server
+    exec ${lib.getExe cfg.package}
   '';
 in
 {
@@ -128,7 +128,7 @@ in
         Type = "simple";
         DynamicUser = true;
         StateDirectory = name;
-        ExecStart = "${anki-sync-server-run}/bin/anki-sync-server-run";
+        ExecStart = anki-sync-server-run;
         Restart = "always";
         LoadCredential = map (
           x: "${specEscape x.user.username}:${specEscape (toString x.user.passwordFile)}"

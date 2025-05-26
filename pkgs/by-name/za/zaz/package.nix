@@ -5,7 +5,8 @@
   pkg-config,
   SDL,
   SDL_image,
-  mesa,
+  libgbm,
+  libGL,
   libtheora,
   libvorbis,
   libogg,
@@ -28,7 +29,8 @@ stdenv.mkDerivation (finalAttrs: {
   buildInputs = [
     (lib.getDev SDL)
     SDL_image
-    mesa
+    libgbm
+    libGL
     libtheora
     libvorbis.dev
     libogg

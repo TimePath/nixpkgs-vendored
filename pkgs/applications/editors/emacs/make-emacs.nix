@@ -32,6 +32,7 @@
   jansson,
   libXaw,
   libXcursor,
+  libXft,
   libXi,
   libXpm,
   libgccjit,
@@ -55,12 +56,13 @@
   recurseIntoAttrs,
   sigtool,
   sqlite,
-  substituteAll,
+  replaceVars,
   systemd,
   tree-sitter,
   texinfo,
   webkitgtk_4_0,
   wrapGAppsHook3,
+  writeText,
   zlib,
 
   # Boolean flags
@@ -74,6 +76,7 @@
   withAcl ? false,
   withAlsaLib ? false,
   withAthena ? false,
+  withCairo ? withX,
   withCsrc ? true,
   withDbus ? stdenv.hostPlatform.isLinux,
   withGTK3 ? withPgtk && !noGui,
@@ -115,20 +118,8 @@
       "lucid"
   ),
 
-  # macOS dependencies for NS and macPort
-  Accelerate,
-  AppKit,
-  Carbon,
-  Cocoa,
-  GSS,
-  IOKit,
-  ImageCaptureCore,
-  ImageIO,
-  OSAKit,
-  Quartz,
-  QuartzCore,
-  UniformTypeIdentifiers,
-  WebKit,
+  # test
+  callPackage,
 }:
 
 assert (withGTK3 && !withNS && variant != "macport") -> withX || withPgtk;
@@ -177,36 +168,39 @@ mkDerivation (finalAttrs: {
   patches =
     patches fetchpatch
     ++ lib.optionals withNativeCompilation [
-      (substituteAll {
-        src =
+      (replaceVars
+        (
           if lib.versionOlder finalAttrs.version "29" then
             ./native-comp-driver-options-28.patch
           else if lib.versionOlder finalAttrs.version "30" then
             ./native-comp-driver-options.patch
           else
-            ./native-comp-driver-options-30.patch;
-        backendPath = (
-          lib.concatStringsSep " " (
-            builtins.map (x: ''"-B${x}"'') (
-              [
-                # Paths necessary so the JIT compiler finds its libraries:
-                "${lib.getLib libgccjit}/lib"
-              ]
-              ++ libGccJitLibraryPaths
-              ++ [
-                # Executable paths necessary for compilation (ld, as):
-                "${lib.getBin stdenv.cc.cc}/bin"
-                "${lib.getBin stdenv.cc.bintools}/bin"
-                "${lib.getBin stdenv.cc.bintools.bintools}/bin"
-              ]
-              ++ lib.optionals stdenv.hostPlatform.isDarwin [
-                # The linker needs to know where to find libSystem on Darwin.
-                "${apple-sdk.sdkroot}/usr/lib"
-              ]
+            ./native-comp-driver-options-30.patch
+        )
+        {
+          backendPath = (
+            lib.concatStringsSep " " (
+              builtins.map (x: ''"-B${x}"'') (
+                [
+                  # Paths necessary so the JIT compiler finds its libraries:
+                  "${lib.getLib libgccjit}/lib"
+                ]
+                ++ libGccJitLibraryPaths
+                ++ [
+                  # Executable paths necessary for compilation (ld, as):
+                  "${lib.getBin stdenv.cc.cc}/bin"
+                  "${lib.getBin stdenv.cc.bintools}/bin"
+                  "${lib.getBin stdenv.cc.bintools.bintools}/bin"
+                ]
+                ++ lib.optionals stdenv.hostPlatform.isDarwin [
+                  # The linker needs to know where to find libSystem on Darwin.
+                  "${apple-sdk.sdkroot}/usr/lib"
+                ]
+              )
             )
-          )
-        );
-      })
+          );
+        }
+      )
     ];
 
   postPatch = lib.concatStringsSep "\n" [
@@ -231,15 +225,15 @@ mkDerivation (finalAttrs: {
     # Reduce closure size by cleaning the environment of the emacs dumper
     ''
       substituteInPlace src/Makefile.in \
-        --replace 'RUN_TEMACS = ./temacs' 'RUN_TEMACS = env -i ./temacs'
+        --replace-warn 'RUN_TEMACS = ./temacs' 'RUN_TEMACS = env -i ./temacs'
     ''
 
     ''
       substituteInPlace lisp/international/mule-cmds.el \
-        --replace /usr/share/locale ${gettext}/share/locale
+        --replace-warn /usr/share/locale ${gettext}/share/locale
 
       for makefile_in in $(find . -name Makefile.in -print); do
-        substituteInPlace $makefile_in --replace /bin/pwd pwd
+        substituteInPlace $makefile_in --replace-warn /bin/pwd pwd
       done
     ''
 
@@ -342,7 +336,6 @@ mkDerivation (finalAttrs: {
     ]
     ++ lib.optionals withX [
       Xaw3d
-      cairo
       giflib
       libXaw
       libXpm
@@ -350,6 +343,12 @@ mkDerivation (finalAttrs: {
       libpng
       librsvg
       libtiff
+    ]
+    ++ lib.optionals withCairo [
+      cairo
+    ]
+    ++ lib.optionals (withX && !withCairo) [
+      libXft
     ]
     ++ lib.optionals withXinput2 [
       libXi
@@ -362,27 +361,6 @@ mkDerivation (finalAttrs: {
     ]
     ++ lib.optionals withNS [
       librsvg
-      AppKit
-      GSS
-      ImageIO
-    ]
-    ++ lib.optionals (variant == "macport") [
-      Accelerate
-      AppKit
-      Carbon
-      Cocoa
-      IOKit
-      OSAKit
-      Quartz
-      QuartzCore
-      WebKit
-      # TODO are these optional?
-      GSS
-      ImageCaptureCore
-      ImageIO
-    ]
-    ++ lib.optionals (variant == "macport" && stdenv.hostPlatform.isAarch64) [
-      UniformTypeIdentifiers
     ];
 
   # Emacs needs to find movemail at run time, see info (emacs) Movemail
@@ -405,8 +383,8 @@ mkDerivation (finalAttrs: {
       else if withX then
         [
           (lib.withFeatureAs true "x-toolkit" toolkit)
-          (lib.withFeature true "cairo")
-          (lib.withFeature true "xft")
+          (lib.withFeature withCairo "cairo")
+          (lib.withFeature (!withCairo) "xft")
         ]
       else if withPgtk then
         [
@@ -510,12 +488,19 @@ mkDerivation (finalAttrs: {
     patchelf --add-needed "libXcursor.so.1" "$out/bin/emacs"
   '';
 
+  setupHook = ./setup-hook.sh;
+
   passthru = {
     inherit withNativeCompilation;
     inherit withTreeSitter;
     inherit withXwidgets;
     pkgs = recurseIntoAttrs (emacsPackagesFor finalAttrs.finalPackage);
-    tests = { inherit (nixosTests) emacs-daemon; };
+    tests = {
+      inherit (nixosTests) emacs-daemon;
+      withPackages = callPackage ./build-support/wrapper-test.nix {
+        emacs = finalAttrs.finalPackage;
+      };
+    };
   };
 
   meta = {

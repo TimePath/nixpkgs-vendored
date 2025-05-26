@@ -220,21 +220,6 @@
     "hash": "sha256-VdwpP5fsclvNqJuppaOvwEwv2ofnAI5ZSz2V+UEdLF0="
   },
   {
-    "pname": "Microsoft.AspNetCore.App.Ref",
-    "version": "6.0.36",
-    "hash": "sha256-9jDkWbjw/nd8yqdzVTagCuqr6owJ/DUMi4BlUZT4hWU="
-  },
-  {
-    "pname": "Microsoft.AspNetCore.App.Runtime.linux-arm64",
-    "version": "6.0.36",
-    "hash": "sha256-JQULJyF0ivLoUU1JaFfK/HHg+/qzpN7V2RR2Cc+WlQ4="
-  },
-  {
-    "pname": "Microsoft.AspNetCore.App.Runtime.linux-x64",
-    "version": "6.0.36",
-    "hash": "sha256-zUsVIpV481vMLAXaLEEUpEMA9/f1HGOnvaQnaWdzlyY="
-  },
-  {
     "pname": "Microsoft.CodeAnalysis.Analyzers",
     "version": "3.0.0",
     "hash": "sha256-KDbCfsBWSJ5ohEXUKp1s1LX9xA2NPvXE/xVzj68EdC0="
@@ -308,31 +293,6 @@
     "pname": "Microsoft.NET.Test.Sdk",
     "version": "16.7.1",
     "hash": "sha256-yE1At8TgGCK3xQip5kpF1aPT722escTNsaIrcuSNHXs="
-  },
-  {
-    "pname": "Microsoft.NETCore.App.Host.linux-arm64",
-    "version": "6.0.36",
-    "hash": "sha256-9lC/LYnthYhjkWWz2kkFCvlA5LJOv11jdt59SDnpdy0="
-  },
-  {
-    "pname": "Microsoft.NETCore.App.Host.linux-x64",
-    "version": "6.0.36",
-    "hash": "sha256-VFRDzx7LJuvI5yzKdGmw/31NYVbwHWPKQvueQt5xc10="
-  },
-  {
-    "pname": "Microsoft.NETCore.App.Ref",
-    "version": "6.0.36",
-    "hash": "sha256-9LZgVoIFF8qNyUu8kdJrYGLutMF/cL2K82HN2ywwlx8="
-  },
-  {
-    "pname": "Microsoft.NETCore.App.Runtime.linux-arm64",
-    "version": "6.0.36",
-    "hash": "sha256-k3rxvUhCEU0pVH8KgEMtkPiSOibn+nBh+0zT2xIfId8="
-  },
-  {
-    "pname": "Microsoft.NETCore.App.Runtime.linux-x64",
-    "version": "6.0.36",
-    "hash": "sha256-U8wJ2snSDFqeAgDVLXjnniidC7Cr5aJ1/h/BMSlyu0c="
   },
   {
     "pname": "Microsoft.NETCore.Platforms",
@@ -1083,11 +1043,6 @@
     "pname": "System.Runtime.CompilerServices.Unsafe",
     "version": "4.7.1",
     "hash": "sha256-UvyoDV8O0oY3HPG1GbA56YVdvwTGEfjYR5gW1O7IK4U="
-  },
-  {
-    "pname": "System.Runtime.CompilerServices.Unsafe",
-    "version": "6.0.0",
-    "hash": "sha256-bEG1PnDp7uKYz/OgLOWs3RWwQSVYm+AnPwVmAmcgp2I="
   },
   {
     "pname": "System.Runtime.Extensions",

@@ -5,12 +5,25 @@
   lib,
   ...
 }:
-with lib;
 let
+  inherit (lib)
+    concatStringsSep
+    literalExpression
+    makeLibraryPath
+    mkEnableOption
+    mkForce
+    mkIf
+    mkOption
+    mkPackageOption
+    mkRemovedOptionModule
+    optional
+    types
+    ;
+
   cfg = config.services.aesmd;
   opt = options.services.aesmd;
 
-  sgx-psw = pkgs.sgx-psw.override { inherit (cfg) debug; };
+  sgx-psw = cfg.package;
 
   configFile =
     with cfg.settings;
@@ -27,13 +40,17 @@ let
     );
 in
 {
+  imports = [
+    (mkRemovedOptionModule [ "services" "aesmd" "debug" ] ''
+      Enable debug mode by overriding the aesmd package directly:
+
+          services.aesmd.package = pkgs.sgx-psw.override { debug = true; };
+    '')
+  ];
+
   options.services.aesmd = {
     enable = mkEnableOption "Intel's Architectural Enclave Service Manager (AESM) for Intel SGX";
-    debug = mkOption {
-      type = types.bool;
-      default = false;
-      description = "Whether to build the PSW package in debug mode.";
-    };
+    package = mkPackageOption pkgs "sgx-psw" { };
     environment = mkOption {
       type = with types; attrsOf str;
       default = { };
@@ -130,7 +147,6 @@ in
         after = [
           "auditd.service"
           "network.target"
-          "syslog.target"
         ];
 
         environment = {
@@ -149,7 +165,7 @@ in
           "|/dev/sgx_enclave"
         ];
 
-        serviceConfig = rec {
+        serviceConfig = {
           ExecStartPre = pkgs.writeShellScript "copy-aesmd-data-files.sh" ''
             set -euo pipefail
             whiteListFile="${aesmDataFolder}/white_list_cert_to_be_verify.bin"

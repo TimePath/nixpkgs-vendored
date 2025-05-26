@@ -11,6 +11,9 @@
   libgee,
   libgtop,
   libgudev,
+  libsoup_3,
+  gettext,
+  glib,
   granite7,
   gtk4,
   packagekit,
@@ -24,16 +27,18 @@
 
 stdenv.mkDerivation rec {
   pname = "switchboard-plug-about";
-  version = "8.0.0";
+  version = "8.2.1";
 
   src = fetchFromGitHub {
     owner = "elementary";
     repo = pname;
     rev = version;
-    sha256 = "sha256-6b6nuOp4pEufHEmTraSfKpbtPuO3Z9hQJfvKuuyy7as=";
+    sha256 = "sha256-H4BDLP3yzQi+ougpvBvnv1R1TImzUjSOVDGbOqw9hvg=";
   };
 
   nativeBuildInputs = [
+    gettext # msgfmt
+    glib # glib-compile-resources
     meson
     ninja
     pkg-config
@@ -50,6 +55,7 @@ stdenv.mkDerivation rec {
     libgee
     libgtop
     libgudev
+    libsoup_3
     packagekit
     polkit
     switchboard
@@ -65,7 +71,7 @@ stdenv.mkDerivation rec {
     homepage = "https://github.com/elementary/switchboard-plug-about";
     license = licenses.gpl3Plus;
     platforms = platforms.linux;
-    maintainers = teams.pantheon.members;
+    teams = [ teams.pantheon ];
   };
 
 }

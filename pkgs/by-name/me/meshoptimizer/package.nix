@@ -16,12 +16,12 @@ let
 in
 stdenv.mkDerivation rec {
   pname = "meshoptimizer";
-  version = "0.21";
+  version = "0.23";
   src = fetchFromGitHub {
     owner = "zeux";
     repo = "meshoptimizer";
     rev = "v${version}";
-    hash = "sha256-G8rR4Ff3mVxTPD1etI82fYwFawsjrLvwWuEuib+dUBU=";
+    hash = "sha256-vA9FXpJuLJS510MZgVZ96LAUbjXth4CFNkXMEV0DpYg=";
   };
 
   nativeBuildInputs = [ cmake ];
@@ -43,7 +43,10 @@ stdenv.mkDerivation rec {
     description = "Mesh optimization library that makes meshes smaller and faster to render";
     homepage = "https://github.com/zeux/meshoptimizer";
     license = licenses.mit;
-    maintainers = [ maintainers.lillycham ];
+    maintainers = with maintainers; [
+      bouk
+      lillycham
+    ];
     platforms = platforms.all;
     mainProgram = "gltfpack";
   };

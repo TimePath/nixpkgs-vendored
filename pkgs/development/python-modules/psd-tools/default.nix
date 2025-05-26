@@ -19,7 +19,7 @@
 
 buildPythonPackage rec {
   pname = "psd-tools";
-  version = "1.10.2";
+  version = "1.10.7";
   pyproject = true;
 
   disabled = pythonOlder "3.7";
@@ -28,7 +28,7 @@ buildPythonPackage rec {
     owner = "psd-tools";
     repo = pname;
     tag = "v${version}";
-    hash = "sha256-vBDFKWNksF8/h5Jp1VOxVWgAzPdOLhv0iDrNDVXzm54=";
+    hash = "sha256-n3OqyItvKXD6NjCm/FgEuu1G5apTmUypwKJ+Y2DCmEg=";
   };
 
   build-system = [
@@ -58,7 +58,7 @@ buildPythonPackage rec {
     description = "Python package for reading Adobe Photoshop PSD files";
     mainProgram = "psd-tools";
     homepage = "https://github.com/kmike/psd-tools";
-    changelog = "https://github.com/psd-tools/psd-tools/blob/v${version}/CHANGES.rst";
+    changelog = "https://github.com/psd-tools/psd-tools/blob/${src.tag}/CHANGES.rst";
     license = licenses.mit;
     maintainers = with maintainers; [ onny ];
   };

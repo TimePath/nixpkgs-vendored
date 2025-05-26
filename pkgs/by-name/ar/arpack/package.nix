@@ -10,7 +10,7 @@
   eigen,
   useMpi ? false,
   mpi,
-  openssh,
+  mpiCheckPhaseHook,
   igraph,
   useAccel ? false, # use Accelerate framework on darwin
 }:
@@ -20,14 +20,14 @@
 assert useMpi -> !blas.isILP64;
 assert useAccel -> stdenv.hostPlatform.isDarwin;
 
-stdenv.mkDerivation rec {
-  pname = "arpack";
+stdenv.mkDerivation (finalAttrs: {
+  pname = "arpack${lib.optionalString useMpi "-mpi"}";
   version = "3.9.1";
 
   src = fetchFromGitHub {
     owner = "opencollab";
     repo = "arpack-ng";
-    rev = version;
+    tag = finalAttrs.version;
     sha256 = "sha256-HCvapLba8oLqx9I5+KDAU0s/dTmdWOEilS75i4gyfC0=";
   };
 
@@ -49,7 +49,13 @@ stdenv.mkDerivation rec {
     )
     ++ lib.optional useMpi mpi;
 
-  nativeCheckInputs = lib.optional useMpi openssh;
+  nativeCheckInputs = lib.optional useMpi mpiCheckPhaseHook;
+  checkInputs =
+    # work around for `ld: file not found: @rpath/libquadmath.0.dylib`
+    # which occurs due to an mpi test linking with `-flat_namespace`
+    # can remove once `-flat_namespace` is removed or
+    # https://github.com/NixOS/nixpkgs/pull/370526 is merged
+    lib.optional (useMpi && stdenv.hostPlatform.isDarwin) gfortran.cc;
 
   # a couple tests fail when run in parallel
   doCheck = true;
@@ -66,10 +72,11 @@ stdenv.mkDerivation rec {
     [
       (lib.cmakeBool "BUILD_SHARED_LIBS" stdenv.hostPlatform.hasSharedLibraries)
       (lib.cmakeBool "EIGEN" true)
-      (lib.cmakeBool "EXAMPLES" true)
+      (lib.cmakeBool "EXAMPLES" finalAttrs.finalPackage.doCheck)
       (lib.cmakeBool "ICB" true)
       (lib.cmakeBool "INTERFACE64" (!useAccel && blas.isILP64))
       (lib.cmakeBool "MPI" useMpi)
+      (lib.cmakeBool "TESTS" finalAttrs.finalPackage.doCheck)
     ]
     ++ lib.optionals stdenv.hostPlatform.isDarwin [
       "-DBLA_VENDOR=${if useAccel then "Apple" else "Generic"}"
@@ -84,7 +91,7 @@ stdenv.mkDerivation rec {
 
   meta = {
     homepage = "https://github.com/opencollab/arpack-ng";
-    changelog = "https://github.com/opencollab/arpack-ng/blob/${src.rev}/CHANGES";
+    changelog = "https://github.com/opencollab/arpack-ng/blob/${finalAttrs.version}/CHANGES";
     description = ''
       A collection of Fortran77 subroutines to solve large scale eigenvalue
       problems.
@@ -96,4 +103,4 @@ stdenv.mkDerivation rec {
     ];
     platforms = lib.platforms.unix;
   };
-}
+})

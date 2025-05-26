@@ -6,36 +6,31 @@
   installShellFiles,
   bzip2,
   openssl,
-  stdenv,
-  darwin,
 }:
 
 rustPlatform.buildRustPackage rec {
   pname = "cargo-make";
-  version = "0.37.23";
+  version = "0.37.24";
 
   src = fetchFromGitHub {
     owner = "sagiegurari";
     repo = "cargo-make";
     rev = version;
-    hash = "sha256-yYZasrnfxpLf0z6GndLYhkIFfVNjTkx4zdfHYX6WyXk=";
+    hash = "sha256-hrUd4J15cDyd78BVVzi8jiDqJI1dE35WUdOo6Tq8gH8=";
   };
 
-  cargoHash = "sha256-X4FhUqhf58wbl3A8nlXAqnYkkaXajxxqRyJn5K7BVqM=";
+  useFetchCargoVendor = true;
+  cargoHash = "sha256-ml/OW4S4fIMLmm7vVPgsXB7CigDYORGFpN3jZRp1f8c=";
 
   nativeBuildInputs = [
     pkg-config
     installShellFiles
   ];
 
-  buildInputs =
-    [
-      bzip2
-      openssl
-    ]
-    ++ lib.optionals stdenv.hostPlatform.isDarwin [
-      darwin.apple_sdk.frameworks.SystemConfiguration
-    ];
+  buildInputs = [
+    bzip2
+    openssl
+  ];
 
   postInstall = ''
     installShellCompletion extra/shell/*.bash

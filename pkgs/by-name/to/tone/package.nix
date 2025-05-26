@@ -5,6 +5,7 @@
   ffmpeg-full,
   dotnetCorePackages,
   versionCheckHook,
+  nix-update-script,
 }:
 
 buildDotnetModule rec {
@@ -38,7 +39,7 @@ buildDotnetModule rec {
   doInstallCheck = true;
   nativeInstallCheckInputs = [ versionCheckHook ];
 
-  passthru.updateScript = ./update.sh;
+  passthru.updateScript = nix-update-script { };
 
   meta = {
     homepage = "https://github.com/sandreas/tone";

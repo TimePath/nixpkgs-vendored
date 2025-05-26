@@ -15,6 +15,7 @@
   docbook_xsl,
   libxml2,
   docbook5,
+  mesonEmulatorHook,
 }:
 
 stdenv.mkDerivation rec {
@@ -50,7 +51,7 @@ stdenv.mkDerivation rec {
     python3Packages.pytest
     python3Packages.pytest-timeout
     systemd
-  ];
+  ] ++ lib.optionals (!stdenv.buildPlatform.canExecute stdenv.hostPlatform) [ mesonEmulatorHook ];
 
   buildInputs = [ yaml-cpp ];
 

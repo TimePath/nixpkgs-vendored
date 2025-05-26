@@ -4,8 +4,7 @@
   fetchFromGitHub,
   makeWrapper,
   makeDesktopItem,
-  fixup-yarn-lock,
-  yarn,
+  yarnConfigHook,
   nodejs,
   fetchYarnDeps,
   jq,
@@ -48,26 +47,13 @@ stdenv.mkDerivation (
     };
 
     nativeBuildInputs = [
-      yarn
-      fixup-yarn-lock
+      yarnConfigHook
       nodejs
       makeWrapper
       jq
     ] ++ lib.optionals stdenv.hostPlatform.isDarwin [ desktopToDarwinBundle ];
 
     inherit seshat;
-
-    configurePhase = ''
-      runHook preConfigure
-
-      export HOME=$(mktemp -d)
-      yarn config --offline set yarn-offline-mirror $offlineCache
-      fixup-yarn-lock yarn.lock
-      yarn install --offline --frozen-lockfile --ignore-platform --ignore-scripts --no-progress --non-interactive
-      patchShebangs node_modules/
-
-      runHook postConfigure
-    '';
 
     # Only affects unused scripts in $out/share/element/electron/scripts. Also
     # breaks because there are some `node`-scripts with a `npx`-shebang and
@@ -116,7 +102,7 @@ stdenv.mkDerivation (
       makeWrapper '${electron}/bin/electron' "$out/bin/${executableName}" \
         --set LD_PRELOAD ${sqlcipher}/lib/libsqlcipher.so \
         --add-flags "$out/share/element/electron" \
-        --add-flags "\''${NIXOS_OZONE_WL:+\''${WAYLAND_DISPLAY:+--ozone-platform-hint=auto --enable-features=WaylandWindowDecorations}}" \
+        --add-flags "\''${NIXOS_OZONE_WL:+\''${WAYLAND_DISPLAY:+--ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime=true}}" \
         --add-flags ${lib.escapeShellArg commandLineArgs}
 
       runHook postInstall
@@ -137,7 +123,10 @@ stdenv.mkDerivation (
         "Chat"
       ];
       startupWMClass = "Element";
-      mimeTypes = [ "x-scheme-handler/element" ];
+      mimeTypes = [
+        "x-scheme-handler/element"
+        "x-scheme-handler/io.element.desktop"
+      ];
     };
 
     postFixup = lib.optionalString stdenv.hostPlatform.isDarwin ''
@@ -165,7 +154,7 @@ stdenv.mkDerivation (
       homepage = "https://element.io/";
       changelog = "https://github.com/element-hq/element-desktop/blob/v${finalAttrs.version}/CHANGELOG.md";
       license = licenses.asl20;
-      maintainers = teams.matrix.members;
+      teams = [ teams.matrix ];
       inherit (electron.meta) platforms;
       mainProgram = "element-desktop";
     };

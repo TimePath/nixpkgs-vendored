@@ -4,7 +4,7 @@
   fetchurl,
   fetchFromGitHub,
   jdk11,
-  gradle,
+  gradle_8,
   metasploit,
   makeWrapper,
   makeDesktopItem,
@@ -47,6 +47,9 @@ let
     # Update for Gradle 8 (https://github.com/r00t0v3rr1d3/armitage/pull/1)
     ./gradle-8.patch
   ];
+
+  # "Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0."
+  gradle = gradle_8;
 
 in
 stdenv.mkDerivation (finalAttrs: {

@@ -2,7 +2,7 @@
   stdenv,
   lib,
   fetchurl,
-  substituteAll,
+  replaceVars,
   glib,
   libxml2,
   openconnect,
@@ -32,15 +32,13 @@ stdenv.mkDerivation rec {
   };
 
   patches = [
-    (substituteAll {
-      src = ./fix-paths.patch;
+    (replaceVars ./fix-paths.patch {
       inherit kmod openconnect;
     })
   ];
 
   buildInputs =
     [
-      glib
       libxml2
       openconnect
       networkmanager
@@ -56,6 +54,7 @@ stdenv.mkDerivation rec {
     ];
 
   nativeBuildInputs = [
+    glib
     intltool
     pkg-config
     file
@@ -78,7 +77,7 @@ stdenv.mkDerivation rec {
 
   meta = with lib; {
     description = "NetworkManager’s OpenConnect plugin";
-    inherit (networkmanager.meta) maintainers platforms;
+    inherit (networkmanager.meta) maintainers teams platforms;
     license = licenses.gpl2Plus;
   };
 }

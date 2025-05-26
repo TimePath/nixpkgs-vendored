@@ -25,6 +25,7 @@
 
 {
   lib,
+  config,
   libsForQt5,
   fetchurl,
 }:
@@ -109,7 +110,6 @@ let
       incidenceeditor = callPackage ./incidenceeditor.nix { };
       itinerary = callPackage ./itinerary.nix { };
       juk = callPackage ./juk.nix { };
-      k3b = callPackage ./k3b.nix { };
       kaccounts-integration = callPackage ./kaccounts-integration.nix { };
       kaccounts-providers = callPackage ./kaccounts-providers.nix { };
       kaddressbook = callPackage ./kaddressbook.nix { };
@@ -277,6 +277,9 @@ let
       qmlkonsole = callPackage ./qmlkonsole.nix { };
       telly-skout = callPackage ./telly-skout.nix { };
       tokodon = callPackage ./tokodon.nix { };
+    }
+    // lib.optionalAttrs config.allowAliases {
+      k3b = throw "libsForQt5.k3b has been dropped in favor of kdePackages.k3b";
     };
 
 in

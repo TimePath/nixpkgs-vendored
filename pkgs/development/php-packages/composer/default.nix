@@ -2,7 +2,6 @@
   lib,
   stdenvNoCC,
   fetchFromGitHub,
-  fetchpatch,
   callPackage,
   php,
   unzip,
@@ -122,6 +121,6 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     homepage = "https://getcomposer.org/";
     license = lib.licenses.mit;
     mainProgram = "composer";
-    maintainers = lib.teams.php.members;
+    teams = [ lib.teams.php ];
   };
 })

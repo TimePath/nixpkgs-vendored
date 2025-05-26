@@ -11,11 +11,11 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "bmake";
-  version = "20240921";
+  version = "20250308";
 
   src = fetchurl {
     url = "https://www.crufty.net/ftp/pub/sjg/bmake-${finalAttrs.version}.tar.gz";
-    hash = "sha256-s0ZXnoLSltGk2ineqFlOPuWWEwsgeG3sDziZo+ESdcI=";
+    hash = "sha256-I4jZ+xhldmM6pyX/FjVSpdunpqN1qMuakBSrV+59maI=";
   };
 
   patches = [
@@ -117,10 +117,7 @@ stdenv.mkDerivation (finalAttrs: {
     description = "Portable version of NetBSD 'make'";
     license = lib.licenses.bsd3;
     mainProgram = "bmake";
-    maintainers = with lib.maintainers; [
-      thoughtpolice
-      AndersonTorres
-    ];
+    maintainers = with lib.maintainers; [ thoughtpolice ];
     platforms = lib.platforms.unix;
     # requires strip
     badPlatforms = [ lib.systems.inspect.platformPatterns.isStatic ];

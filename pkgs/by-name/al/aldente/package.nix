@@ -8,11 +8,11 @@
 
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "aldente";
-  version = "1.28.6";
+  version = "1.32";
 
   src = fetchurl {
     url = "https://github.com/davidwernhart/aldente-charge-limiter/releases/download/${finalAttrs.version}/AlDente.dmg";
-    hash = "sha256-g52XHx1jK0VEgLQJL+vX16bFd8eMu0dw8Fqp4hOtVtE=";
+    hash = "sha256-pUFcP7J60lLeuX9v3qhCMcsRmurfw0LnoCcbRONnxKM=";
   };
 
   dontBuild = true;

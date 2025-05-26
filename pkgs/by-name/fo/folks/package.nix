@@ -101,12 +101,6 @@ stdenv.mkDerivation (finalAttrs: {
   # occur inconsistently
   doCheck = false;
 
-  mesonCheckFlags = [
-    # Prevents e-d-s add-contacts-stress-test from timing out
-    "--timeout-multiplier"
-    "4"
-  ];
-
   postPatch = lib.optionalString telepathySupport ''
     patchShebangs tests/tools/manager-file.py
   '';
@@ -122,7 +116,7 @@ stdenv.mkDerivation (finalAttrs: {
     description = "Library that aggregates people from multiple sources to create metacontacts";
     homepage = "https://gitlab.gnome.org/GNOME/folks";
     license = licenses.lgpl21Plus;
-    maintainers = teams.gnome.members;
+    teams = [ teams.gnome ];
     platforms = platforms.unix;
   };
 })

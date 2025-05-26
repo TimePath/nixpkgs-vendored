@@ -14,6 +14,7 @@
   wrapGAppsHook4,
   desktop-file-utils,
   template-glib,
+  nix-update-script,
 }:
 
 stdenv.mkDerivation rec {
@@ -46,6 +47,10 @@ stdenv.mkDerivation rec {
     template-glib
   ];
 
+  passthru = {
+    updateScript = nix-update-script { };
+  };
+
   meta = with lib; {
     description = "Design spring animations";
     homepage = "https://gitlab.gnome.org/World/elastic/";
@@ -53,5 +58,6 @@ stdenv.mkDerivation rec {
     license = licenses.gpl3Plus;
     platforms = platforms.unix;
     maintainers = with maintainers; [ _0xMRTT ];
+    teams = [ teams.gnome-circle ];
   };
 }

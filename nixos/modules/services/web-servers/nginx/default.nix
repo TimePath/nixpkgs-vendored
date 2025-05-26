@@ -104,7 +104,7 @@ let
     REDIRECT_STATUS = "200";
   };
 
-  recommendedProxyConfig = pkgs.writeText "nginx-recommended-proxy-headers.conf" ''
+  recommendedProxyConfig = pkgs.writeText "nginx-recommended-proxy_set_header-headers.conf" ''
     proxy_set_header        Host $host;
     proxy_set_header        X-Real-IP $remote_addr;
     proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -262,6 +262,14 @@ let
               include ${recommendedProxyConfig};
             ''}
 
+            ${optionalString cfg.recommendedUwsgiSettings ''
+              uwsgi_connect_timeout   ${cfg.uwsgiTimeout};
+              uwsgi_send_timeout      ${cfg.uwsgiTimeout};
+              uwsgi_read_timeout      ${cfg.uwsgiTimeout};
+              uwsgi_param             HTTP_CONNECTION "";
+              include ${cfg.package}/conf/uwsgi_params;
+            ''}
+
             ${optionalString (cfg.mapHashBucketSize != null) ''
               map_hash_bucket_size ${toString cfg.mapHashBucketSize};
             ''}
@@ -331,7 +339,7 @@ let
             map (
               listen:
               {
-                port = cfg.defaultSSLListenPort;
+                port = if (hasPrefix "unix:" listen.addr) then null else cfg.defaultSSLListenPort;
                 ssl = true;
               }
               // listen
@@ -343,7 +351,7 @@ let
             map (
               listen:
               {
-                port = cfg.defaultHTTPListenPort;
+                port = if (hasPrefix "unix:" listen.addr) then null else cfg.defaultHTTPListenPort;
                 ssl = false;
               }
               // listen
@@ -514,6 +522,13 @@ let
             proxy_set_header Upgrade $http_upgrade;
             proxy_set_header Connection $connection_upgrade;
           ''}
+          ${optionalString (
+            config.uwsgiPass != null && !cfg.uwsgiResolveWhileRunning
+          ) "uwsgi_pass ${config.uwsgiPass};"}
+          ${optionalString (config.uwsgiPass != null && cfg.uwsgiResolveWhileRunning) ''
+            set $nix_proxy_target "${config.uwsgiPass}";
+            uwsgi_pass $nix_proxy_target;
+          ''}
           ${concatStringsSep "\n" (
             mapAttrsToList (n: v: ''fastcgi_param ${n} "${v}";'') (
               optionalAttrs (config.fastcgiParams != { }) (defaultFastcgiParams // config.fastcgiParams)
@@ -528,6 +543,9 @@ let
           ${optionalString (
             config.proxyPass != null && config.recommendedProxySettings
           ) "include ${recommendedProxyConfig};"}
+          ${optionalString (
+            config.uwsgiPass != null && config.recommendedUwsgiSettings
+          ) "include ${cfg.package}/conf/uwsgi_params;"}
           ${mkBasicAuth "sublocation" config}
         }
       '') (sortProperties (mapAttrsToList (k: v: v // { location = k; }) locations))
@@ -637,6 +655,23 @@ in
         example = "20s";
         description = ''
           Change the proxy related timeouts in recommendedProxySettings.
+        '';
+      };
+
+      recommendedUwsgiSettings = mkOption {
+        default = false;
+        type = types.bool;
+        description = ''
+          Whether to enable recommended uwsgi settings if a vhost does not specify the option manually.
+        '';
+      };
+
+      uwsgiTimeout = mkOption {
+        type = types.str;
+        default = "60s";
+        example = "20s";
+        description = ''
+          Change the uwsgi related timeouts in recommendedUwsgiSettings.
         '';
       };
 
@@ -953,6 +988,16 @@ in
           :::{.warn}
           `services.nginx.resolver` must be set for this option to work.
           :::
+        '';
+      };
+
+      uwsgiResolveWhileRunning = mkOption {
+        type = types.bool;
+        default = false;
+        description = ''
+          Resolves domains of uwsgi targets at runtime
+          and not only at start, you have to set
+          services.nginx.resolver, too.
         '';
       };
 
@@ -1316,6 +1361,19 @@ in
         }
 
         {
+          assertion = all (
+            host:
+            all (location: !(location.proxyPass != null && location.uwsgiPass != null)) (
+              attrValues host.locations
+            )
+          ) (attrValues virtualHosts);
+          message = ''
+            Options services.nginx.service.virtualHosts.<name>.proxyPass and
+            services.nginx.virtualHosts.<name>.uwsgiPass are mutually exclusive.
+          '';
+        }
+
+        {
           assertion =
             cfg.package.pname != "nginxQuic" && cfg.package.pname != "angieQuic" -> !(cfg.enableQuicBPF);
           message = ''
@@ -1544,9 +1602,16 @@ in
         restartTriggers = optionals cfg.enableReload [ configFile ];
         # Block reloading if not all certs exist yet.
         # Happens when config changes add new vhosts/certs.
-        unitConfig.ConditionPathExists = optionals (sslServices != [ ]) (
-          map (certName: certs.${certName}.directory + "/fullchain.pem") vhostCertNames
-        );
+        unitConfig = {
+          ConditionPathExists = optionals (sslServices != [ ]) (
+            map (certName: certs.${certName}.directory + "/fullchain.pem") vhostCertNames
+          );
+          # Disable rate limiting for this, because it may be triggered quickly a bunch of times
+          # if a lot of certificates are renewed in quick succession. The reload itself is cheap,
+          # so even doing a lot of them in a short burst is fine.
+          # FIXME: there's probably a better way to do this.
+          StartLimitIntervalSec = 0;
+        };
         serviceConfig = {
           Type = "oneshot";
           TimeoutSec = 60;

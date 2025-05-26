@@ -5,8 +5,9 @@
   qmake,
   qtbase,
   qttools,
-  substituteAll,
+  replaceVars,
   libGLU,
+  zlib,
   wrapQtAppsHook,
   fetchpatch,
 }:
@@ -19,14 +20,14 @@ stdenv.mkDerivation {
     owner = "niftools";
     repo = "nifskope";
     rev = "47b788d26ae0fa12e60e8e7a4f0fa945a510c7b2"; # `v${version}` doesn't work with submodules
-    sha256 = "1wqpn53rkq28ws3apqghkzyrib4wis91x171ns64g8kp4q6mfczi";
+    hash = "sha256-8TNXDSZ3okeMtuGEHpKOnKyY/Z/w4auG5kjgmUexF/M=";
     fetchSubmodules = true;
   };
 
   patches = [
     ./external-lib-paths.patch
-    (substituteAll {
-      src = ./qttools-bins.patch;
+    ./zlib.patch
+    (replaceVars ./qttools-bins.patch {
       qttools = "${qttools.dev}/bin";
     })
     (fetchpatch {
@@ -40,6 +41,7 @@ stdenv.mkDerivation {
     qtbase
     qttools
     libGLU
+    zlib
   ];
   nativeBuildInputs = [
     qmake
@@ -76,7 +78,7 @@ stdenv.mkDerivation {
   '';
 
   meta = with lib; {
-    homepage = "https://niftools.sourceforge.net/wiki/NifSkope";
+    homepage = "https://github.com/niftools/nifskope";
     description = "Tool for analyzing and editing NetImmerse/Gamebryo '*.nif' files";
     maintainers = [ ];
     platforms = platforms.linux;

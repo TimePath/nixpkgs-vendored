@@ -22,7 +22,6 @@
   libfido2,
   numactl,
   cctools,
-  CoreServices,
   developer_cmds,
   libtirpc,
   rpcsvc-proto,
@@ -71,6 +70,7 @@ stdenv.mkDerivation (finalAttrs: {
 
   patches = [
     ./no-force-outline-atomics.patch # Do not force compilers to turn on -moutline-atomics switch
+    ./coredumper-explicitly-import-unistd.patch # fix build on aarch64-linux
   ];
 
   ## NOTE: MySQL upstream frequently twiddles the invocations of libtool. When updating, you might proactively grep for libtool references.
@@ -111,7 +111,6 @@ stdenv.mkDerivation (finalAttrs: {
     ]
     ++ lib.optionals stdenv.hostPlatform.isDarwin [
       cctools
-      CoreServices
       developer_cmds
       DarwinTools
     ]
@@ -222,7 +221,7 @@ stdenv.mkDerivation (finalAttrs: {
       Long-term support release.
     '';
     license = licenses.gpl2Only;
-    maintainers = teams.flyingcircus.members;
+    teams = [ teams.flyingcircus ];
     platforms = platforms.unix;
   };
 })

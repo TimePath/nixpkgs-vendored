@@ -33,7 +33,7 @@
   at-spi2-core,
   libpulseaudio,
   libdrm,
-  mesa,
+  libgbm,
   libxkbcommon,
   pname,
   meta,
@@ -52,14 +52,14 @@ let
   # If an update breaks things, one of those might have valuable info:
   # https://aur.archlinux.org/packages/spotify/
   # https://community.spotify.com/t5/Desktop-Linux
-  version = "1.2.48.405.gf2c48e6f";
+  version = "1.2.59.514.g834e17d4";
   # To get the latest stable revision:
   # curl -H 'X-Ubuntu-Series: 16' 'https://api.snapcraft.io/api/v1/snaps/details/spotify?channel=stable' | jq '.download_url,.version,.last_updated'
   # To get general information:
   # curl -H 'Snap-Device-Series: 16' 'https://api.snapcraft.io/v2/snaps/info/spotify' | jq '.'
   # More examples of api usage:
   # https://github.com/canonical-websites/snapcraft.io/blob/master/webapp/publisher/snaps/views.py
-  rev = "80";
+  rev = "86";
 
   deps = [
     alsa-lib
@@ -87,7 +87,7 @@ let
     libpng
     libpulseaudio
     libxkbcommon
-    mesa
+    libgbm
     nss_latest
     pango
     stdenv.cc.cc
@@ -126,7 +126,7 @@ stdenv.mkDerivation {
   src = fetchurl {
     name = "spotify-${version}-${rev}.snap";
     url = "https://api.snapcraft.io/api/v1/snaps/download/pOBIoZ2LrCB3rDohMxoYGnbN14EHOgD7_${rev}.snap";
-    hash = "sha512-Ej9SEhZhssQiH1srcgUW5lQuUNg+htudV7mcnK6o0pW5PiBYZ6qOPEIZ/1tZzD9xkUJ8hCq08fJMB8NQ12KXMg==";
+    hash = "sha512-b9VlPwZ6JJ7Kt2p0ji1qtTJQHZE9d4KBO3iqQwsYh6k+ljtV/mSdinZi+B//Yb+KXhMErd0oaVzIpCCMqft6FQ==";
   };
 
   nativeBuildInputs = [
@@ -222,7 +222,7 @@ stdenv.mkDerivation {
       } \
       --prefix LD_LIBRARY_PATH : "$librarypath" \
       --prefix PATH : "${zenity}/bin" \
-      --add-flags "\''${NIXOS_OZONE_WL:+\''${WAYLAND_DISPLAY:+--enable-features=UseOzonePlatform --ozone-platform=wayland}}"
+      --add-flags "\''${NIXOS_OZONE_WL:+\''${WAYLAND_DISPLAY:+--enable-features=UseOzonePlatform --ozone-platform=wayland --enable-wayland-ime=true}}"
 
     runHook postFixup
   '';

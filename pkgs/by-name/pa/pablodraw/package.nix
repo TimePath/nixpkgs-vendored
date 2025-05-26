@@ -13,28 +13,27 @@
 
 buildDotnetModule rec {
   pname = "pablodraw";
-  version = "3.3.13-beta";
+  version = "3.1.14-beta";
 
   src = fetchFromGitHub {
     owner = "cwensley";
     repo = "pablodraw";
-    rev = version;
-    hash = "sha256-PsCFiNcWYh6Bsf5Ihi3IoYyv66xUT1cRBKkx+K5gB/M=";
+    tag = version;
+    hash = "sha256-p2YeWC3ZZOI5zDpgDmEX3C5ByAAjLxJ0CqFAqKeoJ0Q=";
   };
-
-  postPatch = ''
-    substituteInPlace ${projectFile} \
-      --replace-warn '<EnableCompressionInSingleFile>True</EnableCompressionInSingleFile>' ""
-  '';
 
   projectFile = "Source/PabloDraw/PabloDraw.csproj";
 
   executables = [ "PabloDraw" ];
 
-  dotnet-sdk = dotnetCorePackages.sdk_7_0;
-  dotnet-runtime = dotnetCorePackages.runtime_7_0;
+  dotnet-sdk = dotnetCorePackages.sdk_9_0;
 
   nugetDeps = ./deps.json;
+
+  dotnetFlags = [
+    "-p:EnableCompressionInSingleFile=false"
+    "-p:TargetFrameworks=net9.0"
+  ];
 
   nativeBuildInputs = [
     wrapGAppsHook3
@@ -64,16 +63,16 @@ buildDotnetModule rec {
     install -Dm644 Assets/PabloDraw-64.png $out/share/icons/hicolor/64x64/apps/pablodraw.png
   '';
 
-  meta = with lib; {
+  meta = {
     description = "Ansi/Ascii text and RIPscrip vector graphic art editor/viewer with multi-user capabilities";
     homepage = "https://picoe.ca/products/pablodraw";
-    license = licenses.mit;
+    license = lib.licenses.mit;
     mainProgram = "PabloDraw";
-    maintainers = with maintainers; [
+    maintainers = with lib.maintainers; [
       aleksana
       kip93
     ];
-    platforms = platforms.all;
+    platforms = lib.platforms.all;
     broken = stdenv.hostPlatform.isDarwin; # Eto.Platform.Mac64 not found in nugetSource
   };
 }

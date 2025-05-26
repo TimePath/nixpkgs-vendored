@@ -9,8 +9,11 @@
   mkShellNoCC,
   documentation-highlighter,
   nixos-render-docs,
+  nixos-render-docs-redirects,
+  writeShellScriptBin,
   nixpkgs ? { },
   markdown-code-runner,
+  roboto,
 }:
 
 stdenvNoCC.mkDerivation (
@@ -37,6 +40,7 @@ stdenvNoCC.mkDerivation (
             ../anchor-use.js
             ../anchor.min.js
             ../manpage-urls.json
+            ../redirects.json
           ]
         );
     };
@@ -71,6 +75,7 @@ stdenvNoCC.mkDerivation (
 
       nixos-render-docs manual html \
         --manpage-urls ./manpage-urls.json \
+        --redirects ./redirects.json \
         --revision ${nixpkgs.rev or "master"} \
         --stylesheet style.css \
         --stylesheet highlightjs/mono-blue.css \
@@ -94,6 +99,8 @@ stdenvNoCC.mkDerivation (
       mv out "$dest"
       mv "$dest/index.html" "$dest/manual.html"
 
+      cp ${roboto.src}/web/Roboto\[ital\,wdth\,wght\].ttf "$dest/Roboto.ttf"
+
       cp ${epub} "$dest/nixpkgs-manual.epub"
 
       mkdir -p $out/nix-support/
@@ -115,13 +122,15 @@ stdenvNoCC.mkDerivation (
       shell =
         let
           devmode' = devmode.override {
-            buildArgs = "./.";
+            buildArgs = toString ../.;
             open = "/share/doc/nixpkgs/manual.html";
           };
+          nixos-render-docs-redirects' = writeShellScriptBin "redirects" "${lib.getExe nixos-render-docs-redirects} --file ${toString ../redirects.json} $@";
         in
         mkShellNoCC {
           packages = [
             devmode'
+            nixos-render-docs-redirects'
             markdown-code-runner
           ];
         };

@@ -53,13 +53,11 @@ let
           ${concatMapStringsSep "\n" mkVHostConf virtualHosts}
         '';
 
-        Caddyfile-formatted =
-          pkgs.runCommand "Caddyfile-formatted" { nativeBuildInputs = [ cfg.package ]; }
-            ''
-              mkdir -p $out
-              cp --no-preserve=mode ${Caddyfile}/Caddyfile $out/Caddyfile
-              caddy fmt --overwrite $out/Caddyfile
-            '';
+        Caddyfile-formatted = pkgs.runCommand "Caddyfile-formatted" { } ''
+          mkdir -p $out
+          cp --no-preserve=mode ${Caddyfile}/Caddyfile $out/Caddyfile
+          ${lib.getExe cfg.package} fmt --overwrite $out/Caddyfile
+        '';
       in
       "${
         if pkgs.stdenv.buildPlatform == pkgs.stdenv.hostPlatform then Caddyfile-formatted else Caddyfile
@@ -343,6 +341,41 @@ in
         :::
       '';
     };
+
+    environmentFile = mkOption {
+      type = with types; nullOr path;
+      default = null;
+      example = "/run/secrets/caddy.env";
+      description = ''
+        Environment file as defined in {manpage}`systemd.exec(5)`.
+
+        You can use environment variables to pass secrets to the service without adding
+        them to the world-redable nix store.
+
+        ```
+        # in configuration.nix
+        services.caddy.environmentFile = "/run/secrets/caddy.env";
+        services.caddy.globalConfig = '''
+          {
+            acme_ca https://acme.zerossl.com/v2/DV90
+            acme_eab {
+              key_id {$EAB_KEY_ID}
+              mac_key {$EAB_MAC_KEY}
+            }
+          }
+        ''';
+        ```
+
+        ```
+        # in /run/secrets/caddy.env
+        EAB_KEY_ID=secret
+        EAB_MAC_KEY=secret
+        ```
+
+        Find more examples
+        [here](https://caddyserver.com/docs/caddyfile/concepts#environment-variables)
+      '';
+    };
   };
 
   # implementation
@@ -402,7 +435,7 @@ in
           # If the empty string is assigned to this option, the list of commands to start is reset, prior assignments of this option will have no effect.
           ExecStart = [
             ""
-            ''${cfg.package}/bin/caddy run ${runOptions} ${optionalString cfg.resume "--resume"}''
+            ''${lib.getExe cfg.package} run ${runOptions} ${optionalString cfg.resume "--resume"}''
           ];
           # Validating the configuration before applying it ensures we’ll get a proper error that will be reported when switching to the configuration
           ExecReload = [
@@ -416,6 +449,7 @@ in
           Restart = "on-failure";
           RestartPreventExitStatus = 1;
           RestartSec = "5s";
+          EnvironmentFile = optional (cfg.environmentFile != null) cfg.environmentFile;
 
           # TODO: attempt to upstream these options
           NoNewPrivileges = true;

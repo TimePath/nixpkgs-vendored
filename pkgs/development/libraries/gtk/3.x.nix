@@ -1,7 +1,7 @@
 {
   lib,
   stdenv,
-  substituteAll,
+  replaceVars,
   fetchurl,
   pkg-config,
   gettext,
@@ -46,9 +46,6 @@
   xineramaSupport ? stdenv.hostPlatform.isLinux,
   cupsSupport ? stdenv.hostPlatform.isLinux,
   cups,
-  AppKit,
-  Cocoa,
-  QuartzCore,
   broadwaySupport ? true,
   wayland-scanner,
   testers,
@@ -56,8 +53,7 @@
 
 let
 
-  gtkCleanImmodulesCache = substituteAll {
-    src = ./hooks/clean-immodules-cache.sh;
+  gtkCleanImmodulesCache = replaceVars ./hooks/clean-immodules-cache.sh {
     gtk_module_path = "gtk-3.0";
     gtk_binary_version = "3.0.0";
   };
@@ -66,7 +62,7 @@ in
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "gtk+3";
-  version = "3.24.43";
+  version = "3.24.49";
 
   outputs = [
     "out"
@@ -84,8 +80,8 @@ stdenv.mkDerivation (finalAttrs: {
       inherit (finalAttrs) version;
     in
     fetchurl {
-      url = "mirror://gnome/sources/gtk+/${lib.versions.majorMinor version}/gtk+-${version}.tar.xz";
-      hash = "sha256-fgTwZIUVA0uAa3SuXXdNh8/7GiqWxGjLW+R21Rvy88c=";
+      url = "mirror://gnome/sources/gtk/${lib.versions.majorMinor version}/gtk-${version}.tar.xz";
+      hash = "sha256-XqUsaijw5ezy6aPC+suzDQQLc4cfzV8zzRMX6QGKFG4=";
     };
 
   patches =
@@ -140,9 +136,6 @@ stdenv.mkDerivation (finalAttrs: {
       (libepoxy.override { inherit x11Support; })
       isocodes
     ]
-    ++ lib.optionals stdenv.hostPlatform.isDarwin [
-      AppKit
-    ]
     ++ lib.optionals trackerSupport [
       tinysparql
     ];
@@ -169,11 +162,6 @@ stdenv.mkDerivation (finalAttrs: {
       libXrandr
       libXrender
       pango
-    ]
-    ++ lib.optionals stdenv.hostPlatform.isDarwin [
-      # explicitly propagated, always needed
-      Cocoa
-      QuartzCore
     ]
     ++ lib.optionals waylandSupport [
       libGL
@@ -264,7 +252,7 @@ stdenv.mkDerivation (finalAttrs: {
 
   passthru = {
     updateScript = gnome.updateScript {
-      packageName = "gtk+";
+      packageName = "gtk";
       attrPath = "gtk3";
       freeze = true;
     };
@@ -285,7 +273,8 @@ stdenv.mkDerivation (finalAttrs: {
     '';
     homepage = "https://www.gtk.org/";
     license = licenses.lgpl2Plus;
-    maintainers = with maintainers; [ raskin ] ++ teams.gnome.members;
+    maintainers = with maintainers; [ raskin ];
+    teams = [ teams.gnome ];
     pkgConfigModules =
       [
         "gdk-3.0"

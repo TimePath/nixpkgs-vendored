@@ -15,27 +15,21 @@
   autoPatchelfHook,
   testers,
   signify,
-  overrideSDK,
+  apple-sdk_15,
+  nix-update-script,
   withSsh ? true,
   openssh,
   # Default editor to use when neither VISUAL nor EDITOR are defined
   defaultEditor ? null,
 }:
 
-let
-  stdenv' =
-    if stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isx86_64 then
-      overrideSDK stdenv "11.0"
-    else
-      stdenv;
-in
-stdenv'.mkDerivation (finalAttrs: {
+stdenv.mkDerivation (finalAttrs: {
   pname = "got";
-  version = "0.104";
+  version = "0.111";
 
   src = fetchurl {
     url = "https://gameoftrees.org/releases/portable/got-portable-${finalAttrs.version}.tar.gz";
-    hash = "sha256-sy14eSC8SXUhOVoGvrB9f0+StpN5WGMiS2BJ09ZpyMk=";
+    hash = "sha256-0Jb3bpGnAN0NIvuvlkHCuU+KbeFvCbD0k5yblqnYeM4=";
   };
 
   nativeBuildInputs = [
@@ -43,15 +37,20 @@ stdenv'.mkDerivation (finalAttrs: {
     bison
   ] ++ lib.optionals stdenv.hostPlatform.isLinux [ autoPatchelfHook ];
 
-  buildInputs = [
-    libressl
-    libbsd
-    libevent
-    libuuid
-    libmd
-    zlib
-    ncurses
-  ] ++ lib.optionals stdenv.hostPlatform.isDarwin [ libossp_uuid ];
+  buildInputs =
+    [
+      libressl
+      libbsd
+      libevent
+      libuuid
+      libmd
+      zlib
+      ncurses
+    ]
+    ++ lib.optionals stdenv.hostPlatform.isDarwin [
+      libossp_uuid
+      apple-sdk_15
+    ];
 
   preConfigure = lib.optionalString stdenv.hostPlatform.isDarwin ''
     # The configure script assumes dependencies on Darwin are installed via
@@ -83,8 +82,13 @@ stdenv'.mkDerivation (finalAttrs: {
     ]
   );
 
-  passthru.tests.version = testers.testVersion {
-    package = finalAttrs.finalPackage;
+  passthru = {
+    updateScript = nix-update-script {
+      extraArgs = [ "--url=https://github.com/ThomasAdam/got-portable" ];
+    };
+    tests.version = testers.testVersion {
+      package = finalAttrs.finalPackage;
+    };
   };
 
   meta = {

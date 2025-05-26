@@ -4,6 +4,7 @@
   cmake,
   enet,
   fetchFromGitHub,
+  fixDarwinDylibNames,
   flac,
   freetype,
   gtk3,
@@ -40,19 +41,23 @@
 
 stdenv.mkDerivation rec {
   pname = "allegro";
-  version = "5.2.9.1";
+  version = "5.2.10.1";
 
   src = fetchFromGitHub {
     owner = "liballeg";
     repo = "allegro5";
     rev = version;
-    sha256 = "sha256-n2OCmZmAqeXjtnCTqJgQ5q4j8/lnPfH+5tpWKIFKle0=";
+    sha256 = "sha256-agE3K+6VhhG/LO52fiesCsOq1fNYVRhdW7aKdPCbTOo=";
   };
 
-  nativeBuildInputs = [
-    cmake
-    pkg-config
-  ];
+  nativeBuildInputs =
+    [
+      cmake
+      pkg-config
+    ]
+    ++ lib.optionals stdenv.hostPlatform.isDarwin [
+      fixDarwinDylibNames
+    ];
 
   buildInputs =
     [
@@ -99,6 +104,11 @@ stdenv.mkDerivation rec {
   '';
 
   cmakeFlags = [ "-DCMAKE_SKIP_RPATH=ON" ];
+
+  outputs = [
+    "out"
+    "dev"
+  ];
 
   meta = with lib; {
     description = "Game programming library";

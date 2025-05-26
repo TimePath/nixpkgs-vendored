@@ -1,4 +1,9 @@
-{ hostPkgs, ... }:
+{
+  hostPkgs,
+  lib,
+  withNg,
+  ...
+}:
 {
   name = "nixos-rebuild-target-host";
 
@@ -34,6 +39,7 @@
         system.build.publicKey = snakeOilPublicKey;
         # We don't switch on `deployer`, but we need it to have the dependencies
         # available, to be picked up by system.includeBuildDependencies above.
+        system.rebuild.enableNg = withNg;
         system.switch.enable = true;
       };
 
@@ -106,28 +112,44 @@
 
       configFile =
         hostname:
-        hostPkgs.writeText "configuration.nix" ''
-          { lib, modulesPath, ... }: {
-            imports = [
-              (modulesPath + "/virtualisation/qemu-vm.nix")
-              (modulesPath + "/testing/test-instrumentation.nix")
-              (modulesPath + "/../tests/common/user-account.nix")
-              (lib.modules.importJSON ./target-configuration.json)
-              (lib.modules.importJSON ./target-network.json)
-              ./hardware-configuration.nix
-            ];
+        hostPkgs.writeText "configuration.nix" # nix
+          ''
+            { lib, modulesPath, ... }: {
+              imports = [
+                (modulesPath + "/virtualisation/qemu-vm.nix")
+                (modulesPath + "/testing/test-instrumentation.nix")
+                (modulesPath + "/../tests/common/user-account.nix")
+                (lib.modules.importJSON ./target-configuration.json)
+                (lib.modules.importJSON ./target-network.json)
+                ./hardware-configuration.nix
+              ];
 
-            boot.loader.grub = {
-              enable = true;
-              device = "/dev/vda";
-              forceInstall = true;
-            };
+              boot.loader.grub = {
+                enable = true;
+                device = "/dev/vda";
+                forceInstall = true;
+              };
 
-            # this will be asserted
-            networking.hostName = "${hostname}";
-          }
-        '';
+              system.rebuild.enableNg = ${lib.boolToString withNg};
+
+              ${lib.optionalString withNg # nix
+                ''
+                  nixpkgs.overlays = [
+                    (final: prev: {
+                      # Set tmpdir inside nixos-rebuild-ng to test
+                      # "Deploy works with very long TMPDIR"
+                      nixos-rebuild-ng = prev.nixos-rebuild-ng.override { withTmpdir = "/tmp"; };
+                    })
+                  ];
+                ''
+              }
+
+              # this will be asserted
+              networking.hostName = "${hostname}";
+            }
+          '';
     in
+    # python
     ''
       start_all()
       target.wait_for_open_port(22)
@@ -160,7 +182,8 @@
         assert target_hostname == "config-2-deployed", f"{target_hostname=}"
 
       with subtest("Deploy to bob@target with password based sudo"):
-        deployer.succeed("passh -c 3 -C -p ${nodes.target.users.users.bob.password} -P \"\[sudo\] password\" nixos-rebuild switch -I nixos-config=/root/configuration-3.nix --target-host bob@target --use-remote-sudo &>/dev/console")
+        # TODO: investigate why --ask-sudo-password from nixos-rebuild-ng is not working here
+        deployer.succeed(r'${lib.optionalString withNg "NIX_SSHOPTS=-t "}passh -c 3 -C -p ${nodes.target.users.users.bob.password} -P "\[sudo\] password" nixos-rebuild switch -I nixos-config=/root/configuration-3.nix --target-host bob@target --use-remote-sudo &>/dev/console')
         target_hostname = deployer.succeed("ssh alice@target cat /etc/hostname").rstrip()
         assert target_hostname == "config-3-deployed", f"{target_hostname=}"
 

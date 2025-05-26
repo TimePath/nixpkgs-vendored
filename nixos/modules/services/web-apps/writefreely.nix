@@ -82,7 +82,7 @@ let
 
     inherit (cfg.package) version src;
 
-    nativeBuildInputs = with pkgs.nodePackages; [ less ];
+    nativeBuildInputs = with pkgs; [ lessc ];
 
     buildPhase = ''
       mkdir -p $out

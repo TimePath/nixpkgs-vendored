@@ -2,7 +2,7 @@
   lib,
   fetchFromGitHub,
   cmake,
-  boost179,
+  boost,
   ceres-solver,
   eigen,
   freeimage,
@@ -20,14 +20,14 @@
   qt5,
   xorg,
   cudaSupport ? config.cudaSupport,
-  cudaCapabilities ? cudaPackages.cudaFlags.cudaCapabilities,
+  cudaCapabilities ? cudaPackages.flags.cudaCapabilities,
   cudaPackages,
 }:
 
 assert cudaSupport -> cudaPackages != { };
 
 let
-  boost_static = boost179.override { enableStatic = true; };
+  boost_static = boost.override { enableStatic = true; };
   stdenv' = if cudaSupport then cudaPackages.backendStdenv else stdenv;
 
   # TODO: migrate to redist packages
@@ -46,7 +46,7 @@ stdenv'.mkDerivation rec {
   cmakeFlags = lib.optionals cudaSupport [
     (lib.cmakeBool "CUDA_ENABLED" true)
     (lib.cmakeFeature "CMAKE_CUDA_ARCHITECTURES" (
-      lib.strings.concatStringsSep ";" (map cudaPackages.cudaFlags.dropDot cudaCapabilities)
+      lib.strings.concatStringsSep ";" (map cudaPackages.flags.dropDot cudaCapabilities)
     ))
   ];
 

@@ -5,10 +5,11 @@ import sys
 import time
 import unicodedata
 from abc import ABC, abstractmethod
+from collections.abc import Iterator
 from contextlib import ExitStack, contextmanager
 from pathlib import Path
 from queue import Empty, Queue
-from typing import Any, Dict, Iterator, List
+from typing import Any
 from xml.sax.saxutils import XMLGenerator
 from xml.sax.xmlreader import AttributesImpl
 
@@ -18,17 +19,17 @@ from junit_xml import TestCase, TestSuite
 
 class AbstractLogger(ABC):
     @abstractmethod
-    def log(self, message: str, attributes: Dict[str, str] = {}) -> None:
+    def log(self, message: str, attributes: dict[str, str] = {}) -> None:
         pass
 
     @abstractmethod
     @contextmanager
-    def subtest(self, name: str, attributes: Dict[str, str] = {}) -> Iterator[None]:
+    def subtest(self, name: str, attributes: dict[str, str] = {}) -> Iterator[None]:
         pass
 
     @abstractmethod
     @contextmanager
-    def nested(self, message: str, attributes: Dict[str, str] = {}) -> Iterator[None]:
+    def nested(self, message: str, attributes: dict[str, str] = {}) -> Iterator[None]:
         pass
 
     @abstractmethod
@@ -41,6 +42,10 @@ class AbstractLogger(ABC):
 
     @abstractmethod
     def error(self, *args, **kwargs) -> None:  # type: ignore
+        pass
+
+    @abstractmethod
+    def log_test_error(self, *args, **kwargs) -> None:  # type:ignore
         pass
 
     @abstractmethod
@@ -68,11 +73,11 @@ class JunitXMLLogger(AbstractLogger):
         self._print_serial_logs = True
         atexit.register(self.close)
 
-    def log(self, message: str, attributes: Dict[str, str] = {}) -> None:
+    def log(self, message: str, attributes: dict[str, str] = {}) -> None:
         self.tests[self.currentSubtest].stdout += message + os.linesep
 
     @contextmanager
-    def subtest(self, name: str, attributes: Dict[str, str] = {}) -> Iterator[None]:
+    def subtest(self, name: str, attributes: dict[str, str] = {}) -> Iterator[None]:
         old_test = self.currentSubtest
         self.tests.setdefault(name, self.TestCaseState())
         self.currentSubtest = name
@@ -82,7 +87,7 @@ class JunitXMLLogger(AbstractLogger):
         self.currentSubtest = old_test
 
     @contextmanager
-    def nested(self, message: str, attributes: Dict[str, str] = {}) -> Iterator[None]:
+    def nested(self, message: str, attributes: dict[str, str] = {}) -> Iterator[None]:
         self.log(message)
         yield
 
@@ -95,6 +100,9 @@ class JunitXMLLogger(AbstractLogger):
     def error(self, *args, **kwargs) -> None:  # type: ignore
         self.tests[self.currentSubtest].stderr += args[0] + os.linesep
         self.tests[self.currentSubtest].failure = True
+
+    def log_test_error(self, *args, **kwargs) -> None:  # type: ignore
+        self.error(*args, **kwargs)
 
     def log_serial(self, message: str, machine: str) -> None:
         if not self._print_serial_logs:
@@ -123,25 +131,25 @@ class JunitXMLLogger(AbstractLogger):
 
 
 class CompositeLogger(AbstractLogger):
-    def __init__(self, logger_list: List[AbstractLogger]) -> None:
+    def __init__(self, logger_list: list[AbstractLogger]) -> None:
         self.logger_list = logger_list
 
     def add_logger(self, logger: AbstractLogger) -> None:
         self.logger_list.append(logger)
 
-    def log(self, message: str, attributes: Dict[str, str] = {}) -> None:
+    def log(self, message: str, attributes: dict[str, str] = {}) -> None:
         for logger in self.logger_list:
             logger.log(message, attributes)
 
     @contextmanager
-    def subtest(self, name: str, attributes: Dict[str, str] = {}) -> Iterator[None]:
+    def subtest(self, name: str, attributes: dict[str, str] = {}) -> Iterator[None]:
         with ExitStack() as stack:
             for logger in self.logger_list:
                 stack.enter_context(logger.subtest(name, attributes))
             yield
 
     @contextmanager
-    def nested(self, message: str, attributes: Dict[str, str] = {}) -> Iterator[None]:
+    def nested(self, message: str, attributes: dict[str, str] = {}) -> Iterator[None]:
         with ExitStack() as stack:
             for logger in self.logger_list:
                 stack.enter_context(logger.nested(message, attributes))
@@ -154,6 +162,10 @@ class CompositeLogger(AbstractLogger):
     def warning(self, *args, **kwargs) -> None:  # type: ignore
         for logger in self.logger_list:
             logger.warning(*args, **kwargs)
+
+    def log_test_error(self, *args, **kwargs) -> None:  # type: ignore
+        for logger in self.logger_list:
+            logger.log_test_error(*args, **kwargs)
 
     def error(self, *args, **kwargs) -> None:  # type: ignore
         for logger in self.logger_list:
@@ -173,7 +185,7 @@ class TerminalLogger(AbstractLogger):
     def __init__(self) -> None:
         self._print_serial_logs = True
 
-    def maybe_prefix(self, message: str, attributes: Dict[str, str]) -> str:
+    def maybe_prefix(self, message: str, attributes: dict[str, str]) -> str:
         if "machine" in attributes:
             return f"{attributes['machine']}: {message}"
         return message
@@ -182,16 +194,16 @@ class TerminalLogger(AbstractLogger):
     def _eprint(*args: object, **kwargs: Any) -> None:
         print(*args, file=sys.stderr, **kwargs)
 
-    def log(self, message: str, attributes: Dict[str, str] = {}) -> None:
+    def log(self, message: str, attributes: dict[str, str] = {}) -> None:
         self._eprint(self.maybe_prefix(message, attributes))
 
     @contextmanager
-    def subtest(self, name: str, attributes: Dict[str, str] = {}) -> Iterator[None]:
+    def subtest(self, name: str, attributes: dict[str, str] = {}) -> Iterator[None]:
         with self.nested("subtest: " + name, attributes):
             yield
 
     @contextmanager
-    def nested(self, message: str, attributes: Dict[str, str] = {}) -> Iterator[None]:
+    def nested(self, message: str, attributes: dict[str, str] = {}) -> Iterator[None]:
         self._eprint(
             self.maybe_prefix(
                 Style.BRIGHT + Fore.GREEN + message + Style.RESET_ALL, attributes
@@ -201,7 +213,7 @@ class TerminalLogger(AbstractLogger):
         tic = time.time()
         yield
         toc = time.time()
-        self.log(f"(finished: {message}, in {toc - tic:.2f} seconds)")
+        self.log(f"(finished: {message}, in {toc - tic:.2f} seconds)", attributes)
 
     def info(self, *args, **kwargs) -> None:  # type: ignore
         self.log(*args, **kwargs)
@@ -220,6 +232,11 @@ class TerminalLogger(AbstractLogger):
             return
 
         self._eprint(Style.DIM + f"{machine} # {message}" + Style.RESET_ALL)
+
+    def log_test_error(self, *args, **kwargs) -> None:  # type: ignore
+        prefix = Fore.RED + "!!! " + Style.RESET_ALL
+        # NOTE: using `warning` instead of `error` to ensure it does not exit after printing the first log
+        self.warning(f"{prefix}{args[0]}", *args[1:], **kwargs)
 
 
 class XMLLogger(AbstractLogger):
@@ -241,12 +258,12 @@ class XMLLogger(AbstractLogger):
     def sanitise(self, message: str) -> str:
         return "".join(ch for ch in message if unicodedata.category(ch)[0] != "C")
 
-    def maybe_prefix(self, message: str, attributes: Dict[str, str]) -> str:
+    def maybe_prefix(self, message: str, attributes: dict[str, str]) -> str:
         if "machine" in attributes:
             return f"{attributes['machine']}: {message}"
         return message
 
-    def log_line(self, message: str, attributes: Dict[str, str]) -> None:
+    def log_line(self, message: str, attributes: dict[str, str]) -> None:
         self.xml.startElement("line", attrs=AttributesImpl(attributes))
         self.xml.characters(message)
         self.xml.endElement("line")
@@ -260,7 +277,10 @@ class XMLLogger(AbstractLogger):
     def error(self, *args, **kwargs) -> None:  # type: ignore
         self.log(*args, **kwargs)
 
-    def log(self, message: str, attributes: Dict[str, str] = {}) -> None:
+    def log_test_error(self, *args, **kwargs) -> None:  # type: ignore
+        self.log(*args, **kwargs)
+
+    def log(self, message: str, attributes: dict[str, str] = {}) -> None:
         self.drain_log_queue()
         self.log_line(message, attributes)
 
@@ -273,7 +293,7 @@ class XMLLogger(AbstractLogger):
 
         self.enqueue({"msg": message, "machine": machine, "type": "serial"})
 
-    def enqueue(self, item: Dict[str, str]) -> None:
+    def enqueue(self, item: dict[str, str]) -> None:
         self.queue.put(item)
 
     def drain_log_queue(self) -> None:
@@ -287,12 +307,12 @@ class XMLLogger(AbstractLogger):
             pass
 
     @contextmanager
-    def subtest(self, name: str, attributes: Dict[str, str] = {}) -> Iterator[None]:
+    def subtest(self, name: str, attributes: dict[str, str] = {}) -> Iterator[None]:
         with self.nested("subtest: " + name, attributes):
             yield
 
     @contextmanager
-    def nested(self, message: str, attributes: Dict[str, str] = {}) -> Iterator[None]:
+    def nested(self, message: str, attributes: dict[str, str] = {}) -> Iterator[None]:
         self.xml.startElement("nest", attrs=AttributesImpl({}))
         self.xml.startElement("head", attrs=AttributesImpl(attributes))
         self.xml.characters(message)

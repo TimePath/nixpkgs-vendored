@@ -1,37 +1,21 @@
 {
-  darwin,
   fetchFromGitHub,
   lib,
   rustPlatform,
-  stdenv,
 }:
-let
-  inherit (darwin.apple_sdk.frameworks)
-    CoreServices
-    SystemConfiguration
-    Security
-    ;
-  inherit (lib) optionals;
-  inherit (stdenv.hostPlatform) isDarwin;
-in
 rustPlatform.buildRustPackage rec {
   pname = "cargo-leptos";
-  version = "0.2.21";
+  version = "0.2.28";
 
   src = fetchFromGitHub {
     owner = "leptos-rs";
-    repo = pname;
+    repo = "cargo-leptos";
     rev = "v${version}";
-    hash = "sha256-Oe65m9io7ihymUjylaWHQM/x7r0y/xXqD313H3oyjN8=";
+    hash = "sha256-SjpfM963Zux+H5QhK8prvDLuI56fP5PqX5gcVbthRx4=";
   };
 
-  cargoHash = "sha256-wZNtEr6IAy+OABpTm93rOhKAP1NEEYUvokjaVdoaSG4=";
-
-  buildInputs = optionals isDarwin [
-    SystemConfiguration
-    Security
-    CoreServices
-  ];
+  useFetchCargoVendor = true;
+  cargoHash = "sha256-Da9ei4yAOfhSQmQgrUDZCmMeJXTfGnYhI1+L0JT/ECs=";
 
   # https://github.com/leptos-rs/cargo-leptos#dependencies
   buildFeatures = [ "no_downloads" ]; # cargo-leptos will try to install missing dependencies on its own otherwise

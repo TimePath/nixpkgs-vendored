@@ -55,7 +55,7 @@ in
       default = null;
       description = ''
         Path to file containing secrets for Pomerium, in systemd
-        EnvironmentFile format. See the systemd.exec(5) man page.
+        EnvironmentFile format. See the {manpage}`systemd.exec(5)` man page.
       '';
     };
   };

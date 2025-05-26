@@ -31,16 +31,9 @@
   enableZookeeper ? true,
 }:
 
-let
-  version = "2.55.0";
-  webUiStatic = fetchurl {
-    url = "https://github.com/prometheus/prometheus/releases/download/v${version}/prometheus-web-ui-${version}.tar.gz";
-    hash = "sha256-iSiK6JKm78AMANfBydfCQu+aUpw6B1sZ5fGPa0KL7Fs=";
-  };
-in
-buildGoModule rec {
+buildGoModule (finalAttrs: {
   pname = "prometheus";
-  inherit version;
+  version = "3.1.0";
 
   outputs = [
     "out"
@@ -51,16 +44,24 @@ buildGoModule rec {
   src = fetchFromGitHub {
     owner = "prometheus";
     repo = "prometheus";
-    rev = "v${version}";
-    hash = "sha256-yzAp/YxLCWlpkj5z2aUdsokDaFvRwVnT6ViwL3hivdI=";
+    tag = "v${finalAttrs.version}";
+    hash = "sha256-Q3f0L6cRVQRL1AHgUI3VNbMG9eTfcApbXfSjOTHr7Go=";
   };
 
-  vendorHash = "sha256-p2PjhFT8KOido+MMmKc7eHPkE175my3VfTp1G8bBZcA=";
+  vendorHash = "sha256-vQwBnSxoyIYTeWLk3GD9pKDuUjjsMfwPptgyVnzcTok=";
 
-  excludedPackages = [ "documentation/prometheus-mixin" ];
+  webUiStatic = fetchurl {
+    url = "https://github.com/prometheus/prometheus/releases/download/v${finalAttrs.version}/prometheus-web-ui-${finalAttrs.version}.tar.gz";
+    hash = "sha256-05DaaDIFtADnkLFqdHe5eUvo6LRz6BduMvGVmzOeurM=";
+  };
+
+  excludedPackages = [
+    "documentation/prometheus-mixin"
+    "web/ui/mantine-ui/src/promql/tools"
+  ];
 
   postPatch = ''
-    tar -C web/ui -xzf ${webUiStatic}
+    tar -C web/ui -xzf ${finalAttrs.webUiStatic}
 
     patchShebangs scripts
 
@@ -106,7 +107,7 @@ buildGoModule rec {
     [
       "-s"
       "-w"
-      "-X ${t}.Version=${version}"
+      "-X ${t}.Version=${finalAttrs.version}"
       "-X ${t}.Revision=unknown"
       "-X ${t}.Branch=unknown"
       "-X ${t}.BuildUser=nix@nixpkgs"
@@ -117,7 +118,6 @@ buildGoModule rec {
   preInstall = ''
     mkdir -p "$out/share/doc/prometheus" "$out/etc/prometheus"
     cp -a $src/documentation/* $out/share/doc/prometheus
-    cp -a $src/console_libraries $src/consoles $out/etc/prometheus
   '';
 
   postInstall = ''
@@ -140,4 +140,4 @@ buildGoModule rec {
       Frostman
     ];
   };
-}
+})

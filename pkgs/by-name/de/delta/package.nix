@@ -6,8 +6,8 @@
   pkg-config,
   oniguruma,
   stdenv,
-  apple-sdk_11,
   git,
+  zlib,
 }:
 
 rustPlatform.buildRustPackage rec {
@@ -21,7 +21,8 @@ rustPlatform.buildRustPackage rec {
     hash = "sha256-fJSKGa935kwLG8WYmT9Ncg2ozpSNMzUJx0WLo1gtVAA=";
   };
 
-  cargoHash = "sha256-DIWzRVTADfAZdFckhh2lIfOD13h7GP3KIOQHf/oBHgc=";
+  useFetchCargoVendor = true;
+  cargoHash = "sha256-qF55A1CENoHu3LBtNRc/n2PKYxMls7pdn2d56Mp18Qs=";
 
   nativeBuildInputs = [
     installShellFiles
@@ -33,7 +34,7 @@ rustPlatform.buildRustPackage rec {
       oniguruma
     ]
     ++ lib.optionals stdenv.hostPlatform.isDarwin [
-      apple-sdk_11
+      zlib
     ];
 
   nativeCheckInputs = [ git ];

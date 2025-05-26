@@ -15,17 +15,16 @@
   pkg-config,
   diffutils,
   glibc ? !stdenv.hostPlatform.isDarwin,
-  darwin,
 }:
 
 stdenv.mkDerivation rec {
   pname = "dpkg";
-  version = "1.22.10";
+  version = "1.22.11";
 
   src = fetchgit {
     url = "https://git.launchpad.net/ubuntu/+source/dpkg";
     rev = "applied/${version}";
-    hash = "sha256-D/9nQXwzgLo+odn72WHuCJDjipfWdim2ZdSLTI2VlgE=";
+    hash = "sha256-mKyS0lPTG3ROcw8AhB4IdjNjvZK2YTGV9pbpjz/OLAc=";
   };
 
   configureFlags = [
@@ -50,11 +49,15 @@ stdenv.mkDerivation rec {
     for i in $(find . -name Makefile.in); do
       substituteInPlace $i --replace "install-data-local:" "disabled:" ;
     done
+
+    # Skip check broken when cross-compiling.
+    substituteInPlace configure \
+      --replace-fail 'as_fn_error $? "cannot find a GNU tar program"' "#"
   '';
 
   postPatch =
     ''
-      patchShebangs .
+      patchShebangs --host .
 
       # Dpkg commands sometimes calls out to shell commands
       substituteInPlace lib/dpkg/dpkg.h \
@@ -82,7 +85,7 @@ stdenv.mkDerivation rec {
     xz
     zstd
     libmd
-  ] ++ lib.optionals stdenv.hostPlatform.isDarwin [ darwin.apple_sdk.frameworks.CoreServices ];
+  ];
   nativeBuildInputs = [
     makeWrapper
     perl

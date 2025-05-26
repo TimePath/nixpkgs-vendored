@@ -17,44 +17,12 @@
     config.allowUnfree = true;
   },
 
-  config ? pkgs.config,
+  # You probably need to set it to true to express consent.
+  licenseAccepted ? pkgs.callPackage ../license.nix { },
 }:
 
 # Copy this file to your Android project.
 let
-  # Declaration of versions for everything. This is useful since these
-  # versions may be used in multiple places in this Nix expression.
-  android = {
-    versions = {
-      cmdLineToolsVersion = "13.0";
-      platformTools = "35.0.2";
-      buildTools = "35.0.0";
-      ndk = [
-        "27.0.12077973"
-      ];
-      cmake = "3.6.4111459";
-      emulator = "35.1.4";
-    };
-
-    platforms = [
-      "23"
-      "24"
-      "25"
-      "26"
-      "27"
-      "28"
-      "29"
-      "30"
-      "31"
-      "32"
-      "33"
-      "34"
-      "35"
-    ];
-    abis = [ "x86_64" ];
-    extras = [ "extras;google;gcm" ];
-  };
-
   # If you copy this example out of nixpkgs, something like this will work:
   /*
     androidEnvNixpkgs = fetchTarball {
@@ -64,36 +32,37 @@ let
     };
 
     androidEnv = pkgs.callPackage "${androidEnvNixpkgs}/pkgs/development/mobile/androidenv" {
-      inherit config pkgs;
+      inherit pkgs;
       licenseAccepted = true;
     };
   */
 
   # Otherwise, just use the in-tree androidenv:
   androidEnv = pkgs.callPackage ./.. {
-    inherit config pkgs;
-    # You probably need to uncomment below line to express consent.
-    # licenseAccepted = true;
+    inherit pkgs licenseAccepted;
   };
 
+  # The head unit only works on these platforms
+  includeAuto = pkgs.stdenv.hostPlatform.isx86_64 || pkgs.stdenv.hostPlatform.isDarwin;
+
+  ndkVersions = [
+    "23.1.7779620"
+    "25.1.8937393"
+    "26.1.10909125"
+    "latest"
+  ];
+
   androidComposition = androidEnv.composeAndroidPackages {
-    cmdLineToolsVersion = android.versions.cmdLineToolsVersion;
-    platformToolsVersion = android.versions.platformTools;
-    buildToolsVersions = [ android.versions.buildTools ];
-    platformVersions = android.platforms;
-    abiVersions = android.abis;
-
     includeSources = true;
-    includeSystemImages = true;
-    includeEmulator = true;
-    emulatorVersion = android.versions.emulator;
-
-    includeNDK = true;
-    ndkVersions = android.versions.ndk;
-    cmakeVersions = [ android.versions.cmake ];
-
+    includeSystemImages = false;
+    includeEmulator = "if-supported";
+    includeNDK = "if-supported";
+    inherit ndkVersions;
     useGoogleAPIs = true;
-    includeExtras = android.extras;
+    useGoogleTVAddOns = true;
+
+    # Make sure everything from the last decade works since we are not using system images.
+    numLatestPlatformVersions = 10;
 
     # If you want to use a custom repo JSON:
     # repoJson = ../repo.json;
@@ -114,6 +83,14 @@ let
       };
     */
 
+    includeExtras =
+      [
+        "extras;google;gcm"
+      ]
+      ++ pkgs.lib.optionals includeAuto [
+        "extras;google;auto"
+      ];
+
     # Accepting more licenses declaratively:
     extraLicenses = [
       # Already accepted for you with the global accept_license = true or
@@ -133,6 +110,8 @@ let
 
   androidSdk = androidComposition.androidsdk;
   platformTools = androidComposition.platform-tools;
+  firstSdk = pkgs.lib.foldl' pkgs.lib.min 100 androidComposition.platformVersions;
+  latestSdk = pkgs.lib.foldl' pkgs.lib.max 0 androidComposition.platformVersions;
   jdk = pkgs.jdk;
 in
 pkgs.mkShell rec {
@@ -141,7 +120,6 @@ pkgs.mkShell rec {
     androidSdk
     platformTools
     jdk
-    pkgs.android-studio
   ];
 
   LANG = "C.UTF-8";
@@ -152,12 +130,12 @@ pkgs.mkShell rec {
   ANDROID_SDK_ROOT = "${androidSdk}/libexec/android-sdk";
   ANDROID_NDK_ROOT = "${ANDROID_SDK_ROOT}/ndk-bundle";
 
-  # Ensures that we don't have to use a FHS env by using the nix store's aapt2.
-  GRADLE_OPTS = "-Dorg.gradle.project.android.aapt2FromMavenOverride=${ANDROID_SDK_ROOT}/build-tools/${android.versions.buildTools}/aapt2";
-
   shellHook = ''
+    # Ensures that we don't have to use a FHS env by using the nix store's aapt2.
+    export GRADLE_OPTS="-Dorg.gradle.project.android.aapt2FromMavenOverride=$(echo "$ANDROID_SDK_ROOT/build-tools/"*"/aapt2")"
+
     # Add cmake to the path.
-    cmake_root="$(echo "$ANDROID_SDK_ROOT/cmake/${android.versions.cmake}"*/)"
+    cmake_root="$(echo "$ANDROID_SDK_ROOT/cmake/"*/)"
     export PATH="$cmake_root/bin:$PATH"
 
     # Write out local.properties for Android Studio.
@@ -199,25 +177,20 @@ pkgs.mkShell rec {
           output="$(sdkmanager --list)"
           installed_packages_section=$(echo "''${output%%Available Packages*}" | awk 'NR>4 {print $1}')
 
-          # FIXME couldn't find platforms;android-34, even though it's in the correct directory!! sdkmanager's bug?!
           packages=(
-            "build-tools;35.0.0" "platform-tools" \
-            "platforms;android-23" "platforms;android-24" "platforms;android-25" "platforms;android-26" \
-            "platforms;android-27" "platforms;android-28" "platforms;android-29" "platforms;android-30" \
-            "platforms;android-31" "platforms;android-32" "platforms;android-33" "platforms;android-35" \
-            "sources;android-23" "sources;android-24" "sources;android-25" "sources;android-26" \
-            "sources;android-27" "sources;android-28" "sources;android-29" "sources;android-30" \
-            "sources;android-31" "sources;android-32" "sources;android-33" "sources;android-34" \
-            "sources;android-35" \
-            "system-images;android-28;google_apis_playstore;x86_64" \
-            "system-images;android-29;google_apis_playstore;x86_64" \
-            "system-images;android-30;google_apis_playstore;x86_64" \
-            "system-images;android-31;google_apis_playstore;x86_64" \
-            "system-images;android-32;google_apis_playstore;x86_64" \
-            "system-images;android-33;google_apis_playstore;x86_64" \
-            "system-images;android-34;google_apis;x86_64" \
-            "system-images;android-35;google_apis_playstore_ps16k;x86_64"
+            "build-tools" "platform-tools" \
+            "extras;google;gcm"
           )
+
+          for x in $(seq ${toString firstSdk} ${toString latestSdk}); do
+            if [ $x -ne 34 ]; then
+              # FIXME couldn't find platforms;android-34, even though it's in the correct directory!! sdkmanager's bug?!
+              packages+=("platforms;android-$x")
+            fi
+            packages+=("sources;android-$x")
+          done
+
+          ${pkgs.lib.optionalString includeAuto ''packages+=("extras;google;auto")''}
 
           for package in "''${packages[@]}"; do
             if [[ ! $installed_packages_section =~ "$package" ]]; then
@@ -225,6 +198,12 @@ pkgs.mkShell rec {
               exit 1
             fi
           done
+
+          num_ndk_packages="$(echo "$installed_packages_section" | grep '^ndk;' | wc -l)"
+          if [ $num_ndk_packages -ne ${toString (pkgs.lib.length ndkVersions)} ]; then
+            echo "Invalid NDK package count: $num_ndk_packages"
+            exit 1
+          fi
 
           touch "$out"
         '';

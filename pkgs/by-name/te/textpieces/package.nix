@@ -15,6 +15,7 @@
   gtksourceview5,
   wrapGAppsHook4,
   desktop-file-utils,
+  nix-update-script,
 }:
 
 stdenv.mkDerivation (finalAttrs: {
@@ -52,6 +53,10 @@ stdenv.mkDerivation (finalAttrs: {
     gtksourceview5
   ];
 
+  passthru = {
+    updateScript = nix-update-script { };
+  };
+
   meta = {
     description = "Swiss knife of text processing";
     longDescription = ''
@@ -68,7 +73,7 @@ stdenv.mkDerivation (finalAttrs: {
     platforms = lib.platforms.linux;
     maintainers = with lib.maintainers; [
       zendo
-      aleksana
     ];
+    teams = [ lib.teams.gnome-circle ];
   };
 })

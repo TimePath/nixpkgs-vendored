@@ -90,6 +90,7 @@ in
         enum
         package
         port
+        listOf
         ;
 
       assertStringPath =
@@ -288,6 +289,25 @@ in
         '';
       };
 
+      realmFiles = mkOption {
+        type = listOf path;
+        example = lib.literalExpression ''
+          [
+            ./some/realm.json
+            ./another/realm.json
+          ]
+        '';
+        default = [ ];
+        description = ''
+          Realm files that the server is going to import during startup.
+          If a realm already exists in the server, the import operation is
+          skipped. Importing the master realm is not supported. All files are
+          expected to be in `json` format. See the
+          [documentation](https://www.keycloak.org/server/importExport) for
+          further information.
+        '';
+      };
+
       settings = mkOption {
         type = lib.types.submodule {
           freeformType = attrsOf (
@@ -302,8 +322,8 @@ in
           options = {
             http-host = mkOption {
               type = str;
-              default = "0.0.0.0";
-              example = "127.0.0.1";
+              default = "::";
+              example = "::1";
               description = ''
                 On which address Keycloak should accept new connections.
               '';
@@ -644,6 +664,24 @@ in
         '';
       };
 
+      systemd.tmpfiles.settings."10-keycloak" =
+        let
+          mkTarget =
+            file:
+            let
+              baseName = builtins.baseNameOf file;
+              name = if lib.hasSuffix ".json" baseName then baseName else "${baseName}.json";
+            in
+            "/run/keycloak/data/import/${name}";
+          settingsList = map (f: {
+            name = mkTarget f;
+            value = {
+              "L+".argument = "${f}";
+            };
+          }) cfg.realmFiles;
+        in
+        builtins.listToAttrs settingsList;
+
       systemd.services.keycloak =
         let
           databaseServices =
@@ -725,7 +763,7 @@ in
               cp $CREDENTIALS_DIRECTORY/ssl_{cert,key} /run/keycloak/ssl/
             ''
             + ''
-              kc.sh --verbose start --optimized
+              kc.sh --verbose start --optimized ${lib.optionalString (cfg.realmFiles != [ ]) "--import-realm"}
             '';
         };
 

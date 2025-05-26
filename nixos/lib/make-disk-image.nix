@@ -1,7 +1,7 @@
 /*
   Technical details
 
-  `make-disk-image` has a bit of magic to minimize the amount of work to do in a virtual machine.
+  `make-disk-image` has a bit of magic to minimize the amount of work to do in a virtual machine. It also might arguably have too much, or at least too specific magic, so please consider to work towards the effort of unifying our image builders, as outlined in https://github.com/NixOS/nixpkgs/issues/324817 before adding more.
 
   It relies on the [LKL (Linux Kernel Library) project](https://github.com/lkl/linux) which provides Linux kernel as userspace library.
 
@@ -165,6 +165,9 @@
   # Disk image format, one of qcow2, qcow2-compressed, vdi, vpc, raw.
   format ? "raw",
 
+  # Disk image filename, without any extensions (e.g. `image_1`).
+  baseName ? "nixos",
+
   # Whether to fix:
   #   - GPT Disk Unique Identifier (diskGUID)
   #   - GPT Partition Unique Identifier: depends on the layout, root partition UUID can be controlled through `rootGPUID` option
@@ -244,7 +247,7 @@ let
   compress = lib.optionalString (format' == "qcow2-compressed") "-c";
 
   filename =
-    "nixos."
+    "${baseName}."
     + {
       qcow2 = "qcow2";
       vdi = "vdi";
@@ -270,15 +273,15 @@ let
       legacy = ''
         parted --script $diskImage -- \
           mklabel msdos \
-          mkpart primary ext4 1MiB -1
+          mkpart primary ext4 1MiB 100% \
+          print
       '';
       "legacy+gpt" = ''
         parted --script $diskImage -- \
           mklabel gpt \
-          mkpart no-fs 1MB 2MB \
+          mkpart no-fs 1MiB 2MiB \
           set 1 bios_grub on \
-          align-check optimal 1 \
-          mkpart primary ext4 2MB -1 \
+          mkpart primary ext4 2MiB 100% \
           align-check optimal 2 \
           print
         ${lib.optionalString deterministic ''
@@ -293,9 +296,12 @@ let
       efi = ''
         parted --script $diskImage -- \
           mklabel gpt \
-          mkpart ESP fat32 8MiB ${bootSize} \
+          mkpart ESP fat32 8MiB $bootSizeMiB \
           set 1 boot on \
-          mkpart primary ext4 ${bootSize} -1
+          align-check optimal 1 \
+          mkpart primary ext4 $bootSizeMiB 100% \
+          align-check optimal 2 \
+          print
         ${lib.optionalString deterministic ''
           sgdisk \
           --disk-guid=97FD5997-D90B-4AA3-8D16-C1723AEA73C \
@@ -309,9 +315,13 @@ let
           mklabel gpt \
           mkpart ESP fat32 8MiB 100MiB \
           set 1 boot on \
-          mkpart BOOT fat32 100MiB ${bootSize} \
+          align-check optimal 1 \
+          mkpart BOOT fat32 100MiB $bootSizeMiB \
           set 2 bls_boot on \
-          mkpart ROOT ext4 ${bootSize} -1
+          align-check optimal 2 \
+          mkpart ROOT ext4 $bootSizeMiB 100% \
+          align-check optimal 3 \
+          print
         ${lib.optionalString deterministic ''
           sgdisk \
           --disk-guid=97FD5997-D90B-4AA3-8D16-C1723AEA73C \
@@ -324,11 +334,14 @@ let
       hybrid = ''
         parted --script $diskImage -- \
           mklabel gpt \
-          mkpart ESP fat32 8MiB ${bootSize} \
+          mkpart ESP fat32 8MiB $bootSizeMiB \
           set 1 boot on \
+          align-check optimal 1 \
           mkpart no-fs 0 1024KiB \
           set 2 bios_grub on \
-          mkpart primary ext4 ${bootSize} -1
+          mkpart primary ext4 $bootSizeMiB 100% \
+          align-check optimal 3 \
+          print
         ${lib.optionalString deterministic ''
           sgdisk \
           --disk-guid=97FD5997-D90B-4AA3-8D16-C1723AEA73C \
@@ -424,14 +437,17 @@ let
       echo $(( $1 * 52 / 1000 ))
     }
 
+    round_to_nearest() {
+      echo $(( ( $1 / $2 + 1) * $2 ))
+    }
+
     mkdir $out
 
     root="$PWD/root"
     mkdir -p $root
 
     # Copy arbitrary other files into the image
-    # Semi-shamelessly copied from make-etc.sh. I (@copumpkin) shall factor this stuff out as part of
-    # https://github.com/NixOS/nixpkgs/issues/23052.
+    # Semi-shamelessly copied from make-etc.sh.
     set -f
     sources_=(${lib.concatStringsSep " " sources})
     targets_=(${lib.concatStringsSep " " targets})
@@ -493,6 +509,9 @@ let
 
     diskImage=nixos.raw
 
+    bootSize=$(round_to_nearest $(numfmt --from=iec '${bootSize}') $mebibyte)
+    bootSizeMiB=$(( bootSize / 1024 / 1024 ))MiB
+
     ${
       if diskSize == "auto" then
         ''
@@ -507,13 +526,13 @@ let
                 # represented the actual size of the boot partition. But it instead
                 # represents the offset at which it ends.
                 # So we know bootSize is the reserved space in front of the partition.
-                reservedSpace=$(( gptSpace + $(numfmt --from=iec '${bootSize}') ))
+                reservedSpace=$(( gptSpace + bootSize ))
               ''
             else if partitionTableType == "legacy+gpt" then
               ''
                 # Add the GPT at the end
                 gptSpace=$(( 512 * 34 * 1 ))
-                # And include the bios_grub partition; the ext4 partition starts at 2MB exactly.
+                # And include the bios_grub partition; the ext4 partition starts at 2MiB exactly.
                 reservedSpace=$(( gptSpace + 2 * mebibyte ))
               ''
             else if partitionTableType == "legacy" then
@@ -529,7 +548,7 @@ let
           additionalSpace=$(( $(numfmt --from=iec '${additionalSpace}') + reservedSpace ))
 
           # Compute required space in filesystem blocks
-          diskUsage=$(find . ! -type d -print0 | du --files0-from=- --apparent-size --block-size "${blockSize}" | cut -f1 | sum_lines)
+          diskUsage=$(find . ! -type d -print0 | du --files0-from=- --apparent-size --count-links --block-size "${blockSize}" | cut -f1 | sum_lines)
           # Each inode takes space!
           numInodes=$(find . | wc -l)
           # Convert to bytes, inodes take two blocks each!
@@ -538,14 +557,17 @@ let
           fudge=$(compute_fudge $diskUsage)
           requiredFilesystemSpace=$(( diskUsage + fudge ))
 
-          diskSize=$(( requiredFilesystemSpace  + additionalSpace ))
+          # Round up to the nearest block size.
+          # This ensures whole $blockSize bytes block sizes in the filesystem
+          # and helps towards aligning partitions optimally.
+          requiredFilesystemSpace=$(round_to_nearest $requiredFilesystemSpace ${blockSize})
+
+          diskSize=$(( requiredFilesystemSpace + additionalSpace ))
 
           # Round up to the nearest mebibyte.
           # This ensures whole 512 bytes sector sizes in the disk image
           # and helps towards aligning partitions optimally.
-          if (( diskSize % mebibyte )); then
-            diskSize=$(( ( diskSize / mebibyte + 1) * mebibyte ))
-          fi
+          diskSize=$(round_to_nearest $diskSize $mebibyte)
 
           truncate -s "$diskSize" $diskImage
 
@@ -680,19 +702,19 @@ let
         ''}
 
         ${lib.optionalString installBootLoader ''
-          # In this throwaway resource, we only have /dev/vda, but the actual VM may refer to another disk for bootloader, e.g. /dev/vdb
-          # Use this option to create a symlink from vda to any arbitrary device you want.
-          ${lib.optionalString (config.boot.loader.grub.enable) (
-            lib.concatMapStringsSep " " (
-              device:
-              lib.optionalString (device != "/dev/vda") ''
-                mkdir -p "$(dirname ${device})"
-                ln -s /dev/vda ${device}
-              ''
-            ) config.boot.loader.grub.devices
-          )}
+            # In this throwaway resource, we only have /dev/vda, but the actual VM may refer to another disk for bootloader, e.g. /dev/vdb
+            # Use this option to create a symlink from vda to any arbitrary device you want.
+            ${lib.optionalString (config.boot.loader.grub.enable) (
+              lib.concatMapStringsSep " " (
+                device:
+                lib.optionalString (device != "/dev/vda") ''
+                  mkdir -p "$(dirname ${device})"
+                  ln -s /dev/vda ${device}
+                ''
+              ) config.boot.loader.grub.devices
+            )}
 
-          # Set up core system link, bootloader (sd-boot, GRUB, uboot, etc.), etc.
+            # Set up core system link, bootloader (sd-boot, GRUB, uboot, etc.), etc.
 
           # NOTE: systemd-boot-builder.py calls nix-env --list-generations which
           # clobbers $HOME/.nix-defexpr/channels/nixos This would cause a  folder
@@ -701,9 +723,6 @@ let
           # __noChroot for example).
           export HOME=$TMPDIR
           NIXOS_INSTALL_BOOTLOADER=1 nixos-enter --root $mountPoint -- /nix/var/nix/profiles/system/bin/switch-to-configuration boot
-
-          # The above scripts will generate a random machine-id and we don't want to bake a single ID into all our images
-          rm -f $mountPoint/etc/machine-id
         ''}
 
         # Set the ownerships of the contents. The modes are set in preVM.

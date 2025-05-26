@@ -4,17 +4,18 @@
   fetchFromGitHub,
   bison,
   flex,
+  nix-update-script,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "acpica-tools";
-  version = "20240827";
+  version = "R2025_04_04";
 
   src = fetchFromGitHub {
     owner = "acpica";
     repo = "acpica";
-    tag = "version-${version}";
-    hash = "sha256-RlhKBvydesUdBaFUHk3sSM6SRIZ7q5IqnibX+hps+Tc=";
+    tag = finalAttrs.version;
+    hash = "sha256-+dMuyp3tT0eSLPyzLseuHMY+nNfl6roBFrsnXiZSHkY=";
   };
 
   nativeBuildInputs = [
@@ -50,18 +51,20 @@ stdenv.mkDerivation rec {
 
   installFlags = [ "PREFIX=${placeholder "out"}" ];
 
-  meta = with lib; {
+  passthru.updateScript = nix-update-script { };
+
+  meta = {
     homepage = "https://www.acpica.org/";
     description = "ACPICA Tools";
-    license = with licenses; [
+    license = with lib.licenses; [
       iasl
       gpl2Only
       bsd3
     ];
-    maintainers = with maintainers; [
+    maintainers = with lib.maintainers; [
       tadfisher
       felixsinger
     ];
-    platforms = platforms.linux ++ platforms.darwin;
+    platforms = lib.platforms.linux ++ lib.platforms.darwin;
   };
-}
+})

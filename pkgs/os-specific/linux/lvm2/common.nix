@@ -8,7 +8,7 @@
   coreutils,
   libuuid,
   libaio,
-  substituteAll,
+  replaceVars,
   enableCmdlib ? false,
   enableDmeventd ? false,
   udevSupport ? !stdenv.hostPlatform.isStatic,
@@ -24,6 +24,8 @@
   enableMultipath ? false,
   multipath-tools,
   nixosTests,
+  buildFHSEnv,
+  recurseIntoAttrs,
 }:
 
 # configure: error: --enable-dmeventd requires --enable-cmdlib to be used as well
@@ -67,6 +69,7 @@ stdenv.mkDerivation rec {
       "--with-default-run-dir=/run/lvm"
       "--with-systemdsystemunitdir=${placeholder "out"}/lib/systemd/system"
       "--with-systemd-run=/run/current-system/systemd/bin/systemd-run"
+      "--with-default-profile-subdir=profile.d"
     ]
     ++ lib.optionals (!enableCmdlib && !onlyLib) [
       "--bindir=${placeholder "bin"}/bin"
@@ -112,17 +115,17 @@ stdenv.mkDerivation rec {
 
   patches = [
     # fixes paths to and checks for tools
-    (substituteAll (
+    (replaceVars ./fix-blkdeactivate.patch (
       let
         optionalTool = cond: pkg: if cond then pkg else "/run/current-system/sw";
       in
       {
-        src = ./fix-blkdeactivate.patch;
         inherit coreutils;
         util_linux = optionalTool enableUtilLinux util-linux;
         mdadm = optionalTool enableMdadm mdadm;
         multipath_tools = optionalTool enableMultipath multipath-tools;
         vdo = optionalTool enableVDO vdo;
+        SBINDIR = null; # part of original source code in the patch's context
       }
     ))
     ./fix-stdio-usage.patch
@@ -180,7 +183,13 @@ stdenv.mkDerivation rec {
 
   passthru.tests = {
     installer = nixosTests.installer.lvm;
-    lvm2 = nixosTests.lvm2;
+    lvm2 = recurseIntoAttrs nixosTests.lvm2;
+
+    # https://github.com/NixOS/nixpkgs/issues/369732
+    lvm2-fhs-env = buildFHSEnv {
+      name = "lvm2-fhs-env-test";
+      targetPkgs = p: [ p.lvm2 ];
+    };
   };
 
   meta = with lib; {

@@ -1,7 +1,5 @@
 {
   lib,
-  stdenv,
-  darwin,
   fetchFromGitHub,
   rustPlatform,
 }:
@@ -11,17 +9,13 @@ rustPlatform.buildRustPackage rec {
 
   src = fetchFromGitHub {
     owner = "KSXGitHub";
-    repo = pname;
+    repo = "parallel-disk-usage";
     rev = version;
     hash = "sha256-0SK7v5xKMPuukyYKaGk13PE3WygHginjnyoatkA5xFQ=";
   };
 
-  cargoHash = "sha256-T/TjiqBZJINgiuTLWD+JBCUDEQBs2b/hvZn9E2uxkYc=";
-
-  buildInputs = lib.optionals stdenv.hostPlatform.isDarwin [
-    darwin.apple_sdk_11_0.frameworks.IOKit
-    darwin.apple_sdk_11_0.frameworks.CoreFoundation
-  ];
+  useFetchCargoVendor = true;
+  cargoHash = "sha256-mmR5avrzqkOvitLrc3XP+1Z7TbLeSGifDP7c3MwghO4=";
 
   meta = with lib; {
     description = "Highly parallelized, blazing fast directory tree analyzer";

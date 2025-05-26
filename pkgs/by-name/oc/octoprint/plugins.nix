@@ -117,7 +117,7 @@ in
       description = "Plugin for slicing via Cura Legacy from within OctoPrint";
       homepage = "https://github.com/OctoPrint/OctoPrint-CuraEngineLegacy";
       license = licenses.agpl3Only;
-      maintainers = with maintainers; [ gebner ];
+      maintainers = with maintainers; [ ];
     };
   };
 
@@ -258,13 +258,13 @@ in
 
   mqtt = buildPlugin rec {
     pname = "mqtt";
-    version = "0.8.10";
+    version = "0.8.16";
 
     src = fetchFromGitHub {
       owner = "OctoPrint";
       repo = "OctoPrint-MQTT";
       rev = version;
-      sha256 = "sha256-nvEUvN/SdUE1tQkLbxMkZ8xxeUIZiNNirIfWLeH1Kfg=";
+      sha256 = "sha256-K8DydzmsDzWn5GXpxPGvAHDFpgk/mbyVBflCgOoB94U=";
     };
 
     propagatedBuildInputs = with super; [ paho-mqtt ];
@@ -345,13 +345,13 @@ in
 
   octopod = buildPlugin rec {
     pname = "octopod";
-    version = "0.3.16";
+    version = "0.3.18";
 
     src = fetchFromGitHub {
       owner = "gdombiak";
       repo = "OctoPrint-OctoPod";
       rev = version;
-      sha256 = "sha256-9QKC1MsYO3XihOTAijJUv5i20iMSQHOHPfLiYPV5y8s=";
+      sha256 = "sha256-HLR5402hFlUX0MLg3HXE7bIHKNnOI0buGAViqDt8mLc=";
     };
 
     propagatedBuildInputs = with super; [ pillow ];
@@ -366,13 +366,13 @@ in
 
   printtimegenius = buildPlugin rec {
     pname = "printtimegenius";
-    version = "2.3.3";
+    version = "2.4.0";
 
     src = fetchFromGitHub {
       owner = "eyal0";
       repo = "OctoPrint-PrintTimeGenius";
       rev = version;
-      sha256 = "sha256-hqm8RShCNpsVbrVXquat5VXqcVc7q5tn5+7Ipqmaw4U=";
+      sha256 = "sha256-+EmM61s8HHcTIf0xoHkxEP7eqaNYB6ls61YwSXiVzyA=";
     };
 
     propagatedBuildInputs = with super; [
@@ -390,19 +390,19 @@ in
       description = "Better print time estimation for OctoPrint";
       homepage = "https://github.com/eyal0/OctoPrint-PrintTimeGenius";
       license = licenses.agpl3Only;
-      maintainers = with maintainers; [ gebner ];
+      maintainers = with maintainers; [ ];
     };
   };
 
   prusaslicerthumbnails = buildPlugin rec {
     pname = "prusaslicerthumbnails";
-    version = "1.0.7";
+    version = "1.0.8";
 
     src = fetchFromGitHub {
       owner = "jneilliii";
       repo = "OctoPrint-PrusaSlicerThumbnails";
       rev = version;
-      sha256 = "sha256-waNCTjAZwdBfhHyJCG2La7KTnJ8MDVuX1JLetFB5bS4=";
+      sha256 = "sha256-5TUx64i3VIUXtpIf4mo3hP//kXE+LuuLaZEJYgv4hVs=";
     };
 
     propagatedBuildInputs = with super; [ psutil ];
@@ -439,7 +439,7 @@ in
       description = "OctoPrint plugin to control ATX/AUX power supply";
       homepage = "https://github.com/kantlivelong/OctoPrint-PSUControl";
       license = licenses.agpl3Only;
-      maintainers = with maintainers; [ gebner ];
+      maintainers = with maintainers; [ ];
     };
   };
 
@@ -595,7 +595,7 @@ in
       description = "Touch friendly interface for a small TFT module or phone for OctoPrint";
       homepage = "https://github.com/BillyBlaze/OctoPrint-TouchUI";
       license = licenses.agpl3Only;
-      maintainers = with maintainers; [ gebner ];
+      maintainers = with maintainers; [ ];
     };
   };
 

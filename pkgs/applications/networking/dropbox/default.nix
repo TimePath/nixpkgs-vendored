@@ -18,7 +18,12 @@ assert lib.elem stdenv.hostPlatform.system platforms;
 # Dropbox client to bootstrap installation.
 # The client is self-updating, so the actual version may be newer.
 let
-  version = "206.3.6386";
+  version =
+    {
+      x86_64-linux = "217.4.4417";
+      i686-linux = "206.3.6386";
+    }
+    .${stdenv.hostPlatform.system};
 
   arch =
     {
@@ -45,7 +50,8 @@ let
 in
 
 buildFHSEnv {
-  name = "dropbox";
+  inherit version;
+  pname = "dropbox";
 
   # The dropbox-cli command `dropbox start` starts the dropbox daemon in a
   # separate session, and wants the daemon to outlive the launcher.  Enabling
@@ -70,6 +76,7 @@ buildFHSEnv {
       libXext
       libXfixes
       libXrender
+      libXmu
       libXxf86vm
       libGL
       libxcb
@@ -86,7 +93,7 @@ buildFHSEnv {
       libxslt
       procps
       zlib
-      mesa
+      libgbm
       libxshmfence
       libpthreadstubs
       libappindicator
@@ -128,11 +135,11 @@ buildFHSEnv {
     exec "$HOME/.dropbox-dist/dropboxd" "$@"
   '';
 
-  meta = with lib; {
+  meta = {
     description = "Online stored folders (daemon version)";
-    homepage = "http://www.dropbox.com/";
-    license = licenses.unfree;
-    maintainers = with maintainers; [ ttuegel ];
+    homepage = "https://www.dropbox.com/";
+    license = lib.licenses.unfree;
+    maintainers = with lib.maintainers; [ ttuegel ];
     platforms = [
       "i686-linux"
       "x86_64-linux"

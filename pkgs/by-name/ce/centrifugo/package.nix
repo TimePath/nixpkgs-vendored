@@ -16,23 +16,23 @@ let
 in
 buildGoModule rec {
   pname = "centrifugo";
-  version = "5.4.7";
+  version = "6.2.0";
 
   src = fetchFromGitHub {
     owner = "centrifugal";
     repo = "centrifugo";
     rev = "v${version}";
-    hash = "sha256-hAZT2jqDy0oppKxuLWg6UQxiCySLkPE0eLmqavaRN9I=";
+    hash = "sha256-DCtUw/0EWJcgQSBd/csbgoi1ncN1LnLJZvfv3AZyW0o=";
   };
 
-  vendorHash = "sha256-Xz8s3R2nOouEyH56y04X15nYtMRwL8toP/8WL0saYwQ=";
+  vendorHash = "sha256-35RmwI5Qy50jgUAjOz0UlE7CgjVuDiwFfG3uYafr1O4=";
 
   ldflags = [
     "-s"
     "-w"
-    "-X=github.com/centrifugal/centrifugo/v5/internal/build.Version=${version}"
-    "-X=github.com/centrifugal/centrifugo/v5/internal/build.UsageStatsEndpoint=${statsEndpoint}"
-    "-X=github.com/centrifugal/centrifugo/v5/internal/build.UsageStatsToken=${statsToken}"
+    "-X=github.com/centrifugal/centrifugo/v6/internal/build.Version=${version}"
+    "-X=github.com/centrifugal/centrifugo/v6/internal/build.UsageStatsEndpoint=${statsEndpoint}"
+    "-X=github.com/centrifugal/centrifugo/v6/internal/build.UsageStatsToken=${statsToken}"
   ];
 
   excludedPackages = [
@@ -56,7 +56,10 @@ buildGoModule rec {
     homepage = "https://centrifugal.dev";
     changelog = "https://github.com/centrifugal/centrifugo/releases/tag/v${version}";
     license = lib.licenses.asl20;
-    maintainers = [ lib.maintainers.tie ];
+    maintainers = [
+      lib.maintainers.tie
+      lib.maintainers.valodim
+    ];
     mainProgram = "centrifugo";
   };
 }

@@ -1,30 +1,28 @@
 {
   lib,
-  python3Packages,
   fetchPypi,
   installShellFiles,
+  python3Packages,
 }:
 
-let
+python3Packages.buildPythonApplication rec {
   pname = "tmuxp";
-  version = "1.47.0";
-  hash = "sha256-HYY6CEUPpZVvVK9kV4Ehw4wGk5YfIVSkZ0+qqf6Nz4c=";
-in
-python3Packages.buildPythonApplication {
-  inherit pname version;
+  version = "1.55.0";
   pyproject = true;
 
   src = fetchPypi {
-    inherit pname version hash;
+    inherit pname version;
+    hash = "sha256-reC609nY1kdmQInAphAfmSTZQQqitTD88EBv/4mU3h0=";
   };
 
-  nativeBuildInputs = [
-    python3Packages.poetry-core
-    python3Packages.shtab
-    installShellFiles
+  build-system = with python3Packages; [
+    hatchling
+    shtab
   ];
 
-  propagatedBuildInputs = with python3Packages; [
+  nativeBuildInputs = [ installShellFiles ];
+
+  dependencies = with python3Packages; [
     colorama
     libtmux
     pyyaml

@@ -253,7 +253,7 @@ in
             ++ lib.optionals (cfg.settings.mediagoblin.plugins ? "mediagoblin.media_types.pdf") (
               with pkgs;
               [
-                poppler_utils
+                poppler-utils
                 unoconv
               ]
             );

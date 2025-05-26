@@ -1,17 +1,15 @@
 {
   fetchurl,
-  fetchpatch,
   lib,
   stdenv,
   buildPackages,
   curl,
   openssl,
-  zlib,
+  zlib-ng,
   expat,
   perlPackages,
   python3,
   gettext,
-  cpio,
   gnugrep,
   gnused,
   gawk,
@@ -39,12 +37,11 @@
   nlsSupport ? true,
   osxkeychainSupport ? stdenv.hostPlatform.isDarwin,
   guiSupport ? false,
-  withManual ? true,
+  # Disable the manual since libxslt doesn't seem to parse the files correctly.
+  withManual ? !stdenv.hostPlatform.useLLVM,
   pythonSupport ? true,
   withpcre2 ? true,
   sendEmailSupport ? perlSupport,
-  Security,
-  CoreServices,
   nixosTests,
   withLibsecret ? false,
   pkg-config,
@@ -63,7 +60,7 @@ assert sendEmailSupport -> perlSupport;
 assert svnSupport -> perlSupport;
 
 let
-  version = "2.47.2";
+  version = "2.49.0";
   svn = subversionClient.override { perlBindings = perlSupport; };
   gitwebPerlLibs = with perlPackages; [
     CGI
@@ -85,8 +82,14 @@ stdenv.mkDerivation (finalAttrs: {
   inherit version;
 
   src = fetchurl {
-    url = "https://www.kernel.org/pub/software/scm/git/git-${version}.tar.xz";
-    hash = "sha256-sZJovmtvFVa0ep3YNCcuFn06dXQM3NKDzzgS7f/jkw8=";
+    url =
+      if lib.strings.hasInfix "-rc" version then
+        "https://www.kernel.org/pub/software/scm/git/testing/git-${
+          builtins.replaceStrings [ "-" ] [ "." ] version
+        }.tar.xz"
+      else
+        "https://www.kernel.org/pub/software/scm/git/git-${version}.tar.xz";
+    hash = "sha256-YYGQz1kLfp9sEfkfI7HSZ82Yw6szuFBBbYdY+LWoVig=";
   };
 
   outputs = [ "out" ] ++ lib.optional withManual "doc";
@@ -95,6 +98,7 @@ stdenv.mkDerivation (finalAttrs: {
   hardeningDisable = [ "format" ];
 
   enableParallelBuilding = true;
+  enableParallelInstalling = true;
 
   patches =
     [
@@ -105,16 +109,6 @@ stdenv.mkDerivation (finalAttrs: {
     ]
     ++ lib.optionals withSsh [
       ./ssh-path.patch
-    ]
-    ++ lib.optionals (guiSupport && stdenv.hostPlatform.isDarwin) [
-      # Needed to workaround an issue in macOS where gitk shows a empty window
-      # https://github.com/Homebrew/homebrew-core/issues/68798
-      # https://github.com/git/git/pull/944
-      (fetchpatch {
-        name = "gitk_check_main_window_visibility_before_waiting_for_it_to_show.patch";
-        url = "https://github.com/git/git/commit/1db62e44b7ec93b6654271ef34065b31496cd02e.patch";
-        hash = "sha256-ntvnrYFFsJ1Ebzc6vM9/AMFLHMS1THts73PIOG5DkQo=";
-      })
     ];
 
   postPatch =
@@ -154,9 +148,8 @@ stdenv.mkDerivation (finalAttrs: {
     [
       curl
       openssl
-      zlib
+      zlib-ng
       expat
-      cpio
       (if stdenv.hostPlatform.isFreeBSD then libiconvReal else libiconv)
       bash
     ]
@@ -166,10 +159,6 @@ stdenv.mkDerivation (finalAttrs: {
       tk
     ]
     ++ lib.optionals withpcre2 [ pcre2 ]
-    ++ lib.optionals stdenv.hostPlatform.isDarwin [
-      Security
-      CoreServices
-    ]
     ++ lib.optionals withLibsecret [
       glib
       libsecret
@@ -197,6 +186,7 @@ stdenv.mkDerivation (finalAttrs: {
   makeFlags =
     [
       "prefix=\${out}"
+      "ZLIB_NG=1"
     ]
     # Git does not allow setting a shell separately for building and run-time.
     # Therefore lets leave it at the default /bin/sh when cross-compiling
@@ -230,17 +220,36 @@ stdenv.mkDerivation (finalAttrs: {
 
   postBuild =
     ''
-      make -C contrib/subtree
+      # Set up the flags array for make in the same way as for the main build
+      # phase from stdenv.
+      local flagsArray=(
+          ''${enableParallelBuilding:+-j''${NIX_BUILD_CORES}}
+          SHELL="$SHELL"
+      )
+      concatTo flagsArray makeFlags makeFlagsArray buildFlags buildFlagsArray
+      echoCmd 'build flags' "''${flagsArray[@]}"
     ''
-    + (lib.optionalString perlSupport ''
-      make -C contrib/diff-highlight
-    '')
-    + (lib.optionalString osxkeychainSupport ''
-      make -C contrib/credential/osxkeychain
-    '')
-    + (lib.optionalString withLibsecret ''
-      make -C contrib/credential/libsecret
-    '');
+    + lib.optionalString withManual ''
+      # Need to build the main Git documentation before building the
+      # contrib/subtree documentation, as the latter depends on the
+      # asciidoc.conf file created by the former.
+      make -C Documentation PERL_PATH=${lib.getExe buildPackages.perlPackages.perl} "''${flagsArray[@]}"
+    ''
+    + ''
+      make -C contrib/subtree "''${flagsArray[@]}" all ${lib.optionalString withManual "doc"}
+    ''
+    + lib.optionalString perlSupport ''
+      make -C contrib/diff-highlight "''${flagsArray[@]}"
+    ''
+    + lib.optionalString osxkeychainSupport ''
+      make -C contrib/credential/osxkeychain "''${flagsArray[@]}"
+    ''
+    + lib.optionalString withLibsecret ''
+      make -C contrib/credential/libsecret "''${flagsArray[@]}"
+    ''
+    + ''
+      unset flagsArray
+    '';
 
   ## Install
 
@@ -250,16 +259,26 @@ stdenv.mkDerivation (finalAttrs: {
   installFlags = [ "NO_INSTALL_HARDLINKS=1" ];
 
   preInstall =
-    (lib.optionalString osxkeychainSupport ''
+    lib.optionalString osxkeychainSupport ''
+      mkdir -p $out/libexec/git-core
+      ln -s $out/share/git/contrib/credential/osxkeychain/git-credential-osxkeychain $out/libexec/git-core/
+
+      # ideally unneeded, but added for backwards compatibility
       mkdir -p $out/bin
-      ln -s $out/share/git/contrib/credential/osxkeychain/git-credential-osxkeychain $out/bin/
+      ln -s $out/libexec/git-core/git-credential-osxkeychain $out/bin/
+
       rm -f $PWD/contrib/credential/osxkeychain/git-credential-osxkeychain.o
-    '')
-    + (lib.optionalString withLibsecret ''
+    ''
+    + lib.optionalString withLibsecret ''
+      mkdir -p $out/libexec/git-core
+      ln -s $out/share/git/contrib/credential/libsecret/git-credential-libsecret $out/libexec/git-core/
+
+      # ideally unneeded, but added for backwards compatibility
       mkdir -p $out/bin
-      ln -s $out/share/git/contrib/credential/libsecret/git-credential-libsecret $out/bin/
+      ln -s $out/libexec/git-core/git-credential-libsecret $out/bin/
+
       rm -f $PWD/contrib/credential/libsecret/git-credential-libsecret.o
-    '');
+    '';
 
   postInstall =
     ''
@@ -267,8 +286,17 @@ stdenv.mkDerivation (finalAttrs: {
         unlink $1 || true
       }
 
+      # Set up the flags array for make in the same way as for the main install
+      # phase from stdenv.
+      local flagsArray=(
+          ''${enableParallelInstalling:+-j''${NIX_BUILD_CORES}}
+          SHELL="$SHELL"
+      )
+      concatTo flagsArray makeFlags makeFlagsArray installFlags installFlagsArray
+      echoCmd 'install flags' "''${flagsArray[@]}"
+
       # Install git-subtree.
-      make -C contrib/subtree install ${lib.optionalString withManual "install-doc"}
+      make -C contrib/subtree "''${flagsArray[@]}" install ${lib.optionalString withManual "install-doc"}
       rm -rf contrib/subtree
 
       # Install contrib stuff.
@@ -317,8 +345,11 @@ stdenv.mkDerivation (finalAttrs: {
     ''
     + lib.optionalString perlSupport ''
       # wrap perl commands
-      makeWrapper "$out/share/git/contrib/credential/netrc/git-credential-netrc.perl" $out/bin/git-credential-netrc \
+      makeWrapper "$out/share/git/contrib/credential/netrc/git-credential-netrc.perl" $out/libexec/git-core/git-credential-netrc \
                   --set PERL5LIB   "$out/${perlPackages.perl.libPrefix}:${perlPackages.makePerlPath perlLibs}"
+      # ideally unneeded, but added for backwards compatibility
+      ln -s $out/libexec/git-core/git-credential-netrc $out/bin/
+
       wrapProgram $out/libexec/git-core/git-cvsimport \
                   --set GITPERLLIB "$out/${perlPackages.perl.libPrefix}:${perlPackages.makePerlPath perlLibs}"
       wrapProgram $out/libexec/git-core/git-archimport \
@@ -372,7 +403,7 @@ stdenv.mkDerivation (finalAttrs: {
 
     + lib.optionalString withManual ''
       # Install man pages
-      make -j $NIX_BUILD_CORES PERL_PATH="${buildPackages.perl}/bin/perl" cmd-list.made install install-html \
+      make "''${flagsArray[@]}" cmd-list.made install install-html \
         -C Documentation
     ''
 
@@ -402,6 +433,9 @@ stdenv.mkDerivation (finalAttrs: {
       [credential]
         helper = osxkeychain
       EOF
+    ''
+    + ''
+      unset flagsArray
     '';
 
   ## InstallCheck
@@ -423,6 +457,12 @@ stdenv.mkDerivation (finalAttrs: {
 
   preInstallCheck =
     ''
+      # Some tests break with high concurrency
+      # https://github.com/NixOS/nixpkgs/pull/403237
+      if ((NIX_BUILD_CORES > 32)); then
+        NIX_BUILD_CORES=32
+      fi
+
       installCheckFlagsArray+=(
         GIT_PROVE_OPTS="--jobs $NIX_BUILD_CORES --failures --state=failed,save"
         GIT_TEST_INSTALLED=$out/bin
@@ -461,7 +501,11 @@ stdenv.mkDerivation (finalAttrs: {
     ''
     + ''
       # Flaky tests:
+      disable_test t0027-auto-crlf
+      disable_test t1451-fsck-buffer
+      disable_test t5319-multi-pack-index
       disable_test t6421-merge-partial-clone
+      disable_test t7504-commit-msg-hook
 
       # Fails reproducibly on ZFS on Linux with formD normalization
       disable_test t0021-conversion
@@ -480,6 +524,13 @@ stdenv.mkDerivation (finalAttrs: {
     + lib.optionalString (stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isAarch64) ''
       disable_test t7527-builtin-fsmonitor
     ''
+    +
+      lib.optionalString (stdenv.hostPlatform.isStatic && stdenv.hostPlatform.system == "x86_64-linux")
+        ''
+          # https://github.com/NixOS/nixpkgs/pull/394957
+          # > t2082-parallel-checkout-attributes.sh            (Wstat: 256 (exited 1) Tests: 5 Failed: 1)
+          disable_test t2082-parallel-checkout-attributes
+        ''
     + lib.optionalString stdenv.hostPlatform.isMusl ''
       # Test fails (as of 2.17.0, musl 1.1.19)
       disable_test t3900-i18n-commit

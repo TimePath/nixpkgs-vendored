@@ -6,7 +6,9 @@
 }:
 let
 
-  inherit (config.security) wrapperDir wrappers;
+  inherit (config.security) wrapperDir;
+
+  wrappers = lib.filterAttrs (name: value: value.enable) config.security.wrappers;
 
   parentWrapperDir = dirOf wrapperDir;
 
@@ -51,6 +53,11 @@ let
   wrapperType = lib.types.submodule (
     { name, config, ... }:
     {
+      options.enable = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = "Whether to enable the wrapper.";
+      };
       options.source = lib.mkOption {
         type = lib.types.path;
         description = "The absolute path to the program to be wrapped.";
@@ -211,9 +218,8 @@ in
       description = ''
         This option effectively allows adding setuid/setgid bits, capabilities,
         changing file ownership and permissions of a program without directly
-        modifying it. This works by creating a wrapper program under the
-        {option}`security.wrapperDir` directory, which is then added to
-        the shell `PATH`.
+        modifying it. This works by creating a wrapper program in a directory
+        (not configurable), which is then added to the shell `PATH`.
       '';
     };
 
@@ -222,7 +228,7 @@ in
       example = "10G";
       type = lib.types.str;
       description = ''
-        Size limit for the /run/wrappers tmpfs. Look at mount(8), tmpfs size option,
+        Size limit for the /run/wrappers tmpfs. Look at {manpage}`mount(8)`, tmpfs size option,
         for the accepted syntax. WARNING: don't set to less than 64MB.
       '';
     };
@@ -341,29 +347,33 @@ in
 
     ###### wrappers consistency checks
     system.checks = lib.singleton (
-      pkgs.runCommandLocal "ensure-all-wrappers-paths-exist" { } ''
-        # make sure we produce output
-        mkdir -p $out
+      pkgs.runCommand "ensure-all-wrappers-paths-exist"
+        {
+          preferLocalBuild = true;
+        }
+        ''
+          # make sure we produce output
+          mkdir -p $out
 
-        echo -n "Checking that Nix store paths of all wrapped programs exist... "
+          echo -n "Checking that Nix store paths of all wrapped programs exist... "
 
-        declare -A wrappers
-        ${lib.concatStringsSep "\n" (lib.mapAttrsToList (n: v: "wrappers['${n}']='${v.source}'") wrappers)}
+          declare -A wrappers
+          ${lib.concatStringsSep "\n" (lib.mapAttrsToList (n: v: "wrappers['${n}']='${v.source}'") wrappers)}
 
-        for name in "''${!wrappers[@]}"; do
-          path="''${wrappers[$name]}"
-          if [[ "$path" =~ /nix/store ]] && [ ! -e "$path" ]; then
-            test -t 1 && echo -ne '\033[1;31m'
-            echo "FAIL"
-            echo "The path $path does not exist!"
-            echo 'Please, check the value of `security.wrappers."'$name'".source`.'
-            test -t 1 && echo -ne '\033[0m'
-            exit 1
-          fi
-        done
+          for name in "''${!wrappers[@]}"; do
+            path="''${wrappers[$name]}"
+            if [[ "$path" =~ /nix/store ]] && [ ! -e "$path" ]; then
+              test -t 1 && echo -ne '\033[1;31m'
+              echo "FAIL"
+              echo "The path $path does not exist!"
+              echo 'Please, check the value of `security.wrappers."'$name'".source`.'
+              test -t 1 && echo -ne '\033[0m'
+              exit 1
+            fi
+          done
 
-        echo "OK"
-      ''
+          echo "OK"
+        ''
     );
   };
 }

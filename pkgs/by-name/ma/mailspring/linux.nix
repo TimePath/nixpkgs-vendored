@@ -19,7 +19,7 @@
   openssl,
   udev,
   xorg,
-  mesa,
+  libgbm,
   libdrm,
   libappindicator,
 }:
@@ -29,7 +29,7 @@ stdenv.mkDerivation (finalAttrs: {
 
   src = fetchurl {
     url = "https://github.com/Foundry376/Mailspring/releases/download/${finalAttrs.version}/mailspring-${finalAttrs.version}-amd64.deb";
-    hash = "sha256-2F5k8zRRI6x1EQ0k8wvIq1Q3Lnrn2ROp/Mq+H7Vqzlc=";
+    hash = "sha256-+glQaz36mKMtnNeyHH4brZmzYe9SHCtccO6CIJpTH2k=";
   };
 
   nativeBuildInputs = [
@@ -51,7 +51,7 @@ stdenv.mkDerivation (finalAttrs: {
     xorg.libXScrnSaver
     xorg.libXtst
     xorg.libxshmfence
-    mesa
+    libgbm
     libdrm
   ];
 

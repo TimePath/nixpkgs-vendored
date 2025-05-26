@@ -63,8 +63,11 @@ buildPythonPackage rec {
     # Tests require binaries and additional parts
     "test_memcached"
     "test_mysql"
-    "test_xvfb "
+    "test_xvfb"
   ];
+
+  # Tests use sockets
+  __darwinAllowLocalNetworking = true;
 
   meta = with lib; {
     description = "Services plugin for pytest testing framework";

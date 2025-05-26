@@ -1,5 +1,10 @@
 import ./make-test-python.nix (
-  { pkgs, ... }:
+  {
+    pkgs,
+    lib,
+    withNg ? false,
+    ...
+  }:
   {
     name = "nixos-rebuild-install-bootloader";
 
@@ -19,6 +24,7 @@ import ./make-test-python.nix (
           };
 
           system.includeBuildDependencies = true;
+          system.rebuild.enableNg = withNg;
 
           virtualisation = {
             cores = 2;
@@ -31,24 +37,28 @@ import ./make-test-python.nix (
 
     testScript =
       let
-        configFile = pkgs.writeText "configuration.nix" ''
-          { lib, pkgs, ... }: {
-            imports = [
-              ./hardware-configuration.nix
-              <nixpkgs/nixos/modules/testing/test-instrumentation.nix>
-            ];
+        configFile =
+          pkgs.writeText "configuration.nix" # nix
+            ''
+              { lib, pkgs, ... }: {
+                imports = [
+                  ./hardware-configuration.nix
+                  <nixpkgs/nixos/modules/testing/test-instrumentation.nix>
+                ];
 
-            boot.loader.grub = {
-              enable = true;
-              device = "/dev/vda";
-              forceInstall = true;
-            };
+                boot.loader.grub = {
+                  enable = true;
+                  device = "/dev/vda";
+                  forceInstall = true;
+                };
 
-            documentation.enable = false;
-          }
-        '';
+                system.rebuild.enableNg = ${lib.boolToString withNg};
+                documentation.enable = false;
+              }
+            '';
 
       in
+      # python
       ''
         machine.start()
         machine.succeed("udevadm settle")

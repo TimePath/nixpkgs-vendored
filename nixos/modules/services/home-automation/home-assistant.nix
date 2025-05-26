@@ -2,12 +2,53 @@
   config,
   lib,
   pkgs,
+  utils,
   ...
 }:
 
-with lib;
-
 let
+  inherit (lib)
+    any
+    attrByPath
+    attrValues
+    concatMap
+    concatStrings
+    converge
+    elem
+    escapeShellArg
+    escapeShellArgs
+    filter
+    filterAttrsRecursive
+    flatten
+    getAttr
+    hasAttrByPath
+    isAttrs
+    isDerivation
+    isList
+    isStorePath
+    literalExpression
+    mapAttrsToList
+    mergeAttrsList
+    mkEnableOption
+    mkIf
+    mkMerge
+    mkOption
+    mkRemovedOptionModule
+    mkRenamedOptionModule
+    optionals
+    optionalString
+    recursiveUpdate
+    singleton
+    splitString
+    substring
+    types
+    unique
+    ;
+
+  inherit (utils)
+    escapeSystemdExecArgs
+    ;
+
   cfg = config.services.home-assistant;
   format = pkgs.formats.yaml { };
 
@@ -17,15 +58,19 @@ let
   # https://www.home-assistant.io/docs/configuration/secrets/
   renderYAMLFile =
     fn: yaml:
-    pkgs.runCommandLocal fn { } ''
-      cp ${format.generate fn yaml} $out
-      sed -i -e "s/'\!\([a-z_]\+\) \(.*\)'/\!\1 \2/;s/^\!\!/\!/;" $out
-    '';
+    pkgs.runCommand fn
+      {
+        preferLocalBuilds = true;
+      }
+      ''
+        cp ${format.generate fn yaml} $out
+        sed -i -e "s/'\!\([a-z_]\+\) \(.*\)'/\!\1 \2/;s/^\!\!/\!/;" $out
+      '';
 
   # Filter null values from the configuration, so that we can still advertise
   # optional options in the config attribute.
-  filteredConfig = lib.converge (lib.filterAttrsRecursive (_: v: !elem v [ null ])) (
-    lib.recursiveUpdate customLovelaceModulesResources (cfg.config or { })
+  filteredConfig = converge (filterAttrsRecursive (_: v: !elem v [ null ])) (
+    recursiveUpdate customLovelaceModulesResources (cfg.config or { })
   );
   configFile = renderYAMLFile "configuration.yaml" filteredConfig;
 
@@ -52,7 +97,7 @@ let
     if isDerivation config then
       [ ]
     else if isAttrs config then
-      optional (config ? platform) config.platform ++ concatMap usedPlatforms (attrValues config)
+      optionals (config ? platform) [ config.platform ] ++ concatMap usedPlatforms (attrValues config)
     else if isList config then
       concatMap usedPlatforms config
     else
@@ -67,7 +112,9 @@ let
     hasAttrByPath (splitString "." component) cfg.config
     || useComponentPlatform component
     || useExplicitComponent component
-    || builtins.elem component (cfg.extraComponents ++ cfg.defaultIntegrations);
+    || builtins.elem component (
+      cfg.extraComponents ++ cfg.defaultIntegrations ++ map (getAttr "domain") cfg.customComponents
+    );
 
   # Final list of components passed into the package to include required dependencies
   extraComponents = filter useComponent availableComponents;
@@ -81,7 +128,7 @@ let
         ps:
         (oldArgs.extraPackages or (_: [ ]) ps)
         ++ (cfg.extraPackages ps)
-        ++ (lib.concatMap (component: component.propagatedBuildInputs or [ ]) cfg.customComponents);
+        ++ (concatMap (component: component.propagatedBuildInputs or [ ]) cfg.customComponents);
     })
   );
 
@@ -120,13 +167,22 @@ in
 
   meta = {
     buildDocsInSandbox = false;
-    maintainers = teams.home-assistant.members;
+    maintainers = lib.teams.home-assistant.members;
   };
 
   options.services.home-assistant = {
     # Running home-assistant on NixOS is considered an installation method that is unsupported by the upstream project.
     # https://github.com/home-assistant/architecture/blob/master/adr/0012-define-supported-installation-method.md#decision
     enable = mkEnableOption "Home Assistant. Please note that this installation method is unsupported upstream";
+
+    extraArgs = mkOption {
+      type = types.listOf types.str;
+      default = [ ];
+      example = [ "--debug" ];
+      description = ''
+        Extra arguments to pass to the hass executable.
+      '';
+    };
 
     configDir = mkOption {
       default = "/var/lib/hass";
@@ -307,13 +363,13 @@ in
                 type = types.nullOr (
                   types.enum [
                     "metric"
-                    "imperial"
+                    "us_customary"
                   ]
                 );
                 default = null;
                 example = "metric";
                 description = ''
-                  The unit system to use. This also sets temperature_unit, Celsius for Metric and Fahrenheit for Imperial.
+                  The unit system to use. This also sets temperature_unit, Celsius for Metric and Fahrenheit for US Customary.
                 '';
               };
 
@@ -501,6 +557,41 @@ in
       type = types.bool;
       description = "Whether to open the firewall for the specified port.";
     };
+
+    blueprints = mergeAttrsList (
+      map
+        (domain: {
+          ${domain} = mkOption {
+            default = [ ];
+            description = ''
+              List of ${domain}
+              [blueprints](https://www.home-assistant.io/docs/blueprint/) to
+              install into {file}`''${config.services.home-assistant.configDir}/blueprints/${domain}`.
+            '';
+            example =
+              if domain == "automation" then
+                literalExpression ''
+                  [
+                    (pkgs.fetchurl {
+                      url = "https://github.com/home-assistant/core/raw/2025.1.4/homeassistant/components/automation/blueprints/motion_light.yaml";
+                      hash = "sha256-4HrDX65ycBMfEY2nZ7A25/d3ZnIHdpHZ+80Cblp+P5w=";
+                    })
+                  ]
+                ''
+              else if domain == "template" then
+                literalExpression "[ \"\${pkgs.home-assistant.src}/homeassistant/components/template/blueprints/inverted_binary_sensor.yaml\" ]"
+              else
+                literalExpression "[ ./blueprint.yaml ]";
+            type = types.listOf (types.coercedTo types.path (x: "${x}") types.pathInStore);
+          };
+        })
+        # https://www.home-assistant.io/docs/blueprint/schema/#domain
+        [
+          "automation"
+          "script"
+          "template"
+        ]
+    );
   };
 
   config = mkIf cfg.enable {
@@ -514,12 +605,12 @@ in
     networking.firewall.allowedTCPPorts = mkIf cfg.openFirewall [ cfg.config.http.server_port ];
 
     # symlink the configuration to /etc/home-assistant
-    environment.etc = lib.mkMerge [
-      (lib.mkIf (cfg.config != null && !cfg.configWritable) {
+    environment.etc = mkMerge [
+      (mkIf (cfg.config != null && !cfg.configWritable) {
         "home-assistant/configuration.yaml".source = configFile;
       })
 
-      (lib.mkIf (cfg.lovelaceConfig != null && !cfg.lovelaceConfigWritable) {
+      (mkIf (cfg.lovelaceConfig != null && !cfg.lovelaceConfigWritable) {
         "home-assistant/ui-lovelace.yaml".source = lovelaceConfigFile;
       })
     ];
@@ -535,8 +626,8 @@ in
         "postgresql.service"
       ];
       reloadTriggers =
-        lib.optional (cfg.config != null) configFile
-        ++ lib.optional (cfg.lovelaceConfig != null) lovelaceConfigFile;
+        optionals (cfg.config != null) [ configFile ]
+        ++ optionals (cfg.lovelaceConfig != null) [ lovelaceConfigFile ];
 
       preStart =
         let
@@ -589,33 +680,58 @@ in
               ln -fns "''${paths[@]}" "${cfg.configDir}/custom_components/"
             done
           '';
+          removeBlueprints = ''
+            # remove blueprints symlinked in from below the /nix/store
+            readarray -d "" blueprints < <(find "${cfg.configDir}/blueprints" -maxdepth 2 -type l -print0)
+            for blueprint in "''${blueprints[@]}"; do
+              if [[ "$(readlink "$blueprint")" =~ ^${escapeShellArg builtins.storeDir} ]]; then
+                rm "$blueprint"
+              fi
+            done
+          '';
+          copyBlueprint =
+            domain: blueprint:
+            let
+              filename =
+                if isStorePath blueprint then substring 33 (-1) (baseNameOf blueprint) else baseNameOf blueprint;
+              path = "${cfg.configDir}/blueprints/${domain}";
+            in
+            ''
+              mkdir -p ${escapeShellArg path}
+              ln -s ${escapeShellArg blueprint} ${escapeShellArg "${path}/${filename}"}
+            '';
+          copyBlueprints = concatStrings (
+            flatten (mapAttrsToList (domain: map (copyBlueprint domain)) cfg.blueprints)
+          );
         in
         (optionalString (cfg.config != null) copyConfig)
         + (optionalString (cfg.lovelaceConfig != null) copyLovelaceConfig)
         + copyCustomLovelaceModules
-        + copyCustomComponents;
+        + copyCustomComponents
+        + removeBlueprints
+        + copyBlueprints;
       environment.PYTHONPATH = package.pythonPath;
       serviceConfig =
         let
           # List of capabilities to equip home-assistant with, depending on configured components
-          capabilities = lib.unique (
+          capabilities = unique (
             [
               # Empty string first, so we will never accidentally have an empty capability bounding set
               # https://github.com/NixOS/nixpkgs/issues/120617#issuecomment-830685115
               ""
             ]
-            ++ lib.optionals (builtins.any useComponent componentsUsingBluetooth) [
+            ++ optionals (any useComponent componentsUsingBluetooth) [
               # Required for interaction with hci devices and bluetooth sockets, identified by bluetooth-adapters dependency
               # https://www.home-assistant.io/integrations/bluetooth_le_tracker/#rootless-setup-on-core-installs
               "CAP_NET_ADMIN"
               "CAP_NET_RAW"
             ]
-            ++ lib.optionals (useComponent "emulated_hue") [
+            ++ optionals (useComponent "emulated_hue") [
               # Alexa looks for the service on port 80
               # https://www.home-assistant.io/integrations/emulated_hue
               "CAP_NET_BIND_SERVICE"
             ]
-            ++ lib.optionals (useComponent "nmap_tracker") [
+            ++ optionals (useComponent "nmap_tracker") [
               # https://www.home-assistant.io/integrations/nmap_tracker#linux-capabilities
               "CAP_NET_ADMIN"
               "CAP_NET_BIND_SERVICE"
@@ -644,12 +760,14 @@ in
             "inkbird"
             "improv_ble"
             "keymitt_ble"
-            "leaone-ble"
+            "ld2410_ble"
+            "leaone"
             "led_ble"
             "medcom_ble"
             "melnor"
             "moat"
             "mopeka"
+            "motionblinds_ble"
             "oralb"
             "private_ble_device"
             "qingping"
@@ -683,25 +801,34 @@ in
             # mostly the ones using config flows already.
             "acer_projector"
             "alarmdecoder"
+            "aurora_abb_powerone"
             "blackbird"
+            "bryant_evolution"
+            "crownstone"
             "deconz"
             "dsmr"
             "edl21"
             "elkm1"
             "elv"
             "enocean"
+            "homeassistant_hardware"
+            "homeassistant_yellow"
             "firmata"
             "flexit"
             "gpsd"
             "insteon"
             "kwb"
             "lacrosse"
+            "landisgyr_heat_meter"
             "modbus"
             "modem_callerid"
             "mysensors"
             "nad"
             "numato"
+            "nut"
+            "opentherm_gw"
             "otbr"
+            "rainforst_raven"
             "rflink"
             "rfxtrx"
             "scsgate"
@@ -718,15 +845,31 @@ in
 
             # Custom components, maintained manually.
             "amshan"
+            "benqprojector"
           ];
         in
         {
-          ExecStart = "${package}/bin/hass --config '${cfg.configDir}'";
-          ExecReload = "${pkgs.coreutils}/bin/kill -HUP $MAINPID";
+          ExecStart = escapeSystemdExecArgs (
+            [
+              (lib.getExe package)
+              "--config"
+              cfg.configDir
+            ]
+            ++ cfg.extraArgs
+          );
+          ExecReload =
+            (escapeSystemdExecArgs [
+              (lib.getExe' pkgs.coreutils "kill")
+              "-HUP"
+            ])
+            + " $MAINPID";
           User = "hass";
           Group = "hass";
           WorkingDirectory = cfg.configDir;
           Restart = "on-failure";
+
+          # Signal handling
+          # homeassistant/helpers/signal.py
           RestartForceExitStatus = "100";
           SuccessExitStatus = "100";
           KillSignal = "SIGINT";

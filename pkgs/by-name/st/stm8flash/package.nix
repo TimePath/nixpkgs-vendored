@@ -6,7 +6,7 @@
   pkg-config,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation {
   pname = "stm8flash";
   version = "2022-03-27";
 
@@ -23,8 +23,13 @@ stdenv.mkDerivation rec {
   # NOTE: _FORTIFY_SOURCE requires compiling with optimization (-O)
   env.NIX_CFLAGS_COMPILE = "-O";
 
-  preBuild = ''
-    export DESTDIR=$out;
+  makeFlags = [
+    "DESTDIR=${placeholder "out"}"
+  ];
+
+  postPatch = ''
+    substituteInPlace Makefile \
+      --replace 'pkg-config' '$(PKG_CONFIG)'
   '';
 
   nativeBuildInputs = [ pkg-config ];

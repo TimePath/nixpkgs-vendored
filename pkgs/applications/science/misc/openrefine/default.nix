@@ -11,12 +11,12 @@
 }:
 
 let
-  version = "3.8.5";
+  version = "3.9.3";
   src = fetchFromGitHub {
     owner = "openrefine";
     repo = "openrefine";
     rev = version;
-    hash = "sha256-8QAnZCvSUMuRj/Rd85j79GXDQxl8HlEaiU4StsXDdpU=";
+    hash = "sha256-wV5ur31JEGcMSLRHQq/H6GlsdpEzTH6ZxBkE9Sj6TkU=";
   };
 
   npmPkg = buildNpmPackage {
@@ -25,7 +25,7 @@ let
     pname = "openrefine-npm";
     sourceRoot = "${src.name}/main/webapp";
 
-    npmDepsHash = "sha256-u9qledNFqGgMmOIsm2T8w3UoaLbb7WtksUw6xLoRgU8=";
+    npmDepsHash = "sha256-I0iqGniXeqyCWf1DG2nMNkTScCrtJYeYF9n2Zt6Syjc=";
 
     # package.json doesn't supply a version, which npm doesn't like - fix this.
     # directly referencing jq because buildNpmPackage doesn't pass
@@ -55,7 +55,7 @@ maven.buildMavenPackage {
 
   mvnJdk = jdk;
   mvnParameters = "-pl !packaging";
-  mvnHash = "sha256-SrEsJfiZrPy2zZ0Vzl7+d+8XUHGd2DOOs+PHBOZrbIU=";
+  mvnHash = "sha256-pAL+Zhm0qnE1vEvivlXt2cIzIoPFoge5CRrsbfIoGNs=";
 
   nativeBuildInputs = [ makeWrapper ];
 

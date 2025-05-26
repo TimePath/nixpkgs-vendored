@@ -11,7 +11,7 @@ let
   user = "castopod";
 
   # https://docs.castopod.org/getting-started/install.html#requirements
-  phpPackage = pkgs.php.withExtensions (
+  phpPackage = pkgs.php82.withExtensions (
     { enabled, all }:
     with all;
     [

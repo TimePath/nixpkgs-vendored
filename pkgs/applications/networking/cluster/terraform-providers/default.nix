@@ -2,6 +2,7 @@
   lib,
   stdenv,
   buildGoModule,
+  buildGo123Module,
   fetchFromGitHub,
   fetchFromGitLab,
   callPackage,
@@ -48,7 +49,7 @@ let
       doCheck = false;
       # https://github.com/hashicorp/terraform-provider-scaffolding/blob/a8ac8375a7082befe55b71c8cbb048493dd220c2/.goreleaser.yml
       # goreleaser (used for builds distributed via terraform registry) requires that CGO is disabled
-      CGO_ENABLED = 0;
+      env.CGO_ENABLED = 0;
       ldflags = [
         "-s"
         "-w"
@@ -96,6 +97,7 @@ let
 
   # These are the providers that don't fall in line with the default model
   special-providers = {
+    aws = automated-providers.aws.override { mkProviderGoModule = buildGo123Module; };
     # github api seems to be broken, doesn't just fail to recognize the license, it's ignored entirely.
     checkly = automated-providers.checkly.override { spdx = "MIT"; };
     gitlab = automated-providers.gitlab.override {

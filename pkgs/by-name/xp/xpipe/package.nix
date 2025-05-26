@@ -22,6 +22,8 @@
   libXrender,
   libXtst,
   libXxf86vm,
+  util-linux,
+  socat,
 }:
 
 let
@@ -37,7 +39,7 @@ let
 
   hash =
     {
-      x86_64-linux = "sha256-0Cdu1ntG8ZPHbLOIFvVFO6Dj8ZBHl4Rb+MM46luRKj4=";
+      x86_64-linux = "sha256-u2T2pKO+rOs29Un8dKc+sUqBJiruu6GS6wzrJhKKW9Y=";
     }
     .${system} or throwSystem;
 
@@ -46,7 +48,7 @@ let
 in
 stdenvNoCC.mkDerivation rec {
   pname = "xpipe";
-  version = "12.0";
+  version = "14.2";
 
   src = fetchzip {
     url = "https://github.com/xpipe-io/xpipe/releases/download/${version}/xpipe-portable-linux-${arch}.tar.gz";
@@ -80,6 +82,8 @@ stdenvNoCC.mkDerivation rec {
     libXrender
     libXtst
     libXxf86vm
+    util-linux
+    socat
   ];
 
   desktopItem = makeDesktopItem {
@@ -121,6 +125,8 @@ stdenvNoCC.mkDerivation rec {
           fontconfig
           gtk3
           udev
+          util-linux
+          socat
         ]
       }"
     makeShellWrapper "$out/opt/$pkg/app/scripts/xpiped_debug_raw.sh" "$out/opt/$pkg/app/scripts/xpiped_debug.sh" \
@@ -129,6 +135,8 @@ stdenvNoCC.mkDerivation rec {
           fontconfig
           gtk3
           udev
+          util-linux
+          socat
         ]
       }"
 

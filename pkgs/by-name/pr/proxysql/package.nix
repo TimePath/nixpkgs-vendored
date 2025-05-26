@@ -33,13 +33,13 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "proxysql";
-  version = "2.6.6";
+  version = "2.7.1";
 
   src = fetchFromGitHub {
     owner = "sysown";
     repo = "proxysql";
     rev = finalAttrs.version;
-    hash = "sha256-VyABbePhH4r+eJxBnElceiFBpPXTRqXHCD+o0abh28Q=";
+    hash = "sha256-Ouz1SSc35gQaJcVQO95azkxNgLxuY712ELAwM5buEtY=";
   };
 
   patches = [
@@ -221,7 +221,7 @@ stdenv.mkDerivation (finalAttrs: {
     mainProgram = "proxysql";
     homepage = "https://proxysql.com/";
     license = with licenses; [ gpl3Only ];
-    maintainers = teams.helsinki-systems.members;
+    teams = [ teams.helsinki-systems ];
     platforms = platforms.unix;
   };
 })

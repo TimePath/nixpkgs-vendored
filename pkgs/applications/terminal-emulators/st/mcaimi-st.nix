@@ -10,7 +10,7 @@
   pkg-config,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation {
   pname = "mcaimi-st";
   version = "0.pre+unstable=2021-08-30";
 
@@ -45,7 +45,7 @@ stdenv.mkDerivation rec {
     description = "Suckless Terminal fork";
     mainProgram = "st";
     license = licenses.mit;
-    maintainers = with maintainers; [ AndersonTorres ];
+    maintainers = with maintainers; [ ];
     platforms = platforms.linux;
   };
 }

@@ -2,6 +2,8 @@
   stdenv,
   lib,
   fetchFromGitHub,
+  cmake,
+  ninja,
   libGL,
   libGLU,
   libpng,
@@ -13,21 +15,26 @@
   pcre,
   SDL2,
   sqlite,
-  getconf,
 }:
 
 stdenv.mkDerivation rec {
   pname = "hashlink";
-  version = "1.13";
+  version = "1.15";
 
   src = fetchFromGitHub {
     owner = "HaxeFoundation";
     repo = "hashlink";
     rev = version;
-    sha256 = "lpHW0JWxbLtOBns3By56ZBn47CZsDzwOFBuW9MlERrE=";
+    sha256 = "sha256-nVr+fDdna8EEHvIiXsccWFRTYzXfb4GG1zrfL+O6zLA=";
   };
 
-  makeFlags = [ "PREFIX=$(out)" ];
+  # incompatible pointer type error: const char ** -> const void **
+  postPatch = ''
+    substituteInPlace libs/sqlite/sqlite.c \
+     --replace-warn \
+       "sqlite3_prepare16_v2(db->db, sql, -1, &r->r, &tl)" \
+       "sqlite3_prepare16_v2(db->db, sql, -1, &r->r, (const void**)&tl)"
+  '';
 
   buildInputs = [
     libGL
@@ -43,7 +50,10 @@ stdenv.mkDerivation rec {
     sqlite
   ];
 
-  nativeBuildInputs = [ getconf ];
+  nativeBuildInputs = [
+    cmake
+    ninja
+  ];
 
   # append default installPhase with library install for haxe
   postInstall =
@@ -53,12 +63,8 @@ stdenv.mkDerivation rec {
     ''
       mkdir -p "${haxelibPath}"
       echo -n "${version}" > "${haxelibPath}/../.current"
-      cp -r other/haxelib/* "${haxelibPath}"
+      cp -r ../other/haxelib/* "${haxelibPath}"
     '';
-
-  postFixup = lib.optionalString stdenv.hostPlatform.isDarwin ''
-    install_name_tool -change libhl.dylib $out/lib/libhl.dylib $out/bin/hl
-  '';
 
   meta = with lib; {
     description = "Virtual machine for Haxe";

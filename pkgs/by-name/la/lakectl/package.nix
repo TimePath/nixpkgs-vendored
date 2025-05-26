@@ -5,25 +5,25 @@
   nix-update-script,
 }:
 
-buildGoModule rec {
+buildGoModule (finalAttrs: {
   pname = "lakectl";
-  version = "1.53.0";
+  version = "1.55.0";
 
   src = fetchFromGitHub {
     owner = "treeverse";
     repo = "lakeFS";
-    tag = "v${version}";
-    hash = "sha256-AYFhkwnlK8RU/HPemJkoZiJ1DCSszIFybJRsUIGhs4g=";
+    tag = "v${finalAttrs.version}";
+    hash = "sha256-T/baBUkcRXQkNqgTwqsaHmv91ZfW00ti+86b0vGWNmo=";
   };
 
   subPackages = [ "cmd/lakectl" ];
   proxyVendor = true;
-  vendorHash = "sha256-p5eHkVbUrcSC4i+R/HGh2nSTIWVkFNiN+TVh10rdWqs=";
+  vendorHash = "sha256-HdJeWHQmLOHZaq60xavt7MlkY1siF8JfX5tb+8FexJ4=";
 
   ldflags = [
     "-s"
     "-w"
-    "-X github.com/treeverse/lakefs/pkg/version.Version=${version}"
+    "-X github.com/treeverse/lakefs/pkg/version.Version=${finalAttrs.version}"
   ];
 
   preBuild = ''
@@ -39,11 +39,11 @@ buildGoModule rec {
 
     versionOutput=$($out/bin/lakectl --version)
     echo "Version output: $versionOutput"
-    if [[ "$versionOutput" == *"lakectl version: ${version}"* ]]; then
+    if [[ "$versionOutput" == *"lakectl version: ${finalAttrs.version}"* ]]; then
       echo "Version check passed!"
     else
       echo "Version check failed!"
-      echo "Expected version: 'lakectl version: ${version}'"
+      echo "Expected version: 'lakectl version: ${finalAttrs.version}'"
       echo "Got version: $versionOutput"
       exit 1
     fi
@@ -56,9 +56,9 @@ buildGoModule rec {
   meta = {
     description = "Command line tool for LakeFS";
     homepage = "https://docs.lakefs.io/reference/cli.html";
-    changelog = "https://github.com/treeverse/lakeFS/blob/v${src.tag}/CHANGELOG.md";
+    changelog = "https://github.com/treeverse/lakeFS/blob/v${finalAttrs.version}/CHANGELOG.md";
     license = lib.licenses.asl20;
     maintainers = with lib.maintainers; [ daspk04 ];
     mainProgram = "lakectl";
   };
-}
+})
