@@ -1,15 +1,23 @@
+# Evaluates all the accessible paths in nixpkgs.
+# *This only builds on Linux* since it requires the Linux sandbox isolation to
+# be able to write in various places while evaluating inside the sandbox.
+#
+# This file is used by nixpkgs CI (see .github/workflows/eval.yml) as well as
+# being used directly as an entry point in Lix's CI (in `flake.nix` in the Lix
+# repo).
+#
+# If you know you are doing a breaking API change, please ping the nixpkgs CI
+# maintainers and the Lix maintainers (`nix eval -f . lib.teams.lix`).
 {
   callPackage,
   lib,
   runCommand,
   writeShellScript,
-  writeText,
   symlinkJoin,
   time,
   procps,
-  nixVersions,
+  nix,
   jq,
-  python3,
 }:
 
 let
@@ -30,8 +38,6 @@ let
         ]
       );
     };
-
-  nix = nixVersions.latest;
 
   supportedSystems = builtins.fromJSON (builtins.readFile ../supportedSystems.json);
 
@@ -73,7 +79,9 @@ let
       # The number of attributes per chunk, see ./README.md for more info.
       chunkSize,
       checkMeta ? true,
-      includeBroken ? true,
+
+      # Don't try to eval packages marked as broken.
+      includeBroken ? false,
       # Whether to just evaluate a single chunk for quick testing
       quickTest ? false,
     }:
@@ -191,11 +199,13 @@ let
         cat "$chunkOutputDir"/result/* | jq -s 'add | map_values(.outputs)' > $out/${evalSystem}/paths.json
       '';
 
+  diff = callPackage ./diff.nix { };
+
   combine =
     {
-      resultsDir,
+      diffDir,
     }:
-    runCommand "combined-result"
+    runCommand "combined-eval"
       {
         nativeBuildInputs = [
           jq
@@ -205,12 +215,22 @@ let
         mkdir -p $out
 
         # Combine output paths from all systems
-        cat ${resultsDir}/*/paths.json | jq -s add > $out/outpaths.json
+        cat ${diffDir}/*/diff.json | jq -s '
+          reduce .[] as $item ({}; {
+            added: (.added + $item.added),
+            changed: (.changed + $item.changed),
+            removed: (.removed + $item.removed)
+          })
+        ' > $out/combined-diff.json
 
-        mkdir -p $out/stats
+        mkdir -p $out/before/stats
+        for d in ${diffDir}/before/*; do
+          cp -r "$d"/stats-by-chunk $out/before/stats/$(basename "$d")
+        done
 
-        for d in ${resultsDir}/*; do
-          cp -r "$d"/stats-by-chunk $out/stats/$(basename "$d")
+        mkdir -p $out/after/stats
+        for d in ${diffDir}/after/*; do
+          cp -r "$d"/stats-by-chunk $out/after/stats/$(basename "$d")
         done
       '';
 
@@ -225,18 +245,26 @@ let
       quickTest ? false,
     }:
     let
-      results = symlinkJoin {
-        name = "results";
+      diffs = symlinkJoin {
+        name = "diffs";
         paths = map (
           evalSystem:
-          singleSystem {
-            inherit quickTest evalSystem chunkSize;
+          let
+            eval = singleSystem {
+              inherit quickTest evalSystem chunkSize;
+            };
+          in
+          diff {
+            inherit evalSystem;
+            # Local "full" evaluation doesn't do a real diff.
+            beforeDir = eval;
+            afterDir = eval;
           }
         ) evalSystems;
       };
     in
     combine {
-      resultsDir = results;
+      diffDir = diffs;
     };
 
 in
@@ -244,6 +272,7 @@ in
   inherit
     attrpathsSuperset
     singleSystem
+    diff
     combine
     compare
     # The above three are used by separate VMs in a GitHub workflow,

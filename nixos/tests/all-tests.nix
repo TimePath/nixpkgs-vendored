@@ -409,6 +409,7 @@ in
   dovecot = handleTest ./dovecot.nix { };
   drawterm = discoverTests (import ./drawterm.nix);
   drbd = handleTest ./drbd.nix { };
+  draupnir = runTest ./matrix/draupnir.nix;
   druid = handleTestOn [ "x86_64-linux" ] ./druid { };
   drbd-driver = handleTest ./drbd-driver.nix { };
   dublin-traceroute = handleTest ./dublin-traceroute.nix { };
@@ -1503,6 +1504,7 @@ in
   zipline = runTest ./zipline.nix;
   zoneminder = runTest ./zoneminder.nix;
   zookeeper = runTest ./zookeeper.nix;
+  zoom-us = runTest ./zoom-us.nix;
   zram-generator = runTest ./zram-generator.nix;
   zrepl = runTest ./zrepl.nix;
   zsh-history = runTest ./zsh-history.nix;

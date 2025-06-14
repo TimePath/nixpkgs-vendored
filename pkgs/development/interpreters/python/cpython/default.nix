@@ -24,6 +24,7 @@
   sqlite,
   xz,
   zlib,
+  zstd,
 
   # platform-specific dependencies
   bashNonInteractive,
@@ -196,6 +197,8 @@ let
     ++ optionals (!stdenv.hostPlatform.isDarwin) [
       autoconf-archive # needed for AX_CHECK_COMPILE_FLAG
       autoreconfHook
+    ]
+    ++ optionals (!stdenv.hostPlatform.isDarwin || passthru.pythonAtLeast "3.14") [
       pkg-config
     ]
     ++ optionals (stdenv.hostPlatform != stdenv.buildPlatform) [
@@ -226,6 +229,9 @@ let
       sqlite
       xz
       zlib
+    ]
+    ++ optionals (passthru.pythonAtLeast "3.14") [
+      zstd
     ]
     ++ optionals bluezSupport [
       bluez
@@ -332,6 +338,9 @@ stdenv.mkDerivation (finalAttrs: {
     ]
     ++ optionals (pythonAtLeast "3.13") [
       ./3.13/virtualenv-permissions.patch
+    ]
+    ++ optionals (pythonAtLeast "3.14") [
+      ./3.14/CVE-2025-4517.patch
     ]
     ++ optionals mimetypesSupport [
       # Make the mimetypes module refer to the right file
