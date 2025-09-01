@@ -45,7 +45,7 @@ jobs:
         with:
           merged-as-untrusted: true
 
-      - uses: cachix/install-nix-action@17fe5fb4a23ad6cbbe47d6b3f359611ad276644c # v31
+      - uses: cachix/install-nix-action@56a7bb7b56d9a92d4fd1bc05758de7eea4a370a8 # v31
         with:
           extra_nix_config: sandbox = true
 
