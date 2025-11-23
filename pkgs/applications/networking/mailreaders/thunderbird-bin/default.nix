@@ -33,7 +33,6 @@ let
   inherit (generated) version sources;
 
   mozillaPlatforms = {
-    i686-linux = "linux-i686";
     x86_64-linux = "linux-x86_64";
   };
 
@@ -45,7 +44,8 @@ let
 
   policies = {
     DisableAppUpdate = true;
-  } // config.thunderbird.policies or { };
+  }
+  // config.thunderbird.policies or { };
   policiesJson = writeText "thunderbird-policies.json" (builtins.toJSON { inherit policies; });
 
   defaultSource = lib.findFirst (sourceMatches "en-US") { } sources;
@@ -104,7 +104,6 @@ stdenv.mkDerivation {
   passthru.updateScript = import ./../../browsers/firefox-bin/update.nix {
     inherit
       pname
-      lib
       writeScript
       xidel
       coreutils
@@ -116,7 +115,6 @@ stdenv.mkDerivation {
       versionSuffix
       ;
     baseName = "thunderbird";
-    channel = "release";
     basePath = "pkgs/applications/networking/mailreaders/thunderbird-bin";
     baseUrl = "http://archive.mozilla.org/pub/thunderbird/releases/";
   };

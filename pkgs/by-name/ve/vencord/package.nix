@@ -14,19 +14,29 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "vencord";
-  version = "1.12.3";
+  version = "1.13.6";
 
   src = fetchFromGitHub {
     owner = "Vendicated";
     repo = "Vencord";
-    rev = "v${finalAttrs.version}";
-    hash = "sha256-fOZXgyA61G+D7otNNO8d89ghR/GiYPJ7vSZtj9TeGuU=";
+    tag = "v${finalAttrs.version}";
+    hash = "sha256-QY23r5URr0yDuZXamnW7Nrp+GAJOZ2Q+yZiyEHB8+o8=";
   };
 
-  pnpmDeps = pnpm_10.fetchDeps {
-    inherit (finalAttrs) pname src;
-    hash = "sha256-hO6QKRr4jTfesRDAEGcpFeJmGTGLGMw6EgIvD23DNzw=";
-  };
+  patches = [ ./fix-deps.patch ];
+
+  postPatch = ''
+    substituteInPlace packages/vencord-types/package.json \
+      --replace-fail '"@types/react": "18.3.1"' '"@types/react": "19.0.12"'
+  '';
+
+  pnpmDeps =
+    (pnpm_10.fetchDeps {
+      inherit (finalAttrs) pname src;
+      fetcherVersion = 2;
+      hash = "sha256-5MjxEs+jbowJJbJ9+Z+vppFImpB+PZzEhntwRAgv+xM=";
+    }).overrideAttrs
+      { inherit (finalAttrs) patches postPatch; };
 
   nativeBuildInputs = [
     git
@@ -80,10 +90,12 @@ stdenv.mkDerivation (finalAttrs: {
     homepage = "https://github.com/Vendicated/Vencord";
     license = lib.licenses.gpl3Only;
     maintainers = with lib.maintainers; [
-      donteatoreo
+      FlameFlag
       FlafyDev
+      Gliczy
       NotAShelf
       Scrumplex
+      ryand56
     ];
   };
 })

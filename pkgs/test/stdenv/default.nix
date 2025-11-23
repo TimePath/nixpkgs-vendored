@@ -40,21 +40,19 @@ let
         {
           inherit name;
 
-          postFixup =
-            previousAttrs.postFixup
-            + ''
-              declare -p wrapperName
-              echo "env.wrapperName = $wrapperName"
-              [[ $wrapperName == "CC_WRAPPER" ]] || (echo "'\$wrapperName' was not 'CC_WRAPPER'" && false)
-              declare -p suffixSalt
-              echo "env.suffixSalt = $suffixSalt"
-              [[ $suffixSalt == "${stdenv'.cc.suffixSalt}" ]] || (echo "'\$suffxSalt' was not '${stdenv'.cc.suffixSalt}'" && false)
+          postFixup = previousAttrs.postFixup + ''
+            declare -p wrapperName
+            echo "env.wrapperName = $wrapperName"
+            [[ $wrapperName == "CC_WRAPPER" ]] || (echo "'\$wrapperName' was not 'CC_WRAPPER'" && false)
+            declare -p suffixSalt
+            echo "env.suffixSalt = $suffixSalt"
+            [[ $suffixSalt == "${stdenv'.cc.suffixSalt}" ]] || (echo "'\$suffxSalt' was not '${stdenv'.cc.suffixSalt}'" && false)
 
-              grep -q "@out@" $out/bin/cc || echo "@out@ in $out/bin/cc was substituted"
-              grep -q "@suffixSalt@" $out/bin/cc && (echo "$out/bin/cc contains unsubstituted variables" && false)
+            grep -q "@out@" $out/bin/cc || echo "@out@ in $out/bin/cc was substituted"
+            grep -q "@suffixSalt@" $out/bin/cc && (echo "$out/bin/cc contains unsubstituted variables" && false)
 
-              touch $out
-            '';
+            touch $out
+          '';
         }
         // extraAttrs
       )
@@ -220,9 +218,6 @@ let
 in
 
 {
-  # Disable on Darwin due to assumptions with __bootPackages
-  __attrsFailEvaluation = stdenv.hostPlatform.isDarwin;
-
   # tests for hooks in `stdenv.defaultNativeBuildInputs`
   hooks = lib.recurseIntoAttrs (
     import ./hooks.nix {
@@ -303,7 +298,7 @@ in
               "-c"
               ": > $out"
             ];
-            system = builtins.currentSystem;
+            inherit (stdenv.buildPlatform) system;
           };
           dep2 = derivation {
             name = "dep2";
@@ -312,7 +307,7 @@ in
               "-c"
               ": > $out"
             ];
-            system = builtins.currentSystem;
+            inherit (stdenv.buildPlatform) system;
           };
           passAsFile = [ "dep2" ];
         })
@@ -343,7 +338,7 @@ in
               "-c"
               ": > $out"
             ];
-            system = builtins.currentSystem;
+            inherit (stdenv.buildPlatform) system;
           };
           dep2 = derivation {
             name = "dep2";
@@ -352,7 +347,7 @@ in
               "-c"
               ": > $out"
             ];
-            system = builtins.currentSystem;
+            inherit (stdenv.buildPlatform) system;
           };
           name = "meow";
           outputHash = "sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=";

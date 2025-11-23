@@ -91,6 +91,7 @@ let
     range
     recursiveUpdateUntil
     removePrefix
+    replaceString
     replicate
     runTests
     setFunctionArgs
@@ -144,6 +145,11 @@ let
       inherit expected;
     };
 
+  dummyDerivation = derivation {
+    name = "name";
+    builder = "builder";
+    system = "system";
+  };
 in
 
 runTests {
@@ -379,14 +385,39 @@ runTests {
     expected = 255;
   };
 
-  testFromHexStringSecondExample = {
-    expr = fromHexString (builtins.hashString "sha256" "test");
+  # Highest supported integer value in Nix.
+  testFromHexStringMaximum = {
+    expr = fromHexString "7fffffffffffffff";
     expected = 9223372036854775807;
   };
 
   testFromHexStringWithPrefix = {
     expr = fromHexString "0Xf";
     expected = 15;
+  };
+
+  # FIXME: This might be bad and should potentially be deprecated.
+  testFromHexStringQuestionableMixedCase = {
+    expr = fromHexString "eEeEe";
+    expected = 978670;
+  };
+
+  # FIXME: This is probably bad and should potentially be deprecated.
+  testFromHexStringQuestionableUnderscore = {
+    expr = fromHexString "F_f";
+    expected = 255;
+  };
+
+  # FIXME: This is definitely bad and should be deprecated.
+  testFromHexStringBadComment = {
+    expr = fromHexString "0 # oops";
+    expected = 0;
+  };
+
+  # FIXME: Oh my god.
+  testFromHexStringAwfulInjection = {
+    expr = fromHexString "1\nwhoops = {}";
+    expected = 1;
   };
 
   testToBaseDigits = {
@@ -495,6 +526,11 @@ runTests {
       ]
     );
     expected = "/usr/include:/usr/local/include";
+  };
+
+  testReplaceStringString = {
+    expr = strings.replaceString "." "_" "v1.2.3";
+    expected = "v1_2_3";
   };
 
   testReplicateString = {
@@ -751,18 +787,8 @@ runTests {
   };
 
   testSplitStringsDerivation = {
-    expr = take 3 (
-      strings.splitString "/" (derivation {
-        name = "name";
-        builder = "builder";
-        system = "system";
-      })
-    );
-    expected = [
-      ""
-      "nix"
-      "store"
-    ];
+    expr = lib.dropEnd 1 (strings.splitString "/" dummyDerivation);
+    expected = strings.splitString "/" builtins.storeDir;
   };
 
   testSplitVersionSingle = {
@@ -810,7 +836,7 @@ runTests {
       in
       {
         storePath = isStorePath goodPath;
-        storePathDerivation = isStorePath (import ../.. { system = "x86_64-linux"; }).hello;
+        storePathDerivation = isStorePath dummyDerivation;
         storePathAppendix = isStorePath "${goodPath}/bin/python";
         nonAbsolute = isStorePath (concatStrings (tail (stringToCharacters goodPath)));
         asPath = isStorePath (/. + goodPath);
@@ -895,7 +921,7 @@ runTests {
   };
 
   testHasInfixDerivation = {
-    expr = hasInfix "hello" (import ../.. { system = "x86_64-linux"; }).hello;
+    expr = hasInfix "name" dummyDerivation;
     expected = true;
   };
 
@@ -1706,6 +1732,11 @@ runTests {
     ];
   };
 
+  testReplaceString = {
+    expr = replaceString "world" "Nix" "Hello, world!";
+    expected = "Hello, Nix!";
+  };
+
   testReplicate = {
     expr = replicate 3 "a";
     expected = [
@@ -1902,6 +1933,39 @@ runTests {
   };
 
   # ATTRSETS
+
+  testGenAttrs = {
+    expr = attrsets.genAttrs [ "foo" "bar" ] (name: "x_" + name);
+    expected = {
+      foo = "x_foo";
+      bar = "x_bar";
+    };
+  };
+  testGenAttrs' = {
+    expr = attrsets.genAttrs' [ "foo" "bar" ] (s: nameValuePair ("x_" + s) ("y_" + s));
+    expected = {
+      x_foo = "y_foo";
+      x_bar = "y_bar";
+    };
+  };
+  testGenAttrs'Example2 = {
+    expr = attrsets.genAttrs' [
+      {
+        x = "foo";
+        y = "baz";
+      }
+    ] (s: lib.nameValuePair ("x_" + s.x) ("y_" + s.y));
+    expected = {
+      x_foo = "y_baz";
+    };
+  };
+  testGenAttrs'ConflictingName = {
+    # c.f. warning of genAttrs'
+    expr = attrsets.genAttrs' [ "foo" "bar" "baz" ] (s: nameValuePair "foo" s);
+    expected = {
+      foo = "foo";
+    };
+  };
 
   testConcatMapAttrs = {
     expr =

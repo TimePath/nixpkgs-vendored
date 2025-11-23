@@ -24,23 +24,23 @@ let
 in
 rustPlatform.buildRustPackage (finalAttrs: {
   pname = "libsignal-node";
-  version = "0.72.1";
+  version = "0.83.0";
 
   src = fetchFromGitHub {
     owner = "signalapp";
     repo = "libsignal";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-A8EAHHcBFSD4ZlvFig64g4+eoZQCuqE/qv509hA3I4s=";
+    hash = "sha256-lSk9C2RIRsAlSUr8folhdHkHkpAfPM+vwJ/rZ6mys3Q=";
   };
-  useFetchCargoVendor = true;
-  cargoHash = "sha256-+vJrywIi/RcGGGns42XlN6S63RBil3fB4XByTLsaFVc=";
+
+  cargoHash = "sha256-0P89+p0WlQaa48wpgsaapIhEzlAnWVPl9qD+jnBw9mM=";
 
   npmRoot = "node";
   npmDeps = fetchNpmDeps {
     name = "${finalAttrs.pname}-npm-deps";
     inherit (finalAttrs) version src;
     sourceRoot = "${finalAttrs.src.name}/${finalAttrs.npmRoot}";
-    hash = "sha256-ZD0ZN2b7KReGbnvarqvGpOlQ5TsJfnaHmmOWQ42Y48E=";
+    hash = "sha256-4sd8JVQfCC4dAkksICbb3e4JjNcgplOW26TyRkAFWp0=";
   };
 
   nativeBuildInputs = [
@@ -62,22 +62,15 @@ rustPlatform.buildRustPackage (finalAttrs: {
     ./dont-strip-absolute-paths.patch
   ];
   postPatch = ''
-    substituteInPlace node/binding.gyp \
-      --replace-fail "'--out-dir', '<(PRODUCT_DIR)/'," \
-                     "'--out-dir', '$out/lib/<(NODE_OS_NAME)-<(target_arch)/'," \
-      --replace-fail "'target_name': 'libsignal_client_<(NODE_OS_NAME)_<(target_arch).node'," \
-                     "'target_name': '@signalapp+libsignal-client',"
-
     substituteInPlace node/build_node_bridge.py \
-      --replace-fail "dst_base = 'libsignal_client_%s_%s' % (node_os_name, node_arch)" \
-                     "dst_base = '@signalapp+libsignal-client'"
+      --replace-fail "'prebuilds'" "'$out/lib'"
   '';
 
   buildPhase = ''
     runHook preBuild
 
     pushd node
-    npx node-gyp rebuild
+    npm run build -- --copy-to-prebuilds
     popd
 
     runHook postBuild

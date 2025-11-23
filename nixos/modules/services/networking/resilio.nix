@@ -37,13 +37,12 @@ let
       }
       // optionalAttrs (cfg.directoryRoot != "") { directory_root = cfg.directoryRoot; }
       // optionalAttrs cfg.enableWebUI {
-        webui =
-          {
-            listen = "${cfg.httpListenAddr}:${toString cfg.httpListenPort}";
-          }
-          // (optionalAttrs (cfg.httpLogin != "") { login = cfg.httpLogin; })
-          // (optionalAttrs (cfg.httpPass != "") { password = cfg.httpPass; })
-          // (optionalAttrs (cfg.apiKey != "") { api_key = cfg.apiKey; });
+        webui = {
+          listen = "${cfg.httpListenAddr}:${toString cfg.httpListenPort}";
+        }
+        // (optionalAttrs (cfg.httpLogin != "") { login = cfg.httpLogin; })
+        // (optionalAttrs (cfg.httpPass != "") { password = cfg.httpPass; })
+        // (optionalAttrs (cfg.apiKey != "") { api_key = cfg.apiKey; });
       }
       // optionalAttrs (sharedFoldersRecord != [ ]) {
         shared_folders = sharedFoldersRecord;
@@ -298,7 +297,7 @@ in
 
     users.groups.rslsync.gid = config.ids.gids.rslsync;
 
-    systemd.services.resilio = with pkgs; {
+    systemd.services.resilio = {
       description = "Resilio Sync Service";
       wantedBy = [ "multi-user.target" ];
       after = [ "network.target" ];

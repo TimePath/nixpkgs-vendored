@@ -103,79 +103,78 @@ let
 
   opusWithCustomModes = libopus.override { withCustomModes = true; };
 
-  deps =
-    [
-      alsa-lib
-      at-spi2-atk
-      at-spi2-core
-      atk
-      bzip2
-      cairo
-      coreutils
-      cups
-      curl
-      dbus
-      expat
-      flac
-      fontconfig
-      freetype
-      gcc-unwrapped.lib
-      gdk-pixbuf
-      glib
-      harfbuzz
-      icu
-      libcap
-      libdrm
-      liberation_ttf
-      libexif
-      libglvnd
-      libkrb5
-      libpng
-      libX11
-      libxcb
-      libXcomposite
-      libXcursor
-      libXdamage
-      libXext
-      libXfixes
-      libXi
-      libxkbcommon
-      libXrandr
-      libXrender
-      libXScrnSaver
-      libxshmfence
-      libXtst
-      libgbm
-      nspr
-      nss
-      opusWithCustomModes
-      pango
-      pciutils
-      pipewire
-      snappy
-      speechd-minimal
-      systemd
-      util-linux
-      vulkan-loader
-      wayland
-      wget
-    ]
-    ++ lib.optional pulseSupport libpulseaudio
-    ++ lib.optional libvaSupport libva
-    ++ [
-      gtk3
-      gtk4
-      qt6.qtbase
-      qt6.qtwayland
-    ];
+  deps = [
+    alsa-lib
+    at-spi2-atk
+    at-spi2-core
+    atk
+    bzip2
+    cairo
+    coreutils
+    cups
+    curl
+    dbus
+    expat
+    flac
+    fontconfig
+    freetype
+    gcc-unwrapped.lib
+    gdk-pixbuf
+    glib
+    harfbuzz
+    icu
+    libcap
+    libdrm
+    liberation_ttf
+    libexif
+    libglvnd
+    libkrb5
+    libpng
+    libX11
+    libxcb
+    libXcomposite
+    libXcursor
+    libXdamage
+    libXext
+    libXfixes
+    libXi
+    libxkbcommon
+    libXrandr
+    libXrender
+    libXScrnSaver
+    libxshmfence
+    libXtst
+    libgbm
+    nspr
+    nss
+    opusWithCustomModes
+    pango
+    pciutils
+    pipewire
+    snappy
+    speechd-minimal
+    systemd
+    util-linux
+    vulkan-loader
+    wayland
+    wget
+  ]
+  ++ lib.optional pulseSupport libpulseaudio
+  ++ lib.optional libvaSupport libva
+  ++ [
+    gtk3
+    gtk4
+    qt6.qtbase
+    qt6.qtwayland
+  ];
 
   linux = stdenvNoCC.mkDerivation (finalAttrs: {
     inherit pname meta passthru;
-    version = "137.0.7151.103";
+    version = "142.0.7444.175";
 
     src = fetchurl {
       url = "https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_${finalAttrs.version}-1_amd64.deb";
-      hash = "sha256-fodxvhsZXB5qyQf05Id5DDtoAyh7Y5m+b1p5DgTNfM4=";
+      hash = "sha256-jh1xtWvntfqM894lG8nW9OS2UAaXFC8PGpTFpexuLoU=";
     };
 
     # With strictDeps on, some shebangs were not being patched correctly
@@ -231,9 +230,6 @@ let
         --replace-fail /usr/bin/google-chrome-$dist $exe
       substituteInPlace $out/share/gnome-control-center/default-apps/google-$appname.xml \
         --replace-fail /opt/google/$appname/google-$appname $exe
-      substituteInPlace $out/share/menu/google-$appname.menu \
-        --replace-fail /opt $out/share \
-        --replace-fail $out/share/google/$appname/google-$appname $exe
 
       for icon_file in $out/share/google/chrome*/product_logo_[0-9]*.png; do
         num_and_suffix="''${icon_file##*logo_}"
@@ -276,11 +272,11 @@ let
 
   darwin = stdenvNoCC.mkDerivation (finalAttrs: {
     inherit pname meta passthru;
-    version = "137.0.7151.104";
+    version = "142.0.7444.176";
 
     src = fetchurl {
-      url = "http://dl.google.com/release2/chrome/din3a4gpe3yt7dv7nagbwgsv5a_137.0.7151.104/GoogleChrome-137.0.7151.104.dmg";
-      hash = "sha256-zS8h03FYAAoj9bHcm/P3d70W2hhRfqw+wsioHgmBKg8=";
+      url = "http://dl.google.com/release2/chrome/adwwopanah7ruvzdwqiygodsggsq_142.0.7444.176/GoogleChrome-142.0.7444.176.dmg";
+      hash = "sha256-sH/oPMJOxJNKw+znU2lX7BYtSN6vfcs0CyvxOXlPoFs=";
     };
 
     dontPatch = true;
@@ -319,7 +315,6 @@ let
     homepage = "https://www.google.com/chrome/browser/";
     license = lib.licenses.unfree;
     maintainers = with lib.maintainers; [
-      jnsgruk
       johnrtitor
     ];
     platforms = lib.platforms.darwin ++ [ "x86_64-linux" ];

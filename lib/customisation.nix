@@ -385,7 +385,7 @@ rec {
       outputs = drv.outputs or [ "out" ];
 
       commonAttrs =
-        drv // (listToAttrs outputsList) // ({ all = map (x: x.value) outputsList; }) // passthru;
+        drv // (listToAttrs outputsList) // { all = map (x: x.value) outputsList; } // passthru;
 
       outputToAttrListElement = outputName: {
         name = outputName;
@@ -446,16 +446,15 @@ rec {
     let
       outputs = drv.outputs or [ "out" ];
 
-      commonAttrs =
-        {
-          inherit (drv) name system meta;
-          inherit outputs;
-        }
-        // optionalAttrs (drv._hydraAggregate or false) {
-          _hydraAggregate = true;
-          constituents = map hydraJob (flatten drv.constituents);
-        }
-        // (listToAttrs outputsList);
+      commonAttrs = {
+        inherit (drv) name system meta;
+        inherit outputs;
+      }
+      // optionalAttrs (drv._hydraAggregate or false) {
+        _hydraAggregate = true;
+        constituents = map hydraJob (flatten drv.constituents);
+      }
+      // (listToAttrs outputsList);
 
       makeOutput =
         outputName:
@@ -753,11 +752,22 @@ rec {
     # Inputs
 
     `extendMkDerivation`-specific configurations
-    : `constructDrv`: Base build helper, the `mkDerivation`-like build helper to extend.
-    : `excludeDrvArgNames`: Argument names not to pass from the input fixed-point arguments to `constructDrv`. Note: It doesn't apply to the updating arguments returned by `extendDrvArgs`.
-    : `extendDrvArgs` : An extension (overlay) of the argument set, like the one taken by [overrideAttrs](#sec-pkg-overrideAttrs) but applied before passing to `constructDrv`.
-    : `inheritFunctionArgs`: Whether to inherit `__functionArgs` from the base build helper (default to `true`).
-    : `transformDrv`: Function to apply to the result derivation (default to `lib.id`).
+    : `constructDrv` (required)
+      : Base build helper, the `mkDerivation`-like build helper to extend.
+
+      `excludeDrvArgNames` (default to `[ ]`)
+      : Argument names not to pass from the input fixed-point arguments to `constructDrv`.
+        It doesn't apply to the updating arguments returned by `extendDrvArgs`.
+
+      `extendDrvArgs` (required)
+      : An extension (overlay) of the argument set, like the one taken by [overrideAttrs](#sec-pkg-overrideAttrs) but applied before passing to `constructDrv`.
+
+      `inheritFunctionArgs` (default to `true`)
+      : Whether to inherit `__functionArgs` from the base build helper.
+        Set `inheritFunctionArgs` to `false` when `extendDrvArgs`'s `args` set pattern does not contain an ellipsis.
+
+      `transformDrv` (default to `lib.id`)
+      : Function to apply to the result derivation.
 
     # Type
 

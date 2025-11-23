@@ -59,34 +59,33 @@ stdenv.mkDerivation (finalAttrs: {
     wrapQtAppsHook
   ];
 
-  buildInputs =
+  buildInputs = [
+    chromaprint
+    ffmpeg
+    flac
+    id3lib
+    libogg
+    libvorbis
+    libxslt
+    mp4v2
+    qtbase
+    qtdeclarative
+    qtmultimedia
+    readline
+    taglib
+    zlib
+  ]
+  ++ lib.optionals withKDE (
+    with kdePackages;
     [
-      chromaprint
-      ffmpeg
-      flac
-      id3lib
-      libogg
-      libvorbis
-      libxslt
-      mp4v2
-      qtbase
-      qtdeclarative
-      qtmultimedia
-      readline
-      taglib
-      zlib
+      kconfig
+      kconfigwidgets
+      kcoreaddons
+      kio
+      kxmlgui
+      phonon
     ]
-    ++ lib.optionals withKDE (
-      with kdePackages;
-      [
-        kconfig
-        kconfigwidgets
-        kcoreaddons
-        kio
-        kxmlgui
-        phonon
-      ]
-    );
+  );
 
   cmakeFlags = [ (lib.cmakeFeature "WITH_APPS" apps) ];
 
@@ -136,7 +135,7 @@ stdenv.mkDerivation (finalAttrs: {
         "kid3"
       else
         "kid3-cli";
-    maintainers = with lib.maintainers; [ ];
+    maintainers = [ ];
     platforms = lib.platforms.linux;
   };
 })

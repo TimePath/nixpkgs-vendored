@@ -69,7 +69,8 @@ buildPythonPackage rec {
   nativeCheckInputs = [
     pytest-mpl
     pytestCheckHook
-  ] ++ lib.flatten (lib.attrValues optional-dependencies);
+  ]
+  ++ lib.flatten (lib.attrValues optional-dependencies);
 
   preCheck = ''
     export FONTCONFIG_FILE=${fontconfig.out}/etc/fonts/fonts.conf
@@ -93,7 +94,7 @@ buildPythonPackage rec {
     homepage = "https://scitools.org.uk/cartopy/docs/latest/";
     changelog = "https://github.com/SciTools/cartopy/releases/tag/v${version}";
     license = licenses.lgpl3Plus;
-    maintainers = with maintainers; [ ];
+    maintainers = [ ];
     mainProgram = "feature_download";
   };
 }

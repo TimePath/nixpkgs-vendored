@@ -50,11 +50,11 @@ let
 in
 stdenv.mkDerivation rec {
   pname = "tor";
-  version = "0.4.8.16";
+  version = "0.4.8.20";
 
   src = fetchurl {
     url = "https://dist.torproject.org/${pname}-${version}.tar.gz";
-    sha256 = "sha256-ZUDdN3oSD7jn0nUwqjt/9yoPpbT2cP4dZMmHwc/TkMs=";
+    sha256 = "sha256-G7IjKM3R7pSGR7/O1XHvp4wS/FBkGHtB1SVAhbUoL6c=";
   };
 
   outputs = [
@@ -63,20 +63,19 @@ stdenv.mkDerivation rec {
   ];
 
   nativeBuildInputs = [ pkg-config ];
-  buildInputs =
-    [
-      libevent
-      openssl
-      zlib
-      xz
-      zstd
-      scrypt
-    ]
-    ++ lib.optionals stdenv.hostPlatform.isLinux [
-      libseccomp
-      systemd
-      libcap
-    ];
+  buildInputs = [
+    libevent
+    openssl
+    zlib
+    xz
+    zstd
+    scrypt
+  ]
+  ++ lib.optionals stdenv.hostPlatform.isLinux [
+    libseccomp
+    systemd
+    libcap
+  ];
 
   patches = [ ./disable-monotonic-timer-tests.patch ];
 

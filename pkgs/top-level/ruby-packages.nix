@@ -3562,10 +3562,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "14jpch41i6iclbgc8rykvkyn7ii8s9dwvn98k96qi0hqcbdpj30p";
+      sha256 = "0da64fq3w671qhp7ji1zs84m5lyhalq4khqhbfw5dz0y6mn61dgg";
       type = "gem";
     };
-    version = "3.1.13";
+    version = "3.1.16";
   };
   rack-protection = {
     dependencies = [
@@ -4445,10 +4445,10 @@
     platforms = [ ];
     source = {
       remotes = [ "https://rubygems.org" ];
-      sha256 = "002dkzdc1xqhvz5sdnj4vb0apczhs07mnpgq4kkd5dd1ka2pp6af";
+      sha256 = "103h6wjpcqp3i034hi44za2v365yz7qk9s5df8lmasq43nqvkbmp";
       type = "gem";
     };
-    version = "4.1.1";
+    version = "4.2.1";
   };
   singleton = {
     groups = [ "default" ];

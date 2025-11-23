@@ -17,7 +17,6 @@ rustPlatform.buildRustPackage rec {
     sha256 = "sha256-e0YtpakEaaWdgu+bMr2VFoUc6+SUMFk4hYtSyk5aApY=";
   };
 
-  useFetchCargoVendor = true;
   cargoHash = "sha256-w6ZOqpwogKoN4oqqI1gFqY8xAnfvhEBVaL8/6JXpKXs=";
 
   nativeBuildInputs = [
@@ -35,7 +34,7 @@ rustPlatform.buildRustPackage rec {
     homepage = "https://github.com/apognu/tuigreet";
     changelog = "https://github.com/apognu/tuigreet/releases/tag/${version}";
     license = lib.licenses.gpl3Plus;
-    maintainers = with lib.maintainers; [ ];
+    maintainers = [ ];
     platforms = lib.platforms.linux;
     mainProgram = "tuigreet";
   };

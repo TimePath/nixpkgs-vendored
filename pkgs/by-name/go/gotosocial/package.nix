@@ -10,11 +10,11 @@ let
   owner = "superseriousbusiness";
   repo = "gotosocial";
 
-  version = "0.19.1";
+  version = "0.20.1";
 
   web-assets = fetchurl {
     url = "https://${domain}/${owner}/${repo}/releases/download/v${version}/${repo}_${version}_web-assets.tar.gz";
-    hash = "sha256-UtxFm8ZSpIGXruBdanSF1lkA7Gs1FJNhoqzDTqSNYUM=";
+    hash = "sha256-0WvaPUVTMYd1tz7Rtmlp37vx/co4efhDdSWBc4gUzAU=";
   };
 in
 buildGoModule rec {
@@ -24,7 +24,7 @@ buildGoModule rec {
   src = fetchFromGitea {
     inherit domain owner repo;
     tag = "v${version}";
-    hash = "sha256-RhJRdRxTdbZwIAGD3gH0mjDfCvdS7xkRxcUd1ArsNoo=";
+    hash = "sha256-8z2tBiEVcof0/G41gpc0S8Dye5nynwHSJpTzo/ZseFs=";
   };
 
   vendorHash = null;

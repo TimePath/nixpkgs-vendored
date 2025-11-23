@@ -2129,6 +2129,8 @@ self: super: with self; {
 
   buildcatrust = callPackage ../development/python-modules/buildcatrust { };
 
+  buildstream-plugins = callPackage ../development/python-modules/buildstream-plugins { };
+
   bump-my-version = callPackage ../development/python-modules/bump-my-version { };
 
   bump2version = callPackage ../development/python-modules/bump2version { };
@@ -2301,6 +2303,8 @@ self: super: with self; {
   cccolutils = callPackage ../development/python-modules/cccolutils { krb5-c = pkgs.krb5; };
 
   cdcs = callPackage ../development/python-modules/cdcs { };
+
+  cddlparser = callPackage ../development/python-modules/cddlparser { };
 
   celery = callPackage ../development/python-modules/celery { };
 
@@ -2945,6 +2949,8 @@ self: super: with self; {
 
   credstash = callPackage ../development/python-modules/credstash { };
 
+  crewai = callPackage ../development/python-modules/crewai { };
+
   crochet = callPackage ../development/python-modules/crochet { };
 
   crocoddyl = toPythonModule (
@@ -3055,8 +3061,6 @@ self: super: with self; {
   curlify = callPackage ../development/python-modules/curlify { };
 
   curtsies = callPackage ../development/python-modules/curtsies { };
-
-  curve25519-donna = callPackage ../development/python-modules/curve25519-donna { };
 
   curvefitgui = callPackage ../development/python-modules/curvefitgui { };
 
@@ -4913,6 +4917,8 @@ self: super: with self; {
 
   fido2 = callPackage ../development/python-modules/fido2 { };
 
+  fido2_2 = callPackage ../development/python-modules/fido2/2.nix { };
+
   fields = callPackage ../development/python-modules/fields { };
 
   file-read-backwards = callPackage ../development/python-modules/file-read-backwards { };
@@ -5663,6 +5669,8 @@ self: super: with self; {
   gitlike-commands = callPackage ../development/python-modules/gitlike-commands { };
 
   gitpython = callPackage ../development/python-modules/gitpython { };
+
+  giturlparse = callPackage ../development/python-modules/giturlparse { };
 
   glad = callPackage ../development/python-modules/glad { };
 
@@ -7402,6 +7410,8 @@ self: super: with self; {
   kaleido = callPackage ../development/python-modules/kaleido { };
 
   kalshi-python = callPackage ../development/python-modules/kalshi-python { };
+
+  kanalizer = callPackage ../development/python-modules/kanalizer { };
 
   kanidm = callPackage ../development/python-modules/kanidm { };
 
@@ -10264,6 +10274,8 @@ self: super: with self; {
 
   ohme = callPackage ../development/python-modules/ohme { };
 
+  oic = callPackage ../development/python-modules/oic { };
+
   okonomiyaki = callPackage ../development/python-modules/okonomiyaki { };
 
   okta = callPackage ../development/python-modules/okta { };
@@ -12572,6 +12584,8 @@ self: super: with self; {
 
   pyinstrument = callPackage ../development/python-modules/pyinstrument { };
 
+  pyinterp = callPackage ../development/python-modules/pyinterp { };
+
   pyintesishome = callPackage ../development/python-modules/pyintesishome { };
 
   pyipma = callPackage ../development/python-modules/pyipma { };
@@ -12696,7 +12710,7 @@ self: super: with self; {
 
   pylibjpeg-openjpeg = callPackage ../development/python-modules/pylibjpeg-openjpeg { };
 
-  pyliblo = callPackage ../development/python-modules/pyliblo { };
+  pyliblo3 = callPackage ../development/python-modules/pyliblo3 { };
 
   pylibmc = callPackage ../development/python-modules/pylibmc { };
 
@@ -13046,10 +13060,6 @@ self: super: with self; {
   pypblib = callPackage ../development/python-modules/pypblib { };
 
   pypca = callPackage ../development/python-modules/pypca { };
-
-  pypcap = callPackage ../development/python-modules/pypcap {
-    inherit (pkgs) libpcap; # Avoid confusion with python package of the same name
-  };
 
   pypck = callPackage ../development/python-modules/pypck { };
 
@@ -14872,6 +14882,8 @@ self: super: with self; {
 
   rapidgzip = callPackage ../development/python-modules/rapidgzip { inherit (pkgs) nasm; };
 
+  rapidocr = callPackage ../development/python-modules/rapidocr { };
+
   rapidocr-onnxruntime = callPackage ../development/python-modules/rapidocr-onnxruntime { };
 
   rapt-ble = callPackage ../development/python-modules/rapt-ble { };
@@ -15410,6 +15422,8 @@ self: super: with self; {
   rubicon-objc = callPackage ../development/python-modules/rubicon-objc { };
 
   rubymarshal = callPackage ../development/python-modules/rubymarshal { };
+
+  rucio = callPackage ../development/python-modules/rucio { };
 
   ruff = callPackage ../development/python-modules/ruff { inherit (pkgs) ruff; };
 
@@ -16666,6 +16680,8 @@ self: super: with self; {
 
   stack-data = callPackage ../development/python-modules/stack-data { };
 
+  stackprinter = callPackage ../development/python-modules/stackprinter { };
+
   stamina = callPackage ../development/python-modules/stamina { };
 
   standard-aifc =
@@ -16759,6 +16775,8 @@ self: super: with self; {
   stix2-validator = callPackage ../development/python-modules/stix2-validator { };
 
   stm32loader = callPackage ../development/python-modules/stm32loader { };
+
+  stomp-py = callPackage ../development/python-modules/stomp-py { };
 
   stone = callPackage ../development/python-modules/stone { };
 
@@ -18379,8 +18397,6 @@ self: super: with self; {
 
   ua-parser-rs = callPackage ../development/python-modules/ua-parser-rs { };
 
-  uamqp = callPackage ../development/python-modules/uamqp { };
-
   uarray = callPackage ../development/python-modules/uarray { };
 
   uart-devices = callPackage ../development/python-modules/uart-devices { };
@@ -18615,7 +18631,7 @@ self: super: with self; {
 
   uuid6 = callPackage ../development/python-modules/uuid6 { };
 
-  uv = callPackage ../development/python-modules/uv { };
+  uv = callPackage ../development/python-modules/uv { inherit (pkgs) uv; };
 
   uv-build = callPackage ../development/python-modules/uv-build { };
 
@@ -19386,6 +19402,8 @@ self: super: with self; {
 
   yt-dlp-dearrow = callPackage ../development/python-modules/yt-dlp-dearrow { };
 
+  yt-dlp-ejs = callPackage ../development/python-modules/yt-dlp-ejs { };
+
   yt-dlp-light = toPythonModule (pkgs.yt-dlp-light.override { python3Packages = self; });
 
   yte = callPackage ../development/python-modules/yte { };
@@ -19396,7 +19414,7 @@ self: super: with self; {
 
   yubico-client = callPackage ../development/python-modules/yubico-client { };
 
-  z3-solver = (toPythonModule (pkgs.z3.override { python3 = python; })).python;
+  z3-solver = (toPythonModule (pkgs.z3.override { python3Packages = self; })).python;
 
   z3c-checkversions = callPackage ../development/python-modules/z3c-checkversions { };
 

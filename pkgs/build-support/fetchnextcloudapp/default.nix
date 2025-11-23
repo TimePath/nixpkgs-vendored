@@ -9,6 +9,7 @@
   url,
   hash ? "",
   sha256 ? "",
+  sha512 ? "",
   appName ? null,
   appVersion ? null,
   license,
@@ -23,19 +24,23 @@ applyPatches (
   {
     inherit patches;
     src = (if unpack then fetchzip else fetchurl) {
-      inherit url hash sha256;
-      meta =
-        {
-          license = lib.licenses.${license};
-          longDescription = description;
-          inherit homepage maintainers teams;
-        }
-        // lib.optionalAttrs (description != null) {
-          longDescription = description;
-        }
-        // lib.optionalAttrs (homepage != null) {
-          inherit homepage;
-        };
+      inherit
+        url
+        hash
+        sha256
+        sha512
+        ;
+      meta = {
+        license = lib.licenses.${license};
+        longDescription = description;
+        inherit homepage maintainers teams;
+      }
+      // lib.optionalAttrs (description != null) {
+        longDescription = description;
+      }
+      // lib.optionalAttrs (homepage != null) {
+        inherit homepage;
+      };
     };
     prePatch = ''
       if [ ! -f ./appinfo/info.xml ]; then

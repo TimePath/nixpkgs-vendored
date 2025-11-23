@@ -46,7 +46,7 @@ in
   };
 
 }
-// (mapTestOn ({
+// (mapTestOn {
 
   aspell = all;
   at = linux;
@@ -175,5 +175,5 @@ in
   xfsprogs = linux;
   xkeyboard_config = linux;
   zip = all;
-  tests-stdenv-gcc-stageCompare = all;
-}))
+  tests-stdenv-gcc-stageCompare = linux;
+})

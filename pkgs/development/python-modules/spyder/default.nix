@@ -122,7 +122,8 @@ buildPythonPackage rec {
     three-merge
     watchdog
     yarl
-  ] ++ python-lsp-server.optional-dependencies.all;
+  ]
+  ++ python-lsp-server.optional-dependencies.all;
 
   # There is no test for spyder
   doCheck = false;
@@ -151,7 +152,7 @@ buildPythonPackage rec {
     downloadPage = "https://github.com/spyder-ide/spyder/releases";
     changelog = "https://github.com/spyder-ide/spyder/blob/v${version}/changelogs/Spyder-6.md";
     license = lib.licenses.mit;
-    maintainers = with lib.maintainers; [ ];
+    maintainers = [ ];
     platforms = lib.platforms.linux;
   };
 }

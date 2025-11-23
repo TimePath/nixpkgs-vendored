@@ -27,11 +27,11 @@ let
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = "go";
-  version = "1.24.3";
+  version = "1.24.9";
 
   src = fetchurl {
     url = "https://go.dev/dl/go${finalAttrs.version}.src.tar.gz";
-    hash = "sha256-IpwItgCxRGeYEJ+uH1aSKBAshHPKuoEEtkGMtbwDKHg=";
+    hash = "sha256-xy+BulT+AO/n8+dJnUAJeSRogbE7d16am7hVQcEb5pU=";
   };
 
   strictDeps = true;
@@ -103,35 +103,34 @@ stdenv.mkDerivation (finalAttrs: {
     runHook postBuild
   '';
 
-  preInstall =
-    ''
-      # Contains the wrong perl shebang when cross compiling,
-      # since it is not used for anything we can deleted as well.
-      rm src/regexp/syntax/make_perl_groups.pl
-    ''
-    + (
-      if (stdenv.buildPlatform.system != stdenv.hostPlatform.system) then
-        ''
-          mv bin/*_*/* bin
-          rmdir bin/*_*
-          ${lib.optionalString
-            (!(finalAttrs.GOHOSTARCH == finalAttrs.GOARCH && finalAttrs.GOOS == finalAttrs.GOHOSTOS))
-            ''
-              rm -rf pkg/${finalAttrs.GOHOSTOS}_${finalAttrs.GOHOSTARCH} pkg/tool/${finalAttrs.GOHOSTOS}_${finalAttrs.GOHOSTARCH}
-            ''
-          }
-        ''
-      else
-        lib.optionalString (stdenv.hostPlatform.system != stdenv.targetPlatform.system) ''
-          rm -rf bin/*_*
-          ${lib.optionalString
-            (!(finalAttrs.GOHOSTARCH == finalAttrs.GOARCH && finalAttrs.GOOS == finalAttrs.GOHOSTOS))
-            ''
-              rm -rf pkg/${finalAttrs.GOOS}_${finalAttrs.GOARCH} pkg/tool/${finalAttrs.GOOS}_${finalAttrs.GOARCH}
-            ''
-          }
-        ''
-    );
+  preInstall = ''
+    # Contains the wrong perl shebang when cross compiling,
+    # since it is not used for anything we can deleted as well.
+    rm src/regexp/syntax/make_perl_groups.pl
+  ''
+  + (
+    if (stdenv.buildPlatform.system != stdenv.hostPlatform.system) then
+      ''
+        mv bin/*_*/* bin
+        rmdir bin/*_*
+        ${lib.optionalString
+          (!(finalAttrs.GOHOSTARCH == finalAttrs.GOARCH && finalAttrs.GOOS == finalAttrs.GOHOSTOS))
+          ''
+            rm -rf pkg/${finalAttrs.GOHOSTOS}_${finalAttrs.GOHOSTARCH} pkg/tool/${finalAttrs.GOHOSTOS}_${finalAttrs.GOHOSTARCH}
+          ''
+        }
+      ''
+    else
+      lib.optionalString (stdenv.hostPlatform.system != stdenv.targetPlatform.system) ''
+        rm -rf bin/*_*
+        ${lib.optionalString
+          (!(finalAttrs.GOHOSTARCH == finalAttrs.GOARCH && finalAttrs.GOOS == finalAttrs.GOHOSTOS))
+          ''
+            rm -rf pkg/${finalAttrs.GOOS}_${finalAttrs.GOARCH} pkg/tool/${finalAttrs.GOOS}_${finalAttrs.GOARCH}
+          ''
+        }
+      ''
+  );
 
   installPhase = ''
     runHook preInstall

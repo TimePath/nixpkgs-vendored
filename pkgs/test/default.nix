@@ -127,6 +127,7 @@ with pkgs;
   fetchDebianPatch = callPackages ../build-support/fetchdebianpatch/tests.nix { };
   fetchzip = callPackages ../build-support/fetchzip/tests.nix { };
   fetchgit = callPackages ../build-support/fetchgit/tests.nix { };
+  fetchNextcloudApp = callPackages ../build-support/fetchnextcloudapp/tests.nix { };
   fetchFirefoxAddon = callPackages ../build-support/fetchfirefoxaddon/tests.nix { };
   fetchPypiLegacy = callPackages ../build-support/fetchpypilegacy/tests.nix { };
 
@@ -144,9 +145,7 @@ with pkgs;
 
   php = recurseIntoAttrs (callPackages ./php { });
 
-  pkg-config = recurseIntoAttrs (callPackage ../top-level/pkg-config/tests.nix { }) // {
-    __recurseIntoDerivationForReleaseJobs = true;
-  };
+  pkg-config = recurseIntoAttrs (callPackage ../top-level/pkg-config/tests.nix { });
 
   buildRustCrate = callPackage ../build-support/rust/build-rust-crate/test { };
   importCargoLock = callPackage ../build-support/rust/test/import-cargo-lock { };
@@ -197,9 +196,17 @@ with pkgs;
 
   buildFHSEnv = recurseIntoAttrs (callPackages ./buildFHSEnv { });
 
-  nixpkgs-check-by-name = throw "tests.nixpkgs-check-by-name is now specified in a separate repository: https://github.com/NixOS/nixpkgs-check-by-name";
-
   auto-patchelf-hook = callPackage ./auto-patchelf-hook { };
+
+  # Accumulate all passthru.tests from arrayUtilities into a single attribute set.
+  arrayUtilities = recurseIntoAttrs (
+    lib.concatMapAttrs (
+      name: value:
+      lib.optionalAttrs (value ? passthru.tests) {
+        ${name} = value.passthru.tests;
+      }
+    ) arrayUtilities
+  );
 
   srcOnly = callPackage ../build-support/src-only/tests.nix { };
 

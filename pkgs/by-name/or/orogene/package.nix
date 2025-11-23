@@ -25,7 +25,6 @@ rustPlatform.buildRustPackage rec {
     ./update-outdated-lockfile.patch
   ];
 
-  useFetchCargoVendor = true;
   cargoHash = "sha256-I08mqyogEuadp+V10svMmCm0i0zOZWiocOpM9E3lgag=";
 
   nativeBuildInputs = [
@@ -58,5 +57,8 @@ rustPlatform.buildRustPackage rec {
     ];
     maintainers = with maintainers; [ figsoda ];
     mainProgram = "oro";
+    knownVulnerabilities = [
+      "'orogene' uses a wasm-specific fork of async-tar that is vulnerable to CVE-2025-62518, which is not supported by its upstream"
+    ];
   };
 }

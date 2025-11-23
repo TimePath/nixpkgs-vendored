@@ -47,20 +47,19 @@ stdenv.mkDerivation (finalAttrs: {
     "doc"
   ];
 
-  buildInputs =
-    [
-      libXdmcp
-      libpthreadstubs
-      python311Packages.pyside2
-      python311Packages.pyside2-tools
-      python311Packages.shiboken2
-      qt5.qtbase
-      qt5.qtsvg
-      vulkan-loader
-    ]
-    ++ lib.optionals waylandSupport [
-      wayland
-    ];
+  buildInputs = [
+    libXdmcp
+    libpthreadstubs
+    python311Packages.pyside2
+    python311Packages.pyside2-tools
+    python311Packages.shiboken2
+    qt5.qtbase
+    qt5.qtsvg
+    vulkan-loader
+  ]
+  ++ lib.optionals waylandSupport [
+    wayland
+  ];
 
   nativeBuildInputs = [
     addDriverRunpath
@@ -137,7 +136,7 @@ stdenv.mkDerivation (finalAttrs: {
     '';
     license = lib.licenses.mit;
     mainProgram = "renderdoccmd";
-    maintainers = with lib.maintainers; [ ];
+    maintainers = [ ];
     platforms = lib.intersectLists lib.platforms.linux (lib.platforms.x86_64 ++ lib.platforms.i686);
   };
 })

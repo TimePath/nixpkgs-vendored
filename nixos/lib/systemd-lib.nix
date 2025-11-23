@@ -361,12 +361,13 @@ rec {
     }:
     let
       typeDir =
-        ({
+        {
           system = "system";
           initrd = "system";
           user = "user";
           nspawn = "nspawn";
-        }).${type};
+        }
+        .${type};
     in
     pkgs.runCommand "${type}-units"
       {
@@ -701,17 +702,16 @@ rec {
     {
       config = {
         name = "${utils.escapeSystemdPath config.where}.mount";
-        mountConfig =
-          {
-            What = config.what;
-            Where = config.where;
-          }
-          // optionalAttrs (config.type != "") {
-            Type = config.type;
-          }
-          // optionalAttrs (config.options != "") {
-            Options = config.options;
-          };
+        mountConfig = {
+          What = config.what;
+          Where = config.where;
+        }
+        // optionalAttrs (config.type != "") {
+          Type = config.type;
+        }
+        // optionalAttrs (config.options != "") {
+          Options = config.options;
+        };
       };
     };
 

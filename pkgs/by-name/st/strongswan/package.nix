@@ -2,6 +2,7 @@
   lib,
   stdenv,
   fetchFromGitHub,
+  fetchurl,
   pkg-config,
   autoreconfHook,
   perl,
@@ -56,36 +57,40 @@ stdenv.mkDerivation rec {
     bison
     flex
   ];
-  buildInputs =
-    [
-      curl
-      gmp
-      python3
-      ldns
-      unbound
-      openssl
-      pcsclite
-    ]
-    ++ lib.optionals enableTNC [
-      trousers
-      sqlite
-      libxml2
-    ]
-    ++ lib.optional enableTPM2 tpm2-tss
-    ++ lib.optionals stdenv.hostPlatform.isLinux [
-      systemd.dev
-      pam
-      iptables
-    ]
-    ++ lib.optionals enableNetworkManager [
-      networkmanager
-      glib
-    ];
+  buildInputs = [
+    curl
+    gmp
+    python3
+    ldns
+    unbound
+    openssl
+    pcsclite
+  ]
+  ++ lib.optionals enableTNC [
+    trousers
+    sqlite
+    libxml2
+  ]
+  ++ lib.optional enableTPM2 tpm2-tss
+  ++ lib.optionals stdenv.hostPlatform.isLinux [
+    systemd.dev
+    pam
+    iptables
+  ]
+  ++ lib.optionals enableNetworkManager [
+    networkmanager
+    glib
+  ];
 
   patches = [
     ./ext_auth-path.patch
     ./firewall_defaults.patch
     ./updown-path.patch
+    (fetchurl {
+      name = "CVE-2025-62291.patch";
+      url = "https://download.strongswan.org/security/CVE-2025-62291/strongswan-4.4.0-6.0.2_eap_mschapv2_failure_request_len.patch";
+      hash = "sha256-9aUGGTeSrI9Ji8MfnsVZ6KrGMOB/5RuWZ/WQhY5E4+c=";
+    })
   ];
 
   postPatch = lib.optionalString stdenv.hostPlatform.isLinux ''
@@ -95,90 +100,89 @@ stdenv.mkDerivation rec {
     substituteInPlace src/libcharon/plugins/resolve/resolve_handler.c --replace "/sbin/resolvconf" "${openresolv}/sbin/resolvconf"
   '';
 
-  configureFlags =
-    [
-      "--sysconfdir=/etc"
-      "--enable-swanctl"
-      "--enable-cmd"
-      "--enable-openssl"
-      "--enable-eap-sim"
-      "--enable-eap-sim-file"
-      "--enable-eap-simaka-pseudonym"
-      "--enable-eap-simaka-reauth"
-      "--enable-eap-identity"
-      "--enable-eap-md5"
-      "--enable-eap-gtc"
-      "--enable-eap-aka"
-      "--enable-eap-aka-3gpp2"
-      "--enable-eap-mschapv2"
-      "--enable-eap-radius"
-      "--enable-xauth-eap"
-      "--enable-ext-auth"
-      "--enable-acert"
-      "--enable-pkcs11"
-      "--enable-eap-sim-pcsc"
-      "--enable-dnscert"
-      "--enable-unbound"
-      "--enable-chapoly"
-      "--enable-curl"
-    ]
-    ++ lib.optionals stdenv.hostPlatform.isLinux [
-      "--enable-farp"
-      "--enable-dhcp"
-      "--enable-systemd"
-      "--with-systemdsystemunitdir=${placeholder "out"}/etc/systemd/system"
-      "--enable-xauth-pam"
-      "--enable-forecast"
-      "--enable-connmark"
-      "--enable-af-alg"
-    ]
-    ++ lib.optionals stdenv.hostPlatform.isx86_64 [
-      "--enable-aesni"
-      "--enable-rdrand"
-    ]
-    ++ lib.optional (stdenv.hostPlatform.system == "i686-linux") "--enable-padlock"
-    ++ lib.optionals enableTNC [
-      "--disable-gmp"
-      "--disable-aes"
-      "--disable-md5"
-      "--disable-sha1"
-      "--disable-sha2"
-      "--disable-fips-prf"
-      "--enable-eap-tnc"
-      "--enable-eap-ttls"
-      "--enable-eap-dynamic"
-      "--enable-tnccs-20"
-      "--enable-tnc-imc"
-      "--enable-imc-os"
-      "--enable-imc-attestation"
-      "--enable-tnc-imv"
-      "--enable-imv-attestation"
-      "--enable-tnc-ifmap"
-      "--enable-tnc-imc"
-      "--enable-tnc-imv"
-      "--with-tss=trousers"
-      "--enable-aikgen"
-      "--enable-sqlite"
-    ]
-    ++ lib.optionals enableTPM2 [
-      "--enable-tpm"
-      "--enable-tss-tss2"
-    ]
-    ++ lib.optionals enableNetworkManager [
-      "--enable-nm"
-      "--with-nm-ca-dir=/etc/ssl/certs"
-    ]
-    # Taken from: https://wiki.strongswan.org/projects/strongswan/wiki/MacOSX
-    ++ lib.optionals stdenv.hostPlatform.isDarwin [
-      "--disable-systemd"
-      "--disable-xauth-pam"
-      "--disable-kernel-netlink"
-      "--enable-kernel-pfkey"
-      "--enable-kernel-pfroute"
-      "--enable-kernel-libipsec"
-      "--enable-osx-attr"
-      "--disable-scripts"
-    ];
+  configureFlags = [
+    "--sysconfdir=/etc"
+    "--enable-swanctl"
+    "--enable-cmd"
+    "--enable-openssl"
+    "--enable-eap-sim"
+    "--enable-eap-sim-file"
+    "--enable-eap-simaka-pseudonym"
+    "--enable-eap-simaka-reauth"
+    "--enable-eap-identity"
+    "--enable-eap-md5"
+    "--enable-eap-gtc"
+    "--enable-eap-aka"
+    "--enable-eap-aka-3gpp2"
+    "--enable-eap-mschapv2"
+    "--enable-eap-radius"
+    "--enable-xauth-eap"
+    "--enable-ext-auth"
+    "--enable-acert"
+    "--enable-pkcs11"
+    "--enable-eap-sim-pcsc"
+    "--enable-dnscert"
+    "--enable-unbound"
+    "--enable-chapoly"
+    "--enable-curl"
+  ]
+  ++ lib.optionals stdenv.hostPlatform.isLinux [
+    "--enable-farp"
+    "--enable-dhcp"
+    "--enable-systemd"
+    "--with-systemdsystemunitdir=${placeholder "out"}/etc/systemd/system"
+    "--enable-xauth-pam"
+    "--enable-forecast"
+    "--enable-connmark"
+    "--enable-af-alg"
+  ]
+  ++ lib.optionals stdenv.hostPlatform.isx86_64 [
+    "--enable-aesni"
+    "--enable-rdrand"
+  ]
+  ++ lib.optional (stdenv.hostPlatform.system == "i686-linux") "--enable-padlock"
+  ++ lib.optionals enableTNC [
+    "--disable-gmp"
+    "--disable-aes"
+    "--disable-md5"
+    "--disable-sha1"
+    "--disable-sha2"
+    "--disable-fips-prf"
+    "--enable-eap-tnc"
+    "--enable-eap-ttls"
+    "--enable-eap-dynamic"
+    "--enable-tnccs-20"
+    "--enable-tnc-imc"
+    "--enable-imc-os"
+    "--enable-imc-attestation"
+    "--enable-tnc-imv"
+    "--enable-imv-attestation"
+    "--enable-tnc-ifmap"
+    "--enable-tnc-imc"
+    "--enable-tnc-imv"
+    "--with-tss=trousers"
+    "--enable-aikgen"
+    "--enable-sqlite"
+  ]
+  ++ lib.optionals enableTPM2 [
+    "--enable-tpm"
+    "--enable-tss-tss2"
+  ]
+  ++ lib.optionals enableNetworkManager [
+    "--enable-nm"
+    "--with-nm-ca-dir=/etc/ssl/certs"
+  ]
+  # Taken from: https://wiki.strongswan.org/projects/strongswan/wiki/MacOSX
+  ++ lib.optionals stdenv.hostPlatform.isDarwin [
+    "--disable-systemd"
+    "--disable-xauth-pam"
+    "--disable-kernel-netlink"
+    "--enable-kernel-pfkey"
+    "--enable-kernel-pfroute"
+    "--enable-kernel-libipsec"
+    "--enable-osx-attr"
+    "--disable-scripts"
+  ];
 
   installFlags = [
     "sysconfdir=${placeholder "out"}/etc"

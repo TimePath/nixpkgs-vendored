@@ -26,7 +26,8 @@ stdenv.mkDerivation (finalAttrs: {
     boost
     libGL
     libGLU
-  ] ++ lib.optional stdenv.hostPlatform.isLinux libX11;
+  ]
+  ++ lib.optional stdenv.hostPlatform.isLinux libX11;
 
   cmakeFlags = [ "-DCOIN_USE_CPACK=OFF" ];
 
@@ -35,7 +36,7 @@ stdenv.mkDerivation (finalAttrs: {
     description = "High-level, retained-mode toolkit for effective 3D graphics development";
     mainProgram = "coin-config";
     license = licenses.bsd3;
-    maintainers = with maintainers; [ ];
+    maintainers = [ ];
     platforms = platforms.linux ++ platforms.darwin;
   };
 })

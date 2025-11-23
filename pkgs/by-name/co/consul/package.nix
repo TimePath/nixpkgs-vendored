@@ -1,14 +1,14 @@
 {
   lib,
-  buildGoModule,
+  buildGo125Module,
   fetchFromGitHub,
   nixosTests,
   nix-update-script,
 }:
 
-buildGoModule rec {
+buildGo125Module rec {
   pname = "consul";
-  version = "1.21.1";
+  version = "1.21.5";
 
   # Note: Currently only release tags are supported, because they have the Consul UI
   # vendored. See
@@ -22,7 +22,7 @@ buildGoModule rec {
     owner = "hashicorp";
     repo = pname;
     tag = "v${version}";
-    hash = "sha256-bkBjKvSJapkiqCKENR+mG3sWYTBUZf9klw2UHqgccdc=";
+    hash = "sha256-x5e0DhJ3qMh51E+bEIzl0JmH7bvdicVgOa0l1Qix9vI=";
   };
 
   # This corresponds to paths with package main - normally unneeded but consul
@@ -32,7 +32,7 @@ buildGoModule rec {
     "connect/certgen"
   ];
 
-  vendorHash = "sha256-06tLz04hFZ2HqpetKMRfFY2JJI4TgedzKYpwcVbemfU=";
+  vendorHash = "sha256-PZtLz7jqtqYcBO/xrE/tE4vqNstLq9Iv20eWnW5xloQ=";
 
   doCheck = false;
 
@@ -57,8 +57,6 @@ buildGoModule rec {
     platforms = platforms.linux ++ platforms.darwin;
     license = licenses.bsl11;
     maintainers = with maintainers; [
-      adamcstephens
-      pradeepchhetri
       vdemeester
       nh2
       techknowlogick

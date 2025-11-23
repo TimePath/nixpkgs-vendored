@@ -82,6 +82,21 @@ stdenv.mkDerivation rec {
       url = "https://salsa.debian.org/debian/ghostscript/-/raw/01e895fea033cc35054d1b68010de9818fa4a8fc/debian/patches/2010_add_build_timestamp_setting.patch";
       hash = "sha256-XTKkFKzMR2QpcS1YqoxzJnyuGk/l/Y2jdevsmbMtCXA=";
     })
+    (fetchpatch2 {
+      name = "CVE-2025-59798.patch";
+      url = "https://github.com/ArtifexSoftware/ghostpdl/commit/0cae41b23a9669e801211dd4cf97b6dadd6dbdd7.patch?full_index=1";
+      hash = "sha256-M530YPAhD1vbGuaK5Dg/CFt9Rxi7fIA/qK3Yrirr8G0=";
+    })
+    (fetchpatch2 {
+      name = "CVE-2025-59799.patch";
+      url = "https://github.com/ArtifexSoftware/ghostpdl/commit/6dab38fb211f15226c242ab7a83fa53e4b0ff781.patch?full_index=1";
+      hash = "sha256-Uuw0Kw5GoZgX0AnrUUpvxEGXQ2cSOfgbtNY6e8nNAWw=";
+    })
+    (fetchpatch2 {
+      name = "CVE-2025-59800.patch";
+      url = "https://github.com/ArtifexSoftware/ghostpdl/commit/176cf0188a2294bc307b8caec876f39412e58350.patch?full_index=1";
+      hash = "sha256-DaMsTzXlRc+8HVuYsrAW8X44G9r0csW1WLro/5NIq0U=";
+    })
   ];
 
   outputs = [
@@ -97,91 +112,88 @@ stdenv.mkDerivation rec {
     buildPackages.stdenv.cc
   ];
 
-  nativeBuildInputs =
-    [
-      pkg-config
-      autoconf
-      zlib
-    ]
-    ++ lib.optional cupsSupport cups
-    ++ lib.optional stdenv.hostPlatform.isDarwin fixDarwinDylibNames;
+  nativeBuildInputs = [
+    pkg-config
+    autoconf
+    zlib
+  ]
+  ++ lib.optional cupsSupport cups
+  ++ lib.optional stdenv.hostPlatform.isDarwin fixDarwinDylibNames;
 
-  buildInputs =
-    [
-      zlib
-      expat
-      openssl
-      libjpeg
-      libpng
-      libtiff
-      freetype
-      fontconfig
-      libpaper
-      jbig2dec
-      libiconv
-      ijs
-      lcms2
-      bash
-      openjpeg
-    ]
-    ++ lib.optionals x11Support [
-      xorg.libICE
-      xorg.libX11
-      xorg.libXext
-      xorg.libXt
-    ]
-    ++ lib.optional cupsSupport cups;
+  buildInputs = [
+    zlib
+    expat
+    openssl
+    libjpeg
+    libpng
+    libtiff
+    freetype
+    fontconfig
+    libpaper
+    jbig2dec
+    libiconv
+    ijs
+    lcms2
+    bash
+    openjpeg
+  ]
+  ++ lib.optionals x11Support [
+    xorg.libICE
+    xorg.libX11
+    xorg.libXext
+    xorg.libXt
+  ]
+  ++ lib.optional cupsSupport cups;
 
-  preConfigure =
-    ''
-      # https://ghostscript.com/doc/current/Make.htm
-      export CCAUX=$CC_FOR_BUILD
-      ${lib.optionalString cupsSupport ''export CUPSCONFIG="${cups.dev}/bin/cups-config"''}
+  preConfigure = ''
+    # https://ghostscript.com/doc/current/Make.htm
+    export CCAUX=$CC_FOR_BUILD
+    ${lib.optionalString cupsSupport ''export CUPSCONFIG="${cups.dev}/bin/cups-config"''}
 
-      rm -rf jpeg libpng zlib jasper expat tiff lcms2mt jbig2dec freetype cups/libs ijs openjpeg
+    rm -rf jpeg libpng zlib jasper expat tiff lcms2mt jbig2dec freetype cups/libs ijs openjpeg
 
-      sed "s@if ( test -f \$(INCLUDE)[^ ]* )@if ( true )@; s@INCLUDE=/usr/include@INCLUDE=/no-such-path@" -i base/unix-aux.mak
-      sed "s@^ZLIBDIR=.*@ZLIBDIR=${zlib.dev}/include@" -i configure.ac
+    sed "s@if ( test -f \$(INCLUDE)[^ ]* )@if ( true )@; s@INCLUDE=/usr/include@INCLUDE=/no-such-path@" -i base/unix-aux.mak
+    sed "s@^ZLIBDIR=.*@ZLIBDIR=${zlib.dev}/include@" -i configure.ac
 
-      # Sidestep a bug in autoconf-2.69 that sets the compiler for all checks to
-      # $CXX after the part for the vendored copy of tesseract.
-      # `--without-tesseract` is already passed to the outer ./configure, here we
-      # make sure it is also passed to its recursive invocation for buildPlatform
-      # checks when cross-compiling.
-      substituteInPlace configure.ac \
-        --replace-fail "--without-x" "--without-x --without-tesseract"
+    # Sidestep a bug in autoconf-2.69 that sets the compiler for all checks to
+    # $CXX after the part for the vendored copy of tesseract.
+    # `--without-tesseract` is already passed to the outer ./configure, here we
+    # make sure it is also passed to its recursive invocation for buildPlatform
+    # checks when cross-compiling.
+    substituteInPlace configure.ac \
+      --replace-fail "--without-x" "--without-x --without-tesseract"
 
-      autoconf
-    ''
-    + lib.optionalString stdenv.hostPlatform.isDarwin ''
-      export DARWIN_LDFLAGS_SO_PREFIX=$out/lib/
-    '';
+    autoconf
+  ''
+  + lib.optionalString stdenv.hostPlatform.isDarwin ''
+    export DARWIN_LDFLAGS_SO_PREFIX=$out/lib/
+  '';
 
-  configureFlags =
-    [
-      "--with-system-libtiff"
-      "--without-tesseract"
-    ]
-    ++ lib.optionals dynamicDrivers [
-      "--enable-dynamic"
-      "--disable-hidden-visibility"
-    ]
-    ++ lib.optionals x11Support [
-      "--with-x"
-    ]
-    ++ lib.optionals cupsSupport [
-      "--enable-cups"
-    ];
+  configureFlags = [
+    "--with-system-libtiff"
+    "--without-tesseract"
+  ]
+  ++ lib.optionals dynamicDrivers [
+    "--enable-dynamic"
+    "--disable-hidden-visibility"
+  ]
+  ++ lib.optionals x11Support [
+    "--with-x"
+  ]
+  ++ lib.optionals cupsSupport [
+    "--enable-cups"
+  ];
 
   # make check does nothing useful
   doCheck = false;
 
   # don't build/install statically linked bin/gs
-  buildFlags =
-    [ "so" ]
-    # without -headerpad, the following error occurs on Darwin when compiling with X11 support (as of 10.02.0)
-    # error: install_name_tool: changing install names or rpaths can't be redone for: [...]libgs.dylib.10 (the program must be relinked, and you may need to use -headerpad or -headerpad_max_install_names)
-    ++ lib.optional (x11Support && stdenv.hostPlatform.isDarwin) "LDFLAGS=-headerpad_max_install_names";
+  buildFlags = [
+    "so"
+  ]
+  # without -headerpad, the following error occurs on Darwin when compiling with X11 support (as of 10.02.0)
+  # error: install_name_tool: changing install names or rpaths can't be redone for: [...]libgs.dylib.10 (the program must be relinked, and you may need to use -headerpad or -headerpad_max_install_names)
+  ++ lib.optional (x11Support && stdenv.hostPlatform.isDarwin) "LDFLAGS=-headerpad_max_install_names";
   installTargets = [ "soinstall" ];
 
   postInstall = ''

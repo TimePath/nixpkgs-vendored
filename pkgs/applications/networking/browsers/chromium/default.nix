@@ -71,7 +71,7 @@ let
   chromium = rec {
     inherit stdenv upstream-info;
 
-    mkChromiumDerivation = callPackage ./common.nix ({
+    mkChromiumDerivation = callPackage ./common.nix {
       inherit chromiumVersionAtLeast versionRange;
       inherit
         proprietaryCodecs
@@ -84,6 +84,16 @@ let
         src = fetchgit {
           url = "https://gn.googlesource.com/gn";
           inherit (upstream-info.deps.gn) rev hash;
+          # compat shim release-25.05 to match the new src FOD from unstable
+          leaveDotGit = true;
+          deepClone = true;
+          postFetch = ''
+            cd "$out"
+            mkdir .nix-files
+            git rev-parse --short=12 HEAD > .nix-files/REV_SHORT
+            git describe --match initial-commit | cut -d- -f3 > .nix-files/REV_NUM
+            find "$out" -name .git -print0 | xargs -0 rm -rf
+          '';
         };
 
         # Relax hardening as otherwise gn unstable 2024-06-06 and later fail with:
@@ -96,7 +106,7 @@ let
         # As a work around until gn is updated again, we filter specifically that patch out.
         patches = lib.filter (e: lib.getName e != "LFS64.patch") oldAttrs.patches;
       });
-    });
+    };
 
     browser = callPackage ./browser.nix {
       inherit chromiumVersionAtLeast enableWideVine ungoogled;

@@ -458,6 +458,11 @@ let
             }
           fi
         ''}
+        ${lib.optionalString config.boot.loader.grub.memtest86.enable ''
+          menuentry 'Memtest86+' --class debug {
+            linux (\$root)/boot/memtest.bin ${toString config.boot.loader.grub.memtest86.params}
+          }
+        ''}
         menuentry 'Firmware Setup' --class settings {
           fwsetup
           clear
@@ -797,7 +802,8 @@ in
       device = "/iso/nix-store.squashfs";
       options = [
         "loop"
-      ] ++ lib.optional (config.boot.kernelPackages.kernel.kernelAtLeast "6.2") "threads=multi";
+      ]
+      ++ lib.optional (config.boot.kernelPackages.kernel.kernelAtLeast "6.2") "threads=multi";
       neededForBoot = true;
     };
 
@@ -869,7 +875,8 @@ in
 
     environment.systemPackages = [
       grubPkgs.grub2
-    ] ++ lib.optional (config.isoImage.makeBiosBootable) pkgs.syslinux;
+    ]
+    ++ lib.optional (config.isoImage.makeBiosBootable) pkgs.syslinux;
     system.extraDependencies = [ grubPkgs.grub2_efi ];
 
     # In stage 1 of the boot, mount the CD as the root FS by label so
@@ -901,9 +908,10 @@ in
 
     # Closures to be copied to the Nix store on the CD, namely the init
     # script and the top-level system configuration directory.
-    isoImage.storeContents =
-      [ config.system.build.toplevel ]
-      ++ lib.optional config.isoImage.includeSystemBuildDependencies config.system.build.toplevel.drvPath;
+    isoImage.storeContents = [
+      config.system.build.toplevel
+    ]
+    ++ lib.optional config.isoImage.includeSystemBuildDependencies config.system.build.toplevel.drvPath;
 
     # Individual files to be included on the CD, outside of the Nix
     # store on the CD.
@@ -911,7 +919,7 @@ in
       let
         cfgFiles =
           cfg:
-          lib.optionals cfg.isoImage.showConfiguration ([
+          lib.optionals cfg.isoImage.showConfiguration [
             {
               source = cfg.boot.kernelPackages.kernel + "/" + cfg.system.boot.loader.kernelFile;
               target = "/boot/" + cfg.boot.kernelPackages.kernel + "/" + cfg.system.boot.loader.kernelFile;
@@ -920,7 +928,7 @@ in
               source = cfg.system.build.initialRamdisk + "/" + cfg.system.boot.loader.initrdFile;
               target = "/boot/" + cfg.system.build.initialRamdisk + "/" + cfg.system.boot.loader.initrdFile;
             }
-          ])
+          ]
           ++ lib.concatLists (
             lib.mapAttrsToList (_: { configuration, ... }: cfgFiles configuration) cfg.specialisation
           );

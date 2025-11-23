@@ -165,17 +165,23 @@ let
             --wait \
             --collect \
             --service-type=exec \
+            --setenv OC_PASS \
+            --setenv NC_PASS \
             --quiet \
             ${command}
         elif [[ "$USER" != nextcloud ]]; then
           if [[ -x /run/wrappers/bin/sudo ]]; then
             exec /run/wrappers/bin/sudo \
               --preserve-env=CREDENTIALS_DIRECTORY \
+              --preserve-env=OC_PASS \
+              --preserve-env=NC_PASS \
               --user=nextcloud \
               ${command}
           else
             exec ${lib.getExe' pkgs.util-linux "runuser"} \
               --whitelist-environment=CREDENTIALS_DIRECTORY \
+              --whitelist-environment=OC_PASS \
+              --whitelist-environment=NC_PASS \
               --user=nextcloud \
               ${command}
           fi
@@ -287,7 +293,7 @@ let
         'apps_paths' => [
           ${concatStrings (mapAttrsToList mkAppStoreConfig appStores)}
         ],
-        ${optionalString (showAppStoreSetting) "'appstoreenabled' => ${renderedAppStoreSetting},"}
+        ${optionalString showAppStoreSetting "'appstoreenabled' => ${renderedAppStoreSetting},"}
         ${optionalString cfg.caching.apcu "'memcache.local' => '\\OC\\Memcache\\APCu',"}
         ${optionalString (c.dbname != null) "'dbname' => '${c.dbname}',"}
         ${optionalString (c.dbhost != null) "'dbhost' => '${c.dbhost}',"}
@@ -399,9 +405,10 @@ in
           inherit (pkgs.nextcloud31Packages.apps) mail calendar contacts;
           phonetrack = pkgs.fetchNextcloudApp {
             name = "phonetrack";
-            sha256 = "0qf366vbahyl27p9mshfma1as4nvql6w75zy2zk5xwwbp343vsbc";
-            url = "https://gitlab.com/eneiluj/phonetrack-oc/-/wikis/uploads/931aaaf8dca24bf31a7e169a83c17235/phonetrack-0.6.9.tar.gz";
-            version = "0.6.9";
+            license = "agpl3Plus";
+            sha512 = "f67902d1b48def9a244383a39d7bec95bb4215054963a9751f99dae9bd2f2740c02d2ef97b3b76d69a36fa95f8a9374dd049440b195f4dad2f0c4bca645de228";
+            url = "https://github.com/julien-nc/phonetrack/releases/download/v0.8.2/phonetrack-0.8.2.tar.gz";
+            version = "0.8.2";
           };
         }
       '';
@@ -440,6 +447,7 @@ in
       relatedPackages = [
         "nextcloud30"
         "nextcloud31"
+        "nextcloud32"
       ];
     };
     phpPackage = mkPackageOption pkgs "php" {
@@ -584,11 +592,14 @@ in
 
     config = {
       dbtype = mkOption {
-        type = types.enum [
-          "sqlite"
-          "pgsql"
-          "mysql"
-        ];
+        type = types.nullOr (
+          types.enum [
+            "sqlite"
+            "pgsql"
+            "mysql"
+          ]
+        );
+        default = null;
         description = "Database type.";
       };
       dbname = mkOption {
@@ -1093,6 +1104,17 @@ in
             instead of password.
           '';
         }
+        {
+          assertion = cfg.config.dbtype != null;
+          message = ''
+            `services.nextcloud.config.dbtype` must be set explicitly (pgsql, mysql, or sqlite)
+
+            Before 25.05, it used to default to sqlite but that is not recommended by upstream.
+            Either set it to sqlite as it used to be, or convert to another type as described
+            in the official db conversion page:
+            https://docs.nextcloud.com/server/latest/admin_manual/configuration_database/db_conversion.html
+          '';
+        }
       ];
     }
 
@@ -1232,7 +1254,8 @@ in
             serviceConfig.User = "nextcloud";
             serviceConfig.LoadCredential = [
               "adminpass:${cfg.config.adminpassFile}"
-            ] ++ runtimeSystemdCredentials;
+            ]
+            ++ runtimeSystemdCredentials;
             # On Nextcloud ≥ 26, it is not necessary to patch the database files to prevent
             # an automatic creation of the database user.
             environment.NC_setup_create_db_user = lib.mkIf (nextcloudGreaterOrEqualThan "26") "false";
@@ -1292,34 +1315,33 @@ in
           };
         };
 
-        phpfpm-nextcloud =
-          {
-            # When upgrading the Nextcloud package, Nextcloud can report errors such as
-            # "The files of the app [all apps in /var/lib/nextcloud/apps] were not replaced correctly"
-            # Restarting phpfpm on Nextcloud package update fixes these issues (but this is a workaround).
-            restartTriggers = [
-              webroot
-              overrideConfig
-            ];
-          }
-          // lib.optionalAttrs requiresRuntimeSystemdCredentials {
-            serviceConfig.LoadCredential = runtimeSystemdCredentials;
+        phpfpm-nextcloud = {
+          # When upgrading the Nextcloud package, Nextcloud can report errors such as
+          # "The files of the app [all apps in /var/lib/nextcloud/apps] were not replaced correctly"
+          # Restarting phpfpm on Nextcloud package update fixes these issues (but this is a workaround).
+          restartTriggers = [
+            webroot
+            overrideConfig
+          ];
+        }
+        // lib.optionalAttrs requiresRuntimeSystemdCredentials {
+          serviceConfig.LoadCredential = runtimeSystemdCredentials;
 
-            # FIXME: We use a hack to make the credential files readable by the nextcloud
-            #        user by copying them somewhere else and overriding CREDENTIALS_DIRECTORY
-            #        for php. This is currently necessary as the unit runs as root.
-            serviceConfig.RuntimeDirectory = lib.mkForce "phpfpm phpfpm-nextcloud";
-            preStart = ''
-              umask 0077
+          # FIXME: We use a hack to make the credential files readable by the nextcloud
+          #        user by copying them somewhere else and overriding CREDENTIALS_DIRECTORY
+          #        for php. This is currently necessary as the unit runs as root.
+          serviceConfig.RuntimeDirectory = lib.mkForce "phpfpm phpfpm-nextcloud";
+          preStart = ''
+            umask 0077
 
-              # NOTE: Runtime directories for this service are currently preserved
-              #       between restarts.
-              rm -rf /run/phpfpm-nextcloud/credentials/
-              mkdir -p /run/phpfpm-nextcloud/credentials/
-              cp "$CREDENTIALS_DIRECTORY"/* /run/phpfpm-nextcloud/credentials/
-              chown -R nextcloud:nextcloud /run/phpfpm-nextcloud/credentials/
-            '';
-          };
+            # NOTE: Runtime directories for this service are currently preserved
+            #       between restarts.
+            rm -rf /run/phpfpm-nextcloud/credentials/
+            mkdir -p /run/phpfpm-nextcloud/credentials/
+            cp "$CREDENTIALS_DIRECTORY"/* /run/phpfpm-nextcloud/credentials/
+            chown -R nextcloud:nextcloud /run/phpfpm-nextcloud/credentials/
+          '';
+        };
       };
 
       services.phpfpm = {
@@ -1387,13 +1409,13 @@ in
       services.nextcloud = {
         caching.redis = lib.mkIf cfg.configureRedis true;
         settings = mkMerge [
-          ({
+          {
             datadirectory = lib.mkDefault "${datadir}/data";
             trusted_domains = [ cfg.hostName ];
             "upgrade.disable-web" = true;
             # NixOS already provides its own integrity check and the nix store is read-only, therefore Nextcloud does not need to do its own integrity checks.
             "integrity.check.disabled" = true;
-          })
+          }
           (lib.mkIf cfg.configureRedis {
             "memcache.distributed" = ''\OC\Memcache\Redis'';
             "memcache.locking" = ''\OC\Memcache\Redis'';
@@ -1459,7 +1481,7 @@ in
               # legacy support (i.e. static files and directories in cfg.package)
               rewrite ^/(?!index|remote|public|cron|core\/ajax\/update|status|ocs\/v[12]|updater\/.+|oc[s${
                 optionalString (!ocmProviderIsNotAStaticDirAnymore) "m"
-              }]-provider\/.+|.+\/richdocumentscode\/proxy) /index.php$request_uri;
+              }]-provider\/.+|.+\/richdocumentscode(_arm64)?\/proxy) /index.php$request_uri;
               include ${config.services.nginx.package}/conf/fastcgi.conf;
               fastcgi_split_path_info ^(.+?\.php)(\\/.*)$;
               set $path_info $fastcgi_path_info;
@@ -1475,7 +1497,7 @@ in
               fastcgi_read_timeout ${builtins.toString cfg.fastcgiTimeout}s;
             '';
           };
-          "~ \\.(?:css|js|mjs|svg|gif|png|jpg|jpeg|ico|wasm|tflite|map|html|ttf|bcmap|mp4|webm|ogg|flac)$".extraConfig =
+          "~ \\.(?:css|js|mjs|svg|gif|ico|jpg|jpeg|png|webp|wasm|tflite|map|html|ttf|bcmap|mp4|webm|ogg|flac)$".extraConfig =
             ''
               try_files $uri /index.php$request_uri;
               expires 6M;
@@ -1511,9 +1533,7 @@ in
           index index.php index.html /index.php$request_uri;
           ${optionalString (cfg.nginx.recommendedHttpHeaders) ''
             add_header X-Content-Type-Options nosniff;
-            add_header X-XSS-Protection "1; mode=block";
             add_header X-Robots-Tag "noindex, nofollow";
-            add_header X-Download-Options noopen;
             add_header X-Permitted-Cross-Domain-Policies none;
             add_header X-Frame-Options sameorigin;
             add_header Referrer-Policy no-referrer;
@@ -1529,7 +1549,7 @@ in
           gzip_comp_level 4;
           gzip_min_length 256;
           gzip_proxied expired no-cache no-store private no_last_modified no_etag auth;
-          gzip_types application/atom+xml application/javascript application/json application/ld+json application/manifest+json application/rss+xml application/vnd.geo+json application/vnd.ms-fontobject application/x-font-ttf application/x-web-app-manifest+json application/xhtml+xml application/xml font/opentype image/bmp image/svg+xml image/x-icon text/cache-manifest text/css text/plain text/vcard text/vnd.rim.location.xloc text/vtt text/x-component text/x-cross-domain-policy;
+          gzip_types application/atom+xml text/javascript application/javascript application/json application/ld+json application/manifest+json application/rss+xml application/vnd.geo+json application/vnd.ms-fontobject application/wasm application/x-font-ttf application/x-web-app-manifest+json application/xhtml+xml application/xml font/opentype image/bmp image/svg+xml image/x-icon text/cache-manifest text/css text/plain text/vcard text/vnd.rim.location.xloc text/vtt text/x-component text/x-cross-domain-policy;
 
           ${optionalString cfg.webfinger ''
             rewrite ^/.well-known/host-meta /public.php?service=host-meta last;

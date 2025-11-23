@@ -64,7 +64,8 @@ stdenv.mkDerivation rec {
     cairo
     SDL
     sqlite
-  ] ++ lib.optional emacsSupport emacs;
+  ]
+  ++ lib.optional emacsSupport emacs;
 
   configureFlags = lib.optional (!emacsSupport) "--without-emacs";
 
@@ -90,6 +91,6 @@ stdenv.mkDerivation rec {
       lgpl2
     ];
     platforms = platforms.linux;
-    maintainers = with maintainers; [ ];
+    maintainers = [ ];
   };
 }

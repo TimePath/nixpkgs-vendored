@@ -11,7 +11,7 @@
 
 python3.pkgs.buildPythonApplication rec {
   pname = "nitrokey-app2";
-  version = "2.3.3";
+  version = "2.3.5";
   pyproject = true;
 
   disabled = python3.pythonOlder "3.9";
@@ -20,7 +20,7 @@ python3.pkgs.buildPythonApplication rec {
     owner = "Nitrokey";
     repo = "nitrokey-app2";
     tag = "v${version}";
-    hash = "sha256-BbgP4V0cIctY/oR4/1r1MprkIn+5oyHeFiOQQQ71mNU=";
+    hash = "sha256-zhTDr4GyE4jridK3ee8ae3v5behMbuo86q9WdrBVqQg=";
   };
 
   nativeBuildInputs = with python3.pkgs; [
@@ -28,20 +28,19 @@ python3.pkgs.buildPythonApplication rec {
     wrapQtAppsHook
   ];
 
-  buildInputs =
-    [ qtbase ]
-    ++ lib.optionals stdenv.hostPlatform.isLinux [
-      qtwayland
-      qtsvg
-    ];
+  buildInputs = [
+    qtbase
+  ]
+  ++ lib.optionals stdenv.hostPlatform.isLinux [
+    qtwayland
+    qtsvg
+  ];
 
   propagatedBuildInputs = with python3.pkgs; [
     nitrokey
     pyside6
     usb-monitor
   ];
-
-  pythonRelaxDeps = [ "nitrokey" ];
 
   pythonImportsCheck = [
     "nitrokeyapp"

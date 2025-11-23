@@ -1,6 +1,6 @@
 {
   lib,
-  buildGoModule,
+  buildGo125Module,
   fetchFromGitHub,
   nixosTests,
   withServer ? true, # the actual metrics server
@@ -12,15 +12,15 @@
   withVictoriaLogs ? true, # logs server
 }:
 
-buildGoModule (finalAttrs: {
+buildGo125Module (finalAttrs: {
   pname = "VictoriaMetrics";
-  version = "1.118.0";
+  version = "1.129.1";
 
   src = fetchFromGitHub {
     owner = "VictoriaMetrics";
     repo = "VictoriaMetrics";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-a84n9fuGdiG0o/1/9q3etTwoFbOL01y88ubTI/yIIBA=";
+    hash = "sha256-LLiiA+A3s3WcJcwyqRYKFn+VwaEbbufiawZsyG+ibGU=";
   };
 
   vendorHash = null;
@@ -57,6 +57,10 @@ buildGoModule (finalAttrs: {
     #
     # This appears to be some kind of test server for development purposes only.
     rm -f app/vmui/packages/vmui/web/{go.mod,main.go}
+
+    # Allow older go versions
+    sed -i go.mod -e 's/^go .*/go ${finalAttrs.passthru.go.version}/'
+    sed -i vendor/modules.txt -e 's/## explicit; go .*/## explicit; go ${finalAttrs.passthru.go.version}/'
 
     # Increase timeouts in tests to prevent failure on heavily loaded builders
     substituteInPlace lib/storage/storage_test.go \

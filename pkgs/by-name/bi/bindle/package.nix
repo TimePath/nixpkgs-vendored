@@ -26,7 +26,6 @@ rustPlatform.buildRustPackage rec {
   nativeBuildInputs = [ pkg-config ];
   buildInputs = [ openssl ];
 
-  useFetchCargoVendor = true;
   cargoHash = "sha256-cTgR1yp6TFwotm5VEG5e0O7R1zCMbQmcH2zmRmF7cjI=";
 
   cargoBuildFlags = [
@@ -43,5 +42,9 @@ rustPlatform.buildRustPackage rec {
     license = licenses.asl20;
     maintainers = [ ];
     platforms = platforms.unix;
+
+    knownVulnerabilities = [
+      "'bindle' is vulnerable to CVE-2025-62518 and upstream has been archived"
+    ];
   };
 }

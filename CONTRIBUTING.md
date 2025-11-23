@@ -423,19 +423,21 @@ gitGraph
 
 Here's an overview of the different branches:
 
-| branch | `master` | `staging-next` | `staging` |
-| --- | --- | --- | --- |
-| Used for development | ✔️ | ❌ | ✔️ |
-| Built by Hydra | ✔️ | ✔️ | ❌ |
-| [Mass rebuilds][mass-rebuild] | ❌ | ⚠️  Only to fix Hydra builds | ✔️ |
-| Critical security fixes | ✔️ for non-mass-rebuilds | ✔️ for mass-rebuilds | ❌ |
-| Automatically merged into | `staging-next` | `staging` | - |
-| Manually merged into | - | `master` | `staging-next` |
+| branch | `master` | `staging-next` | `staging` | [`staging-nixos`](#test-driver-rebuild) |
+| --- | --- | --- | --- | --- |
+| Used for development | ✔️ | ❌ | ✔️ | ✔️ |
+| Built by Hydra | ✔️ | ✔️ | ❌ | ❌ |
+| [Mass rebuilds][mass-rebuild] | ❌ | ⚠️  Only to fix Hydra builds | ✔️ | ❌[^1]  |
+| Critical security fixes | ✔️ for non-mass-rebuilds | ✔️ for mass-rebuilds | ❌ | ✔️ |
+| Automatically merged into | `staging-next` & `staging-nixos` | `staging` | - | - |
+| Manually merged into | - | `master` | `staging-next` | `master` |
 
 The staging workflow is used for all main branches, `master` and `release-YY.MM`, with corresponding names:
 - `master`/`release-YY.MM`
 - `staging`/`staging-YY.MM`
 - `staging-next`/`staging-next-YY.MM`
+
+[^1]: Except changes that cause no more rebuilds than kernel updates
 
 # Conventions
 
@@ -487,6 +489,26 @@ Which changes cause mass rebuilds is not formally defined.
 In order to help the decision, CI automatically assigns [`rebuild` labels](https://github.com/NixOS/nixpkgs/labels?q=rebuild) to pull requests based on the number of packages they cause rebuilds for.
 As a rule of thumb, if the number of rebuilds is **over 500**, it can be considered a mass rebuild.
 To get a sense for what changes are considered mass rebuilds, see [previously merged pull requests to the staging branches](https://github.com/NixOS/nixpkgs/issues?q=base%3Astaging+-base%3Astaging-next+is%3Amerged).
+
+Please note that changes to the Linux kernel are an exception to this rule.
+These PRs go to `staging-nixos`, see [the next section for more context](#changes-rebuilding-all-tests).
+
+### Changes rebuilding all NixOS tests
+[test-driver-rebuild]: #changes-rebuilding-all-tests
+
+Changes causing a rebuild of all NixOS tests get a special [`10.rebuild-nixos-tests`](https://github.com/NixOS/nixpkgs/issues?q=state%3Aopen%20label%3A10.rebuild-nixos-tests) label.
+These changes pose a significant impact on the build infrastructure.
+
+Hence, these PRs should either target a `staging`-branch or `staging-nixos`, provided one of following conditions applies:
+
+* The label `10.rebuild-nixos-tests` is set, or
+* The PR is a change affecting the Linux kernel.
+
+The branch gets merged whenever mainline kernel updates or critical security fixes land on the branch.
+This usually happens on a weekly basis.
+
+Backports are not handled by such a branch.
+The relevant PRs from this branch must be backported manually.
 
 ## Commit conventions
 [commit-conventions]: #commit-conventions
@@ -559,7 +581,12 @@ If you have any problems with formatting, please ping the
 - Functions should list their expected arguments as precisely as possible. That is, write
 
   ```nix
-  { stdenv, fetchurl, perl }: <...>
+  {
+    stdenv,
+    fetchurl,
+    perl,
+  }:
+  <...>
   ```
 
   instead of
@@ -571,17 +598,25 @@ If you have any problems with formatting, please ping the
   or
 
   ```nix
-  { stdenv, fetchurl, perl, ... }: <...>
+  {
+    stdenv,
+    fetchurl,
+    perl,
+    ...
+  }:
+  <...>
   ```
 
   For functions that are truly generic in the number of arguments (such as wrappers around `mkDerivation`) that have some required arguments, you should write them using an `@`-pattern:
 
   ```nix
-  { stdenv, doCoverageAnalysis ? false, ... } @ args:
+  {
+    stdenv,
+    doCoverageAnalysis ? false,
+    ...
+  }@args:
 
-  stdenv.mkDerivation (args // {
-    foo = if doCoverageAnalysis then "bla" else "";
-  })
+  stdenv.mkDerivation (args // { foo = if doCoverageAnalysis then "bla" else ""; })
   ```
 
   instead of
@@ -589,41 +624,36 @@ If you have any problems with formatting, please ping the
   ```nix
   args:
 
-  args.stdenv.mkDerivation (args // {
-    foo = if args ? doCoverageAnalysis && args.doCoverageAnalysis then "bla" else "";
-  })
+  args.stdenv.mkDerivation (
+    args
+    // {
+      foo = if args ? doCoverageAnalysis && args.doCoverageAnalysis then "bla" else "";
+    }
+  )
   ```
 
 - Unnecessary string conversions should be avoided. Do
 
   ```nix
-  {
-    rev = version;
-  }
+  { rev = version; }
   ```
 
   instead of
 
   ```nix
-  {
-    rev = "${version}";
-  }
+  { rev = "${version}"; }
   ```
 
 - Building lists conditionally _should_ be done with `lib.optional(s)` instead of using `if cond then [ ... ] else null` or `if cond then [ ... ] else [ ]`.
 
   ```nix
-  {
-    buildInputs = lib.optional stdenv.hostPlatform.isDarwin iconv;
-  }
+  { buildInputs = lib.optional stdenv.hostPlatform.isDarwin iconv; }
   ```
 
   instead of
 
   ```nix
-  {
-    buildInputs = if stdenv.hostPlatform.isDarwin then [ iconv ] else null;
-  }
+  { buildInputs = if stdenv.hostPlatform.isDarwin then [ iconv ] else null; }
   ```
 
   As an exception, an explicit conditional expression with null can be used when fixing a important bug without triggering a mass rebuild.

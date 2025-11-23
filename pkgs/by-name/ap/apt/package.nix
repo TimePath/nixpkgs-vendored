@@ -52,46 +52,44 @@ stdenv.mkDerivation (finalAttrs: {
     "man"
   ];
 
-  nativeBuildInputs =
-    [
-      cmake
-      dpkg # dpkg-architecture
-      gettext # msgfmt
-      gtest
-      (lib.getBin libxslt)
-      pkg-config
-      triehash
-      perlPackages.perl
-    ]
-    ++ lib.optionals withDocs [
-      docbook_xml_dtd_45
-      doxygen
-      perlPackages.Po4a
-      w3m
-    ];
+  nativeBuildInputs = [
+    cmake
+    dpkg # dpkg-architecture
+    gettext # msgfmt
+    gtest
+    (lib.getBin libxslt)
+    pkg-config
+    triehash
+    perlPackages.perl
+  ]
+  ++ lib.optionals withDocs [
+    docbook_xml_dtd_45
+    doxygen
+    perlPackages.Po4a
+    w3m
+  ];
 
-  buildInputs =
-    [
-      bzip2
-      curl
-      db
-      dpkg
-      gnutls
-      gtest
-      libgcrypt
-      libgpg-error
-      libseccomp
-      libtasn1
-      lz4
-      p11-kit
-      udev
-      xxHash
-      xz
-      zstd
-    ]
-    ++ lib.optionals withNLS [
-      gettext
-    ];
+  buildInputs = [
+    bzip2
+    curl
+    db
+    dpkg
+    gnutls
+    gtest
+    libgcrypt
+    libgpg-error
+    libseccomp
+    libtasn1
+    lz4
+    p11-kit
+    udev
+    xxHash
+    xz
+    zstd
+  ]
+  ++ lib.optionals withNLS [
+    gettext
+  ];
 
   cmakeFlags = [
     (lib.cmakeOptionType "filepath" "BERKELEY_INCLUDE_DIRS" "${lib.getDev db}/include")
@@ -109,7 +107,7 @@ stdenv.mkDerivation (finalAttrs: {
     changelog = "https://salsa.debian.org/apt-team/apt/-/raw/${finalAttrs.version}/debian/changelog";
     license = with lib.licenses; [ gpl2Plus ];
     mainProgram = "apt";
-    maintainers = with lib.maintainers; [ ];
+    maintainers = [ ];
     platforms = lib.platforms.linux;
   };
 })

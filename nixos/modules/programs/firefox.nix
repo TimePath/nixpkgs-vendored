@@ -74,9 +74,7 @@ in
       defaultText = lib.literalExpression "pkgs.firefox";
       relatedPackages = [
         "firefox"
-        "firefox-beta-bin"
         "firefox-bin"
-        "firefox-devedition-bin"
         "firefox-esr"
       ];
     };
@@ -151,7 +149,7 @@ in
     languagePacks = lib.mkOption {
       # Available languages can be found in https://releases.mozilla.org/pub/firefox/releases/${cfg.package.version}/linux-x86_64/xpi/
       type = lib.types.listOf (
-        lib.types.enum ([
+        lib.types.enum [
           "ach"
           "af"
           "an"
@@ -255,7 +253,7 @@ in
           "xh"
           "zh-CN"
           "zh-TW"
-        ])
+        ]
       );
       default = [ ];
       description = ''
@@ -287,7 +285,7 @@ in
       '';
     };
 
-    nativeMessagingHosts = ({
+    nativeMessagingHosts = {
       packages = lib.mkOption {
         type = lib.types.listOf lib.types.package;
         default = [ ];
@@ -295,7 +293,8 @@ in
           Additional packages containing native messaging hosts that should be made available to Firefox extensions.
         '';
       };
-    }) // (builtins.mapAttrs (k: v: lib.mkEnableOption "${v.name} support") nmhOptions);
+    }
+    // (builtins.mapAttrs (k: v: lib.mkEnableOption "${v.name} support") nmhOptions);
   };
 
   config =

@@ -50,7 +50,7 @@ let
       crcmod
       numpy
     ]
-    ++ lib.optional (with-gce) google-compute-engine
+    ++ lib.optional with-gce google-compute-engine
   );
 
   data = import ./data.nix { };
@@ -83,6 +83,9 @@ stdenv.mkDerivation rec {
     # Disable checking for updates for the package
     ./gsutil-disable-updates.patch
   ];
+
+  # Prevent Python from writing bytecode to ensure build determinism
+  PYTHONDONTWRITEBYTECODE = "1";
 
   installPhase = ''
     runHook preInstall
@@ -184,6 +187,7 @@ stdenv.mkDerivation rec {
       pradyuman
       stephenmw
       zimbatm
+      ryan4yin
     ];
     platforms = builtins.attrNames data.googleCloudSdkPkgs;
     mainProgram = "gcloud";

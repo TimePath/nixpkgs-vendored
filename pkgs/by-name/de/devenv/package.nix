@@ -3,44 +3,50 @@
   fetchFromGitHub,
   makeBinaryWrapper,
   installShellFiles,
-  rustPlatform,
+  rustPackages_1_89,
   testers,
   cachix,
   nixVersions,
+  gitMinimal,
   openssl,
+  dbus,
   pkg-config,
   glibcLocalesUtf8,
   devenv, # required to run version test
 }:
 
 let
-  devenv_nix = nixVersions.nix_2_24.overrideAttrs (old: {
-    version = "2.24-devenv";
-    src = fetchFromGitHub {
-      owner = "domenkozar";
-      repo = "nix";
-      rev = "b455edf3505f1bf0172b39a735caef94687d0d9c";
-      hash = "sha256-bYyjarS3qSNqxfgc89IoVz8cAFDkF9yPE63EJr+h50s=";
-    };
-    doCheck = false;
-    doInstallCheck = false;
-  });
+  version = "1.10";
+  devenvNixVersion = "2.30.4";
 
-  version = "1.6.1";
+  devenv_nix =
+    (nixVersions.git.overrideSource (fetchFromGitHub {
+      owner = "cachix";
+      repo = "nix";
+      rev = "devenv-${devenvNixVersion}";
+      hash = "sha256-3+GHIYGg4U9XKUN4rg473frIVNn8YD06bjwxKS1IPrU=";
+    })).overrideAttrs
+      (old: {
+        pname = "devenv-nix";
+        version = devenvNixVersion;
+        doCheck = false;
+        doInstallCheck = false;
+        # do override src, but the Nix way so the warning is unaware of it
+        __intentionallyOverridingVersion = true;
+      });
 in
-rustPlatform.buildRustPackage {
+rustPackages_1_89.rustPlatform.buildRustPackage {
   pname = "devenv";
   inherit version;
 
   src = fetchFromGitHub {
     owner = "cachix";
     repo = "devenv";
-    rev = "v${version}";
-    hash = "sha256-CEVWxRaln3sp0541QpMfcfmI2w+RN72UgNLV5Dy9sco=";
+    tag = "v${version}";
+    hash = "sha256-rsb+6Wca43guzLL4Czoc89L394ZW9JZF2MShxaz2Sx4=";
   };
 
-  useFetchCargoVendor = true;
-  cargoHash = "sha256-t4Cj7JlBVrMP02Dqibq2IgdKy6ejv+CeffmcPAkh7BE=";
+  cargoHash = "sha256-Wt47YdBEtFXQACk1ByDwQyXzHU4/nGVQKY7gaZeQrQ4=";
 
   buildAndTestSubdir = "devenv";
 
@@ -50,7 +56,20 @@ rustPlatform.buildRustPackage {
     pkg-config
   ];
 
-  buildInputs = [ openssl ];
+  buildInputs = [
+    openssl
+    dbus
+  ];
+
+  nativeCheckInputs = [
+    gitMinimal
+  ];
+
+  preCheck = ''
+    git init
+    git config user.email "test@example.com"
+    git config user.name "Test User"
+  '';
 
   postInstall =
     let

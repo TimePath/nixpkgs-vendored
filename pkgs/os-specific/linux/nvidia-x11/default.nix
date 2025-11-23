@@ -53,6 +53,14 @@ let
     rev = "94dffc01e23a93c354a765ea7ac64484a3ef96c1";
     hash = "sha256-c94qXNZyMrSf7Dik7jvz2ECaGELqN7WEYNpnbUkzeeU=";
   };
+
+  # https://github.com/NVIDIA/open-gpu-kernel-modules/issues/840
+  gpl_symbols_linux_615_patch = fetchpatch {
+    url = "https://github.com/CachyOS/kernel-patches/raw/914aea4298e3744beddad09f3d2773d71839b182/6.15/misc/nvidia/0003-Workaround-nv_vm_flags_-calling-GPL-only-code.patch";
+    hash = "sha256-YOTAvONchPPSVDP9eJ9236pAPtxYK5nAePNtm2dlvb4=";
+    stripLen = 1;
+    extraPrefix = "kernel/";
+  };
 in
 rec {
   mkDriver = generic;
@@ -64,12 +72,13 @@ rec {
   stable = if stdenv.hostPlatform.system == "i686-linux" then legacy_390 else production;
 
   production = generic {
-    version = "570.153.02";
-    sha256_64bit = "sha256-FIiG5PaVdvqPpnFA5uXdblH5Cy7HSmXxp6czTfpd4bY=";
-    sha256_aarch64 = "sha256-FKhtEVChfw/1sV5FlFVmia/kE1HbahDJaxTlpNETlrA=";
-    openSha256 = "sha256-2DpY3rgQjYFuPfTY4U/5TcrvNqsWWnsOSX0f2TfVgTs=";
-    settingsSha256 = "sha256-5m6caud68Owy4WNqxlIQPXgEmbTe4kZV2vZyTWHWe+M=";
-    persistencedSha256 = "sha256-OSo4Od7NmezRdGm7BLLzYseWABwNGdsomBCkOsNvOxA=";
+    version = "570.195.03";
+    sha256_64bit = "sha256-1H3oHZpRNJamCtyc+nL+nhYsZfJyL7lgxPUxvXrF3B4=";
+    sha256_aarch64 = "sha256-o4rgB6vo+Cv90lJywovIyVARRGS3R15zYQUj+f1nzWQ=";
+    openSha256 = "sha256-vCBB/UJgVKHlSEWdgoF45lODr3YJmR6JwjrwWgWszBw=";
+    settingsSha256 = "sha256-mjKkMEPV6W69PO8jKAKxAS861B82CtCpwVTeNr5CqUY=";
+    persistencedSha256 = "sha256-BMpo2PIabhHjZQqUQi/W5DYhgAPmfCdFvXdN6ND2Bfs=";
+    patches = [ gpl_symbols_linux_615_patch ];
   };
 
   latest = selectHighestVersion production (generic {
@@ -116,16 +125,14 @@ rec {
   dc = dc_565;
 
   dc_535 = generic rec {
-    version = "535.154.05";
+    version = "535.261.03";
     url = "https://us.download.nvidia.com/tesla/${version}/NVIDIA-Linux-x86_64-${version}.run";
-    sha256_64bit = "sha256-fpUGXKprgt6SYRDxSCemGXLrEsIA6GOinp+0eGbqqJg=";
-    persistencedSha256 = "sha256-d0Q3Lk80JqkS1B54Mahu2yY/WocOqFFbZVBh+ToGhaE=";
-    fabricmanagerSha256 = "sha256-/HQfV7YA3MYVmre/sz897PF6tc6MaMiS/h7Q10m2p/o=";
+    sha256_64bit = "sha256-10th0R6cm5BS9AQtbsRDfxPR3vMOlk4jLUfl1lnRHWg=";
+    persistencedSha256 = "sha256-pnOq9+6l3BbIEKHboGeTwEcEcYhtESzmroUfCahqn0U=";
+    fabricmanagerSha256 = "sha256-+4P91JQ5pznAenCk/vW5pg897yKnih/oFcYxrAJMzLc=";
     useSettings = false;
     usePersistenced = true;
     useFabricmanager = true;
-
-    patches = [ rcu_patch ];
   };
 
   dc_565 = generic rec {
@@ -146,12 +153,12 @@ rec {
   # Last one without the bug reported here:
   # https://bbs.archlinux.org/viewtopic.php?pid=2155426#p2155426
   legacy_535 = generic {
-    version = "535.216.01";
-    sha256_64bit = "sha256-Xd6hFHgQAS4zlnwxgTQbzWYkvT1lTGP4Rd+DO07Oavc=";
-    sha256_aarch64 = "sha256-SGmuA0W1iSsqUK7VZsgibT4HgT0RkKpGb+ul6eIbM7k=";
-    openSha256 = "sha256-ey96oMbY32ahcHSOj1+MykvJrep6mhHPVl+V8+B2ZDk=";
-    settingsSha256 = "sha256-9PgaYJbP1s7hmKCYmkuLQ58nkTruhFdHAs4W84KQVME=";
-    persistencedSha256 = "sha256-ckF/BgDA6xSFqFk07rn3HqXuR0iGfwA4PRxpP38QZgw=";
+    version = "535.274.02";
+    sha256_64bit = "sha256-O071TwaZHm3/94aN3nl/rZpFH+5o1SZ9+Hyivo5/KTs=";
+    sha256_aarch64 = "sha256-PgHcrqGf4E+ttnpho+N8SKsMQxnZn29fffHXGbeAxRw=";
+    openSha256 = "sha256-4KRHuTxlU0GT/cWf/j3aR7VqWpOez1ssS8zj/pYytes=";
+    settingsSha256 = "sha256-BXQMXKybl9mmsp+Y+ht1RjZqnn/H3hZfyGcKIGurxrI=";
+    persistencedSha256 = "sha256-/ZvAsvTjjiM/U3gn0DbxUguC3VvHbopyQ3u6+RYkzKk=";
   };
 
   # Last one supporting Kepler architecture

@@ -539,6 +539,12 @@
   "module-services-suwayomi-server-extra-config": [
     "index.html#module-services-suwayomi-server-extra-config"
   ],
+  "module-services-immich": [
+    "index.html#module-services-immich"
+  ],
+  "module-services-immich-vectorchord-migration": [
+    "index.html#module-services-immich-vectorchord-migration"
+  ],
   "module-services-plausible": [
     "index.html#module-services-plausible"
   ],
@@ -577,6 +583,9 @@
   ],
   "module-services-nextcloud-httpd": [
     "index.html#module-services-nextcloud-httpd"
+  ],
+  "module-services-nextcloud-occ": [
+    "index.html#module-services-nextcloud-occ"
   ],
   "installing-apps-php-extensions-nextcloud": [
     "index.html#installing-apps-php-extensions-nextcloud"
@@ -1139,6 +1148,15 @@
   "module-services-mautrix-signal-migrate-configuration": [
     "index.html#module-services-mautrix-signal-migrate-configuration"
   ],
+  "module-services-mautrix-whatsapp": [
+    "index.html#module-services-mautrix-whatsapp"
+  ],
+  "module-services-mautrix-whatsapp-configuration": [
+    "index.html#module-services-mautrix-whatsapp-configuration"
+  ],
+  "module-services-mautrix-whatsapp-migrate-configuration": [
+    "index.html#module-services-mautrix-whatsapp-migrate-configuration"
+  ],
   "module-services-maubot": [
     "index.html#module-services-maubot"
   ],
@@ -1300,6 +1318,9 @@
   ],
   "module-services-postgres-authentication-user-mapping": [
     "index.html#module-services-postgres-authentication-user-mapping"
+  ],
+  "module-services-postgres-pg_config": [
+    "index.html#module-services-postgres-pg_config"
   ],
   "module-services-postgres-upgrading": [
     "index.html#module-services-postgres-upgrading"

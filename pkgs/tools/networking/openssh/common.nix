@@ -55,7 +55,34 @@ stdenv.mkDerivation (finalAttrs: {
 
     # See discussion in https://github.com/NixOS/nixpkgs/pull/16966
     ./dont_create_privsep_path.patch
-  ] ++ extraPatches;
+
+    # CVE-2025-61984:
+    # https://github.com/advisories/GHSA-hh67-847q-q3h9
+    # https://ubuntu.com/security/CVE-2025-61984#patch-details
+    (fetchpatch {
+      name = "CVE-2025-61984.patch";
+      url = "https://github.com/openssh/openssh-portable/commit/35d5917652106aede47621bb3f64044604164043.patch";
+      hunks = [ "2-" ];
+      hash = "sha256-HVnMrXCjUUerE7vENS5ZB+kJieVID9lLEkm12YHWi6A=";
+    })
+    # Fixes percent expansions test for the above.
+    (fetchpatch {
+      name = "CVE-2025-61984.test.patch";
+      url = "https://github.com/openssh/openssh-portable/commit/f64701ca25795548a61614d0b13391d6dfa7f38c.patch";
+      hunks = [ "2-" ];
+      hash = "sha256-6lxwwlDs9IUjoGHL2Orb6uJ3kTer/sXwm+cY/VWNDbI=";
+    })
+    # CVE-2025-61985:
+    # https://github.com/advisories/GHSA-8gmf-r74v-362p
+    # https://ubuntu.com/security/CVE-2025-61985#patch-details
+    (fetchpatch {
+      name = "CVE-2025-61985.patch";
+      url = "https://github.com/openssh/openssh-portable/commit/43b3bff47bb029f2299bacb6a36057981b39fdb0.patch";
+      hunks = [ "2-" ];
+      hash = "sha256-BCvaYGw6suLkQwzT9zJTYChLgX2TexzcNnBYzztFRYw=";
+    })
+  ]
+  ++ extraPatches;
 
   postPatch =
     # On Hydra this makes installation fail (sometimes?),
@@ -65,26 +92,24 @@ stdenv.mkDerivation (finalAttrs: {
     '';
 
   strictDeps = true;
-  nativeBuildInputs =
-    [
-      autoreconfHook
-      pkg-config
-    ]
-    # This is not the same as the krb5 from the inputs! pkgs.krb5 is
-    # needed here to access krb5-config in order to cross compile. See:
-    # https://github.com/NixOS/nixpkgs/pull/107606
-    ++ lib.optional withKerberos pkgs.krb5
-    ++ extraNativeBuildInputs;
-  buildInputs =
-    [
-      zlib
-      libedit
-    ]
-    ++ [ (if linkOpenssl then openssl else libxcrypt) ]
-    ++ lib.optional withFIDO libfido2
-    ++ lib.optional withKerberos krb5
-    ++ lib.optional withLdns ldns
-    ++ lib.optional withPAM pam;
+  nativeBuildInputs = [
+    autoreconfHook
+    pkg-config
+  ]
+  # This is not the same as the krb5 from the inputs! pkgs.krb5 is
+  # needed here to access krb5-config in order to cross compile. See:
+  # https://github.com/NixOS/nixpkgs/pull/107606
+  ++ lib.optional withKerberos pkgs.krb5
+  ++ extraNativeBuildInputs;
+  buildInputs = [
+    zlib
+    libedit
+  ]
+  ++ [ (if linkOpenssl then openssl else libxcrypt) ]
+  ++ lib.optional withFIDO libfido2
+  ++ lib.optional withKerberos krb5
+  ++ lib.optional withLdns ldns
+  ++ lib.optional withPAM pam;
 
   preConfigure = ''
     # Setting LD causes `configure' and `make' to disagree about which linker
@@ -100,32 +125,34 @@ stdenv.mkDerivation (finalAttrs: {
 
   # I set --disable-strip because later we strip anyway. And it fails to strip
   # properly when cross building.
-  configureFlags =
-    [
-      "--sbindir=\${out}/bin"
-      "--localstatedir=/var"
-      "--with-pid-dir=/run"
-      "--with-mantype=man"
-      "--with-libedit=yes"
-      "--disable-strip"
-      (lib.withFeature withPAM "pam")
-    ]
-    ++ lib.optional (etcDir != null) "--sysconfdir=${etcDir}"
-    ++ lib.optional (!withSecurityKey) "--disable-security-key"
-    ++ lib.optional withFIDO "--with-security-key-builtin=yes"
-    ++ lib.optional withKerberos (
-      assert krb5 != null;
-      "--with-kerberos5=${lib.getDev krb5}"
-    )
-    ++ lib.optional stdenv.hostPlatform.isDarwin "--disable-libutil"
-    ++ lib.optional (!linkOpenssl) "--without-openssl"
-    ++ lib.optional withLdns "--with-ldns"
-    ++ lib.optional stdenv.hostPlatform.isOpenBSD "--with-bsd-auth"
-    ++ lib.optional withLinuxMemlock "--with-linux-memlock-onfault"
-    ++ extraConfigureFlags;
+  configureFlags = [
+    "--sbindir=\${out}/bin"
+    "--localstatedir=/var"
+    "--with-pid-dir=/run"
+    "--with-mantype=man"
+    "--with-libedit=yes"
+    "--disable-strip"
+    (lib.withFeature withPAM "pam")
+  ]
+  ++ lib.optional (etcDir != null) "--sysconfdir=${etcDir}"
+  ++ lib.optional (!withSecurityKey) "--disable-security-key"
+  ++ lib.optional withFIDO "--with-security-key-builtin=yes"
+  ++ lib.optional withKerberos (
+    assert krb5 != null;
+    "--with-kerberos5=${lib.getDev krb5}"
+  )
+  ++ lib.optional stdenv.hostPlatform.isDarwin "--disable-libutil"
+  ++ lib.optional (!linkOpenssl) "--without-openssl"
+  ++ lib.optional withLdns "--with-ldns"
+  ++ lib.optional stdenv.hostPlatform.isOpenBSD "--with-bsd-auth"
+  ++ lib.optional withLinuxMemlock "--with-linux-memlock-onfault"
+  ++ extraConfigureFlags;
 
-  ${if stdenv.hostPlatform.isStatic then "NIX_LDFLAGS" else null} =
-    [ "-laudit" ] ++ lib.optional withKerberos "-lkeyutils" ++ lib.optional withLdns "-lcrypto";
+  ${if stdenv.hostPlatform.isStatic then "NIX_LDFLAGS" else null} = [
+    "-laudit"
+  ]
+  ++ lib.optional withKerberos "-lkeyutils"
+  ++ lib.optional withLdns "-lcrypto";
 
   buildFlags = [ "SSH_KEYSIGN=ssh-keysign" ];
 
@@ -232,5 +259,6 @@ stdenv.mkDerivation (finalAttrs: {
     platforms = lib.platforms.unix ++ lib.platforms.windows;
     maintainers = extraMeta.maintainers or [ ];
     mainProgram = "ssh";
-  } // extraMeta;
+  }
+  // extraMeta;
 })

@@ -32,7 +32,8 @@ stdenv.mkDerivation (finalAttrs: {
   buildInputs = [
     curl
     zstd
-  ] ++ lib.optionals stdenv.hostPlatform.isDarwin [ argp-standalone ];
+  ]
+  ++ lib.optionals stdenv.hostPlatform.isDarwin [ argp-standalone ];
 
   outputs = [
     "out"
@@ -64,7 +65,7 @@ stdenv.mkDerivation (finalAttrs: {
     '';
     license = lib.licenses.bsd2;
     mainProgram = "zck";
-    maintainers = with lib.maintainers; [ ];
+    maintainers = [ ];
     platforms = lib.platforms.unix;
   };
 })

@@ -2,6 +2,7 @@
   lib,
   buildPythonPackage,
   fetchFromGitHub,
+  fetchpatch,
 
   # build-system
   setuptools,
@@ -230,6 +231,14 @@ buildPythonPackage {
   inherit version src;
   pyproject = true;
 
+  patches = [
+    (fetchpatch {
+      name = "CVE-2025-10854.patch";
+      url = "https://github.com/neuml/txtai/commit/303a2576155d3adffdc52b939b2bb05125ca479a.patch";
+      hash = "sha256-O1ra8esOAYQk5YT1Sr5qhxgF5YB0tBIRKxAZ9MgjQxI=";
+    })
+  ];
+
   build-system = [ setuptools ];
 
   pythonRemoveDeps = [
@@ -258,17 +267,16 @@ buildPythonPackage {
 
   pythonImportsCheck = [ "txtai" ];
 
-  nativeCheckInputs =
-    [
-      httpx
-      msgpack
-      pytestCheckHook
-      python-multipart
-      sqlalchemy
-    ]
-    ++ optional-dependencies.ann
-    ++ optional-dependencies.api
-    ++ optional-dependencies.similarity;
+  nativeCheckInputs = [
+    httpx
+    msgpack
+    pytestCheckHook
+    python-multipart
+    sqlalchemy
+  ]
+  ++ optional-dependencies.ann
+  ++ optional-dependencies.api
+  ++ optional-dependencies.similarity;
 
   # The deselected paths depend on the huggingface hub and should be run as a passthru test
   # disabledTestPaths won't work as the problem is with the classes containing the tests

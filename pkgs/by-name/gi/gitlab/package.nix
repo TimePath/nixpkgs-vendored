@@ -79,10 +79,11 @@ let
             dontBuilt = true;
             installPhase = ''
               cp -R ext/glfm_markdown $out
+              rm $out/Cargo.lock
               cp Cargo.lock $out
             '';
           };
-          hash = "sha256-73uliXjZNT8Ok98ai2rY+b0jYqxoQH3qW5YS+Ap6KK0=";
+          hash = "sha256-f2a6/xPNGfiT4bbKAlHYYcqc0PkEkW+cpH7QbJMCY7c=";
         };
 
         dontBuild = false;
@@ -145,6 +146,10 @@ let
       yarnLock = src + "/yarn.lock";
       sha256 = data.yarn_hash;
     };
+    frontendIslandsYarnOfflineCache = fetchYarnDeps {
+      yarnLock = src + "/ee/frontend_islands/apps/duo_next/yarn.lock";
+      sha256 = data.frontend_islands_yarn_hash;
+    };
 
     nativeBuildInputs = [
       rubyEnv.wrappedRuby
@@ -170,6 +175,7 @@ let
     # of rake tasks fails.
     GITLAB_LOG_PATH = "log";
     FOSS_ONLY = !gitlabEnterprise;
+    SKIP_FRONTEND_ISLANDS_BUILD = lib.optionalString (!gitlabEnterprise) "true";
 
     SKIP_YARN_INSTALL = 1;
     NODE_OPTIONS = "--max-old-space-size=8192";
@@ -183,6 +189,26 @@ let
       mv config/gitlab.yml.example config/gitlab.yml
 
       patchShebangs scripts/frontend/
+      patchShebangs scripts/
+    ''
+    + lib.optionalString gitlabEnterprise ''
+      # Get node modules for frontend islands
+      export HOME=$(mktemp -d)
+      pushd ee/frontend_islands/apps/duo_next
+      yarn config --offline set yarn-offline-mirror "$frontendIslandsYarnOfflineCache"
+      fixup-yarn-lock yarn.lock
+      yarn install \
+          --frozen-lockfile \
+          --force \
+          --production=false \
+          --ignore-engines \
+          --ignore-platform \
+          --ignore-scripts \
+          --no-progress \
+          --non-interactive \
+          --offline
+      patchShebangs node_modules
+      popd
     '';
 
     buildPhase = ''

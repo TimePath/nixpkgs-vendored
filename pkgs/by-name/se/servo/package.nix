@@ -1,8 +1,9 @@
 {
   lib,
   stdenv,
-  rustPlatform,
+  rustPackages_1_89,
   fetchFromGitHub,
+  nix-update-script,
 
   # build deps
   cargo-deny,
@@ -16,11 +17,11 @@
   makeWrapper,
   perl,
   pkg-config,
-  python3,
+  python311,
   taplo,
+  uv,
   which,
   yasm,
-  zlib,
 
   # runtime deps
   apple-sdk_14,
@@ -35,15 +36,21 @@
   vulkan-loader,
   wayland,
   xorg,
+  zlib,
 
   # tests
   nixosTests,
 }:
 
 let
-  customPython = python3.withPackages (
+  inherit (rustPackages_1_89) rustPlatform;
+
+  # match .python-version
+  customPython = python311.withPackages (
     ps: with ps; [
+      markupsafe
       packaging
+      pygments
     ]
   );
   runtimePaths = lib.makeLibraryPath (
@@ -59,15 +66,15 @@ let
   );
 in
 
-rustPlatform.buildRustPackage {
+rustPlatform.buildRustPackage (finalAttrs: {
   pname = "servo";
-  version = "0-unstable-2025-06-04";
+  version = "0.0.2";
 
   src = fetchFromGitHub {
     owner = "servo";
     repo = "servo";
-    rev = "e78c033b5bc36a9576530869b38eba88080342d1";
-    hash = "sha256-BG0zQRLEM9bghjkB+He5fqpfinowRcn1k1oqhODzaPI=";
+    tag = "v${finalAttrs.version}";
+    hash = "sha256-mhZaAyLznchFUd9f2HqD7th3RDO2inH6U3L5PcZLPFA=";
     # Breaks reproducibility depending on whether the picked commit
     # has other ref-names or not, which may change over time, i.e. with
     # "ref-names: HEAD -> main" as long this commit is the branch HEAD
@@ -77,8 +84,7 @@ rustPlatform.buildRustPackage {
     '';
   };
 
-  useFetchCargoVendor = true;
-  cargoHash = "sha256-7jbaJSmz7isAiOYVXJ3gXorA2lhDEiVpL+l8gkOnQuM=";
+  cargoHash = "sha256-jrspfHjJgNAzuCtFqOE7dwgMN02NwVkCOisYAOE8CrU=";
 
   # set `HOME` to a temp dir for write access
   # Fix invalid option errors during linking (https://github.com/mozilla/nixpkgs-mozilla/commit/c72ff151a3e25f14182569679ed4cd22ef352328)
@@ -100,44 +106,54 @@ rustPlatform.buildRustPackage {
     makeWrapper
     perl
     pkg-config
-    python3
     rustPlatform.bindgenHook
     taplo
+    uv
     which
     yasm
-    zlib
   ];
 
-  buildInputs =
-    [
-      fontconfig
-      freetype
-      gst_all_1.gstreamer
-      gst_all_1.gst-plugins-base
-      gst_all_1.gst-plugins-good
-      gst_all_1.gst-plugins-bad
-      gst_all_1.gst-plugins-ugly
-      harfbuzz
-      libunwind
-      libGL
-    ]
-    ++ lib.optionals stdenv.hostPlatform.isLinux [
-      wayland
-      xorg.libX11
-      xorg.libxcb
-      udev
-      vulkan-loader
-    ]
-    ++ lib.optionals stdenv.hostPlatform.isDarwin [
-      apple-sdk_14
-    ];
+  env.UV_PYTHON = customPython.interpreter;
+
+  buildInputs = [
+    fontconfig
+    freetype
+    gst_all_1.gstreamer
+    gst_all_1.gst-plugins-base
+    gst_all_1.gst-plugins-good
+    gst_all_1.gst-plugins-bad
+    gst_all_1.gst-plugins-ugly
+    harfbuzz
+    libunwind
+    libGL
+    zlib
+  ]
+  ++ lib.optionals stdenv.hostPlatform.isLinux [
+    wayland
+    xorg.libX11
+    xorg.libxcb
+    udev
+    vulkan-loader
+  ]
+  ++ lib.optionals stdenv.hostPlatform.isDarwin [
+    apple-sdk_14
+  ];
 
   # Builds with additional features for aarch64, see https://github.com/servo/servo/issues/36819
   buildFeatures = lib.optionals stdenv.hostPlatform.isAarch64 [
     "servo_allocator/use-system-allocator"
   ];
 
-  env.NIX_CFLAGS_COMPILE = lib.optionalString stdenv.hostPlatform.isDarwin "-I${lib.getInclude stdenv.cc.libcxx}/include/c++/v1";
+  env.NIX_CFLAGS_COMPILE = toString (
+    [
+      # mozjs-sys fails with:
+      #  cc1plus: error: '-Wformat-security' ignored without '-Wformat'
+      "-Wno-error=format-security"
+    ]
+    ++ lib.optionals stdenv.hostPlatform.isDarwin [
+      "-I${lib.getInclude stdenv.cc.libcxx}/include/c++/v1"
+    ]
+  );
 
   # copy resources into `$out` to be used during runtime
   # link runtime libraries
@@ -150,7 +166,7 @@ rustPlatform.buildRustPackage {
   '';
 
   passthru = {
-    updateScript = ./update.sh;
+    updateScript = nix-update-script { };
     tests = { inherit (nixosTests) servo; };
   };
 
@@ -162,7 +178,8 @@ rustPlatform.buildRustPackage {
       hexa
       supinie
     ];
+    teams = with lib.teams; [ ngi ];
     mainProgram = "servo";
     platforms = lib.platforms.linux ++ lib.platforms.darwin;
   };
-}
+})

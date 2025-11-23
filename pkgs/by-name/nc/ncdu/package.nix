@@ -13,11 +13,11 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "ncdu";
-  version = "2.8.2";
+  version = "2.9.2";
 
   src = fetchurl {
     url = "https://dev.yorhel.nl/download/ncdu-${finalAttrs.version}.tar.gz";
-    hash = "sha256-Ai+nZdNaeXl6zcgMgxcH30PJo7pg0a4+bqTMG3osAT0=";
+    hash = "sha256-6RE1KBy2ZWnyykwLrCdyRpkeflJSTAyoy6PeXI6Bzsk=";
   };
 
   nativeBuildInputs = [
@@ -52,6 +52,7 @@ stdenv.mkDerivation (finalAttrs: {
       pSub
       rodrgz
       defelo
+      ryan4yin
     ];
     inherit (zig_0_14.meta) platforms;
     mainProgram = "ncdu";

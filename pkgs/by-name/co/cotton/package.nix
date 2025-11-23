@@ -15,7 +15,6 @@ rustPlatform.buildRustPackage rec {
     sha256 = "sha256-ZMQaVMH8cuOb4PQ19g0pAFAMwP8bR60+eWFhiXk1bYE=";
   };
 
-  useFetchCargoVendor = true;
   cargoHash = "sha256-y162tjxPGZQiYBJxFk4QN9ZqSH8jrqa5Y961Sx2zrRs=";
 
   meta = with lib; {
@@ -26,6 +25,10 @@ rustPlatform.buildRustPackage rec {
     maintainers = with maintainers; [
       dit7ya
       figsoda
+    ];
+
+    knownVulnerabilities = [
+      "'cotton' is vulnerable to CVE-2025-62518"
     ];
   };
 }

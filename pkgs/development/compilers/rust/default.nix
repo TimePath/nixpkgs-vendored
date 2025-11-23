@@ -89,15 +89,10 @@ in
       in
       {
         # Packages suitable for build-time, e.g. `build.rs`-type stuff.
-        buildRustPackages = (selectRustPackage pkgsBuildHost).packages.stable // {
-          # Prevent `pkgs/top-level/release-attrpaths-superset.nix` from recursing more than one level here.
-          buildRustPackages = self.buildRustPackages // {
-            __attrsFailEvaluation = true;
-          };
-        };
+        buildRustPackages = (selectRustPackage pkgsBuildHost).packages.stable;
         # Analogous to stdenv
         rustPlatform = makeRustPlatform self.buildRustPackages;
-        rustc-unwrapped = self.callPackage ./rustc.nix ({
+        rustc-unwrapped = self.callPackage ./rustc.nix {
           version = rustcVersion;
           sha256 = rustcSha256;
           inherit enableRustcDev;
@@ -114,7 +109,7 @@ in
 
           # Use boot package set to break cycle
           inherit (bootstrapRustPackages) cargo rustc rustfmt;
-        });
+        };
         rustc = wrapRustcWith {
           inherit (self) rustc-unwrapped;
           sysroot = if fastCross then self.rustc-unwrapped else null;

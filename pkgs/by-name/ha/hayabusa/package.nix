@@ -18,7 +18,6 @@ rustPlatform.buildRustPackage {
     hash = "sha256-e2zoVIhxcE9cUypi8Uzz3YZe2JvIaEVuWOGpqHVtxn8=";
   };
 
-  useFetchCargoVendor = true;
   cargoHash = "sha256-wWJIZRiDK32uGroIG36QvRSvPw18nFGfp7OI7VNhCWE=";
 
   enableParallelBuilding = true;
@@ -45,7 +44,7 @@ rustPlatform.buildRustPackage {
     description = "Swift rust fetch program";
     homepage = "https://github.com/notarin/hayabusa";
     license = lib.licenses.cc-by-nc-nd-40;
-    maintainers = with lib.maintainers; [ ];
+    maintainers = [ ];
     mainProgram = "hayabusa";
     platforms = lib.platforms.linux;
   };

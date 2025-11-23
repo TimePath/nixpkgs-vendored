@@ -37,19 +37,18 @@ stdenv.mkDerivation (finalAttrs: {
     pkg-config
   ];
 
-  buildInputs =
-    [
-    ]
-    ++ lib.optionals enableHEIFCodec [
-      libheif
-    ]
-    ++ lib.optionals enableJPGCodec [
-      libjpeg
-    ]
-    ++ lib.optionals enableOpenGL [
-      libglut
-      libGL
-    ];
+  buildInputs = [
+  ]
+  ++ lib.optionals enableHEIFCodec [
+    libheif
+  ]
+  ++ lib.optionals enableJPGCodec [
+    libjpeg
+  ]
+  ++ lib.optionals enableOpenGL [
+    libglut
+    libGL
+  ];
 
   # Since "build" already exists and is populated, cmake tries to use it,
   # throwing uncomprehensible error messages...
@@ -96,7 +95,7 @@ stdenv.mkDerivation (finalAttrs: {
     '';
     license = with lib.licenses; [ mit ];
     mainProgram = "jasper";
-    maintainers = with lib.maintainers; [ ];
+    maintainers = [ ];
     platforms = lib.platforms.unix;
   };
 })

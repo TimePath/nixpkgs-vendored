@@ -37,7 +37,8 @@ buildPythonPackage rec {
   dependencies = [
     packaging
     setuptools
-  ] ++ lib.optionals (pythonOlder "3.11") [ tomli ];
+  ]
+  ++ lib.optionals (pythonOlder "3.11") [ tomli ];
 
   # There aren't tests
   doCheck = false;
@@ -53,6 +54,6 @@ buildPythonPackage rec {
     description = "Creates C++ bindings for Python modules";
     homepage = "https://riverbankcomputing.com/";
     license = licenses.gpl3Only;
-    maintainers = with maintainers; [ ];
+    maintainers = [ ];
   };
 }

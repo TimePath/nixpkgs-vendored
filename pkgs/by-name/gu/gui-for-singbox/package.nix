@@ -30,7 +30,7 @@ let
     description = "SingBox GUI program developed by vue3 + wails";
     homepage = "https://github.com/GUI-for-Cores/GUI.for.SingBox";
     license = with lib.licenses; [ gpl3Plus ];
-    maintainers = with lib.maintainers; [ ];
+    maintainers = [ ];
     platforms = lib.platforms.linux;
   };
 
@@ -45,6 +45,7 @@ let
     pnpmDeps = pnpm_9.fetchDeps {
       inherit (finalAttrs) pname version src;
       sourceRoot = "${finalAttrs.src.name}/frontend";
+      fetcherVersion = 1;
       hash = "sha256-5tz1FItH9AvZhJjka8i5Kz22yf/tEmRPkDhz6iswZzc=";
     };
 

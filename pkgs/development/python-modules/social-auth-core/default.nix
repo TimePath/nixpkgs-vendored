@@ -56,7 +56,8 @@ buildPythonPackage rec {
   nativeCheckInputs = [
     pytestCheckHook
     httpretty
-  ] ++ lib.flatten (lib.attrValues optional-dependencies);
+  ]
+  ++ lib.flatten (lib.attrValues optional-dependencies);
 
   # Disable checking the code coverage
   prePatch = ''
@@ -75,6 +76,6 @@ buildPythonPackage rec {
     homepage = "https://github.com/python-social-auth/social-core";
     changelog = "https://github.com/python-social-auth/social-core/blob/${version}/CHANGELOG.md";
     license = licenses.bsd3;
-    maintainers = with maintainers; [ ];
+    maintainers = [ ];
   };
 }

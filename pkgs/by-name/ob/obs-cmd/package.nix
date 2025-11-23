@@ -15,7 +15,6 @@ rustPlatform.buildRustPackage (finalAttrs: {
     hash = "sha256-/LgQqxZqxbE8hgip+yl8VVjiRYD+6AblKag2MQo1gDs=";
   };
 
-  useFetchCargoVendor = true;
   cargoHash = "sha256-ZKHm6N7y5FbDFiK2QfQ+9siexgzrdLpBs5Xikh1SRLo=";
 
   meta = {
@@ -23,7 +22,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
     homepage = "https://github.com/grigio/obs-cmd";
     changelog = "https://github.com/grigio/obs-cmd/releases/tag/v${finalAttrs.version}";
     license = lib.licenses.mit;
-    maintainers = with lib.maintainers; [ ];
+    maintainers = [ ];
     mainProgram = "obs-cmd";
   };
 })

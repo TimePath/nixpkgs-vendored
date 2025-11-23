@@ -18,18 +18,17 @@
   stalwartEnterprise ? false,
 }:
 
-rustPlatform.buildRustPackage rec {
+rustPlatform.buildRustPackage (finalAttrs: {
   pname = "stalwart-mail" + (lib.optionalString stalwartEnterprise "-enterprise");
   version = "0.11.8";
 
   src = fetchFromGitHub {
     owner = "stalwartlabs";
     repo = "mail-server";
-    tag = "v${version}";
+    tag = "v${finalAttrs.version}";
     hash = "sha256-VqGosbSQxNeOS+kGtvXAmz6vyz5mJlXvKZM57B1Xue4=";
   };
 
-  useFetchCargoVendor = true;
   cargoHash = "sha256-iheURWxO0cOvO+FV01l2Vmo0B+S2mXzue6mx3gapftQ=";
 
   nativeBuildInputs = [
@@ -43,22 +42,22 @@ rustPlatform.buildRustPackage rec {
     openssl
     sqlite
     zstd
-  ] ++ lib.optionals (stdenv.hostPlatform.isLinux && withFoundationdb) [ foundationdb ];
+  ]
+  ++ lib.optionals (stdenv.hostPlatform.isLinux && withFoundationdb) [ foundationdb ];
 
   # Issue: https://github.com/stalwartlabs/mail-server/issues/1104
   buildNoDefaultFeatures = true;
-  buildFeatures =
-    [
-      "sqlite"
-      "postgres"
-      "mysql"
-      "rocks"
-      "elastic"
-      "s3"
-      "redis"
-    ]
-    ++ lib.optionals withFoundationdb [ "foundationdb" ]
-    ++ lib.optionals stalwartEnterprise [ "enterprise" ];
+  buildFeatures = [
+    "sqlite"
+    "postgres"
+    "mysql"
+    "rocks"
+    "elastic"
+    "s3"
+    "redis"
+  ]
+  ++ lib.optionals withFoundationdb [ "foundationdb" ]
+  ++ lib.optionals stalwartEnterprise [ "enterprise" ];
 
   env = {
     OPENSSL_NO_VENDOR = true;
@@ -147,6 +146,9 @@ rustPlatform.buildRustPackage rec {
 
   doCheck = !(stdenv.hostPlatform.isLinux && stdenv.hostPlatform.isAarch64);
 
+  # Allow network access during tests on Darwin/macOS
+  __darwinAllowLocalNetworking = true;
+
   passthru = {
     inherit rocksdb; # make used rocksdb version available (e.g., for backup scripts)
     webadmin = callPackage ./webadmin.nix { };
@@ -158,16 +160,17 @@ rustPlatform.buildRustPackage rec {
     description = "Secure & Modern All-in-One Mail Server (IMAP, JMAP, SMTP)";
     homepage = "https://github.com/stalwartlabs/mail-server";
     changelog = "https://github.com/stalwartlabs/mail-server/blob/main/CHANGELOG.md";
-    license =
-      [ lib.licenses.agpl3Only ]
-      ++ lib.optionals stalwartEnterprise [
-        {
-          fullName = "Stalwart Enterprise License 1.0 (SELv1) Agreement";
-          url = "https://github.com/stalwartlabs/mail-server/blob/main/LICENSES/LicenseRef-SEL.txt";
-          free = false;
-          redistributable = false;
-        }
-      ];
+    license = [
+      lib.licenses.agpl3Only
+    ]
+    ++ lib.optionals stalwartEnterprise [
+      {
+        fullName = "Stalwart Enterprise License 1.0 (SELv1) Agreement";
+        url = "https://github.com/stalwartlabs/mail-server/blob/main/LICENSES/LicenseRef-SEL.txt";
+        free = false;
+        redistributable = false;
+      }
+    ];
 
     maintainers = with lib.maintainers; [
       happysalada
@@ -176,4 +179,4 @@ rustPlatform.buildRustPackage rec {
       pandapip1
     ];
   };
-}
+})

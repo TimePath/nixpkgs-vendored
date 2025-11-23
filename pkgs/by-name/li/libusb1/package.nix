@@ -27,12 +27,14 @@ stdenv.mkDerivation rec {
   outputs = [
     "out"
     "dev"
-  ] ++ lib.optionals withDocs [ "doc" ];
+  ]
+  ++ lib.optionals withDocs [ "doc" ];
 
   nativeBuildInputs = [
     pkg-config
     autoreconfHook
-  ] ++ lib.optionals withDocs [ doxygen ];
+  ]
+  ++ lib.optionals withDocs [ doxygen ];
   propagatedBuildInputs = lib.optional enableUdev udev;
 
   dontDisableStatic = withStatic;
@@ -41,8 +43,7 @@ stdenv.mkDerivation rec {
   dontAddDisableDepTrack = stdenv.hostPlatform.isWindows;
 
   configureFlags =
-    lib.optional (!enableUdev) "--disable-udev"
-    ++ lib.optional (withExamples) "--enable-examples-build";
+    lib.optional (!enableUdev) "--disable-udev" ++ lib.optional withExamples "--enable-examples-build";
 
   postBuild = lib.optionalString withDocs ''
     make -C doc

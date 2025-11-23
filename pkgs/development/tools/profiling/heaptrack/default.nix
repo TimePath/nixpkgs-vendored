@@ -46,24 +46,23 @@ mkDerivation rec {
     extra-cmake-modules
     makeBinaryWrapper
   ];
-  buildInputs =
-    [
-      zlib
-      boost
-      libunwind
-      sparsehash
-      zstd
-      qtbase
-      kio
-      kitemmodels
-      threadweaver
-      kconfigwidgets
-      kcoreaddons
-      kdiagram
-    ]
-    ++ lib.optionals stdenv.hostPlatform.isLinux [
-      elfutils
-    ];
+  buildInputs = [
+    zlib
+    boost
+    libunwind
+    sparsehash
+    zstd
+    qtbase
+    kio
+    kitemmodels
+    threadweaver
+    kconfigwidgets
+    kcoreaddons
+    kdiagram
+  ]
+  ++ lib.optionals stdenv.hostPlatform.isLinux [
+    elfutils
+  ];
 
   postInstall = lib.optionalString stdenv.hostPlatform.isDarwin ''
     makeWrapper \
@@ -76,7 +75,7 @@ mkDerivation rec {
     homepage = "https://github.com/KDE/heaptrack";
     license = licenses.lgpl21Plus;
     mainProgram = "heaptrack_gui";
-    maintainers = with maintainers; [ ];
+    maintainers = [ ];
     platforms = platforms.unix;
   };
 }

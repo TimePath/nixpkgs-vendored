@@ -3,6 +3,7 @@
   stdenv,
   buildPythonPackage,
   fetchFromGitHub,
+  replaceVars,
   gitMinimal,
   portaudio,
   playwright-driver,
@@ -259,9 +260,11 @@ let
       gitMinimal
     ];
 
-    postPatch = ''
-      substituteInPlace aider/linter.py --replace-fail "\"flake8\"" "\"${flake8}\""
-    '';
+    patches = [
+      (replaceVars ./fix-flake8-invoke.patch {
+        flake8 = lib.getExe flake8;
+      })
+    ];
 
     disabledTestPaths = [
       # Tests require network access
@@ -270,32 +273,31 @@ let
       "tests/help/test_help.py"
     ];
 
-    disabledTests =
-      [
-        # Tests require network
-        "test_urls"
-        "test_get_commit_message_with_custom_prompt"
-        # FileNotFoundError
-        "test_get_commit_message"
-        # Expected 'launch_gui' to have been called once
-        "test_browser_flag_imports_streamlit"
-        # AttributeError
-        "test_simple_send_with_retries"
-        # Expected 'check_version' to have been called once
-        "test_main_exit_calls_version_check"
-        # AssertionError: assert 2 == 1
-        "test_simple_send_non_retryable_error"
-        # Broken tests (Aider-AI/aider#3679)
-        "test_language_ocaml"
-        "test_language_ocaml_interface"
-      ]
-      ++ lib.optionals stdenv.hostPlatform.isDarwin [
-        # Tests fails on darwin
-        "test_dark_mode_sets_code_theme"
-        "test_default_env_file_sets_automatic_variable"
-        # FileNotFoundError: [Errno 2] No such file or directory: 'vim'
-        "test_pipe_editor"
-      ];
+    disabledTests = [
+      # Tests require network
+      "test_urls"
+      "test_get_commit_message_with_custom_prompt"
+      # FileNotFoundError
+      "test_get_commit_message"
+      # Expected 'launch_gui' to have been called once
+      "test_browser_flag_imports_streamlit"
+      # AttributeError
+      "test_simple_send_with_retries"
+      # Expected 'check_version' to have been called once
+      "test_main_exit_calls_version_check"
+      # AssertionError: assert 2 == 1
+      "test_simple_send_non_retryable_error"
+      # Broken tests (Aider-AI/aider#3679)
+      "test_language_ocaml"
+      "test_language_ocaml_interface"
+    ]
+    ++ lib.optionals stdenv.hostPlatform.isDarwin [
+      # Tests fails on darwin
+      "test_dark_mode_sets_code_theme"
+      "test_default_env_file_sets_automatic_variable"
+      # FileNotFoundError: [Errno 2] No such file or directory: 'vim'
+      "test_pipe_editor"
+    ];
 
     makeWrapperArgs = [
       "--set"
@@ -359,8 +361,7 @@ let
               ++ lib.optionals (withAll || withBedrock) aider-chat.optional-dependencies.bedrock;
 
             propagatedBuildInputs =
-              propagatedBuildInputs
-              ++ lib.optionals (withAll || withPlaywright) [ playwright-driver.browsers ];
+              propagatedBuildInputs ++ lib.optionals (withAll || withPlaywright) [ playwright-driver.browsers ];
 
             makeWrapperArgs =
               makeWrapperArgs

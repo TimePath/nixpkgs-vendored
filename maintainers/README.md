@@ -79,14 +79,12 @@ checks should be performed:
 
   Given a maintainer entry like this:
 
-  ``` nix
+  ```nix
   {
     example = {
       email = "user@example.com";
       name = "Example User";
-      keys = [{
-        fingerprint = "0000 0000 2A70 6423 0AED  3C11 F04F 7A19 AAA6 3AFE";
-      }];
+      keys = [ { fingerprint = "0000 0000 2A70 6423 0AED  3C11 F04F 7A19 AAA6 3AFE"; } ];
     };
   }
   ```
@@ -165,7 +163,6 @@ team after giving the existing members a few days to respond.
 
 *Important:* If a team says it is a closed group, do not merge additions
 to the team without an approval by at least one existing member.
-
 
 # Maintainer scripts
 

@@ -22,6 +22,7 @@ let
       gnome-desktop
       libgnome-keyring
       webkitgtk_4_1
+      adwaita-icon-theme
     ];
   xorgDeps =
     pkgs: with pkgs.xorg; [
@@ -102,7 +103,7 @@ buildFHSEnv {
       gettext
       portaudio
       miniupnpc
-      mbedtls_2
+      mbedtls
       lzo
       sfml
       gsm

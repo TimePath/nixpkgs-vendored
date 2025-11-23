@@ -29,15 +29,14 @@ stdenv.mkDerivation (finalAttrs: {
 
   outputs = [ "out" ] ++ lib.optionals buildDocs [ "man" ];
 
-  nativeBuildInputs =
-    [
-      pkgconf
-    ]
-    ++ lib.optionals (!embedSamurai) [ samurai ]
-    ++ lib.optionals buildDocs [
-      (python3.withPackages (ps: [ ps.pyyaml ]))
-      scdoc
-    ];
+  nativeBuildInputs = [
+    pkgconf
+  ]
+  ++ lib.optionals (!embedSamurai) [ samurai ]
+  ++ lib.optionals buildDocs [
+    (python3.withPackages (ps: [ ps.pyyaml ]))
+    scdoc
+  ];
 
   buildInputs = [
     curl
@@ -75,13 +74,12 @@ stdenv.mkDerivation (finalAttrs: {
       popd
     '';
 
-  postPatch =
-    ''
-      patchShebangs bootstrap.sh
-    ''
-    + lib.optionalString buildDocs ''
-      patchShebangs subprojects/meson-docs/docs/genrefman.py
-    '';
+  postPatch = ''
+    patchShebangs bootstrap.sh
+  ''
+  + lib.optionalString buildDocs ''
+    patchShebangs subprojects/meson-docs/docs/genrefman.py
+  '';
 
   # tests try to access "~"
   postConfigure = ''
@@ -139,7 +137,7 @@ stdenv.mkDerivation (finalAttrs: {
     homepage = "https://muon.build/";
     description = "Implementation of Meson build system in C99";
     license = licenses.gpl3Only;
-    maintainers = with maintainers; [ ];
+    maintainers = [ ];
     platforms = platforms.unix;
     broken = stdenv.hostPlatform.isDarwin; # typical `ar failure`
     mainProgram = "muon";

@@ -27,7 +27,7 @@ let
     description = "Reading manga, novels, and watching animes";
     homepage = "https://github.com/kodjodevf/mangayomi";
     license = with lib.licenses; [ asl20 ];
-    maintainers = with lib.maintainers; [ ];
+    maintainers = [ ];
     platforms = lib.platforms.linux;
   };
 
@@ -35,8 +35,6 @@ let
     inherit pname version src;
 
     sourceRoot = "${src.name}/rust";
-
-    useFetchCargoVendor = true;
 
     cargoHash = "sha256-vGu5e5M6CFpaLodEpt8v8DGhu2S5h/E4vvqSNOKkWns=";
 

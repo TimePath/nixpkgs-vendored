@@ -32,7 +32,8 @@ stdenv.mkDerivation rec {
     libusb1
     qt5.qtbase
     qt5.qttools
-  ] ++ lib.optional withEspeak espeak;
+  ]
+  ++ lib.optional withEspeak espeak;
 
   postPatch = ''
     sed -i rbutil/rbutilqt/rbutilqt.pro \
@@ -74,7 +75,7 @@ stdenv.mkDerivation rec {
     homepage = "https://www.rockbox.org";
     description = "Open source firmware for digital music players";
     license = licenses.gpl2Plus;
-    maintainers = with maintainers; [ ];
+    maintainers = [ ];
     mainProgram = "RockboxUtility";
     platforms = platforms.linux;
   };

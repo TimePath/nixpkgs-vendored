@@ -318,8 +318,8 @@ let
         mktplcRef = {
           name = "vscode-apollo";
           publisher = "apollographql";
-          version = "2.5.6";
-          hash = "sha256-Uh3iFJXG8d0Ywjyx6sGpkYSD0Iy+y/0Uh0C6xYfQhKM=";
+          version = "2.6.2";
+          hash = "sha256-jS+YPE+D0Q3bw8BCMFseL4xdiW5f6LV7JosgMG3Huo8=";
         };
         meta = {
           changelog = "https://marketplace.visualstudio.com/items/apollographql.vscode-apollo/changelog";
@@ -1700,8 +1700,8 @@ let
         mktplcRef = {
           name = "elixir-ls";
           publisher = "JakeBecker";
-          version = "0.27.2";
-          hash = "sha256-PXQiZOAAApsYLB3hztQcjAsnmkfDSDtYvUmMhFUfLxA=";
+          version = "0.29.3";
+          hash = "sha256-cghDjgv3FWsNpnH6Pa9iPuiPOlLI/iucGH+fzF35ERk=";
         };
         meta = {
           changelog = "https://marketplace.visualstudio.com/items/JakeBecker.elixir-ls/changelog";
@@ -2975,8 +2975,8 @@ let
         mktplcRef = {
           name = "vscord";
           publisher = "leonardssh";
-          version = "5.3.2";
-          hash = "sha256-kj1D0X6Wj088nwgFlWZkPG+zaHsqb0MapycPIfRWEIk=";
+          version = "5.3.5";
+          hash = "sha256-b5osn7UeSkr8gnLZ/PkrxS0WmgHUwfS0jnwTc1Uw0Sg=";
         };
         meta = {
           description = "Highly customizable Discord Rich Presence extension for Visual Studio Code";
@@ -3850,6 +3850,8 @@ let
       };
 
       oops418.nix-env-picker = callPackage ./oops418.nix-env-picker { };
+
+      ph-hawkins.arc-plus = callPackage ./ph-hawkins.arc-plus { };
 
       phind.phind = buildVscodeMarketplaceExtension {
         mktplcRef = {

@@ -34,8 +34,6 @@ rustPlatform.buildRustPackage rec {
     hash = "sha256-RYTT62u39g4n9++xMlhJala6U0uIn+btGOxp9khEAnU=";
   };
 
-  useFetchCargoVendor = true;
-
   cargoHash = "sha256-30XSltaw1jzXPpobh0WJ+aIRbdf24nYgnbt7yzuS2gs=";
 
   nativeBuildInputs = [
@@ -121,7 +119,7 @@ rustPlatform.buildRustPackage rec {
   '';
 
   desktopItems = [
-    (makeDesktopItem ({
+    (makeDesktopItem {
       name = "gyroflow";
       desktopName = "Gyroflow";
       genericName = "Video stabilization using gyroscope data";
@@ -139,7 +137,7 @@ rustPlatform.buildRustPackage rec {
       startupNotify = true;
       startupWMClass = "gyroflow";
       prefersNonDefaultGPU = true;
-    }))
+    })
   ];
 
   meta = {

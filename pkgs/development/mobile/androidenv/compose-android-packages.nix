@@ -188,18 +188,21 @@ let
             map (
               archive:
               (fetchurl {
+                pname = packageInfo.name;
+                version = packageInfo.revision;
                 inherit (archive) url sha1;
-                preferLocalBuild = true;
+                inherit meta;
                 passthru = {
                   info = packageInfo;
                 };
               }).overrideAttrs
-                (prev: {
-                  # fetchurl won't generate the correct filename if we specify pname and version,
-                  # and we still want the version attribute to show up in search, so specify these in an override
-                  pname = packageInfo.name;
-                  version = packageInfo.revision;
-                })
+                (
+                  finalAttrs: previousAttrs: {
+                    # fetchurl prioritize `pname` and `version` over the specified `name`,
+                    # so specify custom `name` in an override.
+                    name = baseNameOf (lib.head (finalAttrs.urls));
+                  }
+                )
             ) validArchives
           )
         )
@@ -631,32 +634,32 @@ lib.recurseIntoAttrs rec {
   # This derivation deploys the tools package and symlinks all the desired
   # plugins that we want to use. If the license isn't accepted, prints all the licenses
   # requested and throws.
-  androidsdk =
-    if !licenseAccepted then
-      throw ''
-        ${builtins.concatStringsSep "\n\n" (mkLicenseTexts licenseNames)}
+  androidsdk = callPackage ./cmdline-tools.nix {
+    inherit
+      deployAndroidPackage
+      os
+      arch
+      meta
+      ;
 
-        You must accept the following licenses:
-        ${lib.concatMapStringsSep "\n" (str: "  - ${str}") licenseNames}
+    package = cmdline-tools-package;
 
-        a)
-          by setting nixpkgs config option 'android_sdk.accept_license = true;'.
-        b)
-          by an environment variable for a single invocation of the nix tools.
-            $ export NIXPKGS_ACCEPT_ANDROID_SDK_LICENSE=1
-      ''
-    else
-      callPackage ./cmdline-tools.nix {
-        inherit
-          deployAndroidPackage
-          os
-          arch
-          meta
-          ;
+    postInstall =
+      if !licenseAccepted then
+        throw ''
+          ${builtins.concatStringsSep "\n\n" (mkLicenseTexts licenseNames)}
 
-        package = cmdline-tools-package;
+          You must accept the following licenses:
+          ${lib.concatMapStringsSep "\n" (str: "  - ${str}") licenseNames}
 
-        postInstall = ''
+          a)
+            by setting nixpkgs config option 'android_sdk.accept_license = true;'.
+          b)
+            by an environment variable for a single invocation of the nix tools.
+              $ export NIXPKGS_ACCEPT_ANDROID_SDK_LICENSE=1
+        ''
+      else
+        ''
           # Symlink all requested plugins
           ${linkPlugin {
             name = "platform-tools";
@@ -769,5 +772,5 @@ lib.recurseIntoAttrs rec {
             ''
           ) licenseNames}
         '';
-      };
+  };
 }

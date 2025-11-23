@@ -831,7 +831,7 @@ let
                 loc: defs:
                 mapAttrs (n: v: v.value) (
                   filterAttrs (n: v: v ? value) (
-                    zipAttrsWith (name: defs: (mergeDefinitions (loc ++ [ name ]) elemType (defs)).optionalValue)
+                    zipAttrsWith (name: defs: (mergeDefinitions (loc ++ [ name ]) elemType defs).optionalValue)
                       # Push down position info.
                       (pushPositions defs)
                   )
@@ -919,12 +919,7 @@ let
           description = "attribute-tagged union";
           descriptionClass = "noun";
           getSubOptions =
-            prefix:
-            mapAttrs (tagName: tagOption: {
-              "${lib.showOption prefix}" = tagOption // {
-                loc = prefix ++ [ tagName ];
-              };
-            }) tags;
+            prefix: mapAttrs (tagName: tagOption: tagOption // { loc = prefix ++ [ tagName ]; }) tags;
           check = v: isAttrs v && length (attrNames v) == 1 && tags ? ${head (attrNames v)};
           merge =
             loc: defs:
@@ -1215,7 +1210,8 @@ let
                 # It shouldn't cause an issue since this is cosmetic for the manual.
                 _module.args.name = lib.mkOptionDefault "‹name›";
               }
-            ] ++ modules;
+            ]
+            ++ modules;
           };
 
           freeformType = base._module.freeformType;
