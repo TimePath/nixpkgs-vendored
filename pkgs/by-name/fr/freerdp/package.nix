@@ -3,6 +3,7 @@
   lib,
   fetchFromGitHub,
   cmake,
+  writableTmpDirAsHomeHook,
   docbook-xsl-nons,
   libxslt,
   pkg-config,
@@ -62,18 +63,16 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "freerdp";
-  version = "3.15.0";
+  version = "3.17.2";
 
   src = fetchFromGitHub {
     owner = "FreeRDP";
     repo = "FreeRDP";
     rev = finalAttrs.version;
-    hash = "sha256-xz1vP58hElXe/jLVrJOSpXcbqShBV7LHRpzqPLa2fDU=";
+    hash = "sha256-r9a+tQ3QIBfF4Vtyo4F4dwqLloxJTTFUQFV8J53ITZ4=";
   };
 
   postPatch = ''
-    export HOME=$TMP
-
     # skip NIB file generation on darwin
     substituteInPlace "client/Mac/CMakeLists.txt" "client/Mac/cli/CMakeLists.txt" \
       --replace-fail "if(NOT IS_XCODE)" "if(FALSE)"
@@ -99,6 +98,7 @@ stdenv.mkDerivation (finalAttrs: {
     docbook-xsl-nons
     pkg-config
     wayland-scanner
+    writableTmpDirAsHomeHook
   ];
 
   buildInputs = [
@@ -195,15 +195,15 @@ stdenv.mkDerivation (finalAttrs: {
     inherit gnome-remote-desktop;
   };
 
-  meta = with lib; {
+  meta = {
     description = "Remote Desktop Protocol Client";
     longDescription = ''
       FreeRDP is a client-side implementation of the Remote Desktop Protocol (RDP)
       following the Microsoft Open Specifications.
     '';
     homepage = "https://www.freerdp.com/";
-    license = licenses.asl20;
-    maintainers = with maintainers; [ peterhoeg ];
-    platforms = platforms.unix;
+    license = lib.licenses.asl20;
+    maintainers = with lib.maintainers; [ peterhoeg ];
+    platforms = lib.platforms.unix;
   };
 })

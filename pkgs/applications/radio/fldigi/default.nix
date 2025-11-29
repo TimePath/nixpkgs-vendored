@@ -19,11 +19,11 @@
 
 stdenv.mkDerivation rec {
   pname = "fldigi";
-  version = "4.2.06";
+  version = "4.2.09";
 
   src = fetchurl {
     url = "mirror://sourceforge/${pname}/${pname}-${version}.tar.gz";
-    hash = "sha256-Q2DeIl1vjP65u2pb5qxJLlJwLI9wT4dgnEUtO8sbbAg=";
+    hash = "sha256-L+gj4DQyEOhPYAgOQuMtKf9RLzHJ4ACUHvGJcXDiLDc=";
   };
 
   nativeBuildInputs = [ pkg-config ];

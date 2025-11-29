@@ -8,7 +8,7 @@
 
 rustPlatform.buildRustPackage {
   pname = "gridlock";
-  version = "unstable-2023-08-29";
+  version = "0-unstable-2023-08-29";
 
   outputs = [
     "out"
@@ -40,6 +40,6 @@ rustPlatform.buildRustPackage {
     description = "Nix compatible lockfile manager, without Nix";
     homepage = "https://github.com/lf-/gridlock";
     license = licenses.mit;
-    maintainers = with maintainers; [ figsoda ];
+    maintainers = [ ];
   };
 }

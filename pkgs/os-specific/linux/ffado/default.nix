@@ -17,6 +17,7 @@
   which,
   withMixer ? false,
   qt5,
+  udevCheckHook,
 }:
 
 let
@@ -71,6 +72,7 @@ stdenv.mkDerivation rec {
     scons
     pkg-config
     which
+    udevCheckHook
   ]
   ++ lib.optionals withMixer [
     python
@@ -113,6 +115,7 @@ stdenv.mkDerivation rec {
   enableParallelBuilding = true;
   dontWrapQtApps = true;
   strictDeps = true;
+  doInstallCheck = true;
 
   preFixup = lib.optionalString withMixer ''
     wrapQtApp "$bin/bin/ffado-mixer"

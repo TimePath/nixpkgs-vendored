@@ -161,13 +161,13 @@ in
       autoMount = lib.mkOption {
         type = lib.types.bool;
         default = false;
-        description = "Whether Kubo should try to mount /ipfs and /ipns at startup.";
+        description = "Whether Kubo should try to mount /ipfs, /ipns and /mfs at startup.";
       };
 
       autoMigrate = lib.mkOption {
         type = lib.types.bool;
         default = true;
-        description = "Whether Kubo should try to run the fs-repo-migration at startup.";
+        description = "Whether Kubo should try to migrate its filesystem repository automatically.";
       };
 
       enableGC = lib.mkOption {
@@ -235,6 +235,18 @@ in
               type = lib.types.str;
               default = "/ipns";
               description = "Where to mount the IPNS namespace to";
+            };
+
+            Mounts.MFS = lib.mkOption {
+              type = lib.types.str;
+              default = "/mfs";
+              description = "Where to mount the MFS namespace to";
+            };
+
+            Mounts.FuseAllowOther = lib.mkOption {
+              type = lib.types.bool;
+              default = true;
+              description = "Allow all users to access the FUSE mount points";
             };
           };
         };
@@ -324,10 +336,10 @@ in
     environment.variables.IPFS_PATH = fakeKuboRepo;
 
     # https://github.com/quic-go/quic-go/wiki/UDP-Buffer-Sizes
-    boot.kernel.sysctl."net.core.rmem_max" = lib.mkDefault 2500000;
-    boot.kernel.sysctl."net.core.wmem_max" = lib.mkDefault 2500000;
+    boot.kernel.sysctl."net.core.rmem_max" = lib.mkDefault 7500000;
+    boot.kernel.sysctl."net.core.wmem_max" = lib.mkDefault 7500000;
 
-    programs.fuse = lib.mkIf cfg.autoMount {
+    programs.fuse = lib.mkIf (cfg.autoMount && cfg.settings.Mounts.FuseAllowOther) {
       userAllowOther = true;
     };
 
@@ -338,9 +350,6 @@ in
         createHome = false;
         uid = config.ids.uids.ipfs;
         description = "IPFS daemon user";
-        packages = [
-          pkgs.kubo-migrator
-        ];
       };
     };
 
@@ -356,20 +365,18 @@ in
         ${cfg.dataDir}.d = defaultConfig;
         ${cfg.settings.Mounts.IPFS}.d = lib.mkIf (cfg.autoMount) defaultConfig;
         ${cfg.settings.Mounts.IPNS}.d = lib.mkIf (cfg.autoMount) defaultConfig;
+        ${cfg.settings.Mounts.MFS}.d = lib.mkIf (cfg.autoMount) defaultConfig;
       };
 
     # The hardened systemd unit breaks the fuse-mount function according to documentation in the unit file itself
     systemd.packages =
       if cfg.autoMount then [ cfg.package.systemd_unit ] else [ cfg.package.systemd_unit_hardened ];
 
-    services.kubo.settings = lib.mkIf cfg.autoMount {
-      Mounts.FuseAllowOther = lib.mkDefault true;
-    };
-
     systemd.services.ipfs = {
       path = [
         "/run/wrappers"
         cfg.package
+        pkgs.kubo-fs-repo-migrations # Used by 'ipfs repo migrate --to=...'
       ];
       environment.IPFS_PATH = cfg.dataDir;
 
@@ -381,7 +388,7 @@ in
           rm -vf "$IPFS_PATH/api"
       ''
       + lib.optionalString cfg.autoMigrate ''
-        '${lib.getExe pkgs.kubo-migrator}' -to '${cfg.package.repoVersion}' -y
+        '${lib.getExe cfg.package}' repo migrate '--to=${cfg.package.repoVersion}' --allow-downgrade
       ''
       + ''
         fi
@@ -399,13 +406,13 @@ in
           ipfs --offline config replace -
       '';
       postStop = lib.mkIf cfg.autoMount ''
-        # After an unclean shutdown the fuse mounts at cfg.settings.Mounts.IPFS and cfg.settings.Mounts.IPNS are locked
-        umount --quiet '${cfg.settings.Mounts.IPFS}' '${cfg.settings.Mounts.IPNS}' || true
+        # After an unclean shutdown the fuse mounts at cfg.settings.Mounts.IPFS, cfg.settings.Mounts.IPNS and cfg.settings.Mounts.MFS are locked
+        umount --quiet '${cfg.settings.Mounts.IPFS}' '${cfg.settings.Mounts.IPNS}' '${cfg.settings.Mounts.MFS}' || true
       '';
       serviceConfig = {
         ExecStart = [
           ""
-          "${cfg.package}/bin/ipfs daemon ${kuboFlags}"
+          "${lib.getExe cfg.package} daemon ${kuboFlags}"
         ];
         User = cfg.user;
         Group = cfg.group;

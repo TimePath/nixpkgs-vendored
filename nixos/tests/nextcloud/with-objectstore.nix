@@ -111,7 +111,6 @@ runTest (
     };
 
     test-helpers.init = ''
-      minio.start()
       minio.wait_for_open_port(9000)
       minio.wait_for_unit("nginx.service")
       minio.wait_for_open_port(443)
@@ -126,7 +125,7 @@ runTest (
 
         with subtest("Check if file is in S3"):
             nextcloud.succeed(
-                "mc config host add minio https://acme.test ${accessKey} ${secretKey} --api s3v4"
+                "mc alias set minio https://acme.test ${accessKey} ${secretKey} --api s3v4"
             )
             files = nextcloud.succeed('mc ls minio/nextcloud|sort').strip().split('\n')
 

@@ -1,5 +1,6 @@
 {
   lib,
+  stdenv,
   alsa-lib,
   callPackage,
   cmake,
@@ -19,7 +20,6 @@
   pkg-config,
   qt5,
   qt6,
-  stdenv,
   taglib,
   vulkan-headers,
   vulkan-tools,
@@ -29,6 +29,9 @@
 
 let
   sources = callPackage ./sources.nix { };
+  vulkan-headers-qmplay2 = vulkan-headers.overrideAttrs (oldAttrs: {
+    inherit (sources.vulkan-headers-qmplay2) version src;
+  });
 in
 assert lib.elem qtVersion [
   "5"
@@ -68,7 +71,7 @@ stdenv.mkDerivation (finalAttrs: {
     libva
     libxcb
     taglib
-    vulkan-headers
+    vulkan-headers-qmplay2
     vulkan-tools
   ]
   ++ lib.optionals (qtVersion == "6") [
@@ -107,6 +110,7 @@ stdenv.mkDerivation (finalAttrs: {
     mainProgram = "qmplay2";
     maintainers = with lib.maintainers; [
       kashw2
+      ProxyVT
     ];
     platforms = lib.platforms.linux;
   };

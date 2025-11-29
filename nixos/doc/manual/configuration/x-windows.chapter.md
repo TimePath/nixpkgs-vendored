@@ -23,9 +23,9 @@ Thus you should pick one or more of the following lines:
 
 ```nix
 {
-  services.xserver.desktopManager.plasma5.enable = true;
+  services.desktopManager.plasma6.enable = true;
   services.xserver.desktopManager.xfce.enable = true;
-  services.xserver.desktopManager.gnome.enable = true;
+  services.desktopManager.gnome.enable = true;
   services.xserver.desktopManager.mate.enable = true;
   services.xserver.windowManager.xmonad.enable = true;
   services.xserver.windowManager.twm.enable = true;
@@ -42,7 +42,7 @@ alternative one by picking one of the following lines:
 ```nix
 {
   services.displayManager.sddm.enable = true;
-  services.xserver.displayManager.gdm.enable = true;
+  services.displayManager.gdm.enable = true;
 }
 ```
 

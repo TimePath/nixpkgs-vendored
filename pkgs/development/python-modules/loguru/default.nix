@@ -23,7 +23,7 @@ buildPythonPackage rec {
 
   src = fetchFromGitHub {
     owner = "Delgan";
-    repo = pname;
+    repo = "loguru";
     tag = version;
     hash = "sha256-tccEzzs9TtFAZM9s43cskF9llc81Ng28LqedjLiE1m4=";
   };
@@ -47,6 +47,10 @@ buildPythonPackage rec {
     "test_file_buffering"
     # Slow test
     "test_time_rotation"
+    # broken on latest mypy, fixed upstream, but does not apply cleanly
+    # https://github.com/Delgan/loguru/commit/7608a014df0fa5c3322dec032345482aa5305a56
+    # FIXME: remove in next update
+    "typesafety"
   ]
   ++ lib.optionals stdenv.hostPlatform.isDarwin [
     "test_rotation_and_retention"

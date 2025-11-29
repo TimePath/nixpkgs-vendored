@@ -15,31 +15,22 @@
 
   inherit version;
   defaultVersion =
+    let
+      case = coq: mc: out: {
+        cases = [
+          coq
+          mc
+        ];
+        inherit out;
+      };
+    in
     with lib.versions;
     lib.switch
-      [ coq.version mathcomp.version ]
+      [ coq.coq-version mathcomp.version ]
       [
-        {
-          cases = [
-            (range "8.20" "9.0")
-            (range "2.2" "2.4")
-          ];
-          out = "2025.06.1";
-        }
-        {
-          cases = [
-            (range "8.19" "9.0")
-            (range "2.2" "2.4")
-          ];
-          out = "2025.02.1";
-        }
-        {
-          cases = [
-            (isEq "8.18")
-            (isEq "2.2")
-          ];
-          out = "2024.07.2";
-        }
+        (case (range "8.20" "9.1") (range "2.2" "2.4") "2025.06.1")
+        (case (range "8.19" "9.1") (range "2.2" "2.4") "2025.02.1")
+        (case (isEq "8.18") (isEq "2.2") "2024.07.2")
       ]
       null;
   releaseRev = v: "v${v}";

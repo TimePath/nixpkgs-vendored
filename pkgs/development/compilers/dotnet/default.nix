@@ -8,10 +8,9 @@
 {
   lib,
   config,
-  recurseIntoAttrs,
   generateSplicesForMkScope,
   makeScopeWithSplicing',
-  stdenvNoCC,
+  writeScriptBin,
 }:
 
 let
@@ -70,6 +69,11 @@ let
       // {
         inherit callPackage fetchNupkg buildDotnetSdk;
 
+        generate-dotnet-sdk = writeScriptBin "generate-dotnet-sdk" (
+          # Don't include current nixpkgs in the exposed version. We want to make the script runnable without nixpkgs repo.
+          builtins.replaceStrings [ " -I nixpkgs=./." ] [ "" ] (builtins.readFile ./update.sh)
+        );
+
         # Convert a "stdenv.hostPlatform.system" to a dotnet RID
         systemToDotnetRid =
           system: runtimeIdentifierMap.${system} or (throw "unsupported platform ${system}");
@@ -87,9 +91,9 @@ let
         mkNugetDeps = callPackage ../../../build-support/dotnet/make-nuget-deps { };
         addNuGetDeps = callPackage ../../../build-support/dotnet/add-nuget-deps { };
 
-        dotnet_8 = recurseIntoAttrs (callPackage ./8 { });
-        dotnet_9 = recurseIntoAttrs (callPackage ./9 { });
-        dotnet_10 = recurseIntoAttrs (callPackage ./10 { });
+        dotnet_8 = lib.recurseIntoAttrs (callPackage ./8 { });
+        dotnet_9 = lib.recurseIntoAttrs (callPackage ./9 { });
+        dotnet_10 = lib.recurseIntoAttrs (callPackage ./10 { });
       }
     );
   };

@@ -1,5 +1,5 @@
 #!/usr/bin/env nix-shell
-#!nix-shell -i python3 -p 'python3.withPackages(ps: [ps.requests ps.plumbum])' nix-prefetch nix-prefetch-git yarn-berry_3 yarn-berry_3.yarn-berry-fetcher prefetch-npm-deps
+#!nix-shell -i python3 -p 'python3.withPackages(ps: [ps.requests ps.plumbum])' nix-prefetch nix-prefetch-git yarn-berry_4 yarn-berry_4.yarn-berry-fetcher prefetch-npm-deps
 import json
 import requests
 import tempfile

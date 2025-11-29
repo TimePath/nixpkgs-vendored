@@ -11,6 +11,7 @@
   libxml2,
   pango,
   udev,
+  udevCheckHook,
 }:
 
 rustPlatform.buildRustPackage rec {
@@ -26,7 +27,10 @@ rustPlatform.buildRustPackage rec {
 
   cargoHash = "sha256-/PtoAc2ZNJfW5gegcFQAAlEmjSMysZ+QebVfHtW35Nk=";
 
-  nativeBuildInputs = [ pkg-config ];
+  nativeBuildInputs = [
+    pkg-config
+    udevCheckHook
+  ];
   buildInputs = [
     cairo
     gdk-pixbuf
@@ -48,6 +52,8 @@ rustPlatform.buildRustPackage rec {
     cp -R etc $out/lib
     cp -R share $out
   '';
+
+  doInstallCheck = true;
 
   meta = with lib; {
     homepage = "https://github.com/AsahiLinux/tiny-dfr";

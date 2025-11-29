@@ -9,6 +9,7 @@
   ncurses,
   perl,
   cyrus_sasl,
+  gitUpdater,
   gss,
   gpgme,
   libkrb5,
@@ -42,13 +43,13 @@ assert lib.warnIf enableMixmaster
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "neomutt";
-  version = "20250113";
+  version = "20250905";
 
   src = fetchFromGitHub {
     owner = "neomutt";
     repo = "neomutt";
     tag = finalAttrs.version;
-    hash = "sha256-30uagr4Z748U34yaTpw0lqxifuMlQRqccuZHKpbkXVE=";
+    hash = "sha256-RLyszU2u5jV/o6LrmZFkLx/Wu94Yq3JlXNgpe4agOZI=";
   };
 
   buildInputs = [
@@ -160,6 +161,7 @@ stdenv.mkDerivation (finalAttrs: {
       rev = "8e97688693ca47ea1055f3d15055a4f4ecc5c832";
       hash = "sha256-tx5Y819rNDxOpjg3B/Y2lPcqJDArAxVwjbYarVmJ79k=";
     };
+    updateScript = gitUpdater { };
   };
 
   checkTarget = "test";

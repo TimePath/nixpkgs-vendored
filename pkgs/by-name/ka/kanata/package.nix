@@ -2,8 +2,6 @@
   stdenv,
   lib,
   gnused,
-  apple-sdk_13,
-  darwinMinVersionHook,
   rustPlatform,
   karabiner-dk,
   fetchFromGitHub,
@@ -18,25 +16,20 @@
 }:
 rustPlatform.buildRustPackage (finalAttrs: {
   pname = "kanata";
-  version = "1.8.1";
+  version = "1.9.0";
 
   src = fetchFromGitHub {
     owner = "jtroo";
     repo = "kanata";
     rev = "v${finalAttrs.version}";
-    sha256 = "sha256-w/PeSqj51gJOWmAV5UPMprntdzinX/IL49D2ZUMfeSM=";
+    sha256 = "sha256-xxAIwiwCQugDXpWga9bQ9ZGfem46rwDlmf64dX/tw7g=";
   };
 
-  cargoHash = "sha256-T9fZxv3aujYparzVphfYBJ+5ti/T1VkeCeCqWPyllY8=";
-
-  buildInputs = lib.optionals stdenv.hostPlatform.isDarwin [
-    apple-sdk_13
-    (darwinMinVersionHook "13.0")
-  ];
+  cargoHash = "sha256-LfjuQHR3vVUr2e0efVymnfCnyYkFRx7ZiNdSIjBZc5s=";
 
   nativeBuildInputs = lib.optionals stdenv.hostPlatform.isDarwin [
     (writeShellScriptBin "sw_vers" ''
-      echo 'ProductVersion: 13.0'
+      echo 'ProductVersion: ${stdenv.hostPlatform.darwinMinVersion}'
     '')
   ];
 

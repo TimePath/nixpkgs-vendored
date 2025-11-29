@@ -2,10 +2,12 @@
   lib,
   rustPlatform,
   fetchFromGitHub,
-  fetchpatch,
   pkg-config,
   openssl,
   cmake,
+  installShellFiles,
+  writableTmpDirAsHomeHook,
+
   # deps for audio backends
   alsa-lib,
   libpulseaudio,
@@ -20,7 +22,7 @@
   # build options
   withStreaming ? true,
   withDaemon ? true,
-  withAudioBackend ? "rodio", # alsa, pulseaudio, rodio, portaudio, jackaudio, rodiojack, sdl
+  withAudioBackend ? "rodio", # alsa, pulseaudio, rodio, portaudio, jackaudio, rodiojack, sdl, gstreamer
   withMediaControl ? true,
   withImage ? true,
   withNotify ? true,
@@ -47,21 +49,24 @@ assert lib.assertOneOf "withAudioBackend" withAudioBackend [
 
 rustPlatform.buildRustPackage rec {
   pname = "spotify-player";
-  version = "0.21.1";
+  version = "0.21.2";
 
   src = fetchFromGitHub {
     owner = "aome510";
     repo = "spotify-player";
     tag = "v${version}";
-    hash = "sha256-yjm5NFW+6vEyv45AVfwx+6w2dJ3lKj/UM2NQhGW5SSs=";
+    hash = "sha256-2LOsFcFZRdgH4TqtmVDqf8dxsPwZVQKsQbjyuDHwP/4=";
   };
 
-  cargoHash = "sha256-rqDLkzCl7gn3s/37MPytYaGb0tdtemYi8bgEkrkllDU=";
+  cargoHash = "sha256-JgPf68KpRE8z+2webU99cR0+6xmaplcVwgFcgvHiwrs=";
 
   nativeBuildInputs = [
     pkg-config
     cmake
     rustPlatform.bindgenHook
+    installShellFiles
+    # Tries to access $HOME when installing shell files, and on Darwin
+    writableTmpDirAsHomeHook
   ]
   ++ lib.optionals stdenv.hostPlatform.isDarwin [
     makeBinaryWrapper
@@ -103,16 +108,21 @@ rustPlatform.buildRustPackage rec {
     ++ lib.optionals withSixel [ "sixel" ]
     ++ lib.optionals withFuzzy [ "fzf" ];
 
-  # tries to access HOME only in aarch64-darwin environment when building mac-notification-sys
-  preBuild = lib.optionalString (stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isAarch64) ''
-    export HOME=$TMPDIR
-  '';
-
-  # sixel-sys is dynamically linked to libsixel
-  postInstall = lib.optionals (stdenv.hostPlatform.isDarwin && withSixel) ''
-    wrapProgram $out/bin/spotify_player \
-      --prefix DYLD_LIBRARY_PATH : "${lib.makeLibraryPath [ libsixel ]}"
-  '';
+  postInstall =
+    let
+      inherit (lib.strings) optionalString;
+    in
+    # sixel-sys is dynamically linked to libsixel
+    optionalString (stdenv.hostPlatform.isDarwin && withSixel) ''
+      wrapProgram $out/bin/spotify_player \
+        --prefix DYLD_LIBRARY_PATH : "${lib.makeLibraryPath [ libsixel ]}"
+    ''
+    + optionalString (stdenv.buildPlatform.canExecute stdenv.hostPlatform) ''
+      installShellCompletion --cmd spotify_player \
+        --bash <($out/bin/spotify_player generate bash) \
+        --fish <($out/bin/spotify_player generate fish) \
+         --zsh <($out/bin/spotify_player generate zsh)
+    '';
 
   passthru = {
     updateScript = nix-update-script { };

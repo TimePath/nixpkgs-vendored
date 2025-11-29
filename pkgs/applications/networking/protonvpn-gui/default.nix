@@ -22,14 +22,14 @@
 
 buildPythonApplication rec {
   pname = "protonvpn-gui";
-  version = "4.9.6";
+  version = "4.12.0";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "ProtonVPN";
     repo = "proton-vpn-gtk-app";
-    tag = "${version}";
-    hash = "sha256-Undf3qSClcRa1e9f6B/1hLPIjc2KPG745AXxYHQA0nE=";
+    tag = "v${version}";
+    hash = "sha256-pDTzqTiGAisVEHwez526z9C9GzNkMWl6Cui8E6siIXo=";
   };
 
   nativeBuildInputs = [
@@ -66,7 +66,10 @@ buildPythonApplication rec {
 
   postInstall = ''
     mkdir -p $out/share/{applications,pixmaps}
-    install -Dm 644 ${src}/rpmbuild/SOURCES/protonvpn-app.desktop $out/share/applications
+
+    # Fix the desktop file to correctly identify the wrapped app and show the icon during runtime
+    substitute ${src}/rpmbuild/SOURCES/proton.vpn.app.gtk.desktop $out/share/applications/proton.vpn.app.gtk.desktop \
+      --replace-fail "StartupWMClass=protonvpn-app" "StartupWMClass=.protonvpn-app-wrapped"
     install -Dm 644 ${src}/rpmbuild/SOURCES/proton-vpn-logo.svg $out/share/pixmaps
   '';
 

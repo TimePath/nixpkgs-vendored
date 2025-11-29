@@ -22,20 +22,20 @@
   libportal-gtk4,
   libsecret,
   libsoup_3,
-  pantheon,
+  libspelling,
   sqlite,
   webkitgtk_6_0,
 }:
 
 stdenv.mkDerivation rec {
   pname = "planify";
-  version = "4.12.2";
+  version = "4.16.0";
 
   src = fetchFromGitHub {
     owner = "alainm23";
     repo = "planify";
-    rev = version;
-    hash = "sha256-v5Fwbl02t178t+l+VZybeUojIsblLX3Ws5itAAoEZwI=";
+    tag = "v${version}";
+    hash = "sha256-uNcTP//9YpdwHbZ49jKlrvK8wxCJK3oSrOMjoGAcDjk=";
   };
 
   nativeBuildInputs = [
@@ -64,7 +64,7 @@ stdenv.mkDerivation rec {
     libportal-gtk4
     libsecret
     libsoup_3
-    pantheon.granite7
+    libspelling
     sqlite
     webkitgtk_6_0
   ];

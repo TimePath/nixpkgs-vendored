@@ -11,7 +11,7 @@
   npmHooks,
   openssl,
   pkg-config,
-  rustPackages_1_88,
+  rustPlatform,
   stdenv,
   wrapGAppsHook4,
   webkitgtk_4_1,
@@ -29,7 +29,7 @@ let
 
   subdir = "vrc-get-gui";
 in
-rustPackages_1_88.rustPlatform.buildRustPackage {
+rustPlatform.buildRustPackage {
   inherit pname version src;
 
   patches = [

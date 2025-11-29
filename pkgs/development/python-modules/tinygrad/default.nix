@@ -32,6 +32,7 @@
   hypothesis,
   jax,
   librosa,
+  ml-dtypes,
   networkx,
   numpy,
   onnx,
@@ -44,6 +45,7 @@
   torch,
   tqdm,
   transformers,
+  z3-solver,
 
   # passthru
   tinygrad,
@@ -54,14 +56,14 @@
 
 buildPythonPackage rec {
   pname = "tinygrad";
-  version = "0.10.2";
+  version = "0.11.0";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "tinygrad";
     repo = "tinygrad";
     tag = "v${version}";
-    hash = "sha256-BXQMacp6QjlgsVwhp2pxEZkRylZfKQhqIh92/0dPlfg=";
+    hash = "sha256-VG2rhkiwPFN3JYSBbqrwCdqhdGE8GY6oEatMSCydhw8=";
   };
 
   patches = [
@@ -105,8 +107,8 @@ buildPythonPackage rec {
     + lib.optionalString cudaSupport ''
       substituteInPlace tinygrad/runtime/support/compiler_cuda.py \
         --replace-fail \
-        ', "-I/usr/local/cuda/include", "-I/usr/include", "-I/opt/cuda/include/"' \
-        ', "-I${lib.getDev cudaPackages.cuda_cudart}/include/"'
+        '"-I/usr/local/cuda/include", "-I/usr/include", "-I/opt/cuda/include"' \
+        '"-I${lib.getDev cudaPackages.cuda_cudart}/include/"'
     ''
     + lib.optionalString rocmSupport ''
       substituteInPlace tinygrad/runtime/autogen/hip.py \
@@ -149,6 +151,7 @@ buildPythonPackage rec {
     hypothesis
     jax
     librosa
+    ml-dtypes
     networkx
     numpy
     onnx
@@ -161,6 +164,7 @@ buildPythonPackage rec {
     torch
     tqdm
     transformers
+    z3-solver
   ]
   ++ networkx.optional-dependencies.extra;
 
@@ -174,6 +178,7 @@ buildPythonPackage rec {
     "test_recursive_pad"
 
     # Require internet access
+    "testCopySHMtoDefault"
     "test_benchmark_openpilot_model"
     "test_bn_alone"
     "test_bn_linear"
@@ -182,13 +187,21 @@ buildPythonPackage rec {
     "test_chicken"
     "test_chicken_bigbatch"
     "test_conv_mnist"
-    "testCopySHMtoDefault"
     "test_data_parallel_resnet"
+    "test_dataset_is_realized"
     "test_e2e_big"
     "test_fetch_small"
     "test_huggingface_enet_safetensors"
     "test_index_mnist"
     "test_linear_mnist"
+    "test_llama_basic"
+    "test_llama_bytes"
+    "test_llama_control_char"
+    "test_llama_early_tokenize"
+    "test_llama_pat"
+    "test_llama_repeat"
+    "test_llama_special1"
+    "test_llama_special2"
     "test_load_convnext"
     "test_load_enet"
     "test_load_enet_alt"

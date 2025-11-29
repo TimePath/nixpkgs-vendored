@@ -9,6 +9,7 @@
   libevdev,
   mtdev,
   udev,
+  wacomSupport ? true,
   libwacom,
   documentationSupport ? false,
   doxygen,
@@ -24,6 +25,7 @@
   python3,
   nixosTests,
   wayland-scanner,
+  udevCheckHook,
 }:
 
 let
@@ -49,7 +51,7 @@ in
 
 stdenv.mkDerivation rec {
   pname = "libinput";
-  version = "1.27.1";
+  version = "1.29.2";
 
   outputs = [
     "bin"
@@ -62,7 +64,7 @@ stdenv.mkDerivation rec {
     owner = "libinput";
     repo = "libinput";
     rev = version;
-    hash = "sha256-3U+2a/uSoSj1t34uz7xO2QQtJExygKOhBL7BUGP0Fbo=";
+    hash = "sha256-oxDGUbZebxAmBd2j51qV9Jn8SXBjUX2NPRgkxbDz7Dk=";
   };
 
   patches = [
@@ -73,6 +75,7 @@ stdenv.mkDerivation rec {
     pkg-config
     meson
     ninja
+    udevCheckHook
   ]
   ++ lib.optionals documentationSupport [
     doxygen
@@ -83,7 +86,6 @@ stdenv.mkDerivation rec {
   buildInputs = [
     libevdev
     mtdev
-    libwacom
     (python3.withPackages (
       pp: with pp; [
         pp.libevdev # already in scope
@@ -92,6 +94,9 @@ stdenv.mkDerivation rec {
         setuptools
       ]
     ))
+  ]
+  ++ lib.optionals wacomSupport [
+    libwacom
   ]
   ++ lib.optionals eventGUISupport [
     # GUI event viewer
@@ -114,11 +119,14 @@ stdenv.mkDerivation rec {
     (mkFlag documentationSupport "documentation")
     (mkFlag eventGUISupport "debug-gui")
     (mkFlag testsSupport "tests")
+    (mkFlag wacomSupport "libwacom")
     "--sysconfdir=/etc"
     "--libexecdir=${placeholder "bin"}/libexec"
   ];
 
   doCheck = testsSupport && stdenv.hostPlatform == stdenv.buildPlatform;
+
+  doInstallCheck = true;
 
   postPatch = ''
     patchShebangs \
@@ -148,5 +156,9 @@ stdenv.mkDerivation rec {
     maintainers = with maintainers; [ codyopel ];
     teams = [ teams.freedesktop ];
     changelog = "https://gitlab.freedesktop.org/libinput/libinput/-/releases/${version}";
+    badPlatforms = [
+      # Mandatory shared library.
+      lib.systems.inspect.platformPatterns.isStatic
+    ];
   };
 }

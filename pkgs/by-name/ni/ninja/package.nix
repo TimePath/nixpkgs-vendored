@@ -2,6 +2,7 @@
   lib,
   stdenv,
   fetchFromGitHub,
+  fetchpatch,
   asciidoc,
   docbook_xml_dtd_45,
   docbook_xsl,
@@ -20,7 +21,7 @@ stdenv.mkDerivation (finalAttrs: {
   version =
     {
       "1.11" = "1.11.1";
-      latest = "1.12.1";
+      latest = "1.13.1";
     }
     .${ninjaRelease};
 
@@ -32,7 +33,7 @@ stdenv.mkDerivation (finalAttrs: {
       {
         # TODO: Remove Ninja 1.11 as soon as possible.
         "1.11" = "sha256-LvV/Fi2ARXBkfyA1paCRmLUwCh/rTyz+tGMg2/qEepI=";
-        latest = "sha256-RT5u+TDvWxG5EVQEYj931EZyrHUSAqK73OKDAascAwA=";
+        latest = "sha256-GhAF5wUT19E02ZekW+ywsCMVGYrt56hES+MHCH4lNG4=";
       }
       .${ninjaRelease} or (throw "Unsupported Ninja release: ${ninjaRelease}");
   };
@@ -49,6 +50,18 @@ stdenv.mkDerivation (finalAttrs: {
     docbook_xml_dtd_45
     docbook_xsl
     libxslt.bin
+  ];
+
+  patches = [
+    ./0001-spawn-sh-instead-of-bin-sh.patch
+  ]
+  # TODO: remove together with ninja 1.11
+  ++ lib.optionals (lib.versionOlder finalAttrs.version "1.12") [
+    (fetchpatch {
+      name = "ninja1.11-python3.13-compat.patch";
+      url = "https://github.com/ninja-build/ninja/commit/9cf13cd1ecb7ae649394f4133d121a01e191560b.patch";
+      hash = "sha256-zlMs9LDJ2thtiSUjbsONyqoyYxrB/Ilt2Ljr0nCU6nQ=";
+    })
   ];
 
   postPatch = ''

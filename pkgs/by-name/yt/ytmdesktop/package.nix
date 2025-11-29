@@ -13,6 +13,8 @@
 
   electron,
   commandLineArgs ? "",
+
+  nix-update-script,
 }:
 
 let
@@ -20,7 +22,7 @@ let
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = "ytmdesktop";
-  version = "2.0.8";
+  version = "2.0.10";
 
   src = fetchFromGitHub {
     owner = "ytmdesktop";
@@ -34,11 +36,11 @@ stdenv.mkDerivation (finalAttrs: {
       find -name .git -print0 | xargs -0 rm -rf
     '';
 
-    hash = "sha256-QiV7U7LoJWvBqjVm7oVfHIiyw10cLSAk4lCQGO8hXtY=";
+    hash = "sha256-CA3Vb7Wp4WrsWSVtIwDxnEt1pWYb73WnhyoMVKoqvOE=";
   };
 
   patches = [
-    # instead of runnning git during the build process
+    # instead of running git during the build process
     # use the .COMMIT file generated in the fetcher FOD
     ./git-rev-parse.patch
   ];
@@ -55,7 +57,7 @@ stdenv.mkDerivation (finalAttrs: {
 
   yarnOfflineCache = yarn-berry.fetchYarnBerryDeps {
     inherit (finalAttrs) src missingHashes;
-    hash = "sha256-piHpm7eeOoDmpgc1SmeJ3wLZHZiUZZGu+Pl30qQYqps=";
+    hash = "sha256-1jlnVY4KWm+w3emMkCkdwUtkqRB9ZymPPGuvgfQolrA=";
   };
 
   nativeBuildInputs = [
@@ -137,9 +139,11 @@ stdenv.mkDerivation (finalAttrs: {
     })
   ];
 
+  passthru.updateScript = nix-update-script { };
+
   meta = {
     changelog = "https://github.com/ytmdesktop/ytmdesktop/tag/v${finalAttrs.version}";
-    description = "A Desktop App for YouTube Music";
+    description = "Desktop App for YouTube Music";
     downloadPage = "https://github.com/ytmdesktop/ytmdesktop/releases";
     homepage = "https://ytmdesktop.app/";
     license = lib.licenses.gpl3Only;

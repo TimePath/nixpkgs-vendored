@@ -2,31 +2,34 @@
   useLua ? true,
   usePcre ? true,
   withPrometheusExporter ? true,
-  sslLibrary ? "quictls",
+  sslLibrary ? "openssl",
   stdenv,
   lib,
   fetchurl,
-  fetchpatch,
   nixosTests,
   zlib,
   libxcrypt,
-  wolfssl,
+  aws-lc,
   libressl,
-  quictls,
   openssl,
+  wolfssl,
   lua5_4,
   pcre2,
 }:
 
 assert lib.assertOneOf "sslLibrary" sslLibrary [
-  "quictls"
-  "openssl"
+  "aws-lc"
   "libressl"
+  "openssl"
   "wolfssl"
 ];
 let
   sslPkgs = {
-    inherit quictls openssl libressl;
+    inherit
+      aws-lc
+      libressl
+      openssl
+      ;
     wolfssl = wolfssl.override {
       variant = "haproxy";
       extraConfigureFlags = [ "--enable-quic" ];
@@ -36,20 +39,12 @@ let
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = "haproxy";
-  version = "3.1.7";
+  version = "3.2.9";
 
   src = fetchurl {
     url = "https://www.haproxy.org/download/${lib.versions.majorMinor finalAttrs.version}/src/haproxy-${finalAttrs.version}.tar.gz";
-    hash = "sha256-o5UmRO+TmzYmDZHYGjNWNqqbRFcrTLi2ABJy+IVFxmY=";
+    hash = "sha256-5mDRQbKQGfTRmHhbCDTMPpyW787rgHwv/y/JNb0zVMI=";
   };
-
-  patches = [
-    (fetchpatch {
-      name = "CVE-2025-11230.patch";
-      url = "https://github.com/haproxy/haproxy/commit/06675db4bf234ed17e14305f1d59259d2fe78b06.patch";
-      hash = "sha256-ULHN2gj4TZHUEDIJ6FAaRoyth/wz4VhXOf6maFfkhJA=";
-    })
-  ];
 
   buildInputs = [
     sslPkg
@@ -84,6 +79,9 @@ stdenv.mkDerivation (finalAttrs: {
     "SSL_LIB=${lib.getDev sslPkg}/lib"
     "USE_QUIC=yes"
   ]
+  ++ lib.optionals (sslLibrary == "aws-lc") [
+    "USE_OPENSSL_AWSLC=true"
+  ]
   ++ lib.optionals (sslLibrary == "openssl") [
     "USE_QUIC_OPENSSL_COMPAT=yes"
   ]
@@ -101,7 +99,6 @@ stdenv.mkDerivation (finalAttrs: {
     "LUA_INC=${lua5_4}/include"
   ]
   ++ lib.optionals stdenv.hostPlatform.isLinux [
-    "USE_SYSTEMD=yes"
     "USE_GETADDRINFO=1"
   ]
   ++ lib.optionals withPrometheusExporter [

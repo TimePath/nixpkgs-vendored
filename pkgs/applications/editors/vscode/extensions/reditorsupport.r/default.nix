@@ -5,9 +5,8 @@
   moreutils,
   languageserver ? rPackages.languageserver,
   R,
-  radian ? python311Packages.radian,
+  radian,
 
-  python311Packages,
   rPackages,
 }:
 
@@ -36,6 +35,9 @@ vscode-utils.buildVscodeMarketplaceExtension {
     downloadPage = "https://marketplace.visualstudio.com/items?itemName=REditorSupport.r";
     homepage = "https://github.com/REditorSupport/vscode-R";
     license = lib.licenses.mit;
-    maintainers = [ lib.maintainers.pandapip1 ];
+    maintainers = [
+      lib.maintainers.pandapip1
+      lib.maintainers.ivyfanchiang
+    ];
   };
 }

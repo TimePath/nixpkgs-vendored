@@ -4,14 +4,15 @@
   cmake,
   enet,
   fetchFromGitHub,
+  fetchpatch2,
   fixDarwinDylibNames,
   flac,
   freetype,
+  gitUpdater,
   gtk3,
   libGL,
   libGLU,
   libjpeg,
-  libopus,
   libpng,
   libpthreadstubs,
   libpulseaudio,
@@ -30,14 +31,18 @@
   libXxf86misc,
   libXxf86vm,
   openal,
-  pcre,
   physfs,
   pkg-config,
   stdenv,
   texinfo,
   xorgproto,
   zlib,
+  # https://github.com/liballeg/allegro5/blob/master/README_sdl.txt
+  useSDL ? false,
+  sdl2-compat ? null,
 }:
+
+assert useSDL -> sdl2-compat != null;
 
 stdenv.mkDerivation rec {
   pname = "allegro";
@@ -49,6 +54,14 @@ stdenv.mkDerivation rec {
     rev = version;
     sha256 = "sha256-agE3K+6VhhG/LO52fiesCsOq1fNYVRhdW7aKdPCbTOo=";
   };
+
+  patches = [
+    (fetchpatch2 {
+      name = "Bump-CMake-minimum-version-to-3.5";
+      url = "https://github.com/liballeg/allegro5/commit/6e93fcaabaafd81701f4cd1b74f4b69dd598bc9b.patch?full_index=1";
+      hash = "sha256-IEnn66bS2m6MVFCNf341yLtd7jTl2gflL5EFJFmbEt4=";
+    })
+  ];
 
   nativeBuildInputs = [
     cmake
@@ -66,13 +79,11 @@ stdenv.mkDerivation rec {
     libGL
     libGLU
     libjpeg
-    libopus
     libpng
     libtheora
     libvorbis
     libwebp
     openal
-    pcre
     physfs
     texinfo
     zlib
@@ -93,6 +104,9 @@ stdenv.mkDerivation rec {
     libXxf86misc
     libXxf86vm
     xorgproto
+  ]
+  ++ lib.optionals useSDL [
+    sdl2-compat
   ];
 
   postPatch = ''
@@ -101,12 +115,21 @@ stdenv.mkDerivation rec {
     sed -e 's@OpenAL/@AL/@g' -i addons/audio/openal.c
   '';
 
-  cmakeFlags = [ "-DCMAKE_SKIP_RPATH=ON" ];
+  cmakeFlags = [
+    "-DCMAKE_SKIP_RPATH=ON"
+  ]
+  ++ lib.optionals useSDL [
+    "ALLEGRO_SDL=ON"
+  ];
 
   outputs = [
     "out"
     "dev"
   ];
+
+  strictDeps = true;
+
+  passthru.updateScript = gitUpdater { };
 
   meta = with lib; {
     description = "Game programming library";

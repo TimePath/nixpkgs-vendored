@@ -91,7 +91,7 @@ in
         default =
           config.environment.memoryAllocator.provider != "graphene-hardened"
           && config.environment.memoryAllocator.provider != "graphene-hardened-light";
-        defaultText = ''config.environment.memoryAllocator.provider != "graphene-hardened" && config.environment.memoryAllocator.provider != "graphene-hardened-light"'';
+        defaultText = lib.literalExpression ''config.environment.memoryAllocator.provider != "graphene-hardened" && config.environment.memoryAllocator.provider != "graphene-hardened-light"'';
         description = ''
           Whether to add the `-m` flag to lock memory.
         '';
@@ -235,7 +235,7 @@ in
 
       unitConfig.ConditionCapability = "CAP_SYS_TIME";
       serviceConfig = {
-        Type = "simple";
+        Type = "notify";
         ExecStart = "${chronyPkg}/bin/chronyd ${builtins.toString chronyFlags}";
 
         # Proc filesystem

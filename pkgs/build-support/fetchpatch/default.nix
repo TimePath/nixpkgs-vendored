@@ -67,7 +67,7 @@ lib.throwIfNot (excludes == [ ] || includes == [ ])
           ${lib.optionalString (relative != null) "-p1 -i ${lib.escapeShellArg relative}/'*'"} \
           "$out" \
         | sort -u | sed -e 's/[*?]/\\&/g' \
-        | xargs -I{} \
+        | xargs -I{} --delimiter='\n' \
           filterdiff \
           --include={} \
           --strip=${toString stripLen} \
@@ -111,7 +111,7 @@ lib.throwIfNot (excludes == [ ] || includes == [ ])
       ''
       + postFetch;
     }
-    // builtins.removeAttrs args [
+    // removeAttrs args [
       "relative"
       "stripLen"
       "decode"

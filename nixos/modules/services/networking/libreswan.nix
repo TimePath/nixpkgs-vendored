@@ -166,7 +166,7 @@ in
         procps
         nssTools
         iptables
-        nettools
+        net-tools
       ];
       preStart = lib.optionalString cfg.disableRedirects ''
         # Disable send/receive redirects

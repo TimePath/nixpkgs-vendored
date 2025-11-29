@@ -14,7 +14,7 @@
 
 ocamlPackages.buildDunePackage rec {
   pname = "docfd";
-  version = "11.0.1";
+  version = "12.1.0";
 
   minimalOCamlVersion = "5.1";
 
@@ -22,8 +22,11 @@ ocamlPackages.buildDunePackage rec {
     owner = "darrenldl";
     repo = "docfd";
     rev = version;
-    hash = "sha256-uRC2QBn4gAfS9u85YaNH2Mm2C0reP8FnDHbyloY+OC8=";
+    hash = "sha256-fDvjnqAH0ALP1im34vxmXtO7kst0G/iPu3VLLBas5YI=";
   };
+
+  # Compatibility with nottui ≥ 0.4
+  patches = [ ./nottui-unix.patch ];
 
   nativeBuildInputs = [
     python3
@@ -40,6 +43,7 @@ ocamlPackages.buildDunePackage rec {
     eio_main
     lwd
     nottui
+    nottui-unix
     notty
     ocaml_sqlite3
     ocolor

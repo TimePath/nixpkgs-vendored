@@ -100,7 +100,7 @@ let
 
   modulesConf =
     let
-      lst = builtins.map (mod: mod.path) enabledModules;
+      lst = map (mod: mod.path) enabledModules;
       str = lib.strings.concatStringsSep "\n" lst;
     in
     builtins.toFile "modules.conf" str;
@@ -112,7 +112,7 @@ stdenv.mkDerivation rec {
   version = "1.10.12";
   src = fetchFromGitHub {
     owner = "signalwire";
-    repo = pname;
+    repo = "freeswitch";
     rev = "v${version}";
     hash = "sha256-uOO+TpKjJkdjEp4nHzxcHtZOXqXzpkIF3dno1AX17d8=";
   };

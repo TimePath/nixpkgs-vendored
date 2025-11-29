@@ -26,6 +26,7 @@
   gobject-introspection,
   meson,
   ninja,
+  protobuf,
   protobufc,
   shared-mime-info,
   vala,
@@ -46,9 +47,11 @@
   libgudev,
   libjcat,
   libmbim,
+  libmnl,
   libqmi,
   libuuid,
   libxmlb,
+  libxml2,
   modemmanager,
   pango,
   polkit,
@@ -131,7 +134,7 @@ let
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = "fwupd";
-  version = "2.0.9";
+  version = "2.0.16";
 
   # libfwupd goes to lib
   # daemon, plug-ins and libfwupdplugin go to out
@@ -149,7 +152,7 @@ stdenv.mkDerivation (finalAttrs: {
     owner = "fwupd";
     repo = "fwupd";
     tag = finalAttrs.version;
-    hash = "sha256-Izh6PHMgUsOeez9uWSLoA2GhvawYQlEZo480vovxn38=";
+    hash = "sha256-fsjW3Idaqg4pNGaRP0bm2R94FcW2MVfPQwPFWrN+Qy8=";
   };
 
   patches = [
@@ -174,9 +177,11 @@ stdenv.mkDerivation (finalAttrs: {
 
   postPatch = ''
     patchShebangs \
-      contrib/generate-version-script.py \
-      contrib/generate-man.py \
-      po/test-deps
+      generate-build/generate-version-script.py \
+      generate-build/generate-man.py \
+      po/test-deps \
+      plugins/uefi-capsule/tests/grub2-mkconfig \
+      plugins/uefi-capsule/tests/grub2-reboot
   ''
   # in nixos test tries to chmod 0777 $out/share/installed-tests/fwupd/tests/redfish.conf
   + ''
@@ -200,10 +205,12 @@ stdenv.mkDerivation (finalAttrs: {
     gettext
     gi-docgen
     gobject-introspection
+    libxml2
     meson
     ninja
     pkg-config
-    protobufc # for protoc
+    protobuf # for protoc
+    protobufc # for protoc-gen-c
     shared-mime-info
     vala
     wrapGAppsNoGuiHook
@@ -228,6 +235,7 @@ stdenv.mkDerivation (finalAttrs: {
     libgudev
     libjcat
     libmbim
+    libmnl
     libqmi
     libuuid
     libxmlb
@@ -392,7 +400,10 @@ stdenv.mkDerivation (finalAttrs: {
   meta = {
     homepage = "https://fwupd.org/";
     changelog = "https://github.com/fwupd/fwupd/releases/tag/${finalAttrs.version}";
-    maintainers = with lib.maintainers; [ rvdp ];
+    maintainers = with lib.maintainers; [
+      rvdp
+      johnazoidberg
+    ];
     license = lib.licenses.lgpl21Plus;
     platforms = lib.platforms.linux;
   };

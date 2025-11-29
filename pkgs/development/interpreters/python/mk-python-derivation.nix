@@ -4,13 +4,15 @@
   lib,
   config,
   python,
+  # Allow passing in a custom stdenv to buildPython*.override
+  stdenv,
   wrapPython,
   unzip,
   ensureNewerSourcesForZipFilesHook,
   # Whether the derivation provides a Python module or not.
   toPythonModule,
   namePrefix,
-  update-python-libraries,
+  nix-update-script,
   setuptools,
   pypaBuildHook,
   pypaInstallHook,
@@ -106,17 +108,6 @@ let
     "doInstallCheck"
     "pyproject"
     "format"
-    "disabledTestMarks"
-    "disabledTestPaths"
-    "disabledTests"
-    "enabledTestMarks"
-    "enabledTestPaths"
-    "enabledTests"
-    "pytestFlags"
-    "pytestFlagsArray"
-    "unittestFlags"
-    "unittestFlagsArray"
-    "outputs"
     "stdenv"
     "dependencies"
     "optional-dependencies"
@@ -203,9 +194,6 @@ in
 
   doCheck ? true,
 
-  # Allow passing in a custom stdenv to buildPython*
-  stdenv ? python.stdenv,
-
   ...
 }@attrs:
 
@@ -214,14 +202,28 @@ let
   self = stdenv.mkDerivation (
     finalAttrs:
     let
+      getFinalPassthru =
+        let
+          pos = unsafeGetAttrPos "passthru" finalAttrs;
+        in
+        attrName:
+        finalAttrs.passthru.${attrName} or (throw (
+          ''
+            ${finalAttrs.name}: passthru.${attrName} missing after overrideAttrs overriding.
+          ''
+          + optionalString (pos != null) ''
+            Last overridden at ${pos.file}:${toString pos.line}
+          ''
+        ));
+
       format' =
-        assert (pyproject != null) -> (format == null);
-        if pyproject != null then
-          if pyproject then "pyproject" else "other"
+        assert (getFinalPassthru "pyproject" != null) -> (format == null);
+        if getFinalPassthru "pyproject" != null then
+          if getFinalPassthru "pyproject" then "pyproject" else "other"
         else if format != null then
           format
         else
-          "setuptools";
+          throw "${name} does not configure a `format`. To build with setuptools as before, set `pyproject = true` and `build-system = [ setuptools ]`.`";
 
       withDistOutput = withDistOutput' format';
 
@@ -272,17 +274,18 @@ let
         in
         attrName: inputs: map (checkDrv attrName) inputs;
 
-      isBootstrapInstallPackage = isBootstrapInstallPackage' (attrs.pname or null);
+      isBootstrapInstallPackage = isBootstrapInstallPackage' (finalAttrs.pname or null);
 
-      isBootstrapPackage = isBootstrapInstallPackage || isBootstrapPackage' (attrs.pname or null);
+      isBootstrapPackage = isBootstrapInstallPackage || isBootstrapPackage' (finalAttrs.pname or null);
 
-      isSetuptoolsDependency = isSetuptoolsDependency' (attrs.pname or null);
+      isSetuptoolsDependency = isSetuptoolsDependency' (finalAttrs.pname or null);
+
+      name = namePrefix + attrs.name or "${finalAttrs.pname}-${finalAttrs.version}";
 
     in
     (cleanAttrs attrs)
     // {
-
-      name = namePrefix + attrs.name or "${finalAttrs.pname}-${finalAttrs.version}";
+      inherit name;
 
       inherit catchConflicts;
 
@@ -303,13 +306,15 @@ let
         #
         pythonCatchConflictsHook
       ]
-      ++ optionals (attrs ? pythonRelaxDeps || attrs ? pythonRemoveDeps) [
-        pythonRelaxDepsHook
-      ]
+      ++
+        optionals (finalAttrs.pythonRelaxDeps or [ ] != [ ] || finalAttrs.pythonRemoveDeps or [ ] != [ ])
+          [
+            pythonRelaxDepsHook
+          ]
       ++ optionals removeBinBytecode [
         pythonRemoveBinBytecodeHook
       ]
-      ++ optionals (hasSuffix "zip" (attrs.src.name or "")) [
+      ++ optionals (hasSuffix "zip" (finalAttrs.src.name or "")) [
         unzip
       ]
       ++ optionals (format' == "setuptools") [
@@ -364,13 +369,13 @@ let
         pythonOutputDistHook
       ]
       ++ nativeBuildInputs
-      ++ build-system;
+      ++ getFinalPassthru "build-system";
 
       buildInputs = validatePythonMatches "buildInputs" (buildInputs ++ pythonPath);
 
       propagatedBuildInputs = validatePythonMatches "propagatedBuildInputs" (
         propagatedBuildInputs
-        ++ dependencies
+        ++ getFinalPassthru "dependencies"
         ++ [
           # we propagate python even for packages transformed with 'toPythonApplication'
           # this pollutes the PATH but avoids rebuilds
@@ -386,8 +391,8 @@ let
       # Python packages don't have a checkPhase, only an installCheckPhase
       doCheck = false;
       doInstallCheck = attrs.doCheck or true;
-      nativeInstallCheckInputs = nativeCheckInputs;
-      installCheckInputs = checkInputs;
+      nativeInstallCheckInputs = nativeCheckInputs ++ attrs.nativeInstallCheckInputs or [ ];
+      installCheckInputs = checkInputs ++ attrs.installCheckInputs or [ ];
 
       inherit dontWrapPythonPrograms;
 
@@ -405,26 +410,16 @@ let
       outputs = outputs ++ optional withDistOutput "dist";
 
       passthru = {
-        inherit disabled;
+        inherit
+          disabled
+          pyproject
+          build-system
+          dependencies
+          optional-dependencies
+          ;
       }
       // {
-        updateScript =
-          let
-            filename = head (splitString ":" finalAttrs.finalPackage.meta.position);
-          in
-          [
-            update-python-libraries
-            filename
-          ];
-      }
-      // optionalAttrs (dependencies != [ ]) {
-        inherit dependencies;
-      }
-      // optionalAttrs (optional-dependencies != { }) {
-        inherit optional-dependencies;
-      }
-      // optionalAttrs (build-system != [ ]) {
-        inherit build-system;
+        updateScript = nix-update-script { };
       }
       // attrs.passthru or { };
 
@@ -440,32 +435,21 @@ let
       # Longer-term we should get rid of `checkPhase` and use `installCheckPhase`.
       installCheckPhase = attrs.checkPhase;
     }
-    // optionalAttrs (attrs.doCheck or true) (
-      getOptionalAttrs [
-        "disabledTestMarks"
-        "disabledTestPaths"
-        "disabledTests"
-        "pytestFlags"
-        "pytestFlagsArray"
-        "unittestFlags"
-        "unittestFlagsArray"
-      ] attrs
-      //
-        lib.mapAttrs
-          (
-            name: value:
-            lib.throwIf (
-              attrs.${name} == [ ]
-            ) "${lib.getName finalAttrs}: ${name} must be unspecified, null or a non-empty list." attrs.${name}
-          )
-          (
-            getOptionalAttrs [
-              "enabledTestMarks"
-              "enabledTestPaths"
-              "enabledTests"
-            ] attrs
-          )
-    )
+    //
+      lib.mapAttrs
+        (
+          name: value:
+          lib.throwIf (
+            attrs.${name} == [ ]
+          ) "${lib.getName finalAttrs}: ${name} must be unspecified, null or a non-empty list." attrs.${name}
+        )
+        (
+          getOptionalAttrs [
+            "enabledTestMarks"
+            "enabledTestPaths"
+            "enabledTests"
+          ] attrs
+        )
   );
 
   # This derivation transformation function must be independent to `attrs`

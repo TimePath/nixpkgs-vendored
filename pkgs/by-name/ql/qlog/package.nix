@@ -11,13 +11,13 @@
 
 stdenv.mkDerivation rec {
   pname = "qlog";
-  version = "0.43.1";
+  version = "0.46.1";
 
   src = fetchFromGitHub {
     owner = "foldynl";
     repo = "QLog";
     tag = "v${version}";
-    hash = "sha256-D3WtvSHDauo/9py9To2Kn+20vrSvgw+b1+H0inNnRJI=";
+    hash = "sha256-0oMkD13M81DZY1yHW6mPWr7QMuCsxSqGYw/TMghDKd0=";
     fetchSubmodules = true;
   };
 
@@ -55,7 +55,6 @@ stdenv.mkDerivation rec {
     homepage = "https://github.com/foldynl/QLog";
     maintainers = with lib.maintainers; [
       oliver-koss
-      mkg20001
     ];
     platforms = with lib.platforms; unix;
   };

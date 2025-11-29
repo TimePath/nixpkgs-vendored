@@ -158,7 +158,7 @@ in
               '';
             "~* ^(\\/cache\\/files.*)(\\/.*)".extraConfig = ''
               alias /var/lib/onlyoffice/documentserver/App_Data$1;
-              add_header Content-Disposition "attachment; filename*=UTF-8''$arg_filename";
+              more_set_headers "Content-Disposition: attachment; filename*=UTF-8''$arg_filename";
 
               include ${cfg.securityNonceFile};
               secure_link $arg_md5,$arg_expires;
@@ -248,12 +248,12 @@ in
         after = [
           "network.target"
           "onlyoffice-docservice.service"
-          "postgresql.service"
+          "postgresql.target"
         ];
         requires = [
           "network.target"
           "onlyoffice-docservice.service"
-          "postgresql.service"
+          "postgresql.target"
         ];
         wantedBy = [ "multi-user.target" ];
         serviceConfig = {
@@ -329,9 +329,10 @@ in
           description = "onlyoffice documentserver";
           after = [
             "network.target"
-            "postgresql.service"
+            "postgresql.target"
+            "rabbitmq.service"
           ];
-          requires = [ "postgresql.service" ];
+          requires = [ "postgresql.target" ];
           wantedBy = [ "multi-user.target" ];
           serviceConfig = {
             ExecStart = "${cfg.package.fhs}/bin/onlyoffice-wrapper DocService/docservice /run/onlyoffice/config";
@@ -358,4 +359,6 @@ in
 
     users.groups.onlyoffice = { };
   };
+
+  meta.maintainers = with lib.maintainers; [ raboof ];
 }

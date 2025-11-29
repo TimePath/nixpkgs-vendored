@@ -43,6 +43,8 @@ stdenv.mkDerivation {
 
   strictDeps = true;
 
+  doInstallCheck = true;
+
   nativeBuildInputs = [
     cmake
     pkg-config
@@ -83,6 +85,11 @@ stdenv.mkDerivation {
   + optionalString docSupport ''
     cp -r doc/man "$out/share/"
     cp -r doc/html "$out/share/doc/libftdi1/"
+  '';
+
+  preFixup = ''
+    substituteInPlace $out/lib/pkgconfig/libftdi1.pc --replace-fail "libdir=$out/$out/lib" "libdir=$out/lib"
+    substituteInPlace $out/lib/pkgconfig/libftdipp1.pc --replace-fail "libdir=$out/$out/lib" "libdir=$out/lib"
   '';
 
   meta = with lib; {

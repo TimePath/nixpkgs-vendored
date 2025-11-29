@@ -1,5 +1,5 @@
 {
-  rustPackages_1_89,
+  rustPlatform,
   lib,
   fetchFromGitHub,
   cmake,
@@ -7,7 +7,6 @@
   webrtc,
   pkg-config,
   cubeb,
-  libpulseaudio,
 }:
 let
   cubeb' = cubeb.override {
@@ -15,10 +14,10 @@ let
     pulseSupport = true;
     jackSupport = false;
     sndioSupport = false;
-    buildSharedLibs = false;
+    enableShared = false;
   };
 in
-rustPackages_1_89.rustPlatform.buildRustPackage (finalAttrs: {
+rustPlatform.buildRustPackage (finalAttrs: {
   pname = "ringrtc";
   version = "2.59.4";
 
@@ -57,8 +56,9 @@ rustPackages_1_89.rustPlatform.buildRustPackage (finalAttrs: {
   buildInputs = [
     webrtc
     cubeb'
-    libpulseaudio
-  ];
+  ]
+  # Workaround for https://github.com/NixOS/nixpkgs/pull/394607
+  ++ cubeb'.buildInputs;
 
   meta = {
     homepage = "https://github.com/signalapp/ringrtc";

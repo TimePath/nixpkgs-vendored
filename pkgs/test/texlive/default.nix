@@ -34,7 +34,7 @@ rec {
           nativeBuildInputs = [ texLive ] ++ attrs.nativeBuildInputs or [ ];
           text = builtins.toFile "${name}.tex" text;
         }
-        // builtins.removeAttrs attrs [
+        // removeAttrs attrs [
           "nativeBuildInputs"
           "text"
           "texLive"
@@ -441,9 +441,6 @@ rec {
         # do not know how to test without a valid build.lua
         "ppmcheckpdf"
 
-        # *.inc files in source container rather than run
-        "texaccents"
-
         # 'Error initialising QuantumRenderer: no suitable pipeline found'
         "tlcockpit"
       ]
@@ -626,7 +623,7 @@ rec {
         "outocp"
         "pmxab"
 
-        # GUI scripts that accept no argument or crash without a graphics server; please test manualy
+        # GUI scripts that accept no argument or crash without a graphics server; please test manually
         "epspdftk"
         "texdoctk"
         "tlshell"
@@ -639,6 +636,9 @@ rec {
       needScheme = [
         # pfarrei: require working kpse to find lua module
         "a5toa4"
+
+        # show-pdf-tags: require working kpse to find lualatex and lua modules
+        "show-pdf-tags"
 
         # bibexport: requires kpsewhich
         "bibexport"

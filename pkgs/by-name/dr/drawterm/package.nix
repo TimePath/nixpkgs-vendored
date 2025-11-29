@@ -5,7 +5,6 @@
   unstableGitUpdater,
   installShellFiles,
   makeWrapper,
-  apple-sdk_13,
   xorg,
   pkg-config,
   wayland-scanner,
@@ -13,7 +12,7 @@
   wayland,
   wayland-protocols,
   libxkbcommon,
-  wlr-protocols,
+  libdecor,
   pulseaudio,
   nixosTests,
   withWayland ? false,
@@ -23,13 +22,13 @@ let
 in
 stdenv.mkDerivation {
   pname = "drawterm";
-  version = "0-unstable-2025-03-18";
+  version = "0-unstable-2025-10-11";
 
   src = fetchFrom9Front {
     owner = "plan9front";
     repo = "drawterm";
-    rev = "0b43ac046ca81d78e9eca535ab1e92971d30405a";
-    hash = "sha256-L0a81zwzIKwnRK/Mu/kW1oHoJCroa+VDNGj7CI90WMQ=";
+    rev = "48d53278a8273bb39ca295e8f163563ab04b3530";
+    hash = "sha256-SReZ6A5xEpi0vL2bchVszRl3Dvm4Rw8e/5TQa+8TPto=";
   };
 
   enableParallelBuilding = true;
@@ -49,13 +48,12 @@ stdenv.mkDerivation {
       wayland
       wayland-protocols
       libxkbcommon
-      wlr-protocols
+      libdecor
     ]
     ++ lib.optionals withXorg [
       xorg.libX11
       xorg.libXt
-    ]
-    ++ lib.optional stdenv.hostPlatform.isDarwin apple-sdk_13;
+    ];
 
   makeFlags =
     lib.optional withWayland "CONF=linux"

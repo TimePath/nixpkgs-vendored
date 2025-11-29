@@ -28,7 +28,7 @@ stdenv.mkDerivation rec {
   };
 
   CFLAGS = lib.pipe (lib.attrNames dflags) [
-    (builtins.map (name: "-D${name}=\\\"${dflags.${name}}\\\""))
+    (map (name: "-D${name}=\\\"${dflags.${name}}\\\""))
     (lib.concatStringsSep " ")
   ];
 
@@ -70,12 +70,12 @@ stdenv.mkDerivation rec {
     libxcrypt
   ];
 
-  meta = with lib; {
+  meta = {
     description = "Small footprint implementation of the SSH 2 protocol";
     homepage = "https://matt.ucc.asn.au/dropbear/dropbear.html";
     changelog = "https://github.com/mkj/dropbear/raw/DROPBEAR_${version}/CHANGES";
-    license = licenses.mit;
-    maintainers = with maintainers; [ abbradar ];
-    platforms = platforms.linux;
+    license = lib.licenses.mit;
+    maintainers = [ ];
+    platforms = lib.platforms.linux;
   };
 }

@@ -28,6 +28,7 @@
   cython,
   autograd,
   mpi4py,
+  distutils,
 }:
 
 assert !blas.isILP64;
@@ -35,22 +36,16 @@ assert !lapack.isILP64;
 
 buildPythonPackage rec {
   pname = "meep";
-  version = "1.30.1";
+  version = "1.31.0";
 
   src = fetchFromGitHub {
     owner = "NanoComp";
-    repo = pname;
+    repo = "meep";
     tag = "v${version}";
-    hash = "sha256-rXmOCkWm8SymhLiKNskSiS2bsHCmTlKMfLg5u3XniOk=";
+    hash = "sha256-x5OMdV/LJfklcK1KlYS0pdotsXP/SYzF7AOW5DlJvq0=";
   };
 
   format = "other";
-
-  # https://github.com/NanoComp/meep/issues/2819
-  postPatch = lib.optionalString (!pythonOlder "3.12") ''
-    substituteInPlace configure.ac doc/docs/setup.py python/visualization.py \
-      --replace-fail "distutils" "setuptools._distutils"
-  '';
 
   # MPI is needed in nativeBuildInputs too, otherwise MPI libs will be missing
   # at runtime
@@ -76,8 +71,9 @@ buildPythonPackage rec {
     mpb
   ];
 
-  propagatedBuildInputs = [
-    mpi
+  propagatedBuildInputs = [ mpi ];
+
+  dependencies = [
     numpy
     scipy
     matplotlib
@@ -88,6 +84,7 @@ buildPythonPackage rec {
   ]
   ++ lib.optionals (!pythonOlder "3.12") [
     setuptools # used in python/visualization.py
+    distutils
   ];
 
   propagatedUserEnvPkgs = [ mpi ];
@@ -99,7 +96,7 @@ buildPythonPackage rec {
 
   preConfigure = ''
     export HDF5_MPI=ON
-    export PYTHON=${python}/bin/${python.executable};
+    export PYTHON=${python.interpreter};
   '';
 
   configureFlags = [

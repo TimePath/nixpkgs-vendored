@@ -38,6 +38,7 @@ let
         octoprint-filecheck = self.buildPythonPackage rec {
           pname = "OctoPrint-FileCheck";
           version = "2024.11.12";
+          format = "setuptools";
 
           src = fetchFromGitHub {
             owner = "OctoPrint";
@@ -54,6 +55,7 @@ let
         octoprint-firmwarecheck = self.buildPythonPackage rec {
           pname = "OctoPrint-FirmwareCheck";
           version = "2021.10.11";
+          format = "setuptools";
 
           src = fetchFromGitHub {
             owner = "OctoPrint";
@@ -90,14 +92,14 @@ let
       (self: super: {
         octoprint = self.buildPythonPackage rec {
           pname = "OctoPrint";
-          version = "1.11.3";
+          version = "1.11.4";
           format = "setuptools";
 
           src = fetchFromGitHub {
             owner = "OctoPrint";
             repo = "OctoPrint";
             rev = version;
-            hash = "sha256-AyRi9aQXLFggBzc6WH2kvRPkJu1ANX/++GdCJRNhY/A=";
+            hash = "sha256-2C/f8SQbr1HS4XSm8iQ43xtax441/RrkEeq3youo8Q8=";
           };
 
           propagatedBuildInputs =
@@ -229,7 +231,6 @@ let
             mainProgram = "octoprint";
             license = licenses.agpl3Only;
             maintainers = with maintainers; [
-              abbradar
               WhittlesJr
               gador
             ];

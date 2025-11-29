@@ -15,19 +15,20 @@
   llhttp,
   openssl,
   fmt,
+  nix-update-script,
   enableProxyServerAndClient ? false,
   enablePushNotifications ? false,
 }:
 
-stdenv.mkDerivation {
+stdenv.mkDerivation rec {
   pname = "opendht";
-  version = "3.2.0-unstable-2025-01-05";
+  version = "3.5.4";
 
   src = fetchFromGitHub {
     owner = "savoirfairelinux";
     repo = "opendht";
-    rev = "5237f0a3b3eb8965f294de706ad73596569ae1dd";
-    hash = "sha256-qErVKyZQR/asJ8qr0sRDaXZ8jUV7RaSLnJka5baWa7Q=";
+    tag = "v${version}";
+    hash = "sha256-mnnd6yATIk/TEuFG/M98d+pfeh42IKWBBYjkTP52xeM=";
   };
 
   nativeBuildInputs = [
@@ -60,19 +61,16 @@ stdenv.mkDerivation {
       "-DOPENDHT_PUSH_NOTIFICATIONS=ON"
     ];
 
-  # https://github.com/savoirfairelinux/opendht/issues/612
-  postPatch = ''
-    substituteInPlace CMakeLists.txt \
-      --replace '\$'{exec_prefix}/'$'{CMAKE_INSTALL_LIBDIR} '$'{CMAKE_INSTALL_FULL_LIBDIR} \
-      --replace '\$'{prefix}/'$'{CMAKE_INSTALL_INCLUDEDIR} '$'{CMAKE_INSTALL_FULL_INCLUDEDIR}
-  '';
-
   outputs = [
     "out"
     "lib"
     "dev"
     "man"
   ];
+
+  passthru.updateScript = nix-update-script {
+    extraArgs = [ "--version-regex=v(.+)" ];
+  };
 
   meta = with lib; {
     description = "C++11 Kademlia distributed hash table implementation";

@@ -1,10 +1,9 @@
 {
-  stdenv,
   lib,
+  stdenv,
+  config,
   buildPythonPackage,
   fetchFromGitHub,
-  isPy27,
-  config,
 
   # build-system
   setuptools,
@@ -20,23 +19,23 @@
   tensorboard,
 
   # tests
-  cudaSupport ? config.cudaSupport,
   pytestCheckHook,
   torchvision,
+  writableTmpDirAsHomeHook,
+
+  cudaSupport ? config.cudaSupport,
 }:
 
 buildPythonPackage rec {
   pname = "pytorch-metric-learning";
-  version = "2.8.1";
+  version = "2.9.0";
   pyproject = true;
-
-  disabled = isPy27;
 
   src = fetchFromGitHub {
     owner = "KevinMusgrave";
-    repo = pname;
+    repo = "pytorch-metric-learning";
     tag = "v${version}";
-    hash = "sha256-WO/gv8rKkxY3pR627WrEPVyvZnvUZIKMzOierIW8bJA=";
+    hash = "sha256-JKWE2wVXVx8xp2kpiX6CxvCKkrwYRW80A20K/UTxIaQ=";
   };
 
   build-system = [
@@ -64,7 +63,6 @@ buildPythonPackage rec {
   };
 
   preCheck = ''
-    export HOME=$TMP
     export TEST_DEVICE=cpu
     export TEST_DTYPES=float32,float64  # half-precision tests fail on CPU
   '';
@@ -73,6 +71,7 @@ buildPythonPackage rec {
   nativeCheckInputs = [
     pytestCheckHook
     torchvision
+    writableTmpDirAsHomeHook
   ]
   ++ lib.flatten (lib.attrValues optional-dependencies);
 
@@ -100,10 +99,16 @@ buildPythonPackage rec {
     "test_with_same_parent_label_tester"
   ];
 
+  disabledTestPaths = lib.optionals stdenv.hostPlatform.isDarwin [
+    # Fatal Python error: Segmentation fault
+    "tests/testers/"
+    "tests/utils/"
+  ];
+
   meta = {
     description = "Metric learning library for PyTorch";
     homepage = "https://github.com/KevinMusgrave/pytorch-metric-learning";
-    changelog = "https://github.com/KevinMusgrave/pytorch-metric-learning/releases/tag/v${version}";
+    changelog = "https://github.com/KevinMusgrave/pytorch-metric-learning/releases/tag/${src.tag}";
     license = lib.licenses.mit;
     maintainers = with lib.maintainers; [ bcdarwin ];
   };

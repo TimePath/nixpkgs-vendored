@@ -22,9 +22,9 @@ let
       downloadPage = "https://github.com/FirebirdSQL/firebird/";
       homepage = "https://firebirdsql.org/";
       changelog = "https://github.com/FirebirdSQL/firebird/blob/master/CHANGELOG.md";
-      license = [
-        "IDPL"
-        "Interbase-1.0"
+      license = with lib.licenses; [
+        mpl11
+        interbase
       ];
       platforms = platforms.linux;
       maintainers = with maintainers; [
@@ -47,10 +47,13 @@ let
     ]
     ++ (lib.optional superServer "--enable-superserver");
 
+    enableParallelBuilding = true;
+
     installPhase = ''
       runHook preInstall
       mkdir -p $out
       cp -r gen/Release/firebird/* $out
+      rm -f $out/lib/*.a  # they were just symlinks to /build/source/...
       runHook postInstall
     '';
 

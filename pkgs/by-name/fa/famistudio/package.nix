@@ -7,6 +7,7 @@
   fetchFromGitHub,
   ffmpeg,
   glfw,
+  gtk3,
   libglvnd,
   libogg,
   libvorbis,
@@ -28,13 +29,13 @@ let
 in
 buildDotnetModule (finalAttrs: {
   pname = "famistudio";
-  version = "4.3.3";
+  version = "4.4.4";
 
   src = fetchFromGitHub {
     owner = "BleuBleu";
     repo = "FamiStudio";
     tag = finalAttrs.version;
-    hash = "sha256-jxxZIWdP/j707Zxv/3UESMDIdnsP5h4XLhyYepl6CkI=";
+    hash = "sha256-hYJ82EXR1kP8hzUj+CCXnGuohVzyA1O9TBpWjRccj9Y=";
   };
 
   postPatch =
@@ -133,6 +134,7 @@ buildDotnetModule (finalAttrs: {
   dotnet-sdk = dotnetCorePackages.sdk_8_0;
 
   runtimeDeps = lib.optionals stdenvNoCC.hostPlatform.isLinux [
+    gtk3
     libglvnd
   ];
 

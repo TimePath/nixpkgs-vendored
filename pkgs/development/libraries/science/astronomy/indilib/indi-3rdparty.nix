@@ -37,15 +37,17 @@
   limesuite,
   pkg-config,
   zeromq,
+  udevCheckHook,
 }:
 
 let
+  thirdparty_version = "2.1.6.2";
   fxload = libusb1.override { withExamples = true; };
   src-3rdparty = fetchFromGitHub {
     owner = "indilib";
     repo = "indi-3rdparty";
-    rev = "v${indilib.version}";
-    hash = "sha256-REmeIP0Cl5FfwUnL40u0dqZaJugBlLGT/Bts5j1bvgw=";
+    rev = "v${thirdparty_version}";
+    hash = "sha256-FMvdm7dkOkRlmbPNeQjh0jd+2bOinzW13QPP2NnOr/M=";
   };
 
   buildIndi3rdParty =
@@ -56,7 +58,7 @@ let
       cmakeFlags ? [ ],
       postInstall ? "",
       doCheck ? true,
-      version ? indilib.version,
+      version ? thirdparty_version,
       src ? src-3rdparty,
       meta ? { },
       ...
@@ -85,6 +87,7 @@ let
           cmake
           ninja
           pkg-config
+          udevCheckHook
         ]
         ++ nativeBuildInputs;
 
@@ -103,6 +106,8 @@ let
           ${postInstall}
         '';
 
+        doInstallCheck = true;
+
         meta =
           with lib;
           {
@@ -111,7 +116,6 @@ let
             changelog = "https://github.com/indilib/indi-3rdparty/releases/tag/v${version}";
             license = licenses.lgpl2Plus;
             maintainers = with maintainers; [
-              hjones2199
               sheepforce
               returntoreality
             ];
@@ -683,6 +687,7 @@ in
   indi-fli = buildIndi3rdParty {
     pname = "indi-fli";
     buildInputs = [
+      libusb1
       cfitsio
       indilib
       zlib

@@ -6,6 +6,7 @@ let
       stdenv,
       fetchFromGitHub,
       fetchurl,
+      fetchpatch2,
       lib,
       replaceVars,
       writeShellScriptBin,
@@ -49,8 +50,24 @@ let
       stdenvNoCC,
       testers,
 
+      # Block size
+      # Changing the block size will break on-disk database compatibility. See:
+      # https://www.postgresql.org/docs/current/install-make.html#CONFIGURE-OPTION-WITH-BLOCKSIZE
+      withBlocksize ? null,
+      withWalBlocksize ? null,
+
       # bonjour
       bonjourSupport ? false,
+
+      # Curl
+      curlSupport ?
+        lib.versionAtLeast version "18"
+        && lib.meta.availableOn stdenv.hostPlatform curl
+        # Building statically fails with:
+        # configure: error: library 'curl' does not provide curl_multi_init
+        # https://www.postgresql.org/message-id/487dacec-6d8d-46c0-a36f-d5b8c81a56f1%40technowledgy.de
+        && !stdenv.hostPlatform.isStatic,
+      curl,
 
       # GSSAPI
       gssSupport ? with stdenv.hostPlatform; !isWindows && !isStatic,
@@ -70,7 +87,7 @@ let
         # Building with JIT in pkgsStatic fails like this:
         #   fatal error: 'stdio.h' file not found
         && !stdenv.hostPlatform.isStatic,
-      llvmPackages,
+      llvmPackages_20,
       nukeReferences,
       overrideCC,
 
@@ -81,6 +98,10 @@ let
       # NLS
       nlsSupport ? false,
       gettext,
+
+      # NUMA
+      numaSupport ? lib.versionAtLeast version "18" && lib.meta.availableOn stdenv.hostPlatform numactl,
+      numactl,
 
       # PAM
       pamSupport ?
@@ -129,6 +150,10 @@ let
       # Systemd
       systemdSupport ? lib.meta.availableOn stdenv.hostPlatform systemdLibs,
       systemdLibs,
+
+      # Uring
+      uringSupport ? lib.versionAtLeast version "18" && lib.meta.availableOn stdenv.hostPlatform liburing,
+      liburing,
     }@args:
     let
       atLeast = lib.versionAtLeast version;
@@ -137,6 +162,14 @@ let
       zstdEnabled = atLeast "15";
 
       dlSuffix = if olderThan "16" then ".so" else stdenv.hostPlatform.extensions.sharedLibrary;
+
+      # Pin LLVM 20 until upstream has fully resolved:
+      # https://www.postgresql.org/message-id/flat/d25e6e4a-d1b4-84d3-2f8a-6c45b975f53d%40applied-asynchrony.com
+      # Currently still a problem on aarch64.
+      # TODO: Remove with next minor releases
+      llvmPackages = lib.warnIf (
+        version == "17.8"
+      ) "PostgreSQL: Is the pin for LLVM 20 still needed?" llvmPackages_20;
 
       stdenv' =
         if !stdenv.cc.isClang then
@@ -254,6 +287,9 @@ let
       ++ lib.optionals lz4Enabled [ lz4 ]
       ++ lib.optionals zstdEnabled [ zstd ]
       ++ lib.optionals systemdSupport [ systemdLibs ]
+      ++ lib.optionals uringSupport [ liburing ]
+      ++ lib.optionals curlSupport [ curl ]
+      ++ lib.optionals numaSupport [ numactl ]
       ++ lib.optionals gssSupport [ libkrb5 ]
       ++ lib.optionals pamSupport [ linux-pam ]
       ++ lib.optionals perlSupport [ perl ]
@@ -320,8 +356,13 @@ let
           (if stdenv.hostPlatform.isFreeBSD then "--with-uuid=bsd" else "--with-uuid=e2fs")
           (withFeature perlSupport "perl")
         ]
+        ++ lib.optionals (withBlocksize != null) [ "--with-blocksize=${toString withBlocksize}" ]
+        ++ lib.optionals (withWalBlocksize != null) [ "--with-wal-blocksize=${toString withWalBlocksize}" ]
         ++ lib.optionals lz4Enabled [ "--with-lz4" ]
         ++ lib.optionals zstdEnabled [ "--with-zstd" ]
+        ++ lib.optionals uringSupport [ "--with-liburing" ]
+        ++ lib.optionals curlSupport [ "--with-libcurl" ]
+        ++ lib.optionals numaSupport [ "--with-libnuma" ]
         ++ lib.optionals gssSupport [ "--with-gssapi" ]
         ++ lib.optionals pythonSupport [ "--with-python" ]
         ++ lib.optionals jitSupport [ "--with-llvm" ]
@@ -394,6 +435,18 @@ let
         substituteInPlace "src/common/config_info.c" --subst-var dev
         cat ${./pg_config.env.mk} >> src/common/Makefile
       ''
+      # This test always fails on hardware with >1 NUMA node: the sysfs
+      # dirs providing information about the topology are hidden in the sandbox,
+      # so postgres assumes there's only a single node `0`. However,
+      # the test checks on which NUMA nodes the allocated pages are which is >1
+      # on such hardware. This in turn triggers a safeguard in the view
+      # which breaks the test.
+      # Manual tests confirm that the testcase behaves properly outside of the
+      # Nix sandbox.
+      + lib.optionalString (atLeast "18") ''
+        substituteInPlace src/test/regress/parallel_schedule \
+          --replace-fail numa ""
+      ''
       # This check was introduced upstream to prevent calls to "exit" inside libpq.
       # However, this doesn't work reliably with static linking, see this and following:
       # https://postgr.es/m/flat/20210703001639.GB2374652%40rfd.leadboat.com#52584ca4bd3cb9dac376f3158c419f97
@@ -417,9 +470,12 @@ let
         "$out/bin/pg_config" > "$dev/nix-support/pg_config.expected"
       ''
       + ''
-        rm "$out/bin/pg_config"
-        make -C src/common pg_config.env
-        install -D src/common/pg_config.env "$dev/nix-support/pg_config.env"
+          rm "$out/bin/pg_config"
+          make -C src/common pg_config.env
+          substituteInPlace src/common/pg_config.env \
+            --replace-fail "$out" "@out@" \
+            --replace-fail "$man" "@man@"
+          install -D src/common/pg_config.env "$dev/nix-support/pg_config.env"
 
         # postgres exposes external symbols get_pkginclude_path and similar. Those
         # can't be stripped away by --gc-sections/LTO, because they could theoretically
@@ -500,7 +556,11 @@ let
           !(stdenv'.hostPlatform.isDarwin)
         &&
           # Regression tests currently fail in pkgsMusl because of a difference in EXPLAIN output.
-          !(stdenv'.hostPlatform.isMusl);
+          !(stdenv'.hostPlatform.isMusl)
+        &&
+          # Modifying block sizes is expected to break regression tests.
+          # https://www.postgresql.org/message-id/E1TJOeZ-000717-Lg%40wrigleys.postgresql.org
+          (withBlocksize == null && withWalBlocksize == null);
       installCheckTarget = "check-world";
 
       passthru =
@@ -542,7 +602,13 @@ let
             postgresql = this;
           };
 
-          pg_config = buildPackages.callPackage ./pg_config.nix { inherit (finalAttrs) finalPackage; };
+          pg_config = buildPackages.callPackage ./pg_config.nix {
+            inherit (finalAttrs) finalPackage;
+            outputs = {
+              out = lib.getOutput "out" finalAttrs.finalPackage;
+              man = lib.getOutput "man" finalAttrs.finalPackage;
+            };
+          };
 
           tests = {
             postgresql = nixosTests.postgresql.postgresql.passthru.override finalAttrs.finalPackage;
@@ -596,66 +662,78 @@ let
     f:
     let
       installedExtensions = f postgresql.pkgs;
-    in
-    buildEnv {
-      name = "${postgresql.pname}-and-plugins-${postgresql.version}";
-      paths = installedExtensions ++ [
-        postgresql
-        postgresql.man # in case user installs this into environment
-      ];
+      finalPackage = buildEnv {
+        name = "${postgresql.pname}-and-plugins-${postgresql.version}";
+        paths = installedExtensions ++ [
+          # consider keeping in-sync with `postBuild` below
+          postgresql
+          postgresql.man # in case user installs this into environment
+        ];
 
-      pathsToLink = [
-        "/"
-        "/bin"
-      ];
+        pathsToLink = [
+          "/"
+          "/bin"
+          "/share/postgresql/extension"
+          # Unbreaks Omnigres' build system
+          "/share/postgresql/timezonesets"
+          "/share/postgresql/tsearch_data"
+        ];
 
-      nativeBuildInputs = [ makeBinaryWrapper ];
-      postBuild =
-        let
-          args = lib.concatMap (ext: ext.wrapperArgs or [ ]) installedExtensions;
-        in
-        ''
-          wrapProgram "$out/bin/postgres" ${lib.concatStringsSep " " args}
-        '';
+        nativeBuildInputs = [ makeBinaryWrapper ];
+        postBuild =
+          let
+            args = lib.concatMap (ext: ext.wrapperArgs or [ ]) installedExtensions;
+          in
+          ''
+            wrapProgram "$out/bin/postgres" ${lib.concatStringsSep " " args}
+          '';
 
-      passthru = {
-        inherit installedExtensions;
-        inherit (postgresql)
-          pg_config
-          pkgs
-          psqlSchema
-          version
-          ;
-
-        withJIT = postgresqlWithPackages {
-          inherit
-            buildEnv
-            lib
-            makeBinaryWrapper
-            postgresql
+        passthru = {
+          inherit installedExtensions;
+          inherit (postgresql)
+            pkgs
+            psqlSchema
+            version
             ;
-        } (_: installedExtensions ++ [ postgresql.jit ]);
-        withoutJIT = postgresqlWithPackages {
-          inherit
-            buildEnv
-            lib
-            makeBinaryWrapper
-            postgresql
-            ;
-        } (_: lib.remove postgresql.jit installedExtensions);
 
-        withPackages =
-          f':
-          postgresqlWithPackages {
+          pg_config = postgresql.pg_config.override {
+            outputs = {
+              out = finalPackage;
+              man = finalPackage;
+            };
+          };
+
+          withJIT = postgresqlWithPackages {
             inherit
               buildEnv
               lib
               makeBinaryWrapper
               postgresql
               ;
-          } (ps: installedExtensions ++ f' ps);
+          } (_: installedExtensions ++ [ postgresql.jit ]);
+          withoutJIT = postgresqlWithPackages {
+            inherit
+              buildEnv
+              lib
+              makeBinaryWrapper
+              postgresql
+              ;
+          } (_: lib.remove postgresql.jit installedExtensions);
+
+          withPackages =
+            f':
+            postgresqlWithPackages {
+              inherit
+                buildEnv
+                lib
+                makeBinaryWrapper
+                postgresql
+                ;
+            } (ps: installedExtensions ++ f' ps);
+        };
       };
-    };
+    in
+    finalPackage;
 
 in
 # passed by <major>.nix

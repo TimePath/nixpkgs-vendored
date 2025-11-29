@@ -7,6 +7,7 @@
   inputmodule-control,
   pkg-config,
   libudev-zero,
+  udevCheckHook,
 }:
 
 rustPlatform.buildRustPackage rec {
@@ -24,8 +25,13 @@ rustPlatform.buildRustPackage rec {
 
   buildAndTestSubdir = "inputmodule-control";
 
-  nativeBuildInputs = [ pkg-config ];
+  nativeBuildInputs = [
+    pkg-config
+    udevCheckHook
+  ];
   buildInputs = [ libudev-zero ];
+
+  doInstallCheck = true;
 
   postInstall = ''
     install -Dm644 release/50-framework-inputmodule.rules $out/etc/udev/rules.d/50-framework-inputmodule.rules

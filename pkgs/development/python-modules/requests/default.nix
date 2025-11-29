@@ -5,38 +5,34 @@
   certifi,
   chardet,
   charset-normalizer,
-  fetchPypi,
+  fetchFromGitHub,
   idna,
   pysocks,
   pytest-mock,
   pytest-xdist,
   pytestCheckHook,
   pythonOlder,
+  setuptools,
   urllib3,
 }:
 
 buildPythonPackage rec {
   pname = "requests";
-  version = "2.32.3";
-  format = "setuptools";
+  version = "2.32.5";
+  pyproject = true;
 
-  disabled = pythonOlder "3.7";
+  disabled = pythonOlder "3.9";
 
   __darwinAllowLocalNetworking = true;
 
-  src = fetchPypi {
-    inherit pname version;
-    hash = "sha256-VTZUF3NOsYJVWQqf+euX6eHaho1MzWQCOZ6vaK8gp2A=";
+  src = fetchFromGitHub {
+    owner = "psf";
+    repo = "requests";
+    tag = "v${version}";
+    hash = "sha256-cEBalMFoYFaGG8M48k+OEBvzLegzrTNP1NxH2ljP6qg=";
   };
 
-  patches = [
-    # https://github.com/psf/requests/issues/6730
-    # https://github.com/psf/requests/pull/6731
-    ./ca-load-regression.patch
-
-    # https://seclists.org/fulldisclosure/2025/Jun/2
-    ./CVE-2024-47081.patch
-  ];
+  build-system = [ setuptools ];
 
   dependencies = [
     certifi

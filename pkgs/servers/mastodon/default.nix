@@ -33,7 +33,7 @@ stdenv.mkDerivation rec {
     gemdir = src;
   };
 
-  mastodonModules = stdenv.mkDerivation {
+  mastodonModules = stdenv.mkDerivation (finalAttrs: {
     pname = "${pname}-modules";
     inherit src version;
 
@@ -80,8 +80,9 @@ stdenv.mkDerivation rec {
       find public/assets -type f -regextype posix-extended -iregex '.*\.(css|html|js|json|svg)' \
         -exec gzip --best --keep --force {} ';' \
         -exec brotli --best --keep {} ';'
-      gzip --best --keep public/packs/report.html
-      brotli --best --keep public/packs/report.html
+      find public/packs -type f -regextype posix-extended -iregex '.*\.(css|js|json|svg)' \
+        -exec brotli --best --keep {} ';'
+      gzip --best --keep public/packs/sw.js
 
       runHook postBuild
     '';
@@ -96,7 +97,7 @@ stdenv.mkDerivation rec {
 
       runHook postInstall
     '';
-  };
+  });
 
   propagatedBuildInputs = [ mastodonGems.wrappedRuby ];
   nativeBuildInputs = [ brotli ];
@@ -123,6 +124,8 @@ stdenv.mkDerivation rec {
     # Remove execute permissions
     find public/emoji -type f ! -perm 0555 \
       -exec chmod 0444 {} ';'
+    find public -maxdepth 1 -type f ! -perm 0555 \
+      -exec chmod 0444 {} ';'
 
     # Create missing static gzip and brotli files
     find public -maxdepth 1 -type f -regextype posix-extended -iregex '.*\.(js|txt)' \
@@ -135,8 +138,6 @@ stdenv.mkDerivation rec {
     ln -s assets/500.html.br public/500.html.br
     ln -s packs/sw.js.gz public/sw.js.gz
     ln -s packs/sw.js.br public/sw.js.br
-    ln -s packs/sw.js.map.gz public/sw.js.map.gz
-    ln -s packs/sw.js.map.br public/sw.js.map.br
 
     rm -rf log
     ln -s /var/log/mastodon log

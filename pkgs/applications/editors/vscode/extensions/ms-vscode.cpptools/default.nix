@@ -33,7 +33,7 @@
 
   <https://github.com/Microsoft/vscode-cpptools/issues/35>
 
-  Once the symbolic link temporary solution taken, everything shoud run smootly.
+  Once the symbolic link temporary solution taken, everything should run smootly.
 */
 
 let
@@ -42,15 +42,15 @@ let
   isDarwin = stdenv.hostPlatform.isDarwin;
   supported = {
     x86_64-linux = {
-      hash = "sha256-97eXABltjGg5FOfyl03N8VjmdBcemEe3I+DSV/EpMS4=";
+      hash = "sha256-Fnio8fB7xA7fwcP6NDSV04/NRzY1bnfPlCyMmobYOUs=";
       arch = "linux-x64";
     };
     aarch64-linux = {
-      hash = "sha256-yBQFhQS/eh8hMW8wN0sr8wZwWrz8e1gWnVZHUf33gw4=";
+      hash = "sha256-0dQYD/XQ50+lo0Foh0v/9m16r2pj8Ydt9ZJCeiEIwyA=";
       arch = "linux-arm64";
     };
     aarch64-darwin = {
-      hash = "sha256-HxsZjNTg9nOwkSFy9tPaQjtB0SAQXWw0vwcCOj1ZKuA=";
+      hash = "sha256-41+dCpsWySUnUdsRRM9mQlhcbYBoqCSBOY6Yz5ko18c=";
       arch = "darwin-arm64";
     };
   };
@@ -63,7 +63,7 @@ vscode-utils.buildVscodeMarketplaceExtension {
   mktplcRef = base // {
     name = "cpptools";
     publisher = "ms-vscode";
-    version = "1.25.3";
+    version = "1.28.3";
   };
 
   nativeBuildInputs = [

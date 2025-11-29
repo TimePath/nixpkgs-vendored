@@ -1,21 +1,23 @@
 {
   lib,
   python3Packages,
+  cacert,
   fetchFromGitHub,
   git,
   git-lfs,
+  versionCheckHook,
 }:
 
 python3Packages.buildPythonApplication rec {
   pname = "github-backup";
-  version = "0.50.1";
+  version = "0.51.3";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "josegonzalez";
     repo = "python-github-backup";
     tag = version;
-    hash = "sha256-9fPZ+QWHkIQVEgPKCZMJZk4p5nkXan61Ym+tbF0ZOMM=";
+    hash = "sha256-iaonBBOHu/12vzVhFnGznTKhMUy9JJc/+dTJhsSjvMo=";
   };
 
   build-system = with python3Packages; [
@@ -32,8 +34,13 @@ python3Packages.buildPythonApplication rec {
     ])
   ];
 
-  # has no unit tests
-  doCheck = false;
+  nativeInstallCheckInputs = [
+    versionCheckHook
+  ];
+
+  env.SSL_CERT_FILE = "${cacert}/etc/ssl/certs/ca-bundle.crt";
+
+  versionCheckKeepEnvironment = [ "SSL_CERT_FILE" ];
 
   meta = with lib; {
     description = "Backup a github user or organization";

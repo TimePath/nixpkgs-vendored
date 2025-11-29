@@ -26,14 +26,14 @@
 }:
 
 let
-  version = "2.72.0";
+  version = "2.79.0";
 
   src = fetchFromGitHub {
     name = "azure-cli-${version}-src";
     owner = "Azure";
     repo = "azure-cli";
     tag = "azure-cli-${version}";
-    hash = "sha256-LuQhGrAYVgv+OH214A4xz4LV+xwIshNAH8nAlQL4mDc=";
+    hash = "sha256-VvCtHNMdfW/fFZlbu/7EHlSa6GtFZ0B9pdqQFjHdmXg=";
   };
 
   # put packages that needs to be overridden in the py package scope
@@ -144,6 +144,7 @@ py.pkgs.toPythonApplication (
   py.pkgs.buildAzureCliPackage rec {
     pname = "azure-cli";
     inherit version src;
+    format = "setuptools";
 
     sourceRoot = "${src.name}/src/azure-cli";
 
@@ -153,7 +154,7 @@ py.pkgs.toPythonApplication (
     ];
 
     # Dependencies from:
-    # https://github.com/Azure/azure-cli/blob/azure-cli-2.62.0/src/azure-cli/setup.py#L52
+    # https://github.com/Azure/azure-cli/blob/azure-cli-2.77.0/src/azure-cli/setup.py#L52
     # Please, keep ordered by upstream file order. It facilitates reviews.
     propagatedBuildInputs =
       with py.pkgs;
@@ -165,11 +166,11 @@ py.pkgs.toPythonApplication (
         azure-cosmos
         azure-data-tables
         azure-datalake-store
-        azure-graphrbac
         azure-keyvault-administration
         azure-keyvault-certificates
         azure-keyvault-keys
         azure-keyvault-secrets
+        azure-keyvault-securitydomain
         azure-mgmt-advisor
         azure-mgmt-apimanagement
         azure-mgmt-appconfiguration
@@ -187,10 +188,8 @@ py.pkgs.toPythonApplication (
         azure-mgmt-containerregistry
         azure-mgmt-containerservice
         azure-mgmt-cosmosdb
-        azure-mgmt-databoxedge
         azure-mgmt-datalake-store
         azure-mgmt-datamigration
-        azure-mgmt-dns
         azure-mgmt-eventgrid
         azure-mgmt-eventhub
         azure-mgmt-extendedlocation
@@ -201,24 +200,29 @@ py.pkgs.toPythonApplication (
         azure-mgmt-iothubprovisioningservices
         azure-mgmt-keyvault
         azure-mgmt-loganalytics
-        azure-mgmt-managedservices
         azure-mgmt-managementgroups
         azure-mgmt-maps
         azure-mgmt-marketplaceordering
         azure-mgmt-media
         azure-mgmt-monitor
         azure-mgmt-msi
-        azure-mgmt-mysqlflexibleservers
         azure-mgmt-netapp
         azure-mgmt-policyinsights
         azure-mgmt-postgresqlflexibleservers
         azure-mgmt-privatedns
         azure-mgmt-rdbms
+        azure-mgmt-mysqlflexibleservers
         azure-mgmt-recoveryservicesbackup
         azure-mgmt-recoveryservices
-        azure-mgmt-redis
         azure-mgmt-redhatopenshift
-        azure-mgmt-resource
+        azure-mgmt-redis
+        azure-mgmt-resource-all
+        # Added through azure-mgmt-resource-all package
+        # azure-mgmt-resource
+        # azure-mgmt-resource-deployments
+        # azure-mgmt-resource-deploymentscripts
+        # azure-mgmt-resource-deploymentstacks
+        # azure-mgmt-resource-templatespecs
         azure-mgmt-search
         azure-mgmt-security
         azure-mgmt-servicebus
@@ -248,6 +252,7 @@ py.pkgs.toPythonApplication (
         javaproperties
         jsondiff
         packaging
+        paramiko
         pycomposefile
         pygithub
         pynacl
@@ -322,7 +327,6 @@ py.pkgs.toPythonApplication (
       "azure.cli.telemetry"
       "azure.cosmos"
       "azure.datalake.store"
-      "azure.graphrbac"
       "azure.keyvault"
       "azure.mgmt.advisor"
       "azure.mgmt.apimanagement"
@@ -342,7 +346,6 @@ py.pkgs.toPythonApplication (
       "azure.mgmt.containerservice"
       "azure.mgmt.cosmosdb"
       "azure.mgmt.datamigration"
-      "azure.mgmt.dns"
       "azure.mgmt.eventgrid"
       "azure.mgmt.eventhub"
       "azure.mgmt.hdinsight"
@@ -352,7 +355,6 @@ py.pkgs.toPythonApplication (
       "azure.mgmt.iothubprovisioningservices"
       "azure.mgmt.keyvault"
       "azure.mgmt.loganalytics"
-      "azure.mgmt.managedservices"
       "azure.mgmt.managementgroups"
       "azure.mgmt.maps"
       "azure.mgmt.marketplaceordering"
@@ -367,6 +369,8 @@ py.pkgs.toPythonApplication (
       "azure.mgmt.recoveryservicesbackup"
       "azure.mgmt.redis"
       "azure.mgmt.resource"
+      "azure.mgmt.resource.deployments"
+      "azure.mgmt.resource.deployments.models"
       "azure.mgmt.search"
       "azure.mgmt.security"
       "azure.mgmt.servicebus"

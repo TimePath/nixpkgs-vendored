@@ -8,6 +8,9 @@
   fetchFromGitHub,
   packaging,
   pytest,
+  pytest-plus,
+  pytest-sugar,
+  pytest-xdist,
   pytestCheckHook,
   pythonOlder,
   setuptools,
@@ -16,7 +19,7 @@
 
 buildPythonPackage rec {
   pname = "pytest-ansible";
-  version = "25.4.1";
+  version = "25.11.1";
   pyproject = true;
 
   disabled = pythonOlder "3.10";
@@ -25,7 +28,7 @@ buildPythonPackage rec {
     owner = "ansible";
     repo = "pytest-ansible";
     tag = "v${version}";
-    hash = "sha256-AJU7jGO/fN5R0ZVb/WhiXZKEZF4Z2ibhIBs+267lSSk=";
+    hash = "sha256-8pTw67Nn7BTLaygL/HZyQidzOdrqmbBToOK6TxpRPVo=";
   };
 
   postPatch = ''
@@ -44,6 +47,9 @@ buildPythonPackage rec {
     ansible-core
     ansible-compat
     packaging
+    pytest-plus
+    pytest-sugar
+    pytest-xdist
   ];
 
   nativeCheckInputs = [ pytestCheckHook ];
@@ -52,9 +58,11 @@ buildPythonPackage rec {
     export HOME=$TMPDIR
   '';
 
-  pytestFlagsArray = [ "tests/" ];
+  enabledTestPaths = [ "tests/" ];
 
   disabledTests = [
+    # pytest unrecognized arguments in test_pool.py
+    "test_ansible_test"
     # Host unreachable in the inventory
     "test_become"
     # [Errno -3] Temporary failure in name resolution
@@ -89,6 +97,9 @@ buildPythonPackage rec {
     homepage = "https://github.com/jlaska/pytest-ansible";
     changelog = "https://github.com/ansible-community/pytest-ansible/releases/tag/${src.tag}";
     license = licenses.mit;
-    maintainers = with maintainers; [ tjni ];
+    maintainers = with maintainers; [
+      tjni
+      robsliwi
+    ];
   };
 }

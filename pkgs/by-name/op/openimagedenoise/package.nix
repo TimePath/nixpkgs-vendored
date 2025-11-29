@@ -8,7 +8,7 @@
   lib,
   python3,
   stdenv,
-  tbb,
+  onetbb,
   xcodebuild,
 }:
 
@@ -39,7 +39,7 @@ stdenv.mkDerivation (finalAttrs: {
   ++ lib.optionals stdenv.hostPlatform.isDarwin [ xcodebuild ];
 
   buildInputs = [
-    tbb
+    onetbb
   ]
 
   ++ lib.optionals cudaSupport [
@@ -49,16 +49,16 @@ stdenv.mkDerivation (finalAttrs: {
 
   cmakeFlags = [
     (lib.cmakeBool "OIDN_DEVICE_CUDA" cudaSupport)
-    (lib.cmakeFeature "TBB_INCLUDE_DIR" "${tbb.dev}/include")
-    (lib.cmakeFeature "TBB_ROOT" "${tbb}")
+    (lib.cmakeFeature "TBB_INCLUDE_DIR" "${onetbb.dev}/include")
+    (lib.cmakeFeature "TBB_ROOT" "${onetbb}")
   ];
 
-  meta = with lib; {
+  meta = {
     homepage = "https://www.openimagedenoise.org";
     description = "High-Performance Denoising Library for Ray Tracing";
-    license = licenses.asl20;
-    maintainers = [ maintainers.leshainc ];
-    platforms = platforms.unix;
-    changelog = "https://github.com/RenderKit/oidn/blob/v${version}/CHANGELOG.md";
+    license = lib.licenses.asl20;
+    maintainers = [ lib.maintainers.leshainc ];
+    platforms = lib.platforms.unix;
+    changelog = "https://github.com/RenderKit/oidn/blob/v${finalAttrs.version}/CHANGELOG.md";
   };
 })

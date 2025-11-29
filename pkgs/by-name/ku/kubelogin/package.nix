@@ -10,16 +10,20 @@
 
 buildGoModule rec {
   pname = "kubelogin";
-  version = "0.2.8";
+  version = "0.2.13";
 
   src = fetchFromGitHub {
     owner = "Azure";
-    repo = pname;
+    repo = "kubelogin";
     rev = "v${version}";
-    sha256 = "sha256-aajo43ysA/ItOxFxZbw1i7VQpEm4aqfXFiMUTZt3QDk=";
+    sha256 = "sha256-Vy3HRNBYP+q/DWVib47jolg4W2HgdAAqjcFghfpapSE=";
   };
 
-  vendorHash = "sha256-fILOPZnSsEX9f1nWxC1jTN2wNGmlz15fFmeVvXMA25w=";
+  patches = [
+    ./disable-nix-incompatible-test.patch
+  ];
+
+  vendorHash = "sha256-CWgvbN8NnroSVqfKF8UG6kXqVWrQ0TmKwri1f218K+M=";
 
   ldflags = [
     "-X main.gitTag=v${version}"

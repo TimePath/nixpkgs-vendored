@@ -2,6 +2,7 @@
   lib,
   stdenv,
   fetchFromGitHub,
+  fetchpatch,
   fetchurl,
   cudaSupport ? opencv.cudaSupport or false,
 
@@ -28,7 +29,7 @@
   protobuf,
   pugixml,
   snappy,
-  tbb_2022_0,
+  onetbb,
   cudaPackages,
 }:
 
@@ -61,15 +62,23 @@ in
 
 stdenv.mkDerivation rec {
   pname = "openvino";
-  version = "2025.1.0";
+  version = "2025.2.1";
 
   src = fetchFromGitHub {
     owner = "openvinotoolkit";
     repo = "openvino";
     tag = version;
     fetchSubmodules = true;
-    hash = "sha256-KufQjBSzhj1N+T95PjlNU3Tc9V5/X2OLwCbXoI2fdZk=";
+    hash = "sha256-Bu0m7nGqyHwHsa7FKr4nvUh/poJxMTgwuAU81QBmI4g=";
   };
+
+  patches = [
+    (fetchpatch {
+      name = "cmake4-compat.patch";
+      url = "https://github.com/openvinotoolkit/openvino/commit/677716c2471cadf1bf1268eca6343498a886a229.patch?full_index=1";
+      hash = "sha256-iaifJBdl7+tQZq1d8SiczUaXz+AdfMrLtwzfTmSG+XA=";
+    })
+  ];
 
   outputs = [
     "out"
@@ -156,7 +165,7 @@ stdenv.mkDerivation rec {
     opencv
     pugixml
     snappy
-    tbb_2022_0
+    onetbb
   ]
   ++ lib.optionals cudaSupport [
     cudaPackages.cuda_cudart
@@ -179,7 +188,7 @@ stdenv.mkDerivation rec {
 
   meta = with lib; {
     changelog = "https://github.com/openvinotoolkit/openvino/releases/tag/${src.tag}";
-    description = "OpenVINO™ Toolkit repository";
+    description = "Open-source toolkit for optimizing and deploying AI inference";
     longDescription = ''
       This toolkit allows developers to deploy pre-trained deep learning models through a high-level C++ Inference Engine API integrated with application logic.
 
@@ -191,6 +200,5 @@ stdenv.mkDerivation rec {
     license = with licenses; [ asl20 ];
     platforms = platforms.all;
     broken = stdenv.hostPlatform.isDarwin; # Cannot find macos sdk
-    maintainers = with maintainers; [ tfmoraes ];
   };
 }

@@ -9,13 +9,13 @@
   openssl,
 }:
 
-rustPlatform.buildRustPackage rec {
+rustPlatform.buildRustPackage {
   pname = "finalfrontier";
   version = "unstable-2022-01-06";
 
   src = fetchFromGitHub {
     owner = "finalfusion";
-    repo = pname;
+    repo = "finalfrontier";
     rev = "2461fb1dde13b73039926aa66606e470907a1b59";
     sha256 = "sha256-bnRzXIYairlBjv2JxU16UXYc5BB3VeKZNiJ4+XDzub4=";
   };
@@ -50,5 +50,7 @@ rustPlatform.buildRustPackage rec {
     homepage = "https://github.com/finalfusion/finalfrontier/";
     license = licenses.asl20;
     maintainers = [ ];
+    # The last successful Darwin Hydra build was in 2024
+    broken = stdenv.hostPlatform.isDarwin;
   };
 }

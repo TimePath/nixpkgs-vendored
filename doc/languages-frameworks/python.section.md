@@ -55,13 +55,14 @@ sets are
 * `pkgs.python312Packages`
 * `pkgs.python313Packages`
 * `pkgs.python314Packages`
+* `pkgs.python315Packages`
 * `pkgs.pypy27Packages`
 * `pkgs.pypy310Packages`
 
 and the aliases
 
 * `pkgs.python2Packages` pointing to `pkgs.python27Packages`
-* `pkgs.python3Packages` pointing to `pkgs.python312Packages`
+* `pkgs.python3Packages` pointing to `pkgs.python313Packages`
 * `pkgs.pythonPackages` pointing to `pkgs.python2Packages`
 * `pkgs.pypy2Packages` pointing to `pkgs.pypy27Packages`
 * `pkgs.pypy3Packages` pointing to `pkgs.pypy310Packages`
@@ -134,7 +135,6 @@ buildPythonPackage rec {
     homepage = "https://github.com/pytest-dev/pytest";
     license = lib.licenses.mit;
     maintainers = with lib.maintainers; [
-      domenkozar
       lovek323
       madjar
       lsix
@@ -557,6 +557,19 @@ are used in [`buildPythonPackage`](#buildpythonpackage-function).
   with the `pipInstallHook`.
 - `unittestCheckHook` will run tests with `python -m unittest discover`. See [example usage](#using-unittestcheckhook).
 
+#### Overriding build helpers {#overriding-python-build-helpers}
+
+Like many of the build helpers provided by Nixpkgs, Python build helpers typically provide a `<function>.override` attribute.
+It works like [`<pkg>.override`](#sec-pkg-override), and can be used to override the dependencies of each build helper.
+
+This allows specifying the stdenv to be used by `buildPythonPackage` or `buildPythonApplication`. The default (`python.stdenv`) can be overridden as follows:
+
+```nix
+buildPythonPackage.override { stdenv = customStdenv; } {
+  # package attrs...
+}
+```
+
 ## User Guide {#user-guide}
 
 ### Using Python {#using-python}
@@ -565,9 +578,9 @@ are used in [`buildPythonPackage`](#buildpythonpackage-function).
 
 Several versions of the Python interpreter are available on Nix, as well as a
 high amount of packages. The attribute `python3` refers to the default
-interpreter, which is currently CPython 3.12. The attribute `python` refers to
-CPython 2.7 for backwards-compatibility. It is also possible to refer to
-specific versions, e.g. `python312` refers to CPython 3.12, and `pypy` refers to
+interpreter, which is currently CPython 3.13. The attribute `python` refers to
+CPython 2.7 for backwards compatibility. It is also possible to refer to
+specific versions, e.g., `python313` refers to CPython 3.13, and `pypy` refers to
 the default PyPy interpreter.
 
 Python is used a lot, and in different ways. This affects also how it is
@@ -583,10 +596,10 @@ however, are in separate sets, with one set per interpreter version.
 The interpreters have several common attributes. One of these attributes is
 `pkgs`, which is a package set of Python libraries for this specific
 interpreter. E.g., the `toolz` package corresponding to the default interpreter
-is `python3.pkgs.toolz`, and the CPython 3.12 version is `python312.pkgs.toolz`.
+is `python3.pkgs.toolz`, and the CPython 3.13 version is `python313.pkgs.toolz`.
 The main package set contains aliases to these package sets, e.g.
-`pythonPackages` refers to `python.pkgs` and `python312Packages` to
-`python312.pkgs`.
+`pythonPackages` refers to `python.pkgs` and `python313Packages` to
+`python313.pkgs`.
 
 #### Installing Python and packages {#installing-python-and-packages}
 
@@ -611,7 +624,7 @@ with [`python.buildEnv`](#python.buildenv-function) or [`python.withPackages`](#
 executables are wrapped to be able to find each other and all of the modules.
 
 In the following examples we will start by creating a simple, ad-hoc environment
-with a nix-shell that has `numpy` and `toolz` in Python 3.12; then we will create
+with a nix-shell that has `numpy` and `toolz` in Python 3.13; then we will create
 a re-usable environment in a single-file Python script; then we will create a
 full Python environment for development with this same environment.
 
@@ -627,10 +640,10 @@ temporary shell session with a Python and a *precise* list of packages (plus
 their runtime dependencies), with no other Python packages in the Python
 interpreter's scope.
 
-To create a Python 3.12 session with `numpy` and `toolz` available, run:
+To create a Python 3.13 session with `numpy` and `toolz` available, run:
 
 ```sh
-$ nix-shell -p 'python312.withPackages(ps: with ps; [ numpy toolz ])'
+$ nix-shell -p 'python313.withPackages(ps: with ps; [ numpy toolz ])'
 ```
 
 By default `nix-shell` will start a `bash` session with this interpreter in our
@@ -638,7 +651,7 @@ By default `nix-shell` will start a `bash` session with this interpreter in our
 
 ```Python console
 [nix-shell:~/src/nixpkgs]$ python3
-Python 3.12.4 (main, Jun  6 2024, 18:26:44) [GCC 13.3.0] on linux
+Python 3.13.3 (main, Apr  8 2025, 13:54:08) [GCC 14.2.1 20250322] on linux
 Type "help", "copyright", "credits" or "license" for more information.
 >>> import numpy; import toolz
 ```
@@ -658,8 +671,8 @@ will still get 1 wrapped Python interpreter. We can start the interpreter
 directly like so:
 
 ```sh
-$ nix-shell -p "python312.withPackages (ps: with ps; [ numpy toolz requests ])" --run python3
-Python 3.12.4 (main, Jun  6 2024, 18:26:44) [GCC 13.3.0] on linux
+$ nix-shell -p "python313.withPackages (ps: with ps; [ numpy toolz requests ])" --run python3
+Python 3.13.3 (main, Apr  8 2025, 13:54:08) [GCC 14.2.1 20250322] on linux
 Type "help", "copyright", "credits" or "license" for more information.
 >>> import requests
 >>>
@@ -699,7 +712,7 @@ Executing this script requires a `python3` that has `numpy`. Using what we learn
 in the previous section, we could startup a shell and just run it like so:
 
 ```ShellSession
-$ nix-shell -p 'python312.withPackages (ps: with ps; [ numpy ])' --run 'python3 foo.py'
+$ nix-shell -p 'python313.withPackages (ps: with ps; [ numpy ])' --run 'python3 foo.py'
 The dot product of [1 2] and [3 4] is: 11
 ```
 
@@ -726,7 +739,7 @@ The dot product of [1 2] and [3 4] is: 11
 
 If the dependencies are not available on the host where `foo.py` is executed, it
 will build or download them from a Nix binary cache prior to starting up, prior
-that it is executed on a machine with a multi-user nix installation.
+that it is executed on a machine with a multi-user Nix installation.
 
 This provides a way to ship a self bootstrapping Python script, akin to a
 statically linked binary, where it can be run on any machine (provided nix is
@@ -734,7 +747,7 @@ installed) without having to assume that `numpy` is installed globally on the
 system.
 
 By default it is pulling the import checkout of Nixpkgs itself from our nix
-channel, which is nice as it cache aligns with our other package builds, but we
+channel, which is nice as it cache-aligns with our other package builds, but we
 can make it fully reproducible by pinning the `nixpkgs` import:
 
 ```python
@@ -762,12 +775,12 @@ create a single script with Python dependencies, but in the course of normal
 development we're usually working in an entire package repository.
 
 As explained [in the `nix-shell` section](https://nixos.org/manual/nix/stable/command-ref/nix-shell) of the Nix manual, `nix-shell` can also load an expression from a `.nix` file.
-Say we want to have Python 3.12, `numpy` and `toolz`, like before,
+Say we want to have Python 3.13, `numpy` and `toolz`, like before,
 in an environment. We can add a `shell.nix` file describing our dependencies:
 
 ```nix
 with import <nixpkgs> { };
-(python312.withPackages (
+(python313.withPackages (
   ps: with ps; [
     numpy
     toolz
@@ -786,7 +799,7 @@ What's happening here?
    imports the `<nixpkgs>` function, `{}` calls it and the `with` statement
    brings all attributes of `nixpkgs` in the local scope. These attributes form
    the main package set.
-2. Then we create a Python 3.12 environment with the [`withPackages`](#python.withpackages-function) function, as before.
+2. Then we create a Python 3.13 environment with the [`withPackages`](#python.withpackages-function) function, as before.
 3. The [`withPackages`](#python.withpackages-function) function expects us to provide a function as an argument
    that takes the set of all Python packages and returns a list of packages to
    include in the environment. Here, we select the packages `numpy` and `toolz`
@@ -797,7 +810,7 @@ To combine this with `mkShell` you can:
 ```nix
 with import <nixpkgs> { };
 let
-  pythonEnv = python312.withPackages (ps: [
+  pythonEnv = python313.withPackages (ps: [
     ps.numpy
     ps.toolz
   ]);
@@ -817,7 +830,7 @@ mkShell {
 
 This will create a unified environment that has not just our Python interpreter
 and its Python dependencies, but also tools like `black` or `mypy` and libraries
-like `libffi` the `openssl` in scope. This is generic and can span any number of
+like `libffi` and `openssl` in scope. This is generic and can span any number of
 tools or languages across the Nixpkgs ecosystem.
 
 ##### Installing environments globally on the system {#installing-environments-globally-on-the-system}
@@ -957,8 +970,8 @@ information. The output of the function is a derivation.
 
 An expression for `toolz` can be found in the Nixpkgs repository. As explained
 in the introduction of this Python section, a derivation of `toolz` is available
-for each interpreter version, e.g. `python312.pkgs.toolz` refers to the `toolz`
-derivation corresponding to the CPython 3.12 interpreter.
+for each interpreter version, e.g. `python313.pkgs.toolz` refers to the `toolz`
+derivation corresponding to the CPython 3.13 interpreter.
 
 The above example works when you're directly working on
 `pkgs/top-level/python-packages.nix` in the Nixpkgs repository. Often though,
@@ -972,7 +985,7 @@ with import <nixpkgs> { };
 
 (
   let
-    my_toolz = python312.pkgs.buildPythonPackage rec {
+    my_toolz = python313.pkgs.buildPythonPackage rec {
       pname = "toolz";
       version = "0.10.0";
       pyproject = true;
@@ -982,7 +995,7 @@ with import <nixpkgs> { };
         hash = "sha256-CP3V73yWSArRHBLUct4hrNMjWZlvaaUlkpm1QP66RWA=";
       };
 
-      build-system = [ python312.pkgs.setuptools ];
+      build-system = [ python313.pkgs.setuptools ];
 
       # has no tests
       doCheck = false;
@@ -995,7 +1008,7 @@ with import <nixpkgs> { };
     };
 
   in
-  python312.withPackages (
+  python313.withPackages (
     ps: with ps; [
       numpy
       my_toolz
@@ -1005,7 +1018,7 @@ with import <nixpkgs> { };
 ```
 
 Executing `nix-shell` will result in an environment in which you can use
-Python 3.12 and the `toolz` package. As you can see we had to explicitly mention
+Python 3.13 and the `toolz` package. As you can see we had to explicitly mention
 for which Python version we want to build a package.
 
 So, what did we do here? Well, we took the Nix expression that we used earlier
@@ -1019,7 +1032,7 @@ that we introduced with the `let` expression.
 #### Handling dependencies {#handling-dependencies}
 
 Our example, `toolz`, does not have any dependencies on other Python packages or system libraries.
-[`buildPythonPackage`](#buildpythonpackage-function) uses the the following arguments in the following circumstances:
+[`buildPythonPackage`](#buildpythonpackage-function) uses the following arguments in the following circumstances:
 
 - `dependencies` - For Python runtime dependencies.
 - `build-system` - For Python build-time requirements.
@@ -1227,6 +1240,13 @@ Tests should only be disabled if they don't agree with nix
 (e.g. external dependencies, network access, flakey tests), however,
 as many tests should be enabled as possible. Failing tests can still be
 a good indication that the package is not in a valid state.
+:::
+
+::: {.note}
+We only want to test the functionality of a package. In particular, we are not
+interested in coverage, formatting, and type checking. If pytest fails with
+`unrecognized arguments: --cov`, add `pytest-cov-stub` to `nativeCheckInputs`
+rather than `pytest-cov`.
 :::
 
 #### Using pytest {#using-pytest}
@@ -2067,7 +2087,7 @@ has security implications and is relevant for those using Python in a
 
 When the environment variable `DETERMINISTIC_BUILD` is set, all bytecode will
 have timestamp 1. The [`buildPythonPackage`](#buildpythonpackage-function) function sets `DETERMINISTIC_BUILD=1`
-and [PYTHONHASHSEED=0](https://docs.python.org/3.12/using/cmdline.html#envvar-PYTHONHASHSEED).
+and [PYTHONHASHSEED=0](https://docs.python.org/3.13/using/cmdline.html#envvar-PYTHONHASHSEED).
 Both are also exported in `nix-shell`.
 
 ### How to provide automatic tests to Python packages? {#automatic-tests}
@@ -2110,18 +2130,15 @@ The following rules are desired to be respected:
 * Make sure the tests are enabled using for example [`pytestCheckHook`](#using-pytestcheckhook) and, in the case of
   libraries, are passing for all interpreters. If certain tests fail they can be
   disabled individually. Try to avoid disabling the tests altogether. In any
-  case, when you disable tests, leave a comment explaining why.
+  case, when you disable tests, leave a comment explaining not only _what_ the failure
+  is but _why_ the test failure can be ignored for safe distribution with nixpkgs.
 * `pythonImportsCheck` is set. This is still a good smoke test even if `pytestCheckHook` is set.
 * `meta.platforms` takes the default value in many cases.
   It does not need to be set explicitly unless the package requires a specific platform.
 * The file is formatted with `nixfmt-rfc-style`.
 * Commit names of Python libraries must reflect that they are Python
-  libraries (e.g. `python312Packages.numpy: 1.11 -> 1.12` rather than `numpy: 1.11 -> 1.12`).
-* The current default version of python should be included
-  in commit messages to enable automatic builds by ofborg.
-  For example `python312Packages.numpy: 1.11 -> 1.12` should be used rather
-  than `python3Packages.numpy: 1.11 -> 1.12`.
-  Note that `pythonPackages` is an alias for `python27Packages`.
+  libraries (e.g. `python3Packages.numpy: 1.11 -> 1.12` rather than `numpy: 1.11 -> 1.12`).
+  See also [`pkgs/README.md`](https://github.com/NixOS/nixpkgs/blob/master/pkgs/README.md#commit-conventions).
 * Attribute names in `python-packages.nix` as well as `pname`s should match the
   library's name on PyPI, but be normalized according to [PEP
   0503](https://www.python.org/dev/peps/pep-0503/#normalized-names). This means

@@ -26,7 +26,6 @@ rustPlatform.buildRustPackage (finalAttrs: {
   ];
 
   nativeInstallCheckInputs = [ versionCheckHook ];
-  versionCheckProgram = "${placeholder "out"}/bin/rad-job";
   versionCheckProgramArg = "--version";
   doInstallCheck = true;
 

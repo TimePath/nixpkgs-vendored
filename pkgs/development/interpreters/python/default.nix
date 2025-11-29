@@ -4,7 +4,6 @@
   config,
   db,
   lib,
-  libffiBoot,
   makeScopeWithSplicing',
   pythonPackagesExtensions,
   stdenv,
@@ -17,14 +16,14 @@
     passthruFun = import ./passthrufun.nix args;
 
     sources = {
-      python312 = {
+      python313 = {
         sourceVersion = {
           major = "3";
-          minor = "12";
-          patch = "12";
+          minor = "13";
+          patch = "9";
           suffix = "";
         };
-        hash = "sha256-+4WhNBSwKMSboYu9UjwtBVowtWsYuSzkVOosUe3GVsQ=";
+        hash = "sha256-7V7zTNo2z6Lzo0DwfKx+eBT5HH88QR9tNWIyOoZsXGY=";
       };
     };
 
@@ -37,9 +36,9 @@
         major = "2";
         minor = "7";
         patch = "18";
-        suffix = ".8"; # ActiveState's Python 2 extended support
+        suffix = ".12"; # ActiveState's Python 2 extended support
       };
-      hash = "sha256-HUOzu3uJbtd+3GbmGD35KOk/CDlwL4S7hi9jJGRFiqI=";
+      hash = "sha256-RuEgfpags9wJm9Xe0daotqUx4knABEUc7DvtgnQXEfE=";
       inherit passthruFun;
     };
 
@@ -67,25 +66,25 @@
       inherit passthruFun;
     };
 
-    python312 = callPackage ./cpython (
-      {
-        self = __splicedPackages.python312;
-        inherit passthruFun;
-      }
-      // sources.python312
-    );
-
-    python313 = callPackage ./cpython {
-      self = __splicedPackages.python313;
+    python312 = callPackage ./cpython {
+      self = __splicedPackages.python312;
       sourceVersion = {
         major = "3";
-        minor = "13";
-        patch = "5";
+        minor = "12";
+        patch = "12";
         suffix = "";
       };
-      hash = "sha256-k+WD8kNFTm6eRYjKLCZiIGrZYWWYYyd6/NuWgBZH1kA=";
+      hash = "sha256-+4WhNBSwKMSboYu9UjwtBVowtWsYuSzkVOosUe3GVsQ=";
       inherit passthruFun;
     };
+
+    python313 = callPackage ./cpython (
+      {
+        self = __splicedPackages.python313;
+        inherit passthruFun;
+      }
+      // sources.python313
+    );
 
     python314 = callPackage ./cpython {
       self = __splicedPackages.python314;
@@ -98,6 +97,19 @@
       hash = "sha256-Ipna5ULTlc44g6ygDTyRAwfNaOCy9zNgmMjnt+7p8+k=";
       inherit passthruFun;
     };
+
+    python315 = callPackage ./cpython {
+      self = __splicedPackages.python315;
+      sourceVersion = {
+        major = "3";
+        minor = "15";
+        patch = "0";
+        suffix = "a2";
+      };
+      hash = "sha256-2KCi9Kfz1wkM8ZXoGBTv6V9wVUlVVX9A4UnYaUpmJ1E=";
+      inherit passthruFun;
+    };
+
     # Minimal versions of Python (built without optional dependencies)
     python3Minimal =
       (callPackage ./cpython (
@@ -106,26 +118,9 @@
           inherit passthruFun;
           pythonAttr = "python3Minimal";
           # strip down that python version as much as possible
-          openssl = null;
-          readline = null;
-          ncurses = null;
-          gdbm = null;
-          sqlite = null;
-          tzdata = null;
-          libuuid = null;
-          libffi = libffiBoot; # without test suite
-          stripConfig = true;
-          stripIdlelib = true;
-          stripTests = true;
-          stripTkinter = true;
-          rebuildBytecode = false;
-          stripBytecode = true;
-          includeSiteCustomize = false;
-          enableOptimizations = false;
-          enableLTO = false;
-          mimetypesSupport = false;
+          withMinimalDeps = true;
         }
-        // sources.python312
+        // sources.python313
       )).overrideAttrs
         (old: {
           # TODO(@Artturin): Add this to the main cpython expr
@@ -168,10 +163,10 @@
       sourceVersion = {
         major = "7";
         minor = "3";
-        patch = "19";
+        patch = "20";
       };
 
-      hash = "sha256-SBfARLtGmjJ05gqjZFdw+B60+RZup/3E5sNRNFVUyNg=";
+      hash = "sha256-d4bdp2AAPi6nQJwQN+UCAMV47EJ84CRaxM11hxCyBvs=";
       pythonVersion = "3.11";
       db = db.override { dbmSupport = !stdenv.hostPlatform.isDarwin; };
       python = __splicedPackages.pypy27;

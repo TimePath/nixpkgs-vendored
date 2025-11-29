@@ -80,7 +80,7 @@ let
 in
 
 buildPythonPackage rec {
-  version = "3.10.1";
+  version = "3.10.5";
   pname = "matplotlib";
   pyproject = true;
 
@@ -88,7 +88,7 @@ buildPythonPackage rec {
 
   src = fetchPypi {
     inherit pname version;
-    hash = "sha256-6NLQ44gbEpJoWFv0dlrT7nOkWR13uaGMIUrH46efsro=";
+    hash = "sha256-NS7WzPt5mKAIgWkvOLTKCDxpHT4nW0FFQjcEw0yQkHY=";
   };
 
   env.XDG_RUNTIME_DIR = "/tmp";

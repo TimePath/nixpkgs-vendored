@@ -118,18 +118,11 @@ let
 in
 with pkgs;
 {
-  kafka_3_7 = makeKafkaTest "kafka_3_7" {
-    kafkaPackage = apacheKafka_3_7;
-    mode = "zookeeper";
-  };
-  kafka_3_8 = makeKafkaTest "kafka_3_8" {
-    kafkaPackage = apacheKafka_3_8;
-    mode = "zookeeper";
-  };
   kafka_3_9 = makeKafkaTest "kafka_3_9" {
     kafkaPackage = apacheKafka_3_9;
     mode = "zookeeper";
   };
   kafka_4_0 = makeKafkaTest "kafka_4_0" { kafkaPackage = apacheKafka_4_0; };
+  kafka_4_1 = makeKafkaTest "kafka_4_1" { kafkaPackage = apacheKafka_4_1; };
   kafka = makeKafkaTest "kafka" { kafkaPackage = apacheKafka; };
 }

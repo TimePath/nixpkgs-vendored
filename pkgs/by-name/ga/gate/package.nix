@@ -6,7 +6,7 @@
 
 let
   pname = "gate";
-  version = "0.48.1";
+  version = "0.58.1";
 in
 buildGoModule {
   inherit pname version;
@@ -15,15 +15,20 @@ buildGoModule {
     owner = "minekube";
     repo = "gate";
     tag = "v${version}";
-    hash = "sha256-e6NJlKAo9Y2HGcOF3rfystTRerqgicKVZ+1g2zsQq9g=";
+    hash = "sha256-EOiLoZgIKRobULHOKoUVLws+KRK1XhJvCWjQmKjvjcM=";
   };
 
-  vendorHash = "sha256-gho3OJvDTRTHg+ITCvR49oq9pBUZj7i7rtpSIctmTcY=";
+  vendorHash = "sha256-2ZRfvjIGUznHjn7KA20uzEpVbI7EByNUYu6xALJEUfo=";
 
   ldflags = [
     "-s"
     "-w"
   ];
+
+  # this test requires network access, therefore it should not be run
+  preCheck = ''
+    rm ./pkg/edition/bedrock/geyser/managed/download_test.go
+  '';
 
   excludedPackages = [ ".web" ];
 

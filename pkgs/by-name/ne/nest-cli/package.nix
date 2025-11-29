@@ -7,16 +7,17 @@
 
 buildNpmPackage rec {
   pname = "nest-cli";
-  version = "10.4.9";
+  version = "11.0.11";
 
   src = fetchFromGitHub {
     owner = "nestjs";
     repo = "nest-cli";
-    rev = version;
-    hash = "sha256-dko+hOC3oZToNS+EOqmm+z7DLHfqqKDeQsH2sYxburU=";
+    tag = version;
+    hash = "sha256-A/R0y1NAKR85TrOt8DJaqZ8gMyGfrTc6T7dvzN0T8do=";
   };
 
-  npmDepsHash = "sha256-K4M6Jehy1854SuxDiaHQLlvhOecwInZZbOcgMqchiIM=";
+  npmDepsHash = "sha256-+QGeOUIF36CLGUGi7QUEM/UE/kvpW4ZucjSFAXZbo4M=";
+  npmFlags = [ "--legacy-peer-deps" ];
 
   env = {
     npm_config_build_from_source = true;
@@ -26,11 +27,15 @@ buildNpmPackage rec {
     python3
   ];
 
-  meta = with lib; {
-    description = "CLI tool for Nest applications";
+  meta = {
     homepage = "https://nestjs.com";
-    license = licenses.mit;
+    description = "CLI tool for Nest applications";
+    license = lib.licenses.mit;
+    changelog = "https://github.com/nestjs/nest-cli/releases/tag/${version}";
     mainProgram = "nest";
-    maintainers = [ maintainers.ehllie ];
+    maintainers = with lib.maintainers; [
+      ehllie
+      phanirithvij
+    ];
   };
 }

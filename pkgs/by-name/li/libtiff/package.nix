@@ -2,7 +2,6 @@
   lib,
   stdenv,
   fetchFromGitLab,
-  fetchpatch,
   nix-update-script,
 
   cmake,
@@ -17,12 +16,10 @@
   zlib,
   zstd,
 
-  # Because lerc is C++ and static libraries don't track dependencies,
-  # that every downstream dependent of libtiff has to link with a C++
-  # compiler, or the C++ standard library won't be linked, resulting
-  # in undefined symbol errors.  Without systematic support for this
-  # in build systems, fixing this would require modifying the build
-  # system of every libtiff user.  Hopefully at some point build
+  # Because lerc is C++ and static libraries don't track dependencies, every downstream dependent of
+  # libtiff has to link with a C++ compiler, or the C++ standard library won't be linked, resulting
+  # in undefined symbol errors. Without systematic support for this in build systems, fixing this
+  # would require modifying the build system of every libtiff user. Hopefully at some point build
   # systems will figure this out, and then we can enable this.
   #
   # See https://github.com/mesonbuild/meson/issues/14234
@@ -35,40 +32,24 @@
   graphicsmagick,
   gdal,
   openimageio,
-  freeimage,
   testers,
 }:
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "libtiff";
-  version = "4.7.0";
+  version = "4.7.1";
 
   src = fetchFromGitLab {
     owner = "libtiff";
     repo = "libtiff";
     rev = "v${finalAttrs.version}";
-    hash = "sha256-SuK9/a6OUAumEe1kz1itFJGKxJzbmHkBVLMnyXhIwmQ=";
+    hash = "sha256-UiC6s86i7UavW86EKm74oPVlEacvoKmwW7KETjpnNaI=";
   };
 
   patches = [
     # libc++abi 11 has an `#include <version>`, this picks up files name
     # `version` in the project's include paths
     ./rename-version.patch
-    (fetchpatch {
-      name = "CVE-2024-13978_1.patch";
-      url = "https://gitlab.com/libtiff/libtiff/-/commit/7be20ccaab97455f192de0ac561ceda7cd9e12d1.patch";
-      hash = "sha256-cpsQyIvyP6LkGeQTlLX73iNd1AcPkvZ6Xqfns7G3JBc=";
-    })
-    (fetchpatch {
-      name = "CVE-2024-13978_2.patch";
-      url = "https://gitlab.com/libtiff/libtiff/-/commit/2ebfffb0e8836bfb1cd7d85c059cd285c59761a4.patch";
-      hash = "sha256-cZlLTeB7/nvylf5SLzKF7g91aBERhZxpV5fmWEJVrX4=";
-    })
-    (fetchpatch {
-      name = "CVE-2025-9165.patch";
-      url = "https://gitlab.com/libtiff/libtiff/-/commit/ed141286a37f6e5ddafb5069347ff5d587e7a4e0.patch";
-      hash = "sha256-DIsk8trbHMMTrj6jP5Ae8ciRjHV4CPHdWCN+VbeFnFo=";
-    })
   ];
 
   postPatch = ''
@@ -100,22 +81,16 @@ stdenv.mkDerivation (finalAttrs: {
   ];
 
   buildInputs = [
-    zstd
-  ]
-  ++ lib.optionals withLerc [
-    lerc
-  ];
-
-  # TODO: opengl support (bogus configure detection)
-  propagatedBuildInputs = [
     libdeflate
     libjpeg
-    # libwebp depends on us; this will cause infinite
-    # recursion otherwise
+    # libwebp depends on us; this will cause infinite recursion otherwise
     (libwebp.override { tiffSupport = false; })
     xz
     zlib
     zstd
+  ]
+  ++ lib.optionals withLerc [
+    lerc
   ];
 
   cmakeFlags = [
@@ -125,6 +100,7 @@ stdenv.mkDerivation (finalAttrs: {
   enableParallelBuilding = true;
 
   doCheck = true;
+
   # Avoid flakiness like https://gitlab.com/libtiff/libtiff/-/commit/94f6f7315b1
   enableParallelChecking = false;
 
@@ -136,9 +112,10 @@ stdenv.mkDerivation (finalAttrs: {
         graphicsmagick
         gdal
         openimageio
-        freeimage
         ;
+
       inherit (python3Packages) pillow imread;
+
       pkg-config = testers.hasPkgConfigModules {
         package = finalAttrs.finalPackage;
       };

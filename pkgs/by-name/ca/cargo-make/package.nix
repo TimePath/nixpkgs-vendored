@@ -15,7 +15,7 @@ rustPlatform.buildRustPackage rec {
   src = fetchFromGitHub {
     owner = "sagiegurari";
     repo = "cargo-make";
-    rev = version;
+    tag = version;
     hash = "sha256-hrUd4J15cDyd78BVVzi8jiDqJI1dE35WUdOo6Tq8gH8=";
   };
 
@@ -41,13 +41,12 @@ rustPlatform.buildRustPackage rec {
   #   https://travis-ci.org/sagiegurari/cargo-make
   doCheck = false;
 
-  meta = with lib; {
+  meta = {
     description = "Rust task runner and build tool";
     homepage = "https://github.com/sagiegurari/cargo-make";
     changelog = "https://github.com/sagiegurari/cargo-make/blob/${version}/CHANGELOG.md";
-    license = licenses.asl20;
-    maintainers = with maintainers; [
-      figsoda
+    license = lib.licenses.asl20;
+    maintainers = with lib.maintainers; [
       xrelkd
     ];
     mainProgram = "cargo-make";

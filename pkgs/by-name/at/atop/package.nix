@@ -16,11 +16,11 @@
 
 stdenv.mkDerivation rec {
   pname = "atop";
-  version = "2.11.1";
+  version = "2.12.1";
 
   src = fetchurl {
     url = "https://www.atoptool.nl/download/atop-${version}.tar.gz";
-    hash = "sha256-d2UPefnjiLb1Zm3BE4SYlFdaKbtN4huM1Ydnv4qQUVQ=";
+    hash = "sha256-T9vmfF36+JQFY54YWZ9OrneXgHP/pU88eMNoq1S9EvY=";
   };
 
   nativeBuildInputs = [

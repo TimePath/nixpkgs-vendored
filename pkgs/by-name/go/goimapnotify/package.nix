@@ -27,6 +27,7 @@ buildGoModule rec {
   meta = with lib; {
     description = "Execute scripts on IMAP mailbox changes (new/deleted/updated messages) using IDLE";
     homepage = "https://gitlab.com/shackra/goimapnotify";
+    changelog = "https://gitlab.com/shackra/goimapnotify/-/blob/${src.tag}/CHANGELOG.md";
     license = licenses.gpl3Plus;
     maintainers = with maintainers; [
       wohanley

@@ -20,6 +20,7 @@
   sbc,
   bluez5,
   udev,
+  udevCheckHook,
   openssl,
   fftwFloat,
   soxr,
@@ -109,6 +110,7 @@ stdenv.mkDerivation rec {
     perlPackages.perl
     perlPackages.XMLParser
     m4
+    udevCheckHook
   ]
   ++ lib.optionals (!stdenv.hostPlatform.isDarwin) [ glib ]
   # gstreamer plugin discovery requires wrapping
@@ -225,6 +227,9 @@ stdenv.mkDerivation rec {
 
   # tests fail on Darwin because of timeouts
   doCheck = !stdenv.hostPlatform.isDarwin;
+
+  doInstallCheck = true;
+
   preCheck = ''
     export HOME=$(mktemp -d)
   '';

@@ -106,12 +106,12 @@ in
 # Note: when upgrading this package, please run the list-missing-tools.sh script as described below!
 python.pkgs.buildPythonApplication rec {
   pname = "diffoscope";
-  version = "304";
+  version = "309";
   pyproject = true;
 
   src = fetchurl {
     url = "https://diffoscope.org/archive/diffoscope-${version}.tar.bz2";
-    hash = "sha256-lJdZRIyoVq1PsmiicsSxJ0Mgsy5IcAUar6l8QvJoxOw=";
+    hash = "sha256-VB7CBvHKIJWHanuDnoobSnvGcdxMFTUGLxRZgsNoLbQ=";
   };
 
   outputs = [
@@ -262,7 +262,7 @@ python.pkgs.buildPythonApplication rec {
 
   nativeCheckInputs = with python.pkgs; [ pytestCheckHook ] ++ pythonPath;
 
-  pytestFlagsArray = [
+  pytestFlags = [
     # Always show more information when tests fail
     "-vv"
   ];
@@ -321,7 +321,7 @@ python.pkgs.buildPythonApplication rec {
     '';
   };
 
-  meta = with lib; {
+  meta = {
     description = "Perform in-depth comparison of files, archives, and directories";
     longDescription = ''
       diffoscope will try to get to the bottom of what makes files or directories
@@ -335,13 +335,13 @@ python.pkgs.buildPythonApplication rec {
     '';
     homepage = "https://diffoscope.org/";
     changelog = "https://diffoscope.org/news/diffoscope-${version}-released/";
-    license = licenses.gpl3Plus;
-    maintainers = with maintainers; [
+    license = lib.licenses.gpl3Plus;
+    maintainers = with lib.maintainers; [
       dezgeg
       danielfullmer
       raitobezarius
     ];
-    platforms = platforms.unix;
+    platforms = lib.platforms.unix;
     mainProgram = "diffoscope";
   };
 }

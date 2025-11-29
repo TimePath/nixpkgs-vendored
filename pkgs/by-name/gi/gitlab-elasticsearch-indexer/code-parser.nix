@@ -1,26 +1,24 @@
 {
   lib,
   fetchFromGitLab,
-  rustPackages_1_88,
+  rustPlatform,
   pkg-config,
   openssl,
   clang,
 }:
-let
-  rustPlatform = rustPackages_1_88.rustPlatform;
-in
+
 rustPlatform.buildRustPackage (finalAttrs: {
   pname = "gitlab-code-parser";
-  version = "0.19.3";
+  version = "0.20.2";
 
   src = fetchFromGitLab {
     owner = "gitlab-org";
     repo = "rust/gitlab-code-parser";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-gwldgZsiHjNafebtgiy5mVAmNNAj0Mz+krz4sI18zj4=";
+    hash = "sha256-JjWWlbSjbV9StDNI+aNExLcSNvLsuOPnqhyymEs8+Cg=";
   };
 
-  cargoHash = "sha256-h6JWOhdjN4Ikwzvuv7PIYmsk1KxJyGHbjibJKVWtExY=";
+  cargoHash = "sha256-pcWsVoC6076gdWTy3GgMXQIlKiGJZe2q7LSA9fVYxE8=";
 
   nativeBuildInputs = [
     pkg-config

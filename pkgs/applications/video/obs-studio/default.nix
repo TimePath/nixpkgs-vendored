@@ -6,6 +6,8 @@
   ninja,
   nv-codec-headers-12,
   fetchFromGitHub,
+  fetchpatch2,
+  fetchurl,
   addDriverRunpath,
   autoAddDriverRunpath,
   cudaSupport ? config.cudaSupport,
@@ -59,44 +61,63 @@
   libdatachannel,
   libvpl,
   qrcodegencpp,
+  simde,
   nix-update-script,
+  extra-cmake-modules,
 }:
 
 let
   inherit (lib) optional optionals;
 
-  cef = cef-binary.overrideAttrs (oldAttrs: {
-    version = "127.3.5";
-    __intentionallyOverridingVersion = true; # `cef-binary` uses the overridden `srcHash` values in its source FOD
-    gitRevision = "114ea2a";
-    chromiumVersion = "127.0.6533.120";
+  selectSystem =
+    attrs:
+    attrs.${stdenv.hostPlatform.system} or (throw "Unsupported system ${stdenv.hostPlatform.system}");
 
-    srcHash =
-      {
-        aarch64-linux = "sha256-s8dR97rAO0mCUwbpYnPWyY3t8movq05HhZZKllhZdBs=";
-        x86_64-linux = "sha256-57E7bZKpViWno9W4AaaSjL9B4uxq+rDXAou1tsiODUg=";
-      }
-      .${stdenv.hostPlatform.system} or (throw "unsupported system ${stdenv.hostPlatform.system}");
-  });
+  cef = cef-binary.overrideAttrs (
+    oldAttrs:
+    let
+      version = "6533";
+      revision = "6";
+    in
+    {
+      inherit version;
+
+      src = fetchurl {
+        url = "https://cdn-fastly.obsproject.com/downloads/cef_binary_${version}_linux_${
+          selectSystem {
+            aarch64-linux = "aarch64";
+            x86_64-linux = "x86_64";
+          }
+        }_v${revision}.tar.xz";
+        hash = selectSystem {
+          aarch64-linux = "sha256-ZCUURp6qKaXIh4kQhNLnP33C10Bfffp3JrLbwkswmZk=";
+          x86_64-linux = "sha256-eWMzVRmhnM3FIz9zNMWrAjAm4vPpoMxBcAfAnYZggUY=";
+        };
+      };
+    }
+  );
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = "obs-studio";
-  version = "31.0.4";
+  version = "32.0.1";
 
   src = fetchFromGitHub {
     owner = "obsproject";
     repo = "obs-studio";
     rev = finalAttrs.version;
-    hash = "sha256-YxBPVXin8oJlo++oJogY1WMamIJmRqtSmKZDBsIZPU4=";
+    hash = "sha256-99VAVV3hEMDI2R30OrX/in/9KtesUxMGOPg6yT5e4oM=";
     fetchSubmodules = true;
   };
 
   separateDebugInfo = true;
 
   patches = [
-    # Lets obs-browser build against CEF 90.1.0+
-    ./Enable-file-access-and-universal-access-for-file-URL.patch
     ./fix-nix-plugin-path.patch
+    # Fix build with Qt 6.10 https://github.com/obsproject/obs-studio/pull/12328
+    (fetchpatch2 {
+      url = "https://github.com/obsproject/obs-studio/commit/26dfacbd4f5217258a2f1c5472a544c65a182d10.patch?full_index=1";
+      hash = "sha256-gEWDzZ+GPCR+rmytXcbiBcvzLg8VwZCveMKkvho3COI=";
+    })
   ];
 
   nativeBuildInputs = [
@@ -106,6 +127,7 @@ stdenv.mkDerivation (finalAttrs: {
     pkg-config
     wrapGAppsHook3
     wrapQtAppsHook
+    extra-cmake-modules
   ]
   ++ optional scriptingSupport swig
   ++ optional cudaSupport autoAddDriverRunpath;
@@ -153,6 +175,8 @@ stdenv.mkDerivation (finalAttrs: {
   ]
   ++ optional browserSupport cef
   ++ optional withFdk fdk_aac;
+
+  propagatedBuildInputs = [ simde ];
 
   # Copied from the obs-linuxbrowser
   postUnpack = lib.optionalString browserSupport ''

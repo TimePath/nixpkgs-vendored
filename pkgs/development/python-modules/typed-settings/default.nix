@@ -21,7 +21,7 @@
 }:
 buildPythonPackage rec {
   pname = "typed-settings";
-  version = "24.6.0";
+  version = "25.0.0";
   pyproject = true;
 
   disabled = pythonOlder "3.9";
@@ -29,7 +29,7 @@ buildPythonPackage rec {
   src = fetchPypi {
     pname = "typed_settings";
     inherit version;
-    hash = "sha256-mlWV3jP4BFKiA44Bi8RVCP/8I4qHUvCPXAPcjnvA0eI=";
+    hash = "sha256-Kbr9Mc1PXgD+OAw/ADp3HXC+rnAJcFEqjlXxQq/1wRM=";
   };
 
   build-system = [ hatchling ];
@@ -68,7 +68,7 @@ buildPythonPackage rec {
   ++ (lib.optional (pythonOlder "3.11") typing-extensions)
   ++ (lib.flatten (lib.attrValues optional-dependencies));
 
-  pytestFlagsArray = [ "tests" ];
+  enabledTestPaths = [ "tests" ];
 
   disabledTests = [
     # 1Password CLI is not available

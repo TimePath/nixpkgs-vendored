@@ -3,12 +3,14 @@
   lib,
   buildPackages,
   fetchurl,
+  fetchpatch,
   runtimeShell,
   pkgsBuildHost,
   usePam ? !isStatic,
   pam ? null,
   isStatic ? stdenv.hostPlatform.isStatic,
-  withGo ? pkgsBuildHost.go.meta.available,
+  go,
+  withGo ? lib.meta.availableOn stdenv.buildPlatform go && stdenv.hostPlatform.go.GOARCH != null,
 
   # passthru.tests
   bind,
@@ -27,11 +29,11 @@ assert usePam -> pam != null;
 
 stdenv.mkDerivation rec {
   pname = "libcap";
-  version = "2.75";
+  version = "2.77";
 
   src = fetchurl {
     url = "mirror://kernel/linux/libs/security/linux-privs/libcap2/${pname}-${version}.tar.xz";
-    hash = "sha256-3k5+BkybpFHVI03Ubol9fHHJap6/mgxEW8BPR0LYNjI=";
+    hash = "sha256-iXvBi0Svwmxw54zq09uzHhVKzCS+4IWloJB5qI2/b1I=";
   };
 
   outputs = [
@@ -48,14 +50,14 @@ stdenv.mkDerivation rec {
   ];
 
   nativeBuildInputs = lib.optionals withGo [
-    pkgsBuildHost.go
+    go
   ];
 
   buildInputs = lib.optional usePam pam;
 
   makeFlags = [
     "lib=lib"
-    "PAM_CAP=${if usePam then "yes" else "no"}"
+    "PAM_CAP=${lib.boolToYesNo usePam}"
     "BUILD_CC=$(CC_FOR_BUILD)"
     "CC:=$(CC)"
     "CROSS_COMPILE=${stdenv.cc.targetPrefix}"
@@ -72,6 +74,13 @@ stdenv.mkDerivation rec {
     "LIBCSTATIC=yes"
   ];
 
+  patches = [
+    (fetchpatch {
+      url = "https://git.kernel.org/pub/scm/libs/libcap/libcap.git/patch/?id=d628b3bfe40338d4efff6b0ae50f250a0eb884c7";
+      hash = "sha256-Eiv/BOJZkduL+hOEJd8K1LQd9wvOeCKchE2GaLcerVc=";
+    })
+  ];
+
   postPatch = ''
     patchShebangs ./progs/mkcapshdoc.sh
 
@@ -85,11 +94,6 @@ stdenv.mkDerivation rec {
       --replace 'lib_prefix=$(exec_prefix)' "lib_prefix=$lib" \
       --replace 'inc_prefix=$(prefix)' "inc_prefix=$dev" \
       --replace 'man_prefix=$(prefix)' "man_prefix=$doc"
-  ''
-  + lib.optionalString withGo ''
-    # disable cross compilation for artifacts which are run as part of the build
-    substituteInPlace go/Makefile \
-      --replace-fail '$(GO) run' 'GOOS= GOARCH= $(GO) run'
   '';
 
   installFlags = [ "RAISE_SETFCAP=no" ];

@@ -26,7 +26,6 @@
   libsoup_3,
   json-glib,
   avahi,
-  systemd,
   dbus,
   man-db,
   writeText,
@@ -35,7 +34,7 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "tinysparql";
-  version = "3.9.2";
+  version = "3.10.1";
 
   outputs = [
     "out"
@@ -47,7 +46,7 @@ stdenv.mkDerivation (finalAttrs: {
     url =
       with finalAttrs;
       "mirror://gnome/sources/tinysparql/${lib.versions.majorMinor version}/tinysparql-${version}.tar.xz";
-    hash = "sha256-FM4DkCQTXhgQIrzOSxqtLgA3fdnH2BK5g5HM/HVtrY4=";
+    hash = "sha256-Wn8+eJ22ZxpVDtYoDtT2CmC+p3No2pK+aNx9jX4jAmU=";
   };
 
   strictDeps = true;
@@ -84,10 +83,6 @@ stdenv.mkDerivation (finalAttrs: {
     json-glib
     avahi
     libstemmer
-    dbus
-  ]
-  ++ lib.optionals stdenv.hostPlatform.isLinux [
-    systemd
   ];
 
   nativeCheckInputs = [
@@ -97,6 +92,7 @@ stdenv.mkDerivation (finalAttrs: {
 
   mesonFlags = [
     "-Ddocs=true"
+    "-Dsystemd_user_services_dir=${placeholder "out"}/lib/systemd/user"
     (lib.mesonEnable "introspection" withIntrospection)
     (lib.mesonEnable "vapi" withIntrospection)
   ]
@@ -111,10 +107,7 @@ stdenv.mkDerivation (finalAttrs: {
     [
       "--cross-file=${crossFile}"
     ]
-  )
-  ++ lib.optionals (!stdenv.hostPlatform.isLinux) [
-    "-Dsystemd_user_services=false"
-  ];
+  );
 
   doCheck = true;
 

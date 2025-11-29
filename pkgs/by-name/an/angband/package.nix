@@ -7,7 +7,6 @@
   enableSdl2 ? false,
   SDL2,
   SDL2_image,
-  SDL2_sound,
   SDL2_mixer,
   SDL2_ttf,
 }:
@@ -30,7 +29,6 @@ stdenv.mkDerivation (finalAttrs: {
   ++ lib.optionals enableSdl2 [
     SDL2
     SDL2_image
-    SDL2_sound
     SDL2_mixer
     SDL2_ttf
   ];

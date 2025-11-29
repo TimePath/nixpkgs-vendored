@@ -5,6 +5,7 @@
   nodejs,
   fetchYarnDeps,
   fetchNpmDeps,
+  fetchpatch,
   fixup-yarn-lock,
   npmHooks,
   yarn,
@@ -64,33 +65,75 @@ in
   unpackPhase = null; # prevent chromium's unpackPhase from being used
   sourceRoot = "src";
 
-  env =
-    base.env
-    // {
-      # Hydra can fail to build electron due to clang spamming deprecation
-      # warnings mid-build, causing the build log to grow beyond the limit
-      # of 64mb and then getting killed by Hydra.
-      # For some reason, the log size limit appears to only be enforced on
-      # aarch64-linux. x86_64-linux happily succeeds to build with ~180mb. To
-      # unbreak the build on h.n.o, we simply disable those warnings for now.
-      # https://hydra.nixos.org/build/283952243
-      NIX_CFLAGS_COMPILE = base.env.NIX_CFLAGS_COMPILE + " -Wno-deprecated";
-    }
-    // lib.optionalAttrs (lib.versionAtLeast info.version "35") {
-      # Needed for header generation in electron 35 and above
-      ELECTRON_OUT_DIR = "Release";
-    };
+  env = base.env // {
+    # Hydra can fail to build electron due to clang spamming deprecation
+    # warnings mid-build, causing the build log to grow beyond the limit
+    # of 64mb and then getting killed by Hydra.
+    # For some reason, the log size limit appears to only be enforced on
+    # aarch64-linux. x86_64-linux happily succeeds to build with ~180mb. To
+    # unbreak the build on h.n.o, we simply disable those warnings for now.
+    # https://hydra.nixos.org/build/283952243
+    NIX_CFLAGS_COMPILE = base.env.NIX_CFLAGS_COMPILE + " -Wno-deprecated";
+    # Needed for header generation in electron 35 and above
+    ELECTRON_OUT_DIR = "Release";
+  };
 
   src = null;
 
   patches =
     base.patches
-    # Fix building with Rust 1.86+
-    # electron_33 and electron_34 use older chromium versions which expect rust
-    # to provide the older `adler` library instead of the newer `adler2` library
-    # This patch makes those older versions also use the new adler2 library
-    ++ lib.optionals (lib.versionOlder info.version "35") [
-      ./use-rust-adler2.patch
+    ++ lib.optionals (lib.versionOlder info.version "38") [
+      # Fix build with Rust 1.89.0
+      # https://chromium-review.googlesource.com/c/chromium/src/+/6624733
+      (fetchpatch {
+        name = "Define-rust-no-alloc-shim-is-unstable-v2.patch";
+        url = "https://github.com/chromium/chromium/commit/6aae0e2353c857d98980ff677bf304288d7c58de.patch";
+        hash = "sha256-Dd38c/0hiH+PbGPJhhEFuW6kUR45A36XZqOVExoxlhM=";
+      })
+      # Fix build with LLVM 21+
+      # https://chromium-review.googlesource.com/c/chromium/src/+/6633292
+      (fetchpatch {
+        name = "Dont-return-an-enum-from-EnumSizeTraits-Count.patch";
+        url = "https://github.com/chromium/chromium/commit/b0ff8c3b258a8816c05bdebf472dbba719d3c491.patch";
+        hash = "sha256-YIWcsCj5w0jUd7D67hsuk0ljTA/IbHwA6db3eK4ggUY=";
+      })
+    ]
+    ++ lib.optionals (lib.versionOlder info.version "39") [
+      # Fix build with Rust 1.90.0
+      # https://chromium-review.googlesource.com/c/chromium/src/+/6875644
+      (fetchpatch {
+        name = "Define-rust-alloc-error-handler-should-panic-v2.patch";
+        url = "https://github.com/chromium/chromium/commit/23d818d3c7fba4658248f17fd7b8993199242aa9.patch";
+        hash = "sha256-JVv36PgU/rr34jrhgCyf4Pp8o5j2T8fD1xBVH1avT48=";
+      })
+      # Fix build with Rust 1.91.0
+      # https://chromium-review.googlesource.com/c/chromium/src/+/6949745
+      (fetchpatch {
+        name = "Remove-unicode_width-from-rust-dependencies.patch";
+        url = "https://github.com/chromium/chromium/commit/0420449584e2afb7473393f536379efe194ba23c.patch";
+        hash = "sha256-2x1QoKkZEBfJw0hBjaErN/E47WrVfZvDngAXSIDzJs4=";
+      })
+      (fetchpatch {
+        name = "CrabbyAvif-Switch-from-no_sanitize-cfi-to-sanitize-cfi-off-1.patch";
+        url = "https://github.com/webmproject/CrabbyAvif/commit/4c70b98d1ebc8a210f2919be7ccabbcf23061cb5.patch";
+        extraPrefix = "third_party/crabbyavif/src/";
+        stripLen = 1;
+        hash = "sha256-E8/PmL+8+ZSoDO6L0/YOygIsliCDmcaBptXsi2L6ETQ=";
+      })
+      # backport of https://github.com/webmproject/CrabbyAvif/commit/3ba05863e84fd3acb4f4af2b4545221b317a2e55
+      ./CrabbyAvif-Switch-from-no_sanitize-cfi-to-sanitize-cfi-off-2.patch
+      # https://chromium-review.googlesource.com/c/chromium/src/+/6879484
+      (fetchpatch {
+        name = "crabbyavif-BUILD-gn-Temporarily-remove-disable_cfi-feature.patch";
+        url = "https://github.com/chromium/chromium/commit/e46275404d8f8a65ed84b3e583e9b78e4298acc7.patch";
+        hash = "sha256-2Dths53ervzCPKFbAVxeBHxtPHckxYhesJhaYZbxGSA=";
+      })
+      # https://chromium-review.googlesource.com/c/chromium/src/+/6960510
+      (fetchpatch {
+        name = "crabbyavif-BUILD-gn-Enable-disable_cfi-feature.patch";
+        url = "https://github.com/chromium/chromium/commit/9415f40bc6f853547f791e633be638c71368ce56.patch";
+        hash = "sha256-+M4gI77SoQ4dYIe/iGFgIwF1fS/6KQ8s16vj8ht/rik=";
+      })
     ];
 
   npmRoot = "third_party/node";
@@ -132,6 +175,17 @@ in
     EOF
 
     echo -n '${info.deps."src/third_party/dawn".args.rev}' > gpu/webgpu/DAWN_VERSION
+  ''
+  + lib.optionalString (lib.versionAtLeast info.version "39") ''
+    cat << EOF > gpu/webgpu/dawn_commit_hash.h
+    /* Generated by lastchange.py, do not edit.*/
+    #ifndef GPU_WEBGPU_DAWN_COMMIT_HASH_H_
+    #define GPU_WEBGPU_DAWN_COMMIT_HASH_H_
+    #define DAWN_COMMIT_HASH "${info.deps."src/third_party/dawn".args.rev}"
+    #endif  // GPU_WEBGPU_DAWN_COMMIT_HASH_H_
+    EOF
+  ''
+  + ''
 
     (
       cd electron
@@ -164,8 +218,6 @@ in
         done
       done
     )
-  ''
-  + lib.optionalString (lib.versionAtLeast info.version "36") ''
     echo 'checkout_glic_e2e_tests = false' >> build/config/gclient_args.gni
     echo 'checkout_mutter = false' >> build/config/gclient_args.gni
   ''
@@ -215,6 +267,12 @@ in
     enable_dangling_raw_ptr_feature_flag = false;
     clang_unsafe_buffers_paths = "";
     enterprise_cloud_content_analysis = false;
+  }
+  // lib.optionalAttrs (lib.versionAtLeast info.version "39") {
+    enable_linux_installer = false;
+    enable_pdf_save_to_drive = false;
+  }
+  // {
 
     # other
     enable_widevine = false;
@@ -265,11 +323,7 @@ in
     homepage = "https://github.com/electron/electron";
     platforms = lib.platforms.linux;
     license = licenses.mit;
-    maintainers = with maintainers; [
-      yayayayaka
-      teutat3s
-      tomasajt
-    ];
+    teams = [ teams.electron ];
     mainProgram = "electron";
     hydraPlatforms =
       lib.optionals (!(hasInfix "alpha" info.version) && !(hasInfix "beta" info.version))

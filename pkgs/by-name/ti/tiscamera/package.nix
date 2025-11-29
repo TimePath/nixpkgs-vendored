@@ -109,6 +109,7 @@ stdenv.mkDerivation rec {
     "-DTCAM_INTERNAL_ARAVIS=OFF"
     "-DTCAM_ARAVIS_USB_VISION=${if withAravis && withAravisUsbVision then "ON" else "OFF"}"
     "-DTCAM_INSTALL_FORCE_PREFIX=ON"
+    "-DCMAKE_POLICY_VERSION_MINIMUM=3.10"
   ];
 
   env.CXXFLAGS = "-include cstdint";
@@ -126,6 +127,8 @@ stdenv.mkDerivation rec {
   QT_PLUGIN_PATH = lib.optionalString withGui "${qt5.qtbase.bin}/${qt5.qtbase.qtPluginPrefix}";
 
   dontWrapQtApps = true;
+
+  doInstallCheck = true;
 
   preFixup = ''
     gappsWrapperArgs+=("''${qtWrapperArgs[@]}")

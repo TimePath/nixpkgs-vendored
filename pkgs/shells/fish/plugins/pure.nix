@@ -8,13 +8,13 @@
 
 buildFishPlugin rec {
   pname = "pure";
-  version = "4.11.3";
+  version = "4.12.0";
 
   src = fetchFromGitHub {
     owner = "pure-fish";
     repo = "pure";
     rev = "v${version}";
-    hash = "sha256-mMUFR/n4aLsmZNbVAYmx57AMXT6U2P+wTuuN3opCeqs=";
+    hash = "sha256-QG/saZReqpYiSXTG+nPmkJ5ETAAdo0mVrUqyepu7Pvs=";
   };
 
   nativeCheckInputs = [ git ];
@@ -28,7 +28,7 @@ buildFishPlugin rec {
 
   meta = {
     description = "Pretty, minimal and fast Fish prompt, ported from zsh";
-    homepage = "https://github.com/rafaelrinaldi/pure";
+    homepage = "https://github.com/pure-fish/pure";
     license = lib.licenses.mit;
     maintainers = with lib.maintainers; [ euxane ];
   };

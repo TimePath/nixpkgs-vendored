@@ -23,14 +23,14 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "pan";
-  version = "0.162";
+  version = "0.164";
 
   src = fetchFromGitLab {
     domain = "gitlab.gnome.org";
     owner = "GNOME";
     repo = "pan";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-YXZA0WguDAV/CCqjdkNWB2bnkBwDN7AfWtaSaJ1ztmM=";
+    hash = "sha256-fVhjgnDvDf5rmhuW27UpEp3m7o8FFcpakVcGBhBic0Y=";
   };
 
   nativeBuildInputs = [
@@ -74,7 +74,6 @@ stdenv.mkDerivation (finalAttrs: {
     homepage = "http://pan.rebelbase.com";
     maintainers = with lib.maintainers; [
       aleksana
-      emaryn
     ];
     platforms = lib.platforms.linux;
     license = with lib.licenses; [

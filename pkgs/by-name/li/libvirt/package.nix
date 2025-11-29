@@ -22,6 +22,7 @@
   libxslt,
   makeWrapper,
   meson,
+  nftables,
   ninja,
   openssh,
   perl,
@@ -91,6 +92,7 @@ let
       iptables
       kmod
       lvm2
+      nftables
       numactl
       numad
       openssh
@@ -115,14 +117,14 @@ assert enableZfs -> isLinux;
 stdenv.mkDerivation rec {
   pname = "libvirt";
   # if you update, also bump <nixpkgs/pkgs/development/python-modules/libvirt/default.nix> and SysVirt in <nixpkgs/pkgs/top-level/perl-packages.nix>
-  version = "11.4.0";
+  version = "11.7.0";
 
   src = fetchFromGitLab {
     owner = "libvirt";
     repo = "libvirt";
     tag = "v${version}";
     fetchSubmodules = true;
-    hash = "sha256-0bOX95Ly8d1/XZan/EyxI6JaACJvOu9QsTkFNQTreqI=";
+    hash = "sha256-BLPuqKvKW3wk4ij8ag4V4odgzZXGfn7692gkeJ03xZw=";
   };
 
   patches = [
@@ -328,7 +330,7 @@ stdenv.mkDerivation rec {
       (feat "udev" isLinux)
       (feat "json_c" true)
 
-      (driver "ch" isLinux)
+      (driver "ch" (isLinux && (stdenv.hostPlatform.isx86_64 || stdenv.hostPlatform.isAarch64)))
       (driver "esx" true)
       (driver "interface" isLinux)
       (driver "libvirtd" true)
@@ -402,13 +404,13 @@ stdenv.mkDerivation rec {
 
   passthru.tests.libvirtd = nixosTests.libvirtd;
 
-  meta = with lib; {
+  meta = {
     description = "Toolkit to interact with the virtualization capabilities of recent versions of Linux and other OSes";
     homepage = "https://libvirt.org/";
     changelog = "https://gitlab.com/libvirt/libvirt/-/raw/v${version}/NEWS.rst";
-    license = licenses.lgpl2Plus;
-    platforms = platforms.unix;
-    maintainers = with maintainers; [
+    license = lib.licenses.lgpl2Plus;
+    platforms = lib.platforms.unix;
+    maintainers = with lib.maintainers; [
       fpletz
       globin
       lovesegfault

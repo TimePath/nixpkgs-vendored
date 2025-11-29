@@ -2,7 +2,6 @@
   lib,
   stdenv,
   fetchFromGitHub,
-  gitUpdater,
   substitute,
   cmake,
   coreutils,
@@ -34,18 +33,20 @@
   buildClient ? true,
   buildServer ? true,
   SDL2,
-  useSDL2 ? false,
+  useSDL2 ? true,
+
+  nix-update-script,
 }:
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "luanti";
-  version = "5.11.0";
+  version = "5.14.0";
 
   src = fetchFromGitHub {
-    owner = "minetest";
-    repo = "minetest";
+    owner = "luanti-org";
+    repo = "luanti";
     tag = finalAttrs.version;
-    hash = "sha256-0PJK7sS2oFTNWex9rLTgVIqaRhwuUb6H5HIlVOGA08k=";
+    hash = "sha256-y4Bnlq3nE2u4PN0VPyBP31YORrG6LPPoSb7T5i9JnVM=";
   };
 
   patches = [
@@ -119,7 +120,7 @@ stdenv.mkDerivation (finalAttrs: {
   ++ lib.optionals (buildClient && useSDL2) [
     SDL2
   ]
-  ++ lib.optionals (buildClient && !stdenv.hostPlatform.isDarwin && !useSDL2) [
+  ++ lib.optionals (buildClient && !stdenv.hostPlatform.isDarwin) [
     xorg.libX11
     xorg.libXi
   ]
@@ -141,14 +142,11 @@ stdenv.mkDerivation (finalAttrs: {
 
   doCheck = true;
 
-  passthru.updateScript = gitUpdater {
-    allowedVersions = "\\.";
-    ignoredVersions = "-android$";
-  };
+  passthru.updateScript = nix-update-script { };
 
   meta = with lib; {
     homepage = "https://www.luanti.org/";
-    description = "An open source voxel game engine (formerly Minetest)";
+    description = "Open source voxel game engine (formerly Minetest)";
     license = licenses.lgpl21Plus;
     platforms = platforms.linux ++ platforms.darwin;
     maintainers = with maintainers; [

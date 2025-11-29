@@ -7,8 +7,8 @@
   buildPackages,
   bison,
   coreutils,
+  fetchpatch2,
   flex,
-  git,
   gperf,
   ninja,
   pkg-config,
@@ -38,7 +38,6 @@
   libopus,
   jsoncpp,
   protobuf,
-  libvpx,
   srtp,
   snappy,
   nss,
@@ -60,13 +59,12 @@
   lcms2,
   libkrb5,
   libgbm,
+  libva,
   enableProprietaryCodecs ? true,
   # darwin
   bootstrap_cmds,
   cctools,
   xcbuild,
-
-  fetchpatch,
 }:
 
 qtModule {
@@ -75,7 +73,6 @@ qtModule {
     bison
     coreutils
     flex
-    git
     gperf
     ninja
     pkg-config
@@ -114,12 +111,14 @@ qtModule {
 
     # Reproducibility QTBUG-136068
     ./gn-object-sorted.patch
-
-    # Fix GPU rendering with Mesa 25.2
-    # https://bugreports.qt.io/browse/QTBUG-139424
-    (fetchpatch {
-      url = "https://invent.kde.org/qt/qt/qtwebengine/-/commit/3cc88e0f85113e38ccb1bfdadb7d150c2389b1bc.diff";
-      hash = "sha256-5tKZ6b93VP4mKVc7jctrbW5Ktl+4Mjxw6bK1ajY62zQ=";
+  ]
+  ++ lib.optionals stdenv.cc.isClang [
+    # https://chromium-review.googlesource.com/c/chromium/src/+/6633292
+    (fetchpatch2 {
+      url = "https://github.com/chromium/chromium/commit/b0ff8c3b258a8816c05bdebf472dbba719d3c491.patch?full_index=1";
+      stripLen = 1;
+      extraPrefix = "src/3rdparty/chromium/";
+      hash = "sha256-zDIlHd8bBtrThkFnrcyA13mhXYIQt6sKsi6qAyQ34yo=";
     })
   ];
 
@@ -210,7 +209,6 @@ qtModule {
 
     # Video formats
     srtp
-    libvpx
 
     # Audio formats
     libopus
@@ -269,6 +267,7 @@ qtModule {
 
     libkrb5
     libgbm
+    libva
   ];
 
   buildInputs = [

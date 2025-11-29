@@ -126,7 +126,7 @@ in
             Like upstream, the application option is a list including the application and it's flags. In the case of the NixOS module however, the first element of the list must be a package. The module will assert otherwise.
             The application can be set to a single package because it gets passed to lib.toList, though this will not allow for flags to be passed.
 
-            See https://github.com/WiVRn/WiVRn/blob/master/docs/configuration.md
+            See <https://github.com/WiVRn/WiVRn/blob/master/docs/configuration.md>
           '';
           default = { };
           example = literalExpression ''
@@ -217,7 +217,6 @@ in
     };
 
     services = {
-      udev.packages = with pkgs; [ android-udev-rules ];
       avahi = {
         enable = true;
         publish = {
@@ -231,6 +230,8 @@ in
       allowedTCPPorts = [ 9757 ];
       allowedUDPPorts = [ 9757 ];
     };
+
+    services.firewalld.packages = [ cfg.package ];
 
     environment = {
       systemPackages = [

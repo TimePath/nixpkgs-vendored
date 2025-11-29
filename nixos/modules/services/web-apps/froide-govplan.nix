@@ -161,9 +161,9 @@ in
     systemd = {
       services = {
 
-        postgresql.serviceConfig.ExecStartPost =
+        postgresql-setup.serviceConfig.ExecStartPost =
           let
-            sqlFile = pkgs.writeText "immich-pgvectors-setup.sql" ''
+            sqlFile = pkgs.writeText "froide-govplan-postgis-setup.sql" ''
               CREATE EXTENSION IF NOT EXISTS postgis;
             '';
           in
@@ -183,7 +183,7 @@ in
             TimeoutStartSec = "5m";
           };
           after = [
-            "postgresql.service"
+            "postgresql.target"
             "network.target"
             "systemd-tmpfiles-setup.service"
           ];

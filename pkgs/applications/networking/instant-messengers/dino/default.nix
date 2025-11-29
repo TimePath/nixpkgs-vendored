@@ -32,18 +32,18 @@
   gst-plugins-good,
   gst-plugins-bad,
   gst-vaapi,
-  webrtc-audio-processing_1,
+  webrtc-audio-processing,
 }:
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "dino";
-  version = "0.5.0";
+  version = "0.5.1";
 
   src = fetchFromGitHub {
     owner = "dino";
     repo = "dino";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-Y3MGKpfhjmqnIvmt4mXnkmpjF/riXPDXyUiSrsceY6o=";
+    hash = "sha256-TgXPJP+Xm8LrO2d8yMu6aCCypuBRKNtYuZAb0dYfhng=";
   };
 
   postPatch = ''
@@ -84,7 +84,7 @@ stdenv.mkDerivation (finalAttrs: {
     gst-plugins-good # contains rtpbin, required for VP9
     gst-plugins-bad # required for H264, MSDK
     gst-vaapi # required for VAAPI
-    webrtc-audio-processing_1
+    webrtc-audio-processing
   ];
 
   doCheck = true;

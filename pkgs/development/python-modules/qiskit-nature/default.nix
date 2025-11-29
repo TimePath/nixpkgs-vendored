@@ -60,7 +60,7 @@ buildPythonPackage rec {
 
   pythonImportsCheck = [ "qiskit_nature" ];
 
-  pytestFlagsArray = [ "--durations=10" ];
+  pytestFlags = [ "--durations=10" ];
 
   disabledTests = [
     "test_two_qubit_reduction" # failure cause unclear
@@ -76,6 +76,6 @@ buildPythonPackage rec {
       binaryNativeCode # drivers/gaussiand/gauopen/*.so
     ];
     license = licenses.asl20;
-    maintainers = with maintainers; [ drewrisinger ];
+    maintainers = [ ];
   };
 }

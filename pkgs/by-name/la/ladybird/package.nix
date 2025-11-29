@@ -2,8 +2,6 @@
   lib,
   stdenv,
   fetchFromGitHub,
-  fetchurl,
-  cacert,
   unicode-emoji,
   unicode-character-database,
   unicode-idna,
@@ -11,9 +9,9 @@
   cmake,
   ninja,
   pkg-config,
-  curl,
+  curlFull, # Websocket support
   libavif,
-  libGL,
+  angle, # libEGL
   libjxl,
   libpulseaudio,
   libwebp,
@@ -22,37 +20,27 @@
   python3,
   qt6Packages,
   woff2,
+  fast-float,
   ffmpeg,
   fontconfig,
   simdutf,
   skia,
   nixosTests,
   unstableGitUpdater,
-  apple-sdk_14,
   libtommath,
+  sdl3,
 }:
 
-let
-  # Note: The cacert version is synthetic and must match the version in the package's CMake
-  cacert_version = "2023-12-12";
-in
 stdenv.mkDerivation (finalAttrs: {
   pname = "ladybird";
-  version = "0-unstable-2025-05-24";
+  version = "0-unstable-2025-11-14";
 
   src = fetchFromGitHub {
-    owner = "LadybirdWebBrowser";
+    owner = "LadybirdBrowser";
     repo = "ladybird";
-    rev = "fbd1f771613fc6f13fcc20dcad04c7065633a2c2";
-    hash = "sha256-Gtfnq46JrzfpcapMr6Ez+5BNQ59H/Djsgp7n6QvMSUM=";
+    rev = "70b5496ecda0043b44ddfbbaf3ba0856c969db88";
+    hash = "sha256-98hbxfKBD9rf3AWB6fHZ57V0GgUtMfnk5dAxlAM+2e8=";
   };
-
-  patches = [
-    # Revert https://github.com/LadybirdBrowser/ladybird/commit/51d189198d3fc61141fc367dc315c7f50492a57e
-    # This commit doesn't update the skia used by ladybird vcpkg, but it does update the skia that
-    # that cmake wants.
-    ./001-revert-fake-skia-update.patch
-  ];
 
   postPatch = ''
     sed -i '/iconutil/d' UI/CMakeLists.txt
@@ -68,9 +56,6 @@ stdenv.mkDerivation (finalAttrs: {
     # Note that the versions of the input data packages must match the
     # expected version in the package's CMake.
 
-    # Check that the versions match
-    grep -F 'set(CACERT_VERSION "${cacert_version}")' Meta/CMake/ca_certificates_data.cmake || (echo cacert_version mismatch && exit 1)
-
     mkdir -p build/Caches
 
     cp -r ${unicode-character-database}/share/unicode build/Caches/UCD
@@ -79,10 +64,6 @@ stdenv.mkDerivation (finalAttrs: {
     cp ${unicode-idna}/share/unicode/idna/IdnaMappingTable.txt build/Caches/UCD
     echo -n ${unicode-character-database.version} > build/Caches/UCD/version.txt
     chmod -w build/Caches/UCD
-
-    mkdir build/Caches/CACERT
-    cp ${cacert}/etc/ssl/certs/ca-bundle.crt build/Caches/CACERT/cacert-${cacert_version}.pem
-    echo -n ${cacert_version} > build/Caches/CACERT/version.txt
 
     mkdir build/Caches/PublicSuffix
     cp ${publicsuffix-list}/share/publicsuffix/public_suffix_list.dat build/Caches/PublicSuffix
@@ -98,24 +79,26 @@ stdenv.mkDerivation (finalAttrs: {
   ];
 
   buildInputs = [
-    curl
+    curlFull
+    fast-float
     ffmpeg
     fontconfig
     libavif
-    libGL
+    angle # libEGL
     libjxl
     libwebp
     libxcrypt
     openssl
     qt6Packages.qtbase
     qt6Packages.qtmultimedia
+    sdl3
     simdutf
     (skia.overrideAttrs (prev: {
       gnFlags = prev.gnFlags ++ [
         # https://github.com/LadybirdBrowser/ladybird/commit/af3d46dc06829dad65309306be5ea6fbc6a587ec
         # https://github.com/LadybirdBrowser/ladybird/commit/4d7b7178f9d50fff97101ea18277ebc9b60e2c7c
         # Remove when/if this gets upstreamed in skia.
-        "extra_cflags+=[\"-DSKCMS_API=__attribute__((visibility(\\\"default\\\")))\"]"
+        "extra_cflags+=[\"-DSKCMS_API=[[gnu::visibility(\\\"default\\\")]]\"]"
       ];
     }))
     woff2
@@ -123,16 +106,13 @@ stdenv.mkDerivation (finalAttrs: {
   ++ lib.optional stdenv.hostPlatform.isLinux [
     libpulseaudio.dev
     qt6Packages.qtwayland
-  ]
-  ++ lib.optionals stdenv.hostPlatform.isDarwin [
-    apple-sdk_14
   ];
 
   cmakeFlags = [
     # Takes an enormous amount of resources, even with mold
     (lib.cmakeBool "ENABLE_LTO_FOR_RELEASE" false)
     # Disable network operations
-    "-DSERENITY_CACHE_DIR=Caches"
+    "-DLADYBIRD_CACHE_DIR=Caches"
     "-DENABLE_NETWORK_DOWNLOADS=OFF"
   ]
   ++ lib.optionals stdenv.hostPlatform.isLinux [
@@ -144,7 +124,7 @@ stdenv.mkDerivation (finalAttrs: {
   # ld: [...]/OESVertexArrayObject.cpp.o: undefined reference to symbol 'glIsVertexArrayOES'
   # ld: [...]/libGL.so.1: error adding symbols: DSO missing from command line
   # https://github.com/LadybirdBrowser/ladybird/issues/371#issuecomment-2616415434
-  env.NIX_LDFLAGS = "-lGL";
+  env.NIX_LDFLAGS = "-lGL -lfontconfig";
 
   postInstall = lib.optionalString stdenv.hostPlatform.isDarwin ''
     mkdir -p $out/Applications $out/bin
@@ -161,11 +141,14 @@ stdenv.mkDerivation (finalAttrs: {
 
   passthru.updateScript = unstableGitUpdater { };
 
-  meta = with lib; {
+  meta = {
     description = "Browser using the SerenityOS LibWeb engine with a Qt or Cocoa GUI";
     homepage = "https://ladybird.org";
-    license = licenses.bsd2;
-    maintainers = with maintainers; [ fgaz ];
+    license = lib.licenses.bsd2;
+    maintainers = with lib.maintainers; [
+      fgaz
+      jk
+    ];
     platforms = [
       "x86_64-linux"
       "aarch64-linux"
@@ -173,5 +156,6 @@ stdenv.mkDerivation (finalAttrs: {
       "aarch64-darwin"
     ];
     mainProgram = "Ladybird";
+    broken = stdenv.hostPlatform.isDarwin;
   };
 })

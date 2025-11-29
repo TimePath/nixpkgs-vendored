@@ -154,7 +154,6 @@ stdenv.mkDerivation (finalAttrs: {
     (lib.cmakeBool "XRT_HAVE_TRACY" tracingSupport)
     (lib.cmakeBool "XRT_FEATURE_TRACING" tracingSupport)
     (lib.cmakeBool "XRT_OPENXR_INSTALL_ABSOLUTE_RUNTIME_PATH" true)
-    (lib.cmakeBool "XRT_HAVE_STEAM" true)
   ];
 
   # Help openxr-loader find this runtime
@@ -171,10 +170,7 @@ stdenv.mkDerivation (finalAttrs: {
     description = "Open source XR runtime";
     homepage = "https://monado.freedesktop.org/";
     license = lib.licenses.boost;
-    maintainers = with lib.maintainers; [
-      Scrumplex
-      prusnak
-    ];
+    maintainers = with lib.maintainers; [ Scrumplex ];
     platforms = lib.platforms.linux;
     mainProgram = "monado-cli";
   };

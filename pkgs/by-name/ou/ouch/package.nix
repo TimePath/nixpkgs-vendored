@@ -10,6 +10,10 @@
   git,
   zlib,
   zstd,
+
+  # RAR code is under non-free unRAR license
+  # see the meta.license section below for more details
+  enableUnfree ? false,
 }:
 
 rustPlatform.buildRustPackage rec {
@@ -43,7 +47,16 @@ rustPlatform.buildRustPackage rec {
     zstd
   ];
 
-  buildFeatures = [ "zstd/pkg-config" ];
+  buildNoDefaultFeatures = true;
+  buildFeatures = [
+    "use_zlib"
+    "use_zstd_thin"
+    # "bzip3" will be optional in the next version
+    "zstd/pkg-config"
+  ]
+  ++ lib.optionals enableUnfree [
+    "unrar"
+  ];
 
   postInstall = ''
     installManPage artifacts/*.1
@@ -52,13 +65,12 @@ rustPlatform.buildRustPackage rec {
 
   env.OUCH_ARTIFACTS_FOLDER = "artifacts";
 
-  meta = with lib; {
+  meta = {
     description = "Command-line utility for easily compressing and decompressing files and directories";
     homepage = "https://github.com/ouch-org/ouch";
     changelog = "https://github.com/ouch-org/ouch/blob/${version}/CHANGELOG.md";
-    license = licenses.mit;
-    maintainers = with maintainers; [
-      figsoda
+    license = with lib.licenses; [ mit ] ++ lib.optionals enableUnfree [ unfreeRedistributable ];
+    maintainers = with lib.maintainers; [
       psibi
       krovuxdev
     ];

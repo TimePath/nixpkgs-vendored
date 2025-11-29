@@ -16,16 +16,16 @@
 
 buildNpmPackage rec {
   pname = "teams-for-linux";
-  version = "2.5.3";
+  version = "2.6.15";
 
   src = fetchFromGitHub {
     owner = "IsmaelMartinez";
     repo = "teams-for-linux";
     tag = "v${version}";
-    hash = "sha256-LMYgWXzzVBaUBJnVacWPZPeNe1EasJjS5A0ouRlLxNo=";
+    hash = "sha256-oy5wLcWgiZ/Myyl0pcnjZnicznz7j2PZl1yFsOIMnrs=";
   };
 
-  npmDepsHash = "sha256-3OqiXbLeFnOx/tdv+A0fxtUZLYTaNuOAJwtF71cljFw=";
+  npmDepsHash = "sha256-/aDn3RK5WY07eRYjBdI/aVi75FZuCVAsZoOx0EcnahM=";
 
   nativeBuildInputs = [
     makeWrapper
@@ -132,6 +132,7 @@ buildNpmPackage rec {
       qjoly
       chvp
       khaneliman
+      HarisDotParis
     ];
     platforms = with lib.platforms; darwin ++ linux;
   };

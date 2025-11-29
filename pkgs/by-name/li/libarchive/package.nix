@@ -6,7 +6,6 @@
   attr,
   autoreconfHook,
   bzip2,
-  e2fsprogs,
   glibcLocalesUtf8,
   lzo,
   openssl,
@@ -94,7 +93,6 @@ stdenv.mkDerivation (finalAttrs: {
   ++ lib.optionals stdenv.hostPlatform.isLinux [
     acl
     attr
-    e2fsprogs
   ]
   ++ lib.optional xarSupport libxml2;
 
@@ -103,6 +101,8 @@ stdenv.mkDerivation (finalAttrs: {
     attr
     acl
   ];
+
+  hardeningDisable = [ "strictflexarrays3" ];
 
   configureFlags = lib.optional (!xarSupport) "--without-xml2";
 

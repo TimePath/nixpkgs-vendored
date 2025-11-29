@@ -21,7 +21,6 @@
   grass,
   gsl,
   hdf5,
-  libspatialindex,
   libspatialite,
   libzip,
   netcdf,
@@ -82,14 +81,14 @@ let
   ];
 in
 mkDerivation rec {
-  version = "3.42.3";
+  version = "3.44.4";
   pname = "qgis-unwrapped";
 
   src = fetchFromGitHub {
     owner = "qgis";
     repo = "QGIS";
     rev = "final-${lib.replaceStrings [ "." ] [ "_" ] version}";
-    hash = "sha256-NZLtifHcJAe0Q08i3nTu4H1fWO9gALCcqjaPwb0t8QM=";
+    hash = "sha256-G9atxBBANlUDGl39bkwTo6L04/+0o5A5ake4KvIY70E=";
   };
 
   passthru = {
@@ -115,7 +114,6 @@ mkDerivation rec {
     geos
     gsl
     hdf5
-    libspatialindex
     libspatialite
     libzip
     netcdf
@@ -159,6 +157,9 @@ mkDerivation rec {
     "-DWITH_PDAL=True"
     "-DENABLE_TESTS=False"
     "-DQT_PLUGINS_DIR=${qtbase}/${qtbase.qtPluginPrefix}"
+
+    # See https://github.com/libspatialindex/libspatialindex/issues/276
+    "-DWITH_INTERNAL_SPATIALINDEX=True"
   ]
   ++ lib.optional (!withWebKit) "-DWITH_QTWEBKIT=OFF"
   ++ lib.optional withServer [

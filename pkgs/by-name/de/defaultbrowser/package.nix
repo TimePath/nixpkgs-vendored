@@ -4,13 +4,13 @@
   fetchFromGitHub,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation {
   pname = "defaultbrowser";
   version = "unstable-2020-07-23";
 
   src = fetchFromGitHub {
     owner = "kerma";
-    repo = pname;
+    repo = "defaultbrowser";
     rev = "d2860c00dd7fbb5d615232cc819d7d492a6a6ddb";
     sha256 = "sha256-SelUQXoKtShcDjq8uKg3wM0kG2opREa2DGQCDd6IsOQ=";
   };

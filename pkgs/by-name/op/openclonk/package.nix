@@ -23,7 +23,6 @@
   libogg,
   libpng,
   libvorbis,
-  libXrandr,
   openal,
   readline,
   SDL2,
@@ -85,7 +84,6 @@ stdenv.mkDerivation {
     libogg
     libpng
     libvorbis
-    libXrandr
     openal
     readline
     SDL2

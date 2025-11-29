@@ -12,7 +12,7 @@ buildGoModule rec {
 
   src = fetchFromGitHub {
     owner = "caddyserver";
-    repo = pname;
+    repo = "xcaddy";
     rev = "v${version}";
     hash = "sha256-2cP0bkG16bRdLycLx7gpnQuALgO8hDowp/4cRBO4KuM=";
   };

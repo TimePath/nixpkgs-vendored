@@ -523,7 +523,7 @@ in
       path = [
         # Needed for the mysql_install_db command in the preStart script
         # which calls the hostname command.
-        pkgs.nettools
+        pkgs.hostname-debian
       ]
       # tools 'wsrep_sst_rsync' needs
       ++ lib.optionals cfg.galeraCluster.enable [
@@ -691,7 +691,7 @@ in
       serviceConfig = lib.mkMerge [
         {
           Type = if hasNotify then "notify" else "simple";
-          Restart = "on-abort";
+          Restart = "on-abnormal";
           RestartSec = "5s";
 
           # User and group

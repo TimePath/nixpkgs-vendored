@@ -10,9 +10,9 @@
 }:
 
 let
-  version_4 = "4.9.1";
+  version_4 = "4.11.0";
   version_3 = "3.8.7";
-  hash_4 = "sha256-znxB827TFLAEfCeHrwBsmRlkZz1LVWsBFhjZANiIW/4=";
+  hash_4 = "sha256-6TfmeUdLkZi5SMtcrgvJWUS66HvENKOIvbavbO0+L2I=";
   hash_3 = "sha256-vRrk+Fs/7dZha3h7yI5NpMfd1xezesnigpFgTRCACZo=";
 in
 

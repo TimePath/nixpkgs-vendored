@@ -2,7 +2,6 @@
   lib,
   buildPythonPackage,
   fetchFromGitHub,
-  pythonOlder,
   flit-core,
 
   # extras: babel
@@ -13,7 +12,7 @@
   argon2-cffi,
   bcrypt,
   bleach,
-  flask-mailman,
+  flask-mail,
 
   # extras: fsqla
   flask-sqlalchemy,
@@ -32,6 +31,7 @@
   flask-login,
   flask-principal,
   flask-wtf,
+  libpass,
   markupsafe,
   passlib,
   importlib-resources,
@@ -44,7 +44,6 @@
   mongoengine,
   mongomock,
   peewee,
-  pony,
   pytestCheckHook,
   requests,
   zxcvbn,
@@ -52,16 +51,14 @@
 
 buildPythonPackage rec {
   pname = "flask-security";
-  version = "5.6.1";
+  version = "5.7.1";
   pyproject = true;
-
-  disabled = pythonOlder "3.9";
 
   src = fetchFromGitHub {
     owner = "pallets-eco";
     repo = "flask-security";
     tag = version;
-    hash = "sha256-sAO8wQd/YgPbi5+nQmkmmcTg7DJPYdUoT/EOMUpzr/M=";
+    hash = "sha256-XxlSkD9mWNcaHi9WvNtOayvFCOZMOznnLzdXvjxfKP8=";
   };
 
   build-system = [ flit-core ];
@@ -73,8 +70,7 @@ buildPythonPackage rec {
     flask-principal
     flask-wtf
     markupsafe
-    passlib
-    importlib-resources
+    libpass
     wtforms
   ];
 
@@ -87,12 +83,11 @@ buildPythonPackage rec {
       argon2-cffi
       bcrypt
       bleach
-      flask-mailman
+      flask-mail
     ];
     fsqla = [
       flask-sqlalchemy
       sqlalchemy
-      sqlalchemy-utils
     ];
     mfa = [
       cryptography
@@ -109,7 +104,6 @@ buildPythonPackage rec {
     mongoengine
     mongomock
     peewee
-    pony
     pytestCheckHook
     requests
     zxcvbn
@@ -130,11 +124,11 @@ buildPythonPackage rec {
 
   pythonImportsCheck = [ "flask_security" ];
 
-  meta = with lib; {
-    changelog = "https://github.com/pallets-eco/flask-security/blob/${version}/CHANGES.rst";
+  meta = {
+    changelog = "https://github.com/pallets-eco/flask-security/blob/${src.tag}/CHANGES.rst";
     homepage = "https://github.com/pallets-eco/flask-security";
     description = "Quickly add security features to your Flask application";
-    license = licenses.mit;
-    maintainers = with maintainers; [ gador ];
+    license = lib.licenses.mit;
+    maintainers = with lib.maintainers; [ gador ];
   };
 }

@@ -2,6 +2,7 @@
   lib,
   stdenv,
   fetchFromGitLab,
+  fetchpatch,
   meson,
   ninja,
   pkg-config,
@@ -21,15 +22,23 @@
 
 stdenv.mkDerivation rec {
   pname = "libplacebo";
-  version = "7.349.0";
+  version = "7.351.0";
 
   src = fetchFromGitLab {
     domain = "code.videolan.org";
     owner = "videolan";
     repo = "libplacebo";
     rev = "v${version}";
-    hash = "sha256-mIjQvc7SRjE1Orb2BkHK+K1TcRQvzj2oUOCUT4DzIuA=";
+    hash = "sha256-ccoEFpp6tOFdrfMyE0JNKKMAdN4Q95tP7j7vzUj+lSQ=";
   };
+
+  patches = [
+    (fetchpatch {
+      name = "python-compat.patch";
+      url = "https://code.videolan.org/videolan/libplacebo/-/commit/12509c0f1ee8c22ae163017f0a5e7b8a9d983a17.patch";
+      hash = "sha256-RrlFu0xgLB05IVrzL2EViTPuATYXraM1KZMxnZCvgrk=";
+    })
+  ];
 
   nativeBuildInputs = [
     meson
@@ -72,7 +81,7 @@ stdenv.mkDerivation rec {
       --replace 'python_env.append' '#'
   '';
 
-  meta = with lib; {
+  meta = {
     description = "Reusable library for GPU-accelerated video/image rendering primitives";
     longDescription = ''
       Reusable library for GPU-accelerated image/view processing primitives and
@@ -82,8 +91,8 @@ stdenv.mkDerivation rec {
     '';
     homepage = "https://code.videolan.org/videolan/libplacebo";
     changelog = "https://code.videolan.org/videolan/libplacebo/-/tags/v${version}";
-    license = licenses.lgpl21Plus;
-    maintainers = with maintainers; [ primeos ];
-    platforms = platforms.all;
+    license = lib.licenses.lgpl21Plus;
+    maintainers = [ ];
+    platforms = lib.platforms.all;
   };
 }

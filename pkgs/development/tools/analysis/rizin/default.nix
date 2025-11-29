@@ -24,16 +24,17 @@
   capstone,
   tree-sitter,
   zstd,
+  binutils,
 }:
 
 let
   rizin = stdenv.mkDerivation rec {
     pname = "rizin";
-    version = "0.7.4";
+    version = "0.8.1";
 
     src = fetchurl {
       url = "https://github.com/rizinorg/rizin/releases/download/v${version}/rizin-src-v${version}.tar.xz";
-      hash = "sha256-9xGJEOXchDw4uqPgCzDsAZoc3VwTK6K8Fs8MdJdjEgE=";
+      hash = "sha256-7yseZSXX3DasQ1JblWdJwcyge/F8H+2LZkAtggEKTsI=";
     };
 
     mesonFlags = [
@@ -60,10 +61,6 @@ let
       # caching it. This patch replaces the entire logic to only look at
       # the env var NIX_RZ_PREFIX
       ./librz-wrapper-support.patch
-
-      ./0001-fix-compilation-with-clang.patch
-      # Can be dropped when upstream fixes this: https://github.com/NixOS/nixpkgs/issues/300056
-      ./0002-disable-pcre2-jit.patch
     ];
 
     nativeBuildInputs = [
@@ -111,6 +108,7 @@ let
       xxHash
       xz
       zstd
+      binutils
     ];
 
     postPatch = ''
@@ -119,6 +117,11 @@ let
       # https://github.com/mesonbuild/meson/pull/9904
       substituteInPlace meson.build \
         --replace "import('python').find_installation()" "find_program('python3')"
+
+      substituteInPlace \
+        librz/arch/p/asm/asm_x86_as.c \
+        librz/arch/p/asm/asm_ppc_as.c \
+        --replace '"as"' '"${binutils}/bin/as"'
     '';
 
     passthru = rec {

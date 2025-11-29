@@ -11,13 +11,14 @@ let
     mkdir -p $out/libexec/netdata/plugins.d
     ln -s /run/wrappers/bin/apps.plugin $out/libexec/netdata/plugins.d/apps.plugin
     ln -s /run/wrappers/bin/cgroup-network $out/libexec/netdata/plugins.d/cgroup-network
-    ln -s /run/wrappers/bin/perf.plugin $out/libexec/netdata/plugins.d/perf.plugin
-    ln -s /run/wrappers/bin/slabinfo.plugin $out/libexec/netdata/plugins.d/slabinfo.plugin
+    ln -s /run/wrappers/bin/debugfs.plugin $out/libexec/netdata/plugins.d/debugfs.plugin
     ln -s /run/wrappers/bin/freeipmi.plugin $out/libexec/netdata/plugins.d/freeipmi.plugin
-    ln -s /run/wrappers/bin/systemd-journal.plugin $out/libexec/netdata/plugins.d/systemd-journal.plugin
     ln -s /run/wrappers/bin/logs-management.plugin $out/libexec/netdata/plugins.d/logs-management.plugin
     ln -s /run/wrappers/bin/network-viewer.plugin $out/libexec/netdata/plugins.d/network-viewer.plugin
-    ln -s /run/wrappers/bin/debugfs.plugin $out/libexec/netdata/plugins.d/debugfs.plugin
+    ln -s /run/wrappers/bin/otel-plugin $out/libexec/netdata/plugins.d/otel-plugin
+    ln -s /run/wrappers/bin/perf.plugin $out/libexec/netdata/plugins.d/perf.plugin
+    ln -s /run/wrappers/bin/slabinfo.plugin $out/libexec/netdata/plugins.d/slabinfo.plugin
+    ln -s /run/wrappers/bin/systemd-journal.plugin $out/libexec/netdata/plugins.d/systemd-journal.plugin
   '';
 
   plugins = [
@@ -369,15 +370,19 @@ in
         CapabilityBoundingSet = [
           "CAP_DAC_OVERRIDE" # is required for freeipmi and slabinfo plugins
           "CAP_DAC_READ_SEARCH" # is required for apps and systemd-journal plugin
-          "CAP_FOWNER" # is required for freeipmi plugin
-          "CAP_SETPCAP" # is required for apps, perf and slabinfo plugins
-          "CAP_SYS_ADMIN" # is required for perf plugin
-          "CAP_SYS_PTRACE" # is required for apps plugin
-          "CAP_SYS_RESOURCE" # is required for ebpf plugin
           "CAP_NET_RAW" # is required for fping app
-          "CAP_SYS_CHROOT" # is required for cgroups plugin
+          "CAP_PERFMON" # is required for perf plugin
+          "CAP_SETPCAP" # is required for apps, perf and slabinfo plugins
           "CAP_SETUID" # is required for cgroups and cgroups-network plugins
           "CAP_SYSLOG" # is required for systemd-journal plugin
+          "CAP_SYS_ADMIN" # is required for perf plugin
+          "CAP_SYS_CHROOT" # is required for cgroups plugin
+          "CAP_SYS_PTRACE" # is required for apps plugin
+          "CAP_SYS_RESOURCE" # is required for ebpf plugin
+        ]
+        ++ lib.optionals cfg.package.withIpmi [
+          "CAP_FOWNER"
+          "CAP_SYS_RAWIO"
         ]
         ++ lib.optional isThereAnyWireGuardTunnels "CAP_NET_ADMIN";
         # Sandboxing
@@ -407,8 +412,6 @@ in
         '';
       });
     };
-
-    systemd.enableCgroupAccounting = true;
 
     security.wrappers = {
       "apps.plugin" = {
@@ -443,14 +446,6 @@ in
         permissions = "u+rx,g+x,o-rwx";
       };
 
-      "systemd-journal.plugin" = {
-        source = "${cfg.package}/libexec/netdata/plugins.d/systemd-journal.plugin.org";
-        capabilities = "cap_dac_read_search,cap_syslog+ep";
-        owner = cfg.user;
-        group = cfg.group;
-        permissions = "u+rx,g+x,o-rwx";
-      };
-
       "slabinfo.plugin" = {
         source = "${cfg.package}/libexec/netdata/plugins.d/slabinfo.plugin.org";
         capabilities = "cap_dac_override+ep";
@@ -458,12 +453,11 @@ in
         group = cfg.group;
         permissions = "u+rx,g+x,o-rwx";
       };
-
     }
     // lib.optionalAttrs (cfg.package.withIpmi) {
       "freeipmi.plugin" = {
         source = "${cfg.package}/libexec/netdata/plugins.d/freeipmi.plugin.org";
-        capabilities = "cap_dac_override,cap_fowner+ep";
+        capabilities = "cap_dac_override,cap_fowner,cap_sys_rawio+ep";
         owner = cfg.user;
         group = cfg.group;
         permissions = "u+rx,g+x,o-rwx";
@@ -483,6 +477,24 @@ in
         source = "${cfg.package}/libexec/netdata/plugins.d/ndsudo.org";
         setuid = true;
         owner = "root";
+        group = cfg.group;
+        permissions = "u+rx,g+x,o-rwx";
+      };
+    }
+    // lib.optionalAttrs (cfg.package.withOtel) {
+      "otel-plugin" = {
+        source = "${cfg.package}/libexec/netdata/plugins.d/otel-plugin.org";
+        setuid = true;
+        owner = "root";
+        group = cfg.group;
+        permissions = "u+rx,g+x,o-rwx";
+      };
+    }
+    // lib.optionalAttrs (cfg.package.withSystemdJournal) {
+      "systemd-journal.plugin" = {
+        source = "${cfg.package}/libexec/netdata/plugins.d/systemd-journal.plugin.org";
+        capabilities = "cap_dac_read_search,cap_syslog+ep";
+        owner = cfg.user;
         group = cfg.group;
         permissions = "u+rx,g+x,o-rwx";
       };

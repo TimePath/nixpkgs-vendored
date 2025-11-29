@@ -24,7 +24,7 @@
 
 buildPythonPackage rec {
   pname = "hypothesis";
-  version = "6.130.12";
+  version = "6.136.9";
   pyproject = true;
 
   disabled = pythonOlder "3.9";
@@ -32,8 +32,8 @@ buildPythonPackage rec {
   src = fetchFromGitHub {
     owner = "HypothesisWorks";
     repo = "hypothesis";
-    rev = "hypothesis-python-${version}";
-    hash = "sha256-6p7OCjeZKZJ+3MDfdi+9XffET95pXGC6nzhTiMiEVQA=";
+    tag = "hypothesis-python-${version}";
+    hash = "sha256-Q1wxIJwAYKZ0x6c85CJSGgcdKw9a3xFw8YpJROElSNU=";
   };
 
   # I tried to package sphinx-selective-exclude, but it throws
@@ -78,7 +78,7 @@ buildPythonPackage rec {
     export HYPOTHESIS_PROFILE=ci
   '';
 
-  pytestFlagsArray = [ "tests/cover" ];
+  enabledTestPaths = [ "tests/cover" ];
 
   # Hypothesis by default activates several "Health Checks", including one that fires if the builder is "too slow".
   # This check is disabled [1] if Hypothesis detects a CI environment, i.e. either `CI` or `TF_BUILD` is defined [2].
@@ -115,6 +115,29 @@ buildPythonPackage rec {
     # AssertionError: assert [b'def      \...   f(): pass'] == [b'def\\', b'    f(): pass']
     # https://github.com/HypothesisWorks/hypothesis/issues/4355
     "test_clean_source"
+  ]
+  ++ lib.optionals (pythonAtLeast "3.14") [
+    "test_attrs_inference_builds"
+    "test_bound_missing_dot_access_forward_ref"
+    "test_bound_missing_forward_ref"
+    "test_bound_type_checking_only_forward_ref_wrong_type"
+    "test_bound_type_cheking_only_forward_ref"
+    "test_builds_suggests_from_type"
+    "test_bytestring_not_treated_as_generic_sequence"
+    "test_evil_prng_registration_nonsense"
+    "test_issue_4194_regression"
+    "test_passing_referenced_instance_within_function_scope_warns"
+    "test_registering_a_Random_is_idempotent"
+    "test_register_random_within_nested_function_scope"
+    "test_resolve_fwd_refs"
+    "test_resolves_forwardrefs_to_builtin_types"
+    "test_resolving_standard_collection_as_generic"
+    "test_resolving_standard_container_as_generic"
+    "test_resolving_standard_contextmanager_as_generic"
+    "test_resolving_standard_iterable_as_generic"
+    "test_resolving_standard_reversible_as_generic"
+    "test_resolving_standard_sequence_as_generic"
+    "test_specialised_collection_types"
   ];
 
   pythonImportsCheck = [ "hypothesis" ];

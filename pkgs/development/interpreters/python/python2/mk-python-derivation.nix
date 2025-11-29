@@ -4,6 +4,8 @@
   lib,
   config,
   python,
+  # Allow passing in a custom stdenv to buildPython*.override
+  stdenv,
   wrapPython,
   unzip,
   ensureNewerSourcesForZipFilesHook,
@@ -101,8 +103,6 @@
 }@attrs:
 
 let
-  inherit (python) stdenv;
-
   withDistOutput = lib.elem format [
     "pyproject"
     "setuptools"
@@ -171,12 +171,12 @@ let
       checkDrv = drv: if (isPythonModule drv) && (isMismatchedPython drv) then throwMismatch drv else drv;
 
     in
-    inputs: builtins.map checkDrv inputs;
+    inputs: map checkDrv inputs;
 
   # Keep extra attributes from `attrs`, e.g., `patchPhase', etc.
   self = toPythonModule (
     stdenv.mkDerivation (
-      (builtins.removeAttrs attrs [
+      (removeAttrs attrs [
         "disabled"
         "checkPhase"
         "checkInputs"

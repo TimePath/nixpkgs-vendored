@@ -1,6 +1,5 @@
 {
   cmake,
-  callPackage,
   fetchFromGitHub,
   fetchpatch,
   makeWrapper,
@@ -43,7 +42,7 @@
   enableThirdParty ? true,
 }:
 let
-  inherit (lib) optionalString optionals optional;
+  inherit (lib) optionals;
   pythonInputs =
     optionals enablePython (with python3.pkgs; [ numpy ]) ++ (extraPythonPackages python3.pkgs);
 
@@ -60,7 +59,7 @@ let
     # https://gitlab.orfeo-toolbox.org/orfeotoolbox/otb/-/issues/2454#note_112821
     "fftw"
   ];
-  itkIsInDepsToRemove = dep: builtins.any (d: d == dep.name) itkDepsToRemove;
+  itkIsInDepsToRemove = dep: builtins.elem dep.name itkDepsToRemove;
 
   # remove after https://gitlab.orfeo-toolbox.org/orfeotoolbox/otb/-/issues/2451
   otbSwig = swig.overrideAttrs (oldArgs: {
@@ -95,6 +94,11 @@ let
         hash = "sha256-dDyqYOzo91afR8W7k2N64X6l7t6Ws1C9iuRkWHUe0fg=";
       })
     ];
+
+    postPatch = ''
+      substituteInPlace Modules/ThirdParty/KWSys/src/KWSys/CMakeLists.txt \
+      --replace-fail 'cmake_minimum_required(VERSION 3.1 FATAL_ERROR)' 'cmake_minimum_required(VERSION 3.10)'
+    '';
 
     # fix the CMake config files for ITK which contains double slashes
     postInstall = (oldArgs.postInstall or "") + ''
@@ -231,7 +235,16 @@ stdenv.mkDerivation (finalAttrs: {
     ./1-otb-swig-include-itk.diff
   ];
 
-  postPatch = "substituteInPlace Modules/Core/Wrappers/SWIG/src/python/CMakeLists.txt --replace-fail '''$''{ITK_INCLUDE_DIRS}' ${otb-itk}/include/ITK-${itkMajorMinorVersion}";
+  postPatch = ''
+    substituteInPlace Modules/Core/Wrappers/SWIG/src/python/CMakeLists.txt \
+      --replace-fail ''\'''${ITK_INCLUDE_DIRS}' "${otb-itk}/include/ITK-${itkMajorMinorVersion}"
+  ''
+  # Add the header file "vcl_legacy_aliases.h", which defines the legacy vcl_* functions.
+  # This patch fixes the unreproducible build of OTB.
+  # See https://gitlab.orfeo-toolbox.org/orfeotoolbox/otb/-/issues/2484.
+  + ''
+    sed -i '/#include "vcl_compiler.h"/a #include "vcl_legacy_aliases.h"' Modules/Core/Mosaic/include/otbMosaicFunctors.h
+  '';
 
   nativeBuildInputs = [
     cmake
@@ -295,6 +308,7 @@ stdenv.mkDerivation (finalAttrs: {
     homepage = "https://www.orfeo-toolbox.org/";
     license = lib.licenses.asl20;
     maintainers = with lib.maintainers; [ daspk04 ];
+    teams = [ lib.teams.geospatial ];
     platforms = lib.platforms.linux;
   };
 })

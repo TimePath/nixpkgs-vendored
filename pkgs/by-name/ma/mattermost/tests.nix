@@ -7,7 +7,7 @@
   mariadb,
   redis,
   curl,
-  nettools,
+  net-tools,
   runtimeShell,
 }:
 
@@ -23,7 +23,7 @@ mattermost.overrideAttrs (
       mariadb
       redis
       curl
-      nettools
+      net-tools
       gotestsum
     ];
 
@@ -45,7 +45,7 @@ mattermost.overrideAttrs (
     # X  TestFoo
     # X  TestFoo/TestBar
     # -> TestFoo/TestBar/baz_test
-    disabledTests = [
+    disabledTests = lib.lists.uniqueStrings [
       # All these plugin tests for mmctl reach out to the marketplace, which is impossible in the sandbox
       "TestMmctlE2ESuite/TestPluginDeleteCmd/Delete_Plugin/SystemAdminClient"
       "TestMmctlE2ESuite/TestPluginDeleteCmd/Delete_Plugin/LocalClient"

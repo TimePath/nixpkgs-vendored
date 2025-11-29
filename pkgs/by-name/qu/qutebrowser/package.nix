@@ -26,15 +26,15 @@ let
   isQt6 = lib.versions.major qt6Packages.qtbase.version == "6";
   pdfjs =
     let
-      version = "5.3.31";
+      version = "5.4.296";
     in
     fetchzip {
       url = "https://github.com/mozilla/pdf.js/releases/download/v${version}/pdfjs-${version}-dist.zip";
-      hash = "sha256-8QNFCIRSaF0y98P1mmx0u+Uf0/Zd7nYlFGXp9SkURTc=";
+      hash = "sha256-UQ7sYOh7s95mfzH2ZbfDyEvUZiXr7MI3u0WY8WNHWv4=";
       stripRoot = false;
     };
 
-  version = "3.5.1";
+  version = "3.6.1";
 in
 
 python3.pkgs.buildPythonApplication {
@@ -44,7 +44,7 @@ python3.pkgs.buildPythonApplication {
 
   src = fetchurl {
     url = "https://github.com/qutebrowser/qutebrowser/releases/download/v${version}/qutebrowser-${version}.tar.gz";
-    hash = "sha256-gmu6MooINXJI1eWob6qwpzZVSXQ5rVTSaeISBVkms44=";
+    hash = "sha256-9b31UPJzmsGCXmCAIb+8XMEjKnvFIEO0MozWluHYbZA=";
   };
 
   # Needs tox
@@ -154,14 +154,14 @@ python3.pkgs.buildPythonApplication {
       )
     '';
 
-  meta = with lib; {
+  meta = {
     homepage = "https://github.com/qutebrowser/qutebrowser";
     changelog = "https://github.com/qutebrowser/qutebrowser/blob/v${version}/doc/changelog.asciidoc";
     description = "Keyboard-focused browser with a minimal GUI";
-    license = licenses.gpl3Plus;
+    license = lib.licenses.gpl3Plus;
     mainProgram = "qutebrowser";
     platforms = if enableWideVine then [ "x86_64-linux" ] else qt6Packages.qtwebengine.meta.platforms;
-    maintainers = with maintainers; [
+    maintainers = with lib.maintainers; [
       jagajaga
       rnhmjoj
       ebzzry

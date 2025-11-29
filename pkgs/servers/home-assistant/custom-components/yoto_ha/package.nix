@@ -8,13 +8,13 @@
 buildHomeAssistantComponent rec {
   owner = "cdnninja";
   domain = "yoto";
-  version = "1.24.4";
+  version = "2.3.0";
 
   src = fetchFromGitHub {
     owner = "cdnninja";
     repo = "yoto_ha";
     tag = "v${version}";
-    hash = "sha256-iiS5bns7la17Wf/mRkraE9xL9i+OzI4ru4BaHiLtA6U=";
+    hash = "sha256-8DyL9TQiGT5BMEgZgs7nXGv04HN0slCWIA14OivnzvY=";
   };
 
   dependencies = [
@@ -23,7 +23,7 @@ buildHomeAssistantComponent rec {
 
   meta = with lib; {
     changelog = "https://github.com/cdnninja/yoto_ha/releases/tag/${src.tag}";
-    description = "Home Assistant Integration for Yoto.";
+    description = "Home Assistant Integration for Yoto";
     homepage = "https://github.com/cdnninja/yoto_ha";
     maintainers = with maintainers; [ seberm ];
     license = licenses.mit;

@@ -79,7 +79,7 @@ buildPythonPackage rec {
 
   pythonImportsCheck = [ "nvchecker" ];
 
-  pytestFlagsArray = [ "-m 'not needs_net'" ];
+  disabledTestMarks = [ "needs_net" ];
 
   passthru.updateScript = nix-update-script { };
 

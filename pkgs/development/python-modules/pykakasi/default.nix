@@ -46,7 +46,7 @@ buildPythonPackage rec {
     "test_aozora"
   ];
 
-  pytestFlagsArray = [ "--benchmark-disable" ];
+  pytestFlags = [ "--benchmark-disable" ];
 
   pythonImportsCheck = [ "pykakasi" ];
 

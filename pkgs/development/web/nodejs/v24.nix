@@ -14,11 +14,19 @@ let
     inherit openssl;
     python = python3;
   };
+
+  gypPatches =
+    if stdenv.buildPlatform.isDarwin then
+      [
+        ./gyp-patches-set-fallback-value-for-CLT-darwin.patch
+      ]
+    else
+      [ ];
 in
 buildNodejs {
   inherit enableNpm;
-  version = "24.11.0";
-  sha256 = "cf9c906d46446471f955b1f2c6ace8a461501d82d27e1ae8595dcb3b0e2c312a";
+  version = "24.11.1";
+  sha256 = "ea4da35f1c9ca376ec6837e1e30cee30d491847fe152a3f0378dc1156d954bbd";
   patches =
     (
       if (stdenv.hostPlatform.emulatorAvailable buildPackages) then
@@ -46,29 +54,12 @@ buildNodejs {
     ]
     ++ [
       ./configure-armv6-vfpv2.patch
-      ./disable-darwin-v8-system-instrumentation-node19.patch
       ./node-npm-build-npm-package-logic.patch
       ./use-correct-env-in-tests.patch
       ./bin-sh-node-run-v22.patch
-
-      # TODO: newer GYP versions have been patched to be more compatible with Nix sandbox. We need
-      # to adapt our patch to this newer version, see https://github.com/NixOS/nixpkgs/pull/434742.
-      (fetchpatch2 {
-        url = "https://github.com/nodejs/node/commit/886e4b3b534a9f3ad2facbc99097419e06615900.patch?full_index=1";
-        hash = "sha256-dg/wVkD3iFS7RNjmvMDGw+ONScEjynlkRXqVxdF45TM=";
-        includes = [ "tools/gyp/pylib/gyp/xcode_emulation.py" ];
-        revert = true;
-      })
-      (fetchpatch2 {
-        url = "https://github.com/nodejs/node/commit/886e4b3b534a9f3ad2facbc99097419e06615900.patch?full_index=1";
-        hash = "sha256-DJTH8wVAAnoCTsUhYjsr1DV/EhFaduDpzETfer7WUL0=";
-        stripLen = 2;
-        extraPrefix = "deps/npm/node_modules/node-gyp/";
-        includes = [ "deps/npm/node_modules/node-gyp/gyp/pylib/gyp/xcode_emulation.py" ];
-        revert = true;
-      })
-      ./bypass-darwin-xcrun-node16.patch
+      ./use-nix-codesign.patch
     ]
+    ++ gypPatches
     ++ lib.optionals (!stdenv.buildPlatform.isDarwin) [
       # test-icu-env is failing without the reverts
       (fetchpatch2 {

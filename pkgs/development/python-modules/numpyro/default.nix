@@ -16,6 +16,7 @@
 
   # tests
   dm-haiku,
+  equinox,
   flax,
   funsor,
   graphviz,
@@ -29,14 +30,14 @@
 
 buildPythonPackage rec {
   pname = "numpyro";
-  version = "0.18.0";
+  version = "0.19.0";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "pyro-ppl";
     repo = "numpyro";
     tag = version;
-    hash = "sha256-0X/ta2yfzjf3JnZYdUAzQmXvbsDpwFCJe/bArMSWQgU=";
+    hash = "sha256-3kzaINsz1Mjk97ERQsQIYIBz7CVmXtVDn0edJFMHQWs=";
   };
 
   build-system = [ setuptools ];
@@ -51,6 +52,7 @@ buildPythonPackage rec {
 
   nativeCheckInputs = [
     dm-haiku
+    equinox
     flax
     funsor
     graphviz
@@ -64,7 +66,7 @@ buildPythonPackage rec {
 
   pythonImportsCheck = [ "numpyro" ];
 
-  pytestFlagsArray = [
+  pytestFlags = [
     # Tests memory consumption grows significantly with the number of parallel processes (reaches ~200GB with 80 jobs)
     "--maxprocesses=8"
 
@@ -72,8 +74,7 @@ buildPythonPackage rec {
     # UserWarning: There are not enough devices to run parallel chains: expected 2 but got 1.
     # Chains will be drawn sequentially. If you are running MCMC in CPU, consider using `numpyro.set_host_device_count(2)` at the beginning of your program.
     # You can double-check how many devices are available in your system using `jax.local_device_count()`.
-    "-W"
-    "ignore::UserWarning"
+    "-Wignore::UserWarning"
   ];
 
   disabledTests = [

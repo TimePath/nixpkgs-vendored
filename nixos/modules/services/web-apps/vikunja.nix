@@ -118,7 +118,7 @@ in
       after = [
         "network.target"
       ]
-      ++ lib.optional usePostgresql "postgresql.service"
+      ++ lib.optional usePostgresql "postgresql.target"
       ++ lib.optional useMysql "mysql.service";
       wantedBy = [ "multi-user.target" ];
       path = [ cfg.package ];

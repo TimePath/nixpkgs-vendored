@@ -10,7 +10,7 @@ rustPlatform.buildRustPackage rec {
 
   src = fetchFromGitHub {
     owner = "k4rakara";
-    repo = pname;
+    repo = "freshfetch";
     rev = "v${version}";
     sha256 = "1l9zngr5l12g71j85iyph4jjri3crxc2pi9q0gczrrzvs03439mn";
   };
@@ -24,7 +24,7 @@ rustPlatform.buildRustPackage rec {
     description = "Fresh take on neofetch";
     homepage = "https://github.com/k4rakara/freshfetch";
     license = licenses.mit;
-    maintainers = with maintainers; [ figsoda ];
+    maintainers = [ ];
     mainProgram = "freshfetch";
   };
 }

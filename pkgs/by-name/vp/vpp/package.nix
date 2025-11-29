@@ -38,11 +38,6 @@ let
     ];
   });
 
-  xdp-tools' = xdp-tools.overrideAttrs (old: {
-    postInstall = "";
-    dontDisableStatic = true;
-  });
-
   # in 25.02 only ID seems to be of interest, so keep it simple
   os-release-fake = writeText "os-release-fake" ''
     ID=nixos
@@ -50,13 +45,13 @@ let
 in
 stdenv.mkDerivation rec {
   pname = "vpp";
-  version = "25.02";
+  version = "25.06";
 
   src = fetchFromGitHub {
     owner = "FDio";
     repo = "vpp";
     rev = "v${version}";
-    hash = "sha256-UDO1mlOEQNCmtR18CCTF+ng5Ms9gfTsnohSygLlPopY=";
+    hash = "sha256-BuHKPQA4qHoADqBg2IztlzUMpbvYKK5uH7ktChSW5vk=";
   };
 
   postPatch = ''
@@ -116,7 +111,12 @@ stdenv.mkDerivation rec {
     # af_xdp plugin
     libelf
     libbpf
-    xdp-tools'
+    xdp-tools
+    zlib
+  ];
+
+  patches = lib.optionals enableAfXdp [
+    ./use-dynamic-libxdp-libbpf.patch
   ];
 
   passthru.updateScript = nix-update-script { };

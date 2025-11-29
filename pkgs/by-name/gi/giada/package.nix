@@ -21,17 +21,22 @@
   libvorbis,
   libopus,
   nlohmann_json,
+  expat,
+  libGL,
+  curl,
+  webkitgtk_4_1,
+  gtk3,
 }:
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "giada";
-  version = "1.0.0";
+  version = "1.3.1";
 
   src = fetchFromGitHub {
     owner = "monocasual";
     repo = "giada";
-    rev = finalAttrs.version;
-    hash = "sha256-vTOUS9mI4B3yRNnM2dNCH7jgMuD3ztdhe1FMgXUIt58=";
+    tag = finalAttrs.version;
+    hash = "sha256-MIGDaZLSwSIIZ2vXYuhGur0Ya1HX2yhrhafAawqU/+A=";
     fetchSubmodules = true;
   };
 
@@ -50,22 +55,27 @@ stdenv.mkDerivation (finalAttrs: {
   ];
 
   buildInputs = [
-    rtmidi
+    alsa-lib
+    curl
+    expat
+    flac
     fltk
     fmt
-    libmpg123
-    libsndfile
-    libsamplerate
-    nlohmann_json
-    alsa-lib
-    libXpm
-    libpulseaudio
+    gtk3
     jack2
-    flac
-    libogg
-    libvorbis
-    libopus
+    libGL
+    libXpm
     libXrandr
+    libogg
+    libopus
+    libpulseaudio
+    libsamplerate
+    libsndfile
+    libvorbis
+    libmpg123
+    nlohmann_json
+    rtmidi
+    webkitgtk_4_1
   ]
   ++ lib.optionals (stdenv.hostPlatform.isLinux || stdenv.hostPlatform.isFreeBSD) [
     fontconfig

@@ -3,10 +3,11 @@
   stdenv,
   fetchFromGitHub,
   rustPlatform,
+  buildPackages,
   installShellFiles,
-  testers,
+  writableTmpDirAsHomeHook,
+  versionCheckHook,
   nix-update-script,
-  dprint,
 }:
 
 rustPlatform.buildRustPackage (finalAttrs: {
@@ -25,9 +26,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
 
   cargoHash = "sha256-doaZlr5B9XhOaEawLGgM3yWJjgJ5f6TLUiqb+Ze+v0I=";
 
-  nativeBuildInputs = lib.optionals (stdenv.buildPlatform.canExecute stdenv.hostPlatform) [
-    installShellFiles
-  ];
+  nativeBuildInputs = [ installShellFiles ];
 
   # Avoiding "Undefined symbols" such as "___unw_remove_find_dynamic_unwind_sections" since dprint 0.50.1
   # Adding "libunwind" in buildInputs did not resolve it.
@@ -53,31 +52,37 @@ rustPlatform.buildRustPackage (finalAttrs: {
     "--skip=utils::url::test::unsafe_ignore_cert"
   ];
 
-  postInstall = ''
-    rm "$out/bin/test-process-plugin"
-  ''
-  + lib.optionalString (stdenv.buildPlatform.canExecute stdenv.hostPlatform) ''
-    export DPRINT_CACHE_DIR="$(mktemp -d)"
-    installShellCompletion --cmd dprint \
-      --bash <($out/bin/dprint completions bash) \
-      --zsh <($out/bin/dprint completions zsh) \
-      --fish <($out/bin/dprint completions fish)
-  '';
+  postInstall =
+    let
+      dprint =
+        if stdenv.buildPlatform.canExecute stdenv.hostPlatform then
+          "$out/bin/dprint"
+        else
+          lib.getExe buildPackages.dprint;
+    in
+    ''
+      rm "$out/bin/test-process-plugin"
+      export DPRINT_CACHE_DIR="$(mktemp -d)"
+      installShellCompletion --cmd dprint \
+        --bash <(${dprint} completions bash) \
+        --zsh <(${dprint} completions zsh) \
+        --fish <(${dprint} completions fish)
+    '';
+
+  nativeInstallCheckInputs = [
+    writableTmpDirAsHomeHook
+    versionCheckHook
+  ];
+  doInstallCheck = true;
+  versionCheckProgram = "${placeholder "out"}/bin/dprint";
+  versionCheckProgramArg = "--version";
+  versionCheckKeepEnvironment = [ "HOME" ];
 
   passthru = {
-    tests.version = testers.testVersion {
-      inherit (finalAttrs) version;
-
-      package = dprint;
-      command = ''
-        DPRINT_CACHE_DIR="$(mktemp --directory)" dprint --version
-      '';
-    };
-
     updateScript = nix-update-script { };
   };
 
-  meta = with lib; {
+  meta = {
     description = "Code formatting platform written in Rust";
     longDescription = ''
       dprint is a pluggable and configurable code formatting platform written in Rust.
@@ -86,8 +91,8 @@ rustPlatform.buildRustPackage (finalAttrs: {
     '';
     changelog = "https://github.com/dprint/dprint/releases/tag/${finalAttrs.version}";
     homepage = "https://dprint.dev";
-    license = licenses.mit;
-    maintainers = with maintainers; [
+    license = lib.licenses.mit;
+    maintainers = with lib.maintainers; [
       khushraj
       kachick
       phanirithvij

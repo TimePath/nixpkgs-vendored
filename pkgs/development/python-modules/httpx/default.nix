@@ -38,7 +38,7 @@ buildPythonPackage rec {
 
   src = fetchFromGitHub {
     owner = "encode";
-    repo = pname;
+    repo = "httpx";
     tag = version;
     hash = "sha256-tB8uZm0kPRnmeOvsDdrkrHcMVIYfGanB4l/xHsTKpgE=";
   };
@@ -86,11 +86,9 @@ buildPythonPackage rec {
     export PYTHONPATH=$out/${python.sitePackages}:$PYTHONPATH
   '';
 
-  pytestFlagsArray = [
-    "-W"
-    "ignore::DeprecationWarning"
-    "-W"
-    "ignore::trio.TrioDeprecationWarning"
+  pytestFlags = [
+    "-Wignore::DeprecationWarning"
+    "-Wignore::trio.TrioDeprecationWarning"
   ];
 
   disabledTests = [

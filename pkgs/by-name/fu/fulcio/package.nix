@@ -15,13 +15,13 @@
 
 buildGoModule rec {
   pname = "fulcio";
-  version = "1.7.1";
+  version = "1.8.2";
 
   src = fetchFromGitHub {
     owner = "sigstore";
-    repo = pname;
-    rev = "v${version}";
-    hash = "sha256-UVUVT4RvNHvzIwV6azu2h1O9lnNu0PQnnkj4wbrY8BA=";
+    repo = "fulcio";
+    tag = "v${version}";
+    hash = "sha256-yAaMXlcGU1JXGMr2nkUHAWkd2JAlprPbKxs1MKvU6iM=";
     # populate values that require us to use git. By doing this in postFetch we
     # can delete .git afterwards and maintain better reproducibility of the src.
     leaveDotGit = true;
@@ -33,7 +33,7 @@ buildGoModule rec {
       find "$out" -name .git -print0 | xargs -0 rm -rf
     '';
   };
-  vendorHash = "sha256-lNPRejC7Z3OHDvhJGzPIlgqi7eXjlqgeECJO/13gGt4=";
+  vendorHash = "sha256-xOM92evfKrjFhPPny1kIVK5uxZkLJZ+qyJ15/4HpsN0=";
 
   nativeBuildInputs = [ installShellFiles ];
 
@@ -82,7 +82,7 @@ buildGoModule rec {
     version = "v${version}";
   };
 
-  meta = with lib; {
+  meta = {
     homepage = "https://github.com/sigstore/fulcio";
     changelog = "https://github.com/sigstore/fulcio/releases/tag/v${version}";
     description = "Root-CA for code signing certs - issuing certificates based on an OIDC email address";
@@ -97,8 +97,8 @@ buildGoModule rec {
       different delegation models, and to deploy and run Fulcio as a
       disconnected instance.
     '';
-    license = licenses.asl20;
-    maintainers = with maintainers; [
+    license = lib.licenses.asl20;
+    maintainers = with lib.maintainers; [
       lesuisse
       jk
     ];

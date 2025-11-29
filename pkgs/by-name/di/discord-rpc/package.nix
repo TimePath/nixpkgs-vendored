@@ -14,7 +14,7 @@ stdenv.mkDerivation rec {
 
   src = fetchFromGitHub {
     owner = "discordapp";
-    repo = pname;
+    repo = "discord-rpc";
     rev = "v${version}";
     sha256 = "04cxhqdv5r92lrpnhxf8702a8iackdf3sfk1050z7pijbijiql2a";
   };
@@ -40,6 +40,12 @@ stdenv.mkDerivation rec {
       hash = "sha256-geofgXwfbDsvsYCz92IVFrdvBDiGvMBiFd3GEbsdoHU=";
     })
   ];
+
+  postPatch = ''
+    substituteInPlace CMakeLists.txt --replace-fail \
+      "cmake_minimum_required (VERSION 3.2.0)" \
+      "cmake_minimum_required (VERSION 3.10.0)"
+  '';
 
   meta = with lib; {
     description = "Official library to interface with the Discord client";

@@ -3,6 +3,7 @@
   stdenv,
   callPackage,
   fetchurl,
+  fetchMavenArtifact,
   gitUpdater,
   mkRubyVersion,
   makeBinaryWrapper,
@@ -11,15 +12,15 @@
 
 let
   # The version number here is whatever is reported by the RUBY_VERSION string
-  rubyVersion = mkRubyVersion "3" "1" "7" "";
+  rubyVersion = mkRubyVersion "3" "4" "2" "";
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = "jruby";
-  version = "9.4.14.0";
+  version = "10.0.2.0";
 
   src = fetchurl {
     url = "https://repo1.maven.org/maven2/org/jruby/jruby-dist/${finalAttrs.version}/jruby-dist-${finalAttrs.version}-bin.tar.gz";
-    hash = "sha256-fqK+jQxZiXFMeVtFREkr+ZQclXbnp49ZOhnIVWe8BFI=";
+    hash = "sha256-uKAm84qphGGgTtCqCyCJHOJX7L5T4SRxnOnuW4BFJfE=";
   };
 
   nativeBuildInputs = [ makeBinaryWrapper ];

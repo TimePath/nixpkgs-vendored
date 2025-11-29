@@ -13,7 +13,7 @@ rustPlatform.buildRustPackage rec {
   src = fetchFromGitHub {
     owner = "kamadorueda";
     repo = "alejandra";
-    rev = version;
+    tag = version;
     hash = "sha256-Oi1n2ncF4/AWeY6X55o2FddIRICokbciqFYK64XorYk=";
   };
 
@@ -23,12 +23,12 @@ rustPlatform.buildRustPackage rec {
     version = testers.testVersion { package = alejandra; };
   };
 
-  meta = with lib; {
+  meta = {
     description = "Uncompromising Nix Code Formatter";
     homepage = "https://github.com/kamadorueda/alejandra";
     changelog = "https://github.com/kamadorueda/alejandra/blob/${version}/CHANGELOG.md";
-    license = licenses.unlicense;
-    maintainers = with maintainers; [
+    license = lib.licenses.unlicense;
+    maintainers = with lib.maintainers; [
       _0x4A6F
       kamadorueda
       sciencentistguy

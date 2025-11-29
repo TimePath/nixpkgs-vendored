@@ -19,13 +19,13 @@
 
 buildGoModule rec {
   pname = "skopeo";
-  version = "1.18.0";
+  version = "1.20.0";
 
   src = fetchFromGitHub {
     rev = "v${version}";
     owner = "containers";
     repo = "skopeo";
-    hash = "sha256-Ws01dYx2Jq/zB8rWiWSnV4ZgcxyBWHWvE3DfG7gvFOc=";
+    hash = "sha256-uw41kaIljz9Y378rX2BK0W/ZVUx8IjlIBqYHDuLgZpA=";
   };
 
   outputs = [
@@ -55,13 +55,23 @@ buildGoModule rec {
   buildPhase = ''
     runHook preBuild
     patchShebangs .
-    make bin/skopeo completions docs
+    make bin/skopeo docs
+  ''
+  + lib.optionalString (stdenv.buildPlatform.canExecute stdenv.hostPlatform) ''
+    make completions
+  ''
+  + ''
     runHook postBuild
   '';
 
   installPhase = ''
     runHook preInstall
-    PREFIX=${placeholder "out"} make install-binary install-completions install-docs
+    PREFIX=${placeholder "out"} make install-binary install-docs
+  ''
+  + lib.optionalString (stdenv.buildPlatform.canExecute stdenv.hostPlatform) ''
+    PREFIX=${placeholder "out"} make install-completions
+  ''
+  + ''
     install ${passthru.policy}/default-policy.json -Dt $out/etc/containers
   ''
   + lib.optionalString stdenv.hostPlatform.isLinux ''

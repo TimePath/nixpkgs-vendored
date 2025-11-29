@@ -285,6 +285,19 @@ in
           description = "Filename to be used for the dump. If `null` a default name is chosen by forgejo.";
           example = "forgejo-dump";
         };
+
+        age = mkOption {
+          type = types.str;
+          default = "4w";
+          example = "5d";
+          description = ''
+            Age of backup used to decide what files to delete when cleaning.
+            If a file or directory is older than the current time minus the age field, it is deleted.
+
+            The format is described in
+            {manpage}`tmpfiles.d(5)`.
+          '';
+        };
       };
 
       lfs = {
@@ -596,7 +609,7 @@ in
     };
 
     systemd.tmpfiles.rules = [
-      "d '${cfg.dump.backupDir}' 0750 ${cfg.user} ${cfg.group} - -"
+      "d '${cfg.dump.backupDir}' 0750 ${cfg.user} ${cfg.group} ${cfg.dump.age} -"
       "z '${cfg.dump.backupDir}' 0750 ${cfg.user} ${cfg.group} - -"
       "d '${cfg.repositoryRoot}' 0750 ${cfg.user} ${cfg.group} - -"
       "z '${cfg.repositoryRoot}' 0750 ${cfg.user} ${cfg.group} - -"
@@ -661,7 +674,7 @@ in
         "network.target"
       ]
       ++ optionals usePostgresql [
-        "postgresql.service"
+        "postgresql.target"
       ]
       ++ optionals useMysql [
         "mysql.service"
@@ -671,7 +684,7 @@ in
       ];
       requires =
         optionals (cfg.database.createDatabase && usePostgresql) [
-          "postgresql.service"
+          "postgresql.target"
         ]
         ++ optionals (cfg.database.createDatabase && useMysql) [
           "mysql.service"

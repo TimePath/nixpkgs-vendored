@@ -16,6 +16,7 @@
 
   # buildInputs
   dolfinx,
+  darwinMinVersionHook,
 
   # dependency
   numpy,
@@ -32,7 +33,6 @@
   # nativeCheckInputs
   scipy,
   matplotlib,
-  pytest-xdist,
   pytestCheckHook,
   writableTmpDirAsHomeHook,
   mpiCheckPhaseHook,
@@ -64,7 +64,6 @@ buildPythonPackage rec {
   pyproject = true;
 
   pythonRelaxDeps = [
-    "cffi"
     "fenics-ufl"
   ];
 
@@ -88,7 +87,8 @@ buildPythonPackage rec {
 
   buildInputs = [
     fenicsPackages.dolfinx
-  ];
+  ]
+  ++ lib.optional stdenv.hostPlatform.isDarwin (darwinMinVersionHook "13.3");
 
   dependencies = [
     numpy
@@ -103,29 +103,20 @@ buildPythonPackage rec {
     (mpi4py.override { inherit (fenicsPackages) mpi; })
   ];
 
-  doCheck = true;
-
   nativeCheckInputs = [
     scipy
     matplotlib
-    pytest-xdist
     pytestCheckHook
     writableTmpDirAsHomeHook
     mpiCheckPhaseHook
   ];
 
   preCheck = ''
-    rm -rf dolfinx
+    cd test
   '';
 
   pythonImportsCheck = [
     "dolfinx"
-  ];
-
-  disabledTests = [
-    # require cffi<1.17
-    "test_cffi_expression"
-    "test_hexahedron_mesh"
   ];
 
   passthru = {

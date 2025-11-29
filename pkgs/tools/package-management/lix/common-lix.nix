@@ -67,6 +67,7 @@ assert lib.assertMsg (
   removeReferencesTo,
   xz,
   yq,
+  zstd,
   nixosTests,
   rustPlatform,
   # Only used for versions before 2.92.
@@ -79,7 +80,11 @@ assert lib.assertMsg (
   enableDocumentation ? stdenv.hostPlatform == stdenv.buildPlatform,
   enableStatic ? stdenv.hostPlatform.isStatic,
   enableStrictLLVMChecks ? true,
-  withAWS ? !enableStatic && (stdenv.hostPlatform.isLinux || stdenv.hostPlatform.isDarwin),
+  withAWS ?
+    lib.meta.availableOn stdenv.hostPlatform aws-c-common
+    && !enableStatic
+    && (stdenv.hostPlatform.isLinux || stdenv.hostPlatform.isDarwin),
+  aws-c-common,
   aws-sdk-cpp,
   # FIXME support Darwin once https://github.com/NixOS/nixpkgs/pull/392918 lands
   withDtrace ?
@@ -88,7 +93,7 @@ assert lib.assertMsg (
   # RISC-V support in progress https://github.com/seccomp/libseccomp/pull/50
   withLibseccomp ? lib.meta.availableOn stdenv.hostPlatform libseccomp,
   libseccomp,
-  pastaFod ? false,
+  pastaFod ? lib.meta.availableOn stdenv.hostPlatform passt,
   passt,
 
   confDir,
@@ -132,6 +137,7 @@ stdenv.mkDerivation (finalAttrs: {
     # We don't want the underlying GCC neither!
     stdenv.cc.cc.stdenv.cc.cc
   ];
+  __structuredAttrs = true;
 
   # We only include CMake so that Meson can locate toml11, which only ships CMake dependency metadata.
   dontUseCmakeConfigure = true;
@@ -180,7 +186,8 @@ stdenv.mkDerivation (finalAttrs: {
   ++ lib.optionals pastaFod [ passt ]
   ++ lib.optionals parseToYAML [ yq ]
   ++ lib.optionals usesCapnp [ capnproto ]
-  ++ lib.optionals stdenv.hostPlatform.isLinux [ util-linuxMinimal ];
+  ++ lib.optionals stdenv.hostPlatform.isLinux [ util-linuxMinimal ]
+  ++ lib.optionals (lib.versionAtLeast version "2.94") [ zstd ];
 
   buildInputs = [
     boost
@@ -368,7 +375,6 @@ stdenv.mkDerivation (finalAttrs: {
   # fortify breaks the build with lto and musl for some reason
   ++ lib.optional stdenv.hostPlatform.isMusl "fortify";
 
-  # hardeningEnable = lib.optionals (!stdenv.hostPlatform.isDarwin) [ "pie" ];
   separateDebugInfo = stdenv.hostPlatform.isLinux && !enableStatic;
   enableParallelBuilding = true;
 

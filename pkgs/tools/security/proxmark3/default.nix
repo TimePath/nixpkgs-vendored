@@ -12,6 +12,8 @@
   whereami,
   lua,
   lz4,
+  udevCheckHook,
+  nix-update-script,
   withGui ? true,
   wrapQtAppsHook,
   qtbase,
@@ -29,34 +31,31 @@
 assert withBlueshark -> stdenv.hostPlatform.isLinux;
 stdenv.mkDerivation (finalAttrs: {
   pname = "proxmark3";
-  version = "4.20142";
+  version = "4.20728";
 
   src = fetchFromGitHub {
     owner = "RfidResearchGroup";
     repo = "proxmark3";
     rev = "v${finalAttrs.version}";
-    hash = "sha256-kdwjwydeX8EwJazFzrrk5osv0YVzDVzn2S1sDKRQdR8=";
+    hash = "sha256-dmWPi5xOcXXdvUc45keXGUNhYmQEzAHbKexpDOwIHhE=";
   };
-
-  patches = [
-    # Don't check for DISPLAY env variable on Darwin. pm3 uses this to test if
-    # XQuartz is installed, however it is not actually required for GUI features
-    ./darwin-always-gui.patch
-  ];
 
   postPatch = ''
     # Remove hardcoded paths on Darwin
     substituteInPlace Makefile.defs \
-      --replace "/usr/bin/ar" "ar" \
-      --replace "/usr/bin/ranlib" "ranlib"
+      --replace-fail "/usr/bin/ar" "ar" \
+      --replace-fail "/usr/bin/ranlib" "ranlib"
     # Replace hardcoded path to libwhereami
+    # Replace darwin sed syntax with gnused
     substituteInPlace client/Makefile \
-      --replace "/usr/include/whereami.h" "${whereami}/include/whereami.h"
+      --replace-fail "/usr/include/whereami.h" "${whereami}/include/whereami.h" \
+      --replace-fail "sed -E -i '''" "sed -i"
   '';
 
   nativeBuildInputs = [
     pkg-config
     gcc-arm-embedded
+    udevCheckHook
   ]
   ++ lib.optional withGui wrapQtAppsHook;
   buildInputs = [
@@ -84,6 +83,10 @@ stdenv.mkDerivation (finalAttrs: {
   ++ lib.optional withSmall "PLATFORM_SIZE=256"
   ++ map (x: "SKIP_${x}=1") withoutFunctions;
   enableParallelBuilding = true;
+
+  doInstallCheck = true;
+
+  passthru.updateScript = nix-update-script { };
 
   meta = with lib; {
     description = "Client for proxmark3, powerful general purpose RFID tool";

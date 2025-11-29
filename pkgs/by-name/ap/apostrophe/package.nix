@@ -4,7 +4,7 @@
   gtksourceview5,
   libspelling,
   fetchFromGitHub,
-  python3Packages,
+  python312Packages,
   nodePackages,
   meson,
   ninja,
@@ -20,14 +20,14 @@
 }:
 
 let
-  version = "3.2";
+  version = "3.4";
 
   src = fetchFromGitLab {
     owner = "World";
     repo = "apostrophe";
     domain = "gitlab.gnome.org";
     rev = "refs/tags/v${version}";
-    hash = "sha256-NPpBu6Wmd8z99vzVQ394CyHRV2RQBtkbuqcaFqKqlkQ=";
+    hash = "sha256-Sj5Y4QPMYavdXbU+iVv76qOFNhgBjAeX9+/TvQHZzeI=";
   };
 
   reveal-js = fetchFromGitHub {
@@ -40,7 +40,10 @@ let
     hash = "sha256-L6KVBw20K67lHT07Ws+ZC2DwdURahqyuyjAaK0kTgN0=";
   };
 in
-python3Packages.buildPythonApplication {
+
+# Requires telnetlib, and possibly others
+# Try to remove in subsequent updates
+python312Packages.buildPythonApplication {
   inherit version src;
   pname = "apostrophe";
   pyproject = false;
@@ -79,11 +82,12 @@ python3Packages.buildPythonApplication {
     webkitgtk_6_0
   ];
 
-  propagatedBuildInputs = with python3Packages; [
+  dependencies = with python312Packages; [
     pygobject3
     pypandoc
     chardet
     levenshtein
+    regex
   ];
 
   dontWrapGApps = true;

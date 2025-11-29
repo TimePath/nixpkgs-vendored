@@ -28,13 +28,13 @@ let
     p.semantic-version
   ]);
 in
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "zeek";
-  version = "6.2.1";
+  version = "7.2.2";
 
   src = fetchurl {
-    url = "https://download.zeek.org/zeek-${version}.tar.gz";
-    hash = "sha256-ZOOlK9mfZVrfxvgFREgqcRcSs18EMpADD8Y4Ev391Bw=";
+    url = "https://download.zeek.org/zeek-${finalAttrs.version}.tar.gz";
+    hash = "sha256-Kx3ySPlBmaFoThxGDWTPHF5J10ccK1YvlCrF++mAWJM=";
   };
 
   strictDeps = true;
@@ -105,15 +105,16 @@ stdenv.mkDerivation rec {
     inherit broker;
   };
 
-  meta = with lib; {
+  meta = {
     description = "Network analysis framework much different from a typical IDS";
     homepage = "https://www.zeek.org";
-    changelog = "https://github.com/zeek/zeek/blob/v${version}/CHANGES";
-    license = licenses.bsd3;
-    maintainers = with maintainers; [
+    changelog = "https://github.com/zeek/zeek/blob/v${finalAttrs.version}/CHANGES";
+    license = lib.licenses.bsd3;
+    mainProgram = "zeek";
+    maintainers = with lib.maintainers; [
       pSub
       tobim
     ];
-    platforms = platforms.unix;
+    platforms = lib.platforms.unix;
   };
-}
+})

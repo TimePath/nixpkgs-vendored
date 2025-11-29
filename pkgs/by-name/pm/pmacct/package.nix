@@ -8,6 +8,8 @@
   libpcap,
   libcdada,
   # Optional Dependencies
+  withKafka ? true,
+  rdkafka,
   withJansson ? true,
   jansson,
   withNflog ? true,
@@ -45,6 +47,7 @@ stdenv.mkDerivation (finalAttrs: {
     libcdada
     libpcap
   ]
+  ++ lib.optional withKafka rdkafka
   ++ lib.optional withJansson jansson
   ++ lib.optional withNflog libnetfilter_log
   ++ lib.optional withSQLite sqlite
@@ -61,6 +64,7 @@ stdenv.mkDerivation (finalAttrs: {
   configureFlags = [
     "--with-pcap-includes=${libpcap}/include"
   ]
+  ++ lib.optional withKafka "--enable-kafka"
   ++ lib.optional withJansson "--enable-jansson"
   ++ lib.optional withNflog "--enable-nflog"
   ++ lib.optional withSQLite "--enable-sqlite3"
@@ -75,16 +79,16 @@ stdenv.mkDerivation (finalAttrs: {
     };
   };
 
-  meta = with lib; {
+  meta = {
     description = "Small set of multi-purpose passive network monitoring tools";
     longDescription = ''
       pmacct is a small set of multi-purpose passive network monitoring tools
       [NetFlow IPFIX sFlow libpcap BGP BMP RPKI IGP Streaming Telemetry]
     '';
     homepage = "http://www.pmacct.net/";
-    changelog = "https://github.com/pmacct/pmacct/blob/v${version}/ChangeLog";
-    license = licenses.gpl2Plus;
-    maintainers = with maintainers; [ _0x4A6F ];
-    platforms = platforms.unix;
+    changelog = "https://github.com/pmacct/pmacct/blob/v${finalAttrs.version}/ChangeLog";
+    license = lib.licenses.gpl2Plus;
+    maintainers = with lib.maintainers; [ _0x4A6F ];
+    platforms = lib.platforms.unix;
   };
 })

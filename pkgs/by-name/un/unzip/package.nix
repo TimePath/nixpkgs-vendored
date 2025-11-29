@@ -16,7 +16,10 @@ stdenv.mkDerivation rec {
     sha256 = "0dxx11knh3nk95p2gg2ak777dd11pr7jx5das2g49l262scrcv83";
   };
 
-  hardeningDisable = [ "format" ];
+  hardeningDisable = [
+    "format"
+    "strictflexarrays3"
+  ];
 
   patchFlags = [
     "-p1"
@@ -81,6 +84,11 @@ stdenv.mkDerivation rec {
     name = "unzip-6.0-natspec.patch";
     sha256 = "67ab260ae6adf8e7c5eda2d1d7846929b43562943ec4aff629bd7018954058b1";
   });
+
+  # gcc-15 uses c23 standard, which removed non-prototype function declarations.
+  postPatch = ''
+    sed -i '/localtime()/ d' unix/unxcfg.h
+  '';
 
   nativeBuildInputs = [ bzip2 ];
   buildInputs = [ bzip2 ] ++ lib.optional enableNLS libnatspec;

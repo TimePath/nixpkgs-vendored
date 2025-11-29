@@ -37,8 +37,8 @@
       };
 
       systemd.services."freshrss-config" = {
-        requires = [ "postgresql.service" ];
-        after = [ "postgresql.service" ];
+        requires = [ "postgresql.target" ];
+        after = [ "postgresql.target" ];
       };
     };
 

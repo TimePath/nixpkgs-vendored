@@ -75,6 +75,10 @@ stdenv.mkDerivation (finalAttrs: {
         "-Wno-unsafe-buffer-usage"
         "-Wno-cast-function-type-strict"
       ])
+      # These three probably started to appear with clang 20 or 21:
+      "-Wno-c++-keyword"
+      "-Wno-implicit-void-ptr-cast"
+      "-Wno-nrvo"
     ]
   );
 
@@ -105,7 +109,7 @@ stdenv.mkDerivation (finalAttrs: {
     runHook preInstall
 
     install -Dm555 -t $out/bin b/*/7zz${stdenv.hostPlatform.extensions.executable}
-    install -Dm444 -t $out/share/doc/${finalAttrs.pname} ../../../../DOC/*.txt
+    install -Dm444 -t $out/share/doc/7zz ../../../../DOC/*.txt
 
     runHook postInstall
   '';

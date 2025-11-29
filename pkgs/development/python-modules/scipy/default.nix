@@ -28,6 +28,8 @@
   pybind11,
   pooch,
   xsimd,
+  boost188,
+  qhull,
 
   # dependencies
   numpy,
@@ -48,8 +50,8 @@ let
   #     nix-shell maintainers/scripts/update.nix --argstr package python3.pkgs.scipy
   #
   # The update script uses sed regexes to replace them with the updated hashes.
-  version = "1.15.3";
-  srcHash = "sha256-97z5CLRq/2kWjL2+ewHRA71vSfvCLHVJdOUZfDFnyhM=";
+  version = "1.16.3";
+  srcHash = "sha256-2NVmsJqsUjWSD7oEJhRkRjbKvqwikBJenAhBio/+IuU=";
   datasetsHashes = {
     ascent = "1qjp35ncrniq9rhzb14icwwykqg2208hcssznn3hz27w39615kh3";
     ecg = "1bwbjp43b7znnwha5hv6wiz3g0bhwrpqpi75s12zidxrbwvd62pj";
@@ -104,7 +106,7 @@ buildPythonPackage {
   # that override globally the `numpy` attribute to point to `numpy_1`.
   postPatch = ''
     substituteInPlace pyproject.toml \
-      --replace-fail "numpy>=2.0.0,<2.5" numpy
+      --replace-fail "numpy>=2.0.0,<2.6" numpy
   '';
 
   build-system = [
@@ -118,7 +120,7 @@ buildPythonPackage {
   ]
   ++ lib.optionals stdenv.hostPlatform.isDarwin [
     # Minimal version required according to:
-    # https://github.com/scipy/scipy/blob/v1.14.0/scipy/meson.build#L185-L188
+    # https://github.com/scipy/scipy/blob/v1.16.0/scipy/meson.build#L238-L244
     (xcbuild.override {
       sdkVer = "13.3";
     })
@@ -130,6 +132,8 @@ buildPythonPackage {
     pybind11
     pooch
     xsimd
+    boost188
+    qhull
   ];
 
   dependencies = [ numpy ];
@@ -142,22 +146,22 @@ buildPythonPackage {
     pytest-xdist
   ];
 
-  disabledTests = [
-    "test_cumulative_simpson_against_simpson_with_default_dx"
-    # https://github.com/scipy/scipy/issues/22789
-    "test_funcs"
-  ]
-  ++ lib.optionals (stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isAarch64) [
-    # The following tests are broken on aarch64-darwin with newer compilers and library versions.
-    # See https://github.com/scipy/scipy/issues/18308
-    "test_a_b_neg_int_after_euler_hypergeometric_transformation"
-    "test_dst4_definition_ortho"
-    "test_load_mat4_le"
-    "hyp2f1_test_case47"
-    "hyp2f1_test_case3"
-    "test_uint64_max"
-    "test_large_m4" # https://github.com/scipy/scipy/issues/22466
-  ];
+  disabledTests =
+    lib.optionals (stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isAarch64) [
+      # The following tests are broken on aarch64-darwin with newer compilers and library versions.
+      # See https://github.com/scipy/scipy/issues/18308
+      "test_a_b_neg_int_after_euler_hypergeometric_transformation"
+      "test_dst4_definition_ortho"
+      "test_load_mat4_le"
+      "hyp2f1_test_case47"
+      "hyp2f1_test_case3"
+      "test_uint64_max"
+      "test_large_m4" # https://github.com/scipy/scipy/issues/22466
+    ]
+    ++ lib.optionals (python.isPy311) [
+      # https://github.com/scipy/scipy/issues/22789 Observed only with Python 3.11
+      "test_funcs"
+    ];
 
   doCheck = !(stdenv.hostPlatform.isx86_64 && stdenv.hostPlatform.isDarwin);
 
@@ -185,6 +189,7 @@ buildPythonPackage {
     # meson the proper cross compilation related arguments. See also:
     # https://docs.scipy.org/doc/scipy/building/cross_compilation.html
     "--cross-file=${crossFileScipy}"
+    "-Duse-system-libraries=all"
   ];
 
   # disable stackprotector on aarch64-darwin for now

@@ -1,6 +1,7 @@
 {
   stdenv,
   fetchFromGitHub,
+  fetchpatch,
   gmp,
   bison,
   perl,
@@ -14,7 +15,7 @@
   sharutils,
   file,
   getconf,
-  flint3,
+  flint,
   ntl,
   mpfr,
   cddlib,
@@ -39,7 +40,7 @@ stdenv.mkDerivation rec {
 
     # if a release is tagged (which sometimes does not happen), it will
     # be in the format below.
-    rev = "Release-${lib.replaceStrings [ "." ] [ "-" ] version}";
+    tag = "Release-${lib.replaceStrings [ "." ] [ "-" ] version}";
     hash = "sha256-vrRIirWQLbbe1l07AqqHK/StWo0egKuivdKT5R8Rx58=";
 
     # the repository's .gitattributes file contains the lines "/Tst/
@@ -51,7 +52,7 @@ stdenv.mkDerivation rec {
   configureFlags = [
     "--enable-gfanlib"
     "--with-ntl=${ntl}"
-    "--with-flint=${flint3}"
+    "--with-flint=${flint}"
   ]
   ++ lib.optionals enableDocs [
     "--enable-doc-build"
@@ -69,13 +70,25 @@ stdenv.mkDerivation rec {
     patchShebangs .
   '';
 
+  # Use fq_nmod_mat_entry instead of row pointer (removed in flint 3.3.0)
+  patches = [
+    (fetchpatch {
+      url = "https://github.com/Singular/Singular/commit/05f5116e13c8a4f5f820c78c35944dd6d197d442.patch";
+      hash = "sha256-4l7JaCCFzE+xINU+E92eBN5CJKIdtQHly4Ed3ZwbKTA=";
+    })
+    (fetchpatch {
+      url = "https://github.com/Singular/Singular/commit/595d7167e6e019d45d9a4f1e18ae741df1f3c41d.patch";
+      hash = "sha256-hpTZy/eAiHAaleasWPAenxM35aqeNAZ//o6OqqdGOJ4=";
+    })
+  ];
+
   # For reference (last checked on commit 75f460d):
   # https://github.com/Singular/Singular/blob/spielwiese/doc/Building-Singular-from-source.md
   # https://github.com/Singular/Singular/blob/spielwiese/doc/external-packages-dynamic-modules.md
   buildInputs = [
     # necessary
     gmp
-    flint3
+    flint
     # by upstream recommended but optional
     ncurses
     readline

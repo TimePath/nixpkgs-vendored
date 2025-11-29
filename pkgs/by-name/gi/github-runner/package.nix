@@ -161,6 +161,8 @@ buildDotnetModule (finalAttrs: {
   disabledTests = [
     "GitHub.Runner.Common.Tests.Listener.SelfUpdaterL0.TestSelfUpdateAsync"
     "GitHub.Runner.Common.Tests.ProcessInvokerL0.OomScoreAdjIsInherited"
+    # intermittently failing
+    "GitHub.Runner.Common.Tests.ProcessExtensionL0.SuccessReadProcessEnv"
   ]
   ++ map (x: "GitHub.Runner.Common.Tests.Listener.SelfUpdaterL0.TestSelfUpdateAsync_${x}") [
     "Cancel_CloneHashTask_WhenNotNeeded"
@@ -219,12 +221,10 @@ buildDotnetModule (finalAttrs: {
     "GitHub.Runner.Common.Tests.Worker.StepHostL0.DetermineNode24RuntimeVersionInAlpineContainerAsync"
   ]
   ++ lib.optionals finalAttrs.DOTNET_SYSTEM_GLOBALIZATION_INVARIANT [
-    "GitHub.Runner.Common.Tests.ProcessExtensionL0.SuccessReadProcessEnv"
     "GitHub.Runner.Common.Tests.Util.StringUtilL0.FormatUsesInvariantCulture"
     "GitHub.Runner.Common.Tests.Worker.VariablesL0.Constructor_SetsOrdinalIgnoreCaseComparer"
     "GitHub.Runner.Common.Tests.Worker.WorkerL0.DispatchCancellation"
     "GitHub.Runner.Common.Tests.Worker.WorkerL0.DispatchRunNewJob"
-    "GitHub.Runner.Common.Tests.ProcessExtensionL0.SuccessReadProcessEnv"
   ];
 
   testProjectFile = [ "src/Test/Test.csproj" ];
@@ -348,12 +348,12 @@ buildDotnetModule (finalAttrs: {
     updateScript = ./update.sh;
   };
 
-  meta = with lib; {
-    changelog = "https://github.com/actions/runner/releases/tag/v${version}";
+  meta = {
+    changelog = "https://github.com/actions/runner/releases/tag/v${finalAttrs.version}";
     description = "Self-hosted runner for GitHub Actions";
     homepage = "https://github.com/actions/runner";
-    license = licenses.mit;
-    maintainers = with maintainers; [
+    license = lib.licenses.mit;
+    maintainers = with lib.maintainers; [
       veehaitch
       kfollesdal
       aanderse
@@ -365,6 +365,6 @@ buildDotnetModule (finalAttrs: {
       "x86_64-darwin"
       "aarch64-darwin"
     ];
-    sourceProvenance = with sourceTypes; [ binaryNativeCode ];
+    sourceProvenance = with lib.sourceTypes; [ binaryNativeCode ];
   };
 })

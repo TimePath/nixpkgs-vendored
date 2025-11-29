@@ -4,15 +4,16 @@
   fetchzip,
   ripgrep,
   makeWrapper,
+  testers,
 }:
 
-buildNpmPackage rec {
+buildNpmPackage (finalAttrs: {
   pname = "amp-cli";
-  version = "0.0.1747195318-g6d7769";
+  version = "0.0.1763812881-gc5f191";
 
   src = fetchzip {
-    url = "https://registry.npmjs.org/@sourcegraph/amp/-/amp-${version}.tgz";
-    hash = "sha256-YoyuZX41l21eTGi9t0rYb4vEE3rSqiue2kIf0PDbaKc=";
+    url = "https://registry.npmjs.org/@sourcegraph/amp/-/amp-${finalAttrs.version}.tgz";
+    hash = "sha256-lsRQZM5OdQUnGAEn70k/IRgu0BcyAppgDCFvYkfbsmw=";
   };
 
   postPatch = ''
@@ -25,7 +26,7 @@ buildNpmPackage rec {
       "version": "0.0.0",
       "license": "UNLICENSED",
       "dependencies": {
-        "@sourcegraph/amp": "${version}"
+        "@sourcegraph/amp": "${finalAttrs.version}"
       },
       "bin": {
         "amp": "./bin/amp-wrapper.js"
@@ -39,12 +40,12 @@ buildNpmPackage rec {
     # Create a wrapper script that will be installed by npm
     cat > bin/amp-wrapper.js << EOF
     #!/usr/bin/env node
-    require('@sourcegraph/amp/dist/amp.js')
+    import('@sourcegraph/amp/dist/main.js')
     EOF
     chmod +x bin/amp-wrapper.js
   '';
 
-  npmDepsHash = "sha256-NxccnQxATtDBipRKhQWJn0s3PPXPeldrz9DLVq/ftpM=";
+  npmDepsHash = "sha256-5FpZX1citPeT4nqORqxkPFWQUwtSwXBmrGXN8oyexy8=";
 
   propagatedBuildInputs = [
     ripgrep
@@ -65,20 +66,25 @@ buildNpmPackage rec {
 
   postInstall = ''
     wrapProgram $out/bin/amp \
-      --prefix PATH : ${lib.makeBinPath [ ripgrep ]}
+      --prefix PATH : ${lib.makeBinPath [ ripgrep ]} \
+      --set AMP_SKIP_UPDATE_CHECK 1
   '';
 
   passthru.updateScript = ./update.sh;
+  passthru.tests.version = testers.testVersion {
+    package = finalAttrs.finalPackage;
+    command = "HOME=$(mktemp -d) amp --version";
+  };
 
   meta = {
-    description = "Amp is an AI coding agent, in research preview from Sourcegraph. This is the CLI for Amp.";
-    homepage = "https://github.com/sourcegraph/amp";
+    description = "CLI for Amp, an agentic coding agent in research preview from Sourcegraph";
+    homepage = "https://ampcode.com/";
     downloadPage = "https://www.npmjs.com/package/@sourcegraph/amp";
     license = lib.licenses.unfree;
     maintainers = with lib.maintainers; [
       keegancsmith
-      owickstrom
+      burmudar
     ];
     mainProgram = "amp";
   };
-}
+})

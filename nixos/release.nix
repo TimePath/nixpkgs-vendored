@@ -30,7 +30,8 @@ let
 
   version = fileContents ../.version;
   versionSuffix =
-    (if stableBranch then "." else "beta") + "${toString nixpkgs.revCount}.${nixpkgs.shortRev}";
+    (if stableBranch then "." else "beta")
+    + "${toString (nixpkgs.revCount - 901827)}.${nixpkgs.shortRev}";
 
   # Run the tests for each platform.  You can run a test by doing
   # e.g. ‘nix-build release.nix -A tests.login.x86_64-linux’,
@@ -456,100 +457,6 @@ rec {
         )
       );
 
-  # An image that can be imported into lxd and used for container creation
-  lxdContainerImage = forMatchingSystems [ "x86_64-linux" "aarch64-linux" ] (
-    system:
-
-    with import ./.. { inherit system; };
-
-    hydraJob (
-      (import lib/eval-config.nix {
-        inherit system;
-        modules = [
-          configuration
-          versionModule
-          ./maintainers/scripts/lxd/lxd-container-image.nix
-        ];
-      }).config.system.build.tarball
-    )
-
-  );
-
-  lxdContainerImageSquashfs = forMatchingSystems [ "x86_64-linux" "aarch64-linux" ] (
-    system:
-
-    with import ./.. { inherit system; };
-
-    hydraJob (
-      (import lib/eval-config.nix {
-        inherit system;
-        modules = [
-          configuration
-          versionModule
-          ./maintainers/scripts/lxd/lxd-container-image.nix
-        ];
-      }).config.system.build.squashfs
-    )
-
-  );
-
-  # Metadata for the lxd image
-  lxdContainerMeta = forMatchingSystems [ "x86_64-linux" "aarch64-linux" ] (
-    system:
-
-    with import ./.. { inherit system; };
-
-    hydraJob (
-      (import lib/eval-config.nix {
-        inherit system;
-        modules = [
-          configuration
-          versionModule
-          ./maintainers/scripts/lxd/lxd-container-image.nix
-        ];
-      }).config.system.build.metadata
-    )
-
-  );
-
-  # An image that can be imported into lxd and used for container creation
-  lxdVirtualMachineImage = forMatchingSystems [ "x86_64-linux" "aarch64-linux" ] (
-    system:
-
-    with import ./.. { inherit system; };
-
-    hydraJob (
-      (import lib/eval-config.nix {
-        inherit system;
-        modules = [
-          configuration
-          versionModule
-          ./maintainers/scripts/lxd/lxd-virtual-machine-image.nix
-        ];
-      }).config.system.build.qemuImage
-    )
-
-  );
-
-  # Metadata for the lxd image
-  lxdVirtualMachineImageMeta = forMatchingSystems [ "x86_64-linux" "aarch64-linux" ] (
-    system:
-
-    with import ./.. { inherit system; };
-
-    hydraJob (
-      (import lib/eval-config.nix {
-        inherit system;
-        modules = [
-          configuration
-          versionModule
-          ./maintainers/scripts/lxd/lxd-virtual-machine-image.nix
-        ];
-      }).config.system.build.metadata
-    )
-
-  );
-
   # Ensure that all packages used by the minimal NixOS config end up in the channel.
   dummy = forAllSystems (
     system:
@@ -616,7 +523,7 @@ rec {
       {
         services.xserver.enable = true;
         services.displayManager.sddm.enable = true;
-        services.xserver.desktopManager.plasma5.enable = true;
+        services.desktopManager.plasma6.enable = true;
       }
     );
 
@@ -632,8 +539,8 @@ rec {
       { ... }:
       {
         services.xserver.enable = true;
-        services.xserver.displayManager.gdm.enable = true;
-        services.xserver.desktopManager.gnome.enable = true;
+        services.displayManager.gdm.enable = true;
+        services.desktopManager.gnome.enable = true;
       }
     );
 
@@ -641,16 +548,7 @@ rec {
       { ... }:
       {
         services.xserver.enable = true;
-        services.xserver.desktopManager.pantheon.enable = true;
-      }
-    );
-
-    deepin = makeClosure (
-      { ... }:
-      {
-        services.xserver.enable = true;
-        services.xserver.displayManager.lightdm.enable = true;
-        services.xserver.desktopManager.deepin.enable = true;
+        services.desktopManager.pantheon.enable = true;
       }
     );
 

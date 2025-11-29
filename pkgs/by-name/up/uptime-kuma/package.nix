@@ -35,7 +35,7 @@ buildNpmPackage rec {
     cp -r dist $out/lib/node_modules/uptime-kuma/
 
     # remove references to nodejs source
-    rm -r $out/lib/node_modules/uptime-kuma/node_modules/@louislam/sqlite3/build-tmp-napi-v6
+    rm -r $out/lib/node_modules/uptime-kuma/node_modules/@louislam/sqlite3/build-tmp-napi-v*
   '';
 
   postFixup = ''
@@ -46,13 +46,13 @@ buildNpmPackage rec {
 
   passthru.tests.uptime-kuma = nixosTests.uptime-kuma;
 
-  meta = with lib; {
+  meta = {
     description = "Fancy self-hosted monitoring tool";
     mainProgram = "uptime-kuma-server";
     homepage = "https://github.com/louislam/uptime-kuma";
     changelog = "https://github.com/louislam/uptime-kuma/releases/tag/${version}";
-    license = licenses.mit;
-    maintainers = with maintainers; [ julienmalka ];
+    license = lib.licenses.mit;
+    maintainers = with lib.maintainers; [ julienmalka ];
     # FileNotFoundError: [Errno 2] No such file or directory: 'xcrun'
     broken = stdenv.hostPlatform.isDarwin;
   };

@@ -111,6 +111,10 @@ stdenv.mkDerivation (
         & https://github.com/NixOS/nixpkgs/pull/188492#issuecomment-1233802991
       */
       ./reenable_DT_HASH.patch
+
+      # enable parallel & reproducible build of glibcLocales
+      ./0001-localedata-allow-reproducible-parallel-install-of-lo.patch
+      ./0002-Makeconfig-make-inst_complocaledir-overridable.patch
     ]
     /*
       NVCC does not support ARM intrinsics. Since <math.h> is pulled in by almost
@@ -123,10 +127,16 @@ stdenv.mkDerivation (
         isAarch64 = stdenv.buildPlatform.isAarch64 || stdenv.hostPlatform.isAarch64;
         isLinux = stdenv.buildPlatform.isLinux || stdenv.hostPlatform.isLinux;
       in
+      # Remove certain defines when __CUDACC__ is defined (i.e. we're building with a CUDA compiler)
       lib.optional (isAarch64 && isLinux) ./0001-aarch64-math-vector.h-add-NVCC-include-guard.patch
     )
+    # Modify certain defines to be compatible with musl
     ++ lib.optional stdenv.hostPlatform.isMusl ./fix-rpc-types-musl-conflicts.patch
+    # Enable cross-compilation of glibc on Darwin (build=Darwin, host=Linux)
     ++ lib.optional stdenv.buildPlatform.isDarwin ./darwin-cross-build.patch
+    # Reverts this patch: https://sourceware.org/git/?p=glibc.git;a=commit;h=55d63e731253de82e96ed4ddca2e294076cd0bc5
+    # This revert enables [CET] (Control-flow Enforcement Technology) by default
+    # [CET]: https://en.wikipedia.org/wiki/Control-flow_integrity#Intel_Control-flow_Enforcement_Technology
     ++ lib.optional enableCETRuntimeDefault ./2.39-revert-cet-default-disable.patch;
 
     postPatch = ''
@@ -154,6 +164,15 @@ stdenv.mkDerivation (
       -#define LIBIDN2_SONAME "libidn2.so.0"
       +#define LIBIDN2_SONAME "${lib.getLib libidn2}/lib/libidn2.so.0"
       EOF
+    ''
+    # For some reason, with gcc-15 build fails with the following error:
+    #
+    #     zic.c:3767:1: note: did you mean to specify it after ')' following function parameters?
+    #     zic.c:3781:1: error: standard 'reproducible' attribute can only be applied to function declarators or type specifiers with function type []
+    + ''
+      for path in timezone/zic.c timezone/zdump.c ; do
+        substituteInPlace $path  --replace-fail "ATTRIBUTE_REPRODUCIBLE" ""
+      done
     '';
 
     configureFlags = [

@@ -17,6 +17,7 @@
   stumpy,
   cloudpickle,
   pytestCheckHook,
+  pytest-cov-stub,
   pytest-xdist,
   mock,
   matplotlib,
@@ -30,7 +31,7 @@
 
 buildPythonPackage rec {
   pname = "tsfresh";
-  version = "0.21.0";
+  version = "0.21.1";
   pyproject = true;
 
   disabled = pythonOlder "3.7";
@@ -39,13 +40,12 @@ buildPythonPackage rec {
     owner = "blue-yonder";
     repo = "tsfresh";
     tag = "v${version}";
-    hash = "sha256-XwNCI1J/Z6w7nq59s9rSN4eVGgrMDQjPpGFy9SxrTn0=";
+    hash = "sha256-KwUI33t5KFcTUWdSDg81OPbNn5SYv4Gw/0dPjCB502w=";
   };
 
   patches = [
     # The pyscaffold is not a build dependency but just a python project bootstrapping tool, so we do not need it
     ./remove-pyscaffold.patch
-    ./remove-pytest-coverage-flags.patch
   ];
 
   dependencies = [
@@ -71,6 +71,7 @@ buildPythonPackage rec {
 
   nativeCheckInputs = [
     pytestCheckHook
+    pytest-cov-stub
     pytest-xdist
     mock
     matplotlib

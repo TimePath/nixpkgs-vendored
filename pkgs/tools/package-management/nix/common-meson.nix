@@ -12,8 +12,9 @@
   },
   patches ? [ ],
   maintainers ? [
-    lib.maintainers.lovesegfault
     lib.maintainers.artturin
+    lib.maintainers.philiptaron
+    lib.maintainers.lovesegfault
   ],
   teams ? [ lib.teams.nix ],
   self_attribute_name,
@@ -63,7 +64,11 @@ assert (hash == null) -> (src != null);
   xz,
   enableDocumentation ? stdenv.buildPlatform.canExecute stdenv.hostPlatform,
   enableStatic ? stdenv.hostPlatform.isStatic,
-  withAWS ? !enableStatic && (stdenv.hostPlatform.isLinux || stdenv.hostPlatform.isDarwin),
+  withAWS ?
+    lib.meta.availableOn stdenv.hostPlatform aws-c-common
+    && !enableStatic
+    && (stdenv.hostPlatform.isLinux || stdenv.hostPlatform.isDarwin),
+  aws-c-common,
   aws-sdk-cpp,
   withLibseccomp ? lib.meta.availableOn stdenv.hostPlatform libseccomp,
   libseccomp,
@@ -95,8 +100,6 @@ stdenv.mkDerivation (finalAttrs: {
     "man"
     "doc"
   ];
-
-  hardeningEnable = lib.optionals (!stdenv.hostPlatform.isDarwin) [ "pie" ];
 
   hardeningDisable = [
     "shadowstack"
@@ -226,7 +229,7 @@ stdenv.mkDerivation (finalAttrs: {
       export MANPATH=$man/share/man:$MANPATH
     '';
 
-  separateDebugInfo = stdenv.hostPlatform.isLinux && enableStatic;
+  separateDebugInfo = stdenv.hostPlatform.isLinux && !enableStatic;
 
   passthru = {
     inherit aws-sdk-cpp boehmgc;
@@ -271,6 +274,10 @@ stdenv.mkDerivation (finalAttrs: {
     license = licenses.lgpl21Plus;
     inherit maintainers teams;
     platforms = platforms.unix;
+    # Gets stuck in functional-tests in cross-trunk jobset and doesn't timeout
+    # https://hydra.nixos.org/build/298175022
+    # probably https://github.com/NixOS/nix/issues/13042
+    broken = stdenv.hostPlatform.system == "i686-linux" && stdenv.buildPlatform != stdenv.hostPlatform;
     outputsToInstall = [ "out" ] ++ optional enableDocumentation "man";
     mainProgram = "nix";
   };

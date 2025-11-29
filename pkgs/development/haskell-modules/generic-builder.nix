@@ -16,13 +16,6 @@
 let
   isCross = stdenv.buildPlatform != stdenv.hostPlatform;
 
-  # Note that ghc.isGhcjs != stdenv.hostPlatform.isGhcjs.
-  # ghc.isGhcjs implies that we are using ghcjs, a project separate from GHC.
-  # (mere) stdenv.hostPlatform.isGhcjs means that we are using GHC's JavaScript
-  # backend. The latter is a normal cross compilation backend and needs little
-  # special accommodation.
-  outputsJS = ghc.isGhcjs or false || stdenv.hostPlatform.isGhcjs;
-
   # Pass the "wrong" C compiler rather than none at all so packages that just
   # use the C preproccessor still work, see
   # https://github.com/haskell/cabal/issues/6466 for details.
@@ -47,7 +40,7 @@ in
 
 {
   pname,
-  dontStrip ? outputsJS,
+  dontStrip ? stdenv.hostPlatform.isGhcjs,
   version,
   revision ? null,
   sha256 ? null,
@@ -57,6 +50,9 @@ in
   },
   sourceRoot ? null,
   setSourceRoot ? null,
+  # Extra environment variables to set during the build.
+  # See: `../../../doc/languages-frameworks/haskell.section.md`
+  env ? { },
   buildDepends ? [ ],
   setupHaskellDepends ? [ ],
   libraryHaskellDepends ? [ ],
@@ -77,14 +73,17 @@ in
   doHaddockQuickjump ? doHoogle,
   doInstallIntermediates ? false,
   editedCabalFile ? null,
-  enableLibraryProfiling ? !outputsJS,
+  enableLibraryProfiling ? !stdenv.hostPlatform.isGhcjs,
   enableExecutableProfiling ? false,
   profilingDetail ? "exported-functions",
   # TODO enable shared libs for cross-compiling
   enableSharedExecutables ? false,
-  enableSharedLibraries ? !stdenv.hostPlatform.isStatic && (ghc.enableShared or false),
+  enableSharedLibraries ?
+    !stdenv.hostPlatform.isStatic
+    && (ghc.enableShared or false)
+    && !stdenv.hostPlatform.useAndroidPrebuilt, # TODO: figure out why /build leaks into RPATH
   enableDeadCodeElimination ? (!stdenv.hostPlatform.isDarwin), # TODO: use -dead_strip for darwin
-  # Disabling this for ghcjs prevents this crash: https://gitlab.haskell.org/ghc/ghc/-/issues/23235
+  # Disabling this for JS prevents this crash: https://gitlab.haskell.org/ghc/ghc/-/issues/23235
   enableStaticLibraries ?
     !(stdenv.hostPlatform.isWindows || stdenv.hostPlatform.isWasm || stdenv.hostPlatform.isGhcjs),
   enableHsc2hsViaAsm ? stdenv.hostPlatform.isWindows,
@@ -97,14 +96,14 @@ in
   libraryFrameworkDepends ? [ ],
   executableFrameworkDepends ? [ ],
   homepage ? "https://hackage.haskell.org/package/${pname}",
-  platforms ? with lib.platforms; all, # GHC can cross-compile
+  platforms ? lib.platforms.all, # GHC can cross-compile
   badPlatforms ? lib.platforms.none,
   hydraPlatforms ? null,
   hyperlinkSource ? true,
   isExecutable ? false,
   isLibrary ? !isExecutable,
   jailbreak ? false,
-  license,
+  license ? null,
   enableParallelBuilding ? true,
   maintainers ? null,
   teams ? null,
@@ -185,6 +184,11 @@ in
   # See https://nixos.org/manual/nixpkgs/unstable/#haskell-packaging-helpers
   # or its source doc/languages-frameworks/haskell.section.md
   disallowGhcReference ? false,
+  # By default we convert the `.cabal` file to Unix line endings to work around
+  # Hackage converting them to DOS line endings when revised, see
+  # <https://github.com/haskell/hackage-server/issues/316>.
+  # Pass `true` to disable this behavior.
+  dontConvertCabalFileToUnix ? false,
   # Cabal 3.8 which is shipped by default for GHC >= 9.3 always calls
   # `pkg-config --libs --static` as part of the configure step. This requires
   # Requires.private dependencies of pkg-config dependencies to be present in
@@ -222,13 +226,12 @@ let
     optionalAttrs
     ;
 
-  isGhcjs = ghc.isGhcjs or false;
   isHaLVM = ghc.isHaLVM or false;
 
   # GHC used for building Setup.hs
   #
   # Same as our GHC, unless we're cross, in which case it is native GHC with the
-  # same version, or ghcjs, in which case its the ghc used to build ghcjs.
+  # same version.
   nativeGhc = buildHaskellPackages.ghc;
 
   # the target dir for haddock documentation
@@ -352,9 +355,6 @@ let
     (enableFeature (!dontStrip) "library-stripping")
     (enableFeature (!dontStrip) "executable-stripping")
   ]
-  ++ optionals isGhcjs [
-    "--ghcjs"
-  ]
   ++ optionals isCross (
     [
       "--configure-option=--host=${stdenv.hostPlatform.config}"
@@ -397,9 +397,9 @@ let
       # closePropagationFast.
       propagatePlainBuildInputs =
         drvs:
-        builtins.map (i: i.val) (
+        map (i: i.val) (
           builtins.genericClosure {
-            startSet = builtins.map (drv: {
+            startSet = map (drv: {
               key = drv.outPath;
               val = drv;
             }) (builtins.filter propagateValue drvs);
@@ -484,7 +484,7 @@ let
 
   setupCommand = "./Setup";
 
-  ghcCommand' = if isGhcjs then "ghcjs" else "ghc";
+  ghcCommand' = "ghc";
   ghcCommand = "${ghc.targetPrefix}${ghcCommand'}";
 
   ghcNameWithPrefix = "${ghc.targetPrefix}${ghc.haskellCompilerName}";
@@ -513,9 +513,7 @@ let
 
   intermediatesDir = "share/haskell/${ghc.version}/${pname}-${version}/dist";
 
-  # On old ghcjs, the jsexe directories are the output but on the js backend they seem to be treated as intermediates
   jsexe = rec {
-    shouldUseNode = isGhcjs;
     shouldAdd = stdenv.hostPlatform.isGhcjs && isExecutable;
     shouldCopy = shouldAdd && !doInstallIntermediates;
     shouldSymlink = shouldAdd && doInstallIntermediates;
@@ -551,6 +549,20 @@ let
       "haskellPackages.mkDerivation: testTarget is deprecated. Use testTargets instead"
       (lib.concatStringsSep " " testTargets);
 
+  env' = {
+    LANG = "en_US.UTF-8"; # GHC needs the locale configured during the Haddock phase.
+  }
+  // env
+  # Implicit pointer to integer conversions are errors by default since clang 15.
+  # Works around https://gitlab.haskell.org/ghc/ghc/-/issues/23456. krank:ignore-line
+  # A fix was included in GHC 9.10.* and backported to 9.6.5 and 9.8.2 (but we no longer
+  # ship 9.8.1).
+  // optionalAttrs (lib.versionOlder ghc.version "9.6.5" && stdenv.hasCC && stdenv.cc.isClang) {
+    NIX_CFLAGS_COMPILE =
+      "-Wno-error=int-conversion"
+      + lib.optionalString (env ? NIX_CFLAGS_COMPILE) (" " + env.NIX_CFLAGS_COMPILE);
+  };
+
 in
 lib.fix (
   drv:
@@ -585,19 +597,29 @@ lib.fix (
         ++ optionals stdenv.hostPlatform.isGhcjs [ nodejs ];
       propagatedBuildInputs = optionals isLibrary propagatedBuildInputs;
 
-      LANG = "en_US.UTF-8"; # GHC needs the locale configured during the Haddock phase.
+      env =
+        optionalAttrs (stdenv.buildPlatform.libc == "glibc") {
+          LOCALE_ARCHIVE = "${glibcLocales}/lib/locale/locale-archive";
+        }
+        // env';
 
       prePatch =
         optionalString (editedCabalFile != null) ''
           echo "Replace Cabal file with edited version from ${newCabalFileUrl}."
           cp ${newCabalFile} ${pname}.cabal
         ''
-        + prePatch;
+        + prePatch
+        + "\n"
+        # cabal2nix-generated expressions run hpack not until prePatch to create
+        # the .cabal file (if necessary)
+        + lib.optionalString (!dontConvertCabalFileToUnix) ''
+          sed -i -e 's/\r$//' *.cabal
+        '';
 
       postPatch =
         optionalString jailbreak ''
           echo "Run jailbreak-cabal to lift version restrictions on build inputs."
-          ${jailbreak-cabal}/bin/jailbreak-cabal ${pname}.cabal
+          ${jailbreak-cabal}/bin/jailbreak-cabal *.cabal
         ''
         + postPatch;
 
@@ -719,13 +741,7 @@ lib.fix (
       # package specifies `hardeningDisable`.
       hardeningDisable =
         lib.optionals (args ? hardeningDisable) hardeningDisable
-        ++ lib.optional (ghc.isHaLVM or false) "all"
-        # Static libraries (ie. all of pkgsStatic.haskellPackages) fail to build
-        # because by default Nix adds `-pie` to the linker flags: this
-        # conflicts with the `-r` and `-no-pie` flags added by GHC (see
-        # https://gitlab.haskell.org/ghc/ghc/-/issues/19580). hardeningDisable
-        # changes the default Nix behavior regarding adding "hardening" flags.
-        ++ lib.optional enableStaticLibraries "pie";
+        ++ lib.optional (ghc.isHaLVM or false) "all";
 
       configurePhase = ''
         runHook preConfigure
@@ -775,7 +791,7 @@ lib.fix (
         checkFlagsArray+=(
           "--show-details=streaming"
           "--test-wrapper=${testWrapperScript}"
-          ${lib.escapeShellArgs (builtins.map (opt: "--test-option=${opt}") testFlags)}
+          ${lib.escapeShellArgs (map (opt: "--test-option=${opt}") testFlags)}
         )
         export NIX_GHC_PACKAGE_PATH_FOR_TEST="''${NIX_GHC_PACKAGE_PATH_FOR_TEST:-$packageConfDir:}"
         ${setupCommand} test ${testTargetsString} $checkFlags ''${checkFlagsArray:+"''${checkFlagsArray[@]}"}
@@ -827,15 +843,7 @@ lib.fix (
             ''
         }
 
-        ${optionalString jsexe.shouldUseNode ''
-          for exeDir in "${binDir}/"*.jsexe; do
-            exe="''${exeDir%.jsexe}"
-            printWords '#!${nodejs}/bin/node' > "$exe"
-            echo >> "$exe"
-            cat "$exeDir/all.js" >> "$exe"
-            chmod +x "$exe"
-          done
-        ''}
+
         ${optionalString doCoverage "mkdir -p $out/share && cp -r dist/hpc $out/share"}
 
         ${optionalString jsexe.shouldCopy ''
@@ -956,7 +964,7 @@ lib.fix (
         #   # and with python:
         #
         #   > nix-shell -E 'with (import <nixpkgs> {}); \
-        #   >    haskell.packages.ghc865.hello.envFunc { buildInputs = [ python ]; }'
+        #   >    haskellPackages.hello.envFunc { buildInputs = [ python ]; }'
         envFunc =
           {
             withHoogle ? false,
@@ -991,16 +999,36 @@ lib.fix (
             ++ optional (allPkgconfigDepends != [ ]) pkg-config
             ++ collectedToolDepends;
             buildInputs = otherBuildInputsSystem;
-            LANG = "en_US.UTF-8";
-            LOCALE_ARCHIVE = lib.optionalString (
-              stdenv.buildPlatform.libc == "glibc"
-            ) "${buildPackages.glibcLocales}/lib/locale/locale-archive";
-            "NIX_${ghcCommandCaps}" = "${ghcEnv}/bin/${ghcCommand}";
-            "NIX_${ghcCommandCaps}PKG" = "${ghcEnv}/bin/${ghcCommand}-pkg";
-            # TODO: is this still valid?
-            "NIX_${ghcCommandCaps}_DOCDIR" = "${ghcEnv}/share/doc/ghc/html";
-            "NIX_${ghcCommandCaps}_LIBDIR" =
-              if ghc.isHaLVM or false then "${ghcEnv}/lib/HaLVM-${ghc.version}" else "${ghcEnv}/${ghcLibdir}";
+
+            env = {
+              "NIX_${ghcCommandCaps}" = "${ghcEnv}/bin/${ghcCommand}";
+              "NIX_${ghcCommandCaps}PKG" = "${ghcEnv}/bin/${ghcCommand}-pkg";
+              # TODO: is this still valid?
+              "NIX_${ghcCommandCaps}_DOCDIR" = "${ghcEnv}/share/doc/ghc/html";
+              "NIX_${ghcCommandCaps}_LIBDIR" =
+                if ghc.isHaLVM or false then "${ghcEnv}/lib/HaLVM-${ghc.version}" else "${ghcEnv}/${ghcLibdir}";
+            }
+            // optionalAttrs (stdenv.buildPlatform.libc == "glibc") {
+              # TODO: Why is this written in terms of `buildPackages`, unlike
+              # the outer `env`?
+              #
+              # According to @sternenseemann [1]:
+              #
+              # > The condition is based on `buildPlatform`, so it needs to
+              # > match. `LOCALE_ARCHIVE` is set to accompany `LANG` which
+              # > concerns things we execute on the build platform like
+              # > `haddock`.
+              # >
+              # > Arguably the outer non `buildPackages` one is incorrect and
+              # > probably works by accident in most cases since the locale
+              # > archive is not platform specific (the trouble is that it
+              # > may sometimes be impossible to cross-compile). At least
+              # > that would be my assumption.
+              #
+              # [1]: https://github.com/NixOS/nixpkgs/pull/424368#discussion_r2202683378
+              LOCALE_ARCHIVE = "${buildPackages.glibcLocales}/lib/locale/locale-archive";
+            }
+            // env';
           } "echo $nativeBuildInputs $buildInputs > $out";
 
         env = envFunc { };
@@ -1008,10 +1036,11 @@ lib.fix (
       };
 
       meta = {
-        inherit homepage license platforms;
+        inherit homepage platforms;
       }
       // optionalAttrs (args ? broken) { inherit broken; }
       // optionalAttrs (args ? description) { inherit description; }
+      // optionalAttrs (args ? license) { inherit license; }
       // optionalAttrs (args ? maintainers) { inherit maintainers; }
       // optionalAttrs (args ? teams) { inherit teams; }
       // optionalAttrs (args ? hydraPlatforms) { inherit hydraPlatforms; }
@@ -1045,17 +1074,8 @@ lib.fix (
     // optionalAttrs (args ? postFixup) { inherit postFixup; }
     // optionalAttrs (args ? dontStrip) { inherit dontStrip; }
     // optionalAttrs (postPhases != [ ]) { inherit postPhases; }
-    // optionalAttrs (stdenv.buildPlatform.libc == "glibc") {
-      LOCALE_ARCHIVE = "${glibcLocales}/lib/locale/locale-archive";
-    }
     // optionalAttrs (disallowedRequisites != [ ] || disallowGhcReference) {
       disallowedRequisites = disallowedRequisites ++ (if disallowGhcReference then [ ghc ] else [ ]);
-    }
-
-    # Implicit pointer to integer conversions are errors by default since clang 15.
-    # Works around https://gitlab.haskell.org/ghc/ghc/-/issues/23456.
-    // optionalAttrs (stdenv.hasCC && stdenv.cc.isClang) {
-      NIX_CFLAGS_COMPILE = "-Wno-error=int-conversion";
     }
   )
 )

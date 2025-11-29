@@ -2,31 +2,42 @@
   cmake,
   lib,
   fetchFromGitHub,
-  monado,
+  fetchpatch2,
   ninja,
+  sdl3,
+  stdenv,
+  testers,
+  libX11,
+  libGL,
   nix-update-script,
+
+  # passthru tests
   SDL2_ttf,
   SDL2_net,
   SDL2_gfx,
   SDL2_sound,
   SDL2_mixer,
   SDL2_image,
-  sdl3,
-  stdenv,
-  testers,
-  libX11,
-  libGL,
-}:
+  SDL_compat,
+  ffmpeg,
+  qemu,
 
+  x11Support ? !stdenv.hostPlatform.isAndroid && !stdenv.hostPlatform.isWindows,
+}:
+let
+  # tray support on sdl3 pulls in gtk3, which is quite an expensive dependency.
+  # sdl2 does not support the tray, so we can just disable that requirement.
+  sdl3' = sdl3.override { traySupport = false; };
+in
 stdenv.mkDerivation (finalAttrs: {
   pname = "sdl2-compat";
-  version = "2.32.56";
+  version = "2.32.58";
 
   src = fetchFromGitHub {
     owner = "libsdl-org";
     repo = "sdl2-compat";
     tag = "release-${finalAttrs.version}";
-    hash = "sha256-Xg886KX54vwGANIhTAFslzPw/sZs2SvpXzXUXcOKgMs=";
+    hash = "sha256-Ngmr/KG5dQ1IDVafn2Jw/29hFCzPGKc9GOenT/4fsIM=";
   };
 
   nativeBuildInputs = [
@@ -35,9 +46,9 @@ stdenv.mkDerivation (finalAttrs: {
   ];
 
   buildInputs = [
-    sdl3
-    libX11
-  ];
+    sdl3'
+  ]
+  ++ lib.optional x11Support libX11;
 
   checkInputs = [ libGL ];
 
@@ -53,7 +64,7 @@ stdenv.mkDerivation (finalAttrs: {
 
   cmakeFlags = [
     (lib.cmakeBool "SDL2COMPAT_TESTS" finalAttrs.finalPackage.doCheck)
-    (lib.cmakeFeature "CMAKE_INSTALL_RPATH" (lib.makeLibraryPath [ sdl3 ]))
+    (lib.cmakeFeature "CMAKE_INSTALL_RPATH" (lib.makeLibraryPath [ sdl3' ]))
   ];
 
   # skip timing-based tests as those are flaky
@@ -61,7 +72,15 @@ stdenv.mkDerivation (finalAttrs: {
 
   doCheck = true;
 
-  patches = [ ./find-headers.patch ];
+  patches = [
+    ./find-headers.patch
+
+    # https://github.com/libsdl-org/sdl2-compat/pull/545
+    (fetchpatch2 {
+      url = "https://github.com/libsdl-org/sdl2-compat/commit/b799076c72c2492224e81544f58f92b737cccbd3.patch?full_index=1";
+      hash = "sha256-fAc8yBlT+XFHDKcF4MFgBAz2WtXGmhYzNNrjaGSr+do=";
+    })
+  ];
   setupHook = ./setup-hook.sh;
 
   postFixup = ''
@@ -75,16 +94,18 @@ stdenv.mkDerivation (finalAttrs: {
       pkg-config = testers.testMetaPkgConfig finalAttrs.finalPackage;
 
       inherit
+        SDL_compat
         SDL2_ttf
         SDL2_net
         SDL2_gfx
         SDL2_sound
         SDL2_mixer
         SDL2_image
+        ffmpeg
         ;
     }
     // lib.optionalAttrs stdenv.hostPlatform.isLinux {
-      inherit monado;
+      inherit qemu;
     };
 
     updateScript = nix-update-script {

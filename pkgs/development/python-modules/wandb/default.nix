@@ -4,10 +4,9 @@
   fetchFromGitHub,
 
   ## wandb-core
-  buildGoModule,
-  git,
+  buildGo125Module,
+  gitMinimal,
   versionCheckHook,
-  fetchpatch2,
 
   ## gpu-stats
   rustPlatform,
@@ -44,7 +43,7 @@
   azure-storage-blob,
   bokeh,
   boto3,
-  coverage,
+  cloudpickle,
   flask,
   google-cloud-artifact-registry,
   google-cloud-compute,
@@ -78,22 +77,22 @@
 }:
 
 let
-  version = "0.19.10";
+  version = "0.21.4";
   src = fetchFromGitHub {
     owner = "wandb";
     repo = "wandb";
     tag = "v${version}";
-    hash = "sha256-SptjImAK0hDAr7UZjUMWnAVB1bxyzoATlyrPek5Tm48=";
+    hash = "sha256-1l68nU/rmYg/Npg1EVraGr2tu/lkNAo9M7Q0IyckEoc=";
   };
 
   gpu-stats = rustPlatform.buildRustPackage {
     pname = "gpu-stats";
-    version = "0.3.0";
+    version = "0.6.0";
     inherit src;
 
     sourceRoot = "${src.name}/gpu_stats";
 
-    cargoHash = "sha256-kkWvTLduxFVIEvi4e65QQ7S0kHTRJ8XW028o430L91s=";
+    cargoHash = "sha256-iZinowkbBc3nuE0uRS2zLN2y97eCMD1mp/MKVKdnXaE=";
 
     checkFlags = [
       # fails in sandbox
@@ -103,7 +102,6 @@ let
     nativeInstallCheckInputs = [
       versionCheckHook
     ];
-    versionCheckProgram = "${placeholder "out"}/bin/gpu_stats";
     versionCheckProgramArg = "--version";
     doInstallCheck = true;
 
@@ -112,32 +110,15 @@ let
     };
   };
 
-  wandb-core = buildGoModule rec {
+  wandb-core = buildGo125Module rec {
     pname = "wandb-core";
     inherit src version;
 
     sourceRoot = "${src.name}/core";
 
-    # x86_64-darwin fails with:
-    # "link: duplicated definition of symbol dlopen, from github.com/ebitengine/purego and github.com/ebitengine/purego"
-    # This is fixed in purego 0.8.3, but wandb-core uses 0.8.2, so we pull in the fix here.
-    patches = lib.optionals (stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isx86_64) [
-      (fetchpatch2 {
-        url = "https://github.com/ebitengine/purego/commit/1638563e361522e5f63511d84c4541ae1c5fd704.patch";
-        stripLen = 1;
-        extraPrefix = "vendor/github.com/ebitengine/purego/";
-        # These are not vendored by wandb-core
-        excludes = [
-          "vendor/github.com/ebitengine/purego/.github/workflows/test.yml"
-          "vendor/github.com/ebitengine/purego/internal/fakecgo/gen.go"
-        ];
-        hash = "sha256-GoT/OL6r3rJY5zoUyl3kGzSRpX3PoI7Yjpe7oRb0cFc=";
-      })
-    ];
-
     # hardcode the `gpu_stats` binary path.
     postPatch = ''
-      substituteInPlace pkg/monitor/gpuresourcemanager.go \
+      substituteInPlace internal/monitor/gpuresourcemanager.go \
         --replace-fail \
           'cmdPath, err := getGPUCollectorCmdPath()' \
           'cmdPath, err := "${lib.getExe gpu-stats}", error(nil)'
@@ -146,7 +127,7 @@ let
     vendorHash = null;
 
     nativeBuildInputs = [
-      git
+      gitMinimal
     ];
 
     nativeInstallCheckInputs = [
@@ -182,17 +163,23 @@ buildPythonPackage rec {
   patches = [
     # Replace git paths
     (replaceVars ./hardcode-git-path.patch {
-      git = lib.getExe git;
+      git = lib.getExe gitMinimal;
     })
   ];
 
-  # Hard-code the path to the `wandb-core` binary in the code.
-  postPatch = ''
-    substituteInPlace wandb/util.py \
-      --replace-fail \
-        'bin_path = pathlib.Path(__file__).parent / "bin" / "wandb-core"' \
-        'bin_path = pathlib.Path("${lib.getExe wandb-core}")'
-  '';
+  postPatch =
+    # Prevent hatch from building wandb-core
+    ''
+      substituteInPlace hatch_build.py \
+        --replace-fail "artifacts.extend(self._build_wandb_core())" ""
+    ''
+    # Hard-code the path to the `wandb-core` binary in the code.
+    + ''
+      substituteInPlace wandb/util.py \
+        --replace-fail \
+          'bin_path = pathlib.Path(__file__).parent / "bin" / "wandb-core"' \
+          'bin_path = pathlib.Path("${lib.getExe wandb-core}")'
+    '';
 
   env = {
     # Prevent the install script to try building and embedding the `gpu_stats` and `wandb-core`
@@ -237,9 +224,9 @@ buildPythonPackage rec {
     azure-containerregistry
     azure-identity
     azure-storage-blob
-    boto3
     bokeh
-    coverage
+    boto3
+    cloudpickle
     flask
     google-cloud-artifact-registry
     google-cloud-compute
@@ -273,7 +260,7 @@ buildPythonPackage rec {
   ];
 
   # test_matplotlib_image_with_multiple_axes may take >60s
-  pytestFlagsArray = [
+  pytestFlags = [
     "--timeout=1024"
   ];
 
@@ -283,6 +270,16 @@ buildPythonPackage rec {
 
     # broke somewhere between sentry-sdk 2.15.0 and 2.22.0
     "tests/unit_tests/test_analytics/test_sentry.py"
+
+    # Server connection times out under load
+    "tests/unit_tests/test_wandb_login.py"
+
+    # PermissionError: unable to write to .cache/wandb/artifacts
+    "tests/unit_tests/test_artifacts/test_wandb_artifacts.py"
+  ]
+  ++ lib.optionals stdenv.hostPlatform.isDarwin [
+    # Breaks in sandbox: "Timed out waiting for wandb service to start"
+    "tests/unit_tests/test_job_builder.py"
   ];
 
   disabledTests = [
@@ -356,6 +353,13 @@ buildPythonPackage rec {
     "test_log_media_prefixed_with_multiple_slashes"
     "test_log_media_saves_to_run_directory"
     "test_log_media_with_path_traversal"
+
+    # HandleAbandonedError / SystemExit when run in sandbox
+    "test_makedirs_raises_oserror__uses_temp_dir"
+    "test_no_root_dir_access__uses_temp_dir"
+
+    # AssertionError: Not all requests have been executed
+    "test_image_refs"
   ]
   ++ lib.optionals stdenv.hostPlatform.isDarwin [
     # AssertionError: assert not copy2_mock.called
@@ -375,6 +379,15 @@ buildPythonPackage rec {
 
     # RuntimeError: *** -[__NSPlaceholderArray initWithObjects:count:]: attempt to insert nil object from objects[1]
     "test_wandb_image_with_matplotlib_figure"
+
+    # AssertionError: assert 'did you mean https://api.wandb.ai' in '1'
+    "test_login_bad_host"
+
+    # Asserttion error: 1 != 0 (testing system exit code)
+    "test_login_host_trailing_slash_fix_invalid"
+
+    # Breaks in sandbox: "Timed out waiting for wandb service to start"
+    "test_setup_offline"
   ];
 
   pythonImportsCheck = [ "wandb" ];

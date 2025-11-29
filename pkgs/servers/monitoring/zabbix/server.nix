@@ -10,6 +10,7 @@
   libxml2,
   openssl,
   pcre,
+  pcre2,
   zlib,
   jabberSupport ? true,
   iksemel,
@@ -47,6 +48,8 @@ import ./versions.nix (
       inherit hash;
     };
 
+    enableParallelBuilding = true;
+
     nativeBuildInputs = [
       autoreconfHook
       pkg-config
@@ -58,7 +61,7 @@ import ./versions.nix (
       libiconv
       libxml2
       openssl
-      pcre
+      (if lib.versionAtLeast version "7.4" then pcre2 else pcre)
       zlib
     ]
     ++ optional odbcSupport unixODBC

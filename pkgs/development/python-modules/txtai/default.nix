@@ -2,7 +2,6 @@
   lib,
   buildPythonPackage,
   fetchFromGitHub,
-  fetchpatch,
 
   # build-system
   setuptools,
@@ -17,20 +16,26 @@
   regex,
 
   # optional-dependencies
+  # agent
+  mcpadapt,
+  smolagents,
   # ann
   annoy,
   hnswlib,
   pgvector,
   sqlalchemy,
-  sqlite-vec,
+  sqlite-vec-c,
   # api
   aiohttp,
   fastapi,
+  fastapi-mcp,
+  httpx,
   pillow,
   python-multipart,
   uvicorn,
   # cloud
   # apache-libcloud, (unpackaged)
+  fasteners,
   # console
   rich,
   # database
@@ -39,7 +44,6 @@
   # grand-cypher (unpackaged)
   # grand-graph (unpackaged)
   networkx,
-  python-louvain,
   # model
   onnx,
   onnxruntime,
@@ -62,8 +66,9 @@
   litellm,
   # llama-cpp-python, (unpackaged)
   # pipeline-text
-  fasttext,
+  gliner,
   sentencepiece,
+  staticvectors,
   # pipeline-train
   accelerate,
   bitsandbytes,
@@ -71,6 +76,7 @@
   peft,
   skl2onnx,
   # vectors
+  fasttext,
   # pymagnitude-lite, (unpackaged)
   scikit-learn,
   sentence-transformers,
@@ -83,27 +89,35 @@
   xmltodict,
 
   # tests
-  httpx,
   msgpack,
   pytestCheckHook,
 }:
 let
-  version = "8.2.0";
+  version = "9.1.0";
+  agent = [
+    mcpadapt
+    smolagents
+  ];
   ann = [
     annoy
     hnswlib
     pgvector
     sqlalchemy
-    sqlite-vec
+    sqlite-vec-c
   ];
   api = [
     aiohttp
     fastapi
+    fastapi-mcp
+    httpx
     pillow
     python-multipart
     uvicorn
   ];
-  # cloud = [ apache-libcloud ];
+  cloud = [
+    # apache-libcloud
+    fasteners
+  ];
   console = [ rich ];
   database = [
     duckdb
@@ -114,7 +128,6 @@ let
     # grand-cypher
     # grand-graph
     networkx
-    python-louvain
     sqlalchemy
   ];
   model = [
@@ -146,8 +159,9 @@ let
     # llama-cpp-python
   ];
   pipeline-text = [
-    fasttext
+    gliner
     sentencepiece
+    staticvectors
   ];
   pipeline-train = [
     accelerate
@@ -187,7 +201,8 @@ let
   ];
   similarity = ann ++ vectors;
   all =
-    api
+    agent
+    ++ api
     ++ ann
     ++ console
     ++ database
@@ -200,13 +215,16 @@ let
 
   optional-dependencies = {
     inherit
+      agent
       ann
       api
+      cloud
       console
       database
       graph
       model
       pipeline-audio
+      pipeline-data
       pipeline-image
       pipeline-llm
       pipeline-text
@@ -223,21 +241,13 @@ let
     owner = "neuml";
     repo = "txtai";
     tag = "v${version}";
-    hash = "sha256-fMzCYw9eqlpGI5FKoyYyxT17EhUFmFP9lrCn/LFC6ks=";
+    hash = "sha256-5wr9fTfLVwGksD/+wbw4CktSznDi/xI/WfZBG3+BNYc=";
   };
 in
 buildPythonPackage {
   pname = "txtai";
   inherit version src;
   pyproject = true;
-
-  patches = [
-    (fetchpatch {
-      name = "CVE-2025-10854.patch";
-      url = "https://github.com/neuml/txtai/commit/303a2576155d3adffdc52b939b2bb05125ca479a.patch";
-      hash = "sha256-O1ra8esOAYQk5YT1Sr5qhxgF5YB0tBIRKxAZ9MgjQxI=";
-    })
-  ];
 
   build-system = [ setuptools ];
 
@@ -272,29 +282,16 @@ buildPythonPackage {
     msgpack
     pytestCheckHook
     python-multipart
+    timm
     sqlalchemy
   ]
+  ++ optional-dependencies.agent
   ++ optional-dependencies.ann
   ++ optional-dependencies.api
   ++ optional-dependencies.similarity;
 
-  # The deselected paths depend on the huggingface hub and should be run as a passthru test
-  # disabledTestPaths won't work as the problem is with the classes containing the tests
-  # (in other words, it fails on __init__)
   pytestFlagsArray = [
-    "test/python/test*.py"
-    "--deselect=test/python/testagent.py"
-    "--deselect=test/python/testcloud.py"
-    "--deselect=test/python/testconsole.py"
-    "--deselect=test/python/testembeddings.py"
-    "--deselect=test/python/testgraph.py"
-    "--deselect=test/python/testapi/testembeddings.py"
-    "--deselect=test/python/testapi/testpipelines.py"
-    "--deselect=test/python/testapi/testworkflow.py"
-    "--deselect=test/python/testdatabase/testclient.py"
-    "--deselect=test/python/testdatabase/testduckdb.py"
-    "--deselect=test/python/testdatabase/testencoder.py"
-    "--deselect=test/python/testworkflow.py"
+    "test/python/*"
   ];
 
   disabledTests = [
@@ -302,7 +299,14 @@ buildPythonPackage {
     "testInvalidTar"
     "testInvalidZip"
     # Downloads from Huggingface
+    "TestAgent"
+    "TestCloud"
+    "TestConsole"
+    "TestEmbeddings"
+    "TestGraph"
+    "TestWorkflow"
     "testPipeline"
+    "testVectors"
     # Not finding sqlite-vec despite being supplied
     "testSQLite"
     "testSQLiteCustom"

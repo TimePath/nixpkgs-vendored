@@ -12,7 +12,7 @@ for system in "aarch64-darwin darwin/arm64" "x86_64-linux linux/x64"; do
 
   url=$(curl -ILs -o /dev/null -w %{url_effective} "https://lmstudio.ai/download/latest/${platform}")
   version="$(echo "${url}" | cut -d/ -f6)"
-  hash=$(nix hash convert --hash-algo sha256 "$(nix-prefetch-url "${url}")")
+  hash=$(nix --extra-experimental-features nix-command hash convert --hash-algo sha256 "$(nix-prefetch-url "${url}")")
 
   update-source-version lmstudio "${version}" "${hash}" --system="${arch}" --version-key="version_${arch}" \
     2> >(tee /dev/stderr) | grep -q "nothing to do" && exit

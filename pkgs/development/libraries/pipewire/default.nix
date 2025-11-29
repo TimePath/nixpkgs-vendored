@@ -28,7 +28,6 @@
   vulkan-headers,
   vulkan-loader,
   webrtc-audio-processing,
-  webrtc-audio-processing_1,
   ncurses,
   readline, # meson can't find <7 as those versions don't have a .pc file
   lilv,
@@ -70,19 +69,15 @@
 }:
 
 let
-  webrtc-audio-processings = lib.filter (lib.meta.availableOn stdenv.hostPlatform) [
-    webrtc-audio-processing_1
-    webrtc-audio-processing
-  ];
-
   modemmanagerSupport = lib.meta.availableOn stdenv.hostPlatform modemmanager;
   libcameraSupport = lib.meta.availableOn stdenv.hostPlatform libcamera;
   ldacbtSupport = lib.meta.availableOn stdenv.hostPlatform ldacbt;
+  webrtcAudioProcessingSupport = lib.meta.availableOn stdenv.hostPlatform webrtc-audio-processing;
 in
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "pipewire";
-  version = "1.4.7";
+  version = "1.4.9";
 
   outputs = [
     "out"
@@ -98,7 +93,7 @@ stdenv.mkDerivation (finalAttrs: {
     owner = "pipewire";
     repo = "pipewire";
     rev = finalAttrs.version;
-    sha256 = "sha256-U9J7f6nDO4tp6OCBtBcZ9HP9KDKLfuuRWDEbgLL9Avs=";
+    sha256 = "sha256-380KY17l6scVchZAoSHswTvceYl427e79eU11JQallc=";
   };
 
   patches = [
@@ -155,7 +150,7 @@ stdenv.mkDerivation (finalAttrs: {
     epoll-shim
     freebsd.libstdthreads
   ]
-  ++ lib.take 1 webrtc-audio-processings
+  ++ lib.optional webrtcAudioProcessingSupport webrtc-audio-processing
   ++ lib.optional stdenv.hostPlatform.isLinux alsa-lib
   ++ lib.optional ldacbtSupport ldacbt
   ++ lib.optional libcameraSupport libcamera
@@ -170,6 +165,7 @@ stdenv.mkDerivation (finalAttrs: {
   ++ lib.optionals x11Support [
     libcanberra
     xorg.libX11
+    xorg.libxcb
     xorg.libXfixes
   ]
   ++ lib.optionals bluezSupport [
@@ -194,7 +190,7 @@ stdenv.mkDerivation (finalAttrs: {
     (lib.mesonEnable "installed_tests" true)
     (lib.mesonOption "installed_test_prefix" (placeholder "installedTests"))
     (lib.mesonOption "libjack-path" "${placeholder "jack"}/lib")
-    (lib.mesonEnable "echo-cancel-webrtc" (webrtc-audio-processings != [ ]))
+    (lib.mesonEnable "echo-cancel-webrtc" webrtcAudioProcessingSupport)
     (lib.mesonEnable "libcamera" (lib.meta.availableOn stdenv.hostPlatform libcamera))
     (lib.mesonEnable "libffado" ffadoSupport)
     (lib.mesonEnable "roc" rocSupport)
@@ -243,10 +239,14 @@ stdenv.mkDerivation (finalAttrs: {
   FONTCONFIG_FILE = makeFontsConf { fontDirectories = [ ]; };
 
   doCheck = true;
+  doInstallCheck = true;
 
-  postUnpack = ''
-    patchShebangs ${finalAttrs.src.name}/doc/*.py
-    patchShebangs ${finalAttrs.src.name}/doc/input-filter-h.sh
+  postPatch = ''
+    patchShebangs doc/*.py
+    patchShebangs doc/input-filter-h.sh
+
+    # Remove installed-test that runs forever
+    sed -i -e "/test-pipewire-alsa-stress/d" pipewire-alsa/tests/meson.build
   '';
 
   postInstall = ''

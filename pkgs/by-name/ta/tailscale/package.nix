@@ -24,7 +24,7 @@
 
 buildGoModule (finalAttrs: {
   pname = "tailscale";
-  version = "1.82.5";
+  version = "1.90.9";
 
   outputs = [
     "out"
@@ -35,10 +35,10 @@ buildGoModule (finalAttrs: {
     owner = "tailscale";
     repo = "tailscale";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-BFitj8A+TfNKTyXBB1YhsEs5NvLUfgJ2IbjB2ipf4xU=";
+    hash = "sha256-gfpjP1i9077VR/sDclnz+QXJcCffuS0i33m75zo91kM=";
   };
 
-  vendorHash = "sha256-SiUkN6BQK1IQmLfkfPetzvYqRu9ENK6+6txtGxegF5Y=";
+  vendorHash = "sha256-AUOjLomba75qfzb9Vxc0Sktyeces6hBSuOMgboWcDnE=";
 
   nativeBuildInputs = [
     makeWrapper
@@ -60,8 +60,7 @@ buildGoModule (finalAttrs: {
   ];
 
   excludedPackages = [
-    # exlude integration tests which fail to work
-    # and require additional tooling
+    # Exclude integration tests which fail to work and require additional tooling
     "tstest/integration"
   ];
 
@@ -76,8 +75,7 @@ buildGoModule (finalAttrs: {
     "ts_include_cli"
   ];
 
-  # remove vendored tooling to ensure it's not used
-  # also avoids some unnecessary tests
+  # Remove vendored tooling to ensure it's not used; also avoids some unnecessary tests
   preBuild = ''
     rm -rf ./tool
   '';
@@ -148,6 +146,12 @@ buildGoModule (finalAttrs: {
 
         # flaky: https://github.com/tailscale/tailscale/issues/15348
         "TestSafeFuncHappyPath"
+
+        # Requires `go` to be installed with the `go tool` system which we don't use
+        "TestGoVersion"
+
+        # Fails because we vendor dependencies
+        "TestLicenseHeaders"
       ]
       ++ lib.optionals stdenv.hostPlatform.isDarwin [
         # syscall default route interface en0 differs from netstat
@@ -162,6 +166,11 @@ buildGoModule (finalAttrs: {
 
         # Fails only on Darwin, succeeds on other tested platforms.
         "TestOnTailnetDefaultAutoUpdate"
+
+        # Fails due to UNIX domain socket path limits in the Nix build environment.
+        # Likely we could do something to make the paths shorter.
+        "TestProtocolQEMU"
+        "TestProtocolUnixDgram"
       ];
     in
     [ "-skip=^${builtins.concatStringsSep "$|^" skippedTests}$" ];

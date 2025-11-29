@@ -7,11 +7,12 @@
   gst_all_1,
   wayland,
   pkg-config,
+  nix-update-script,
 }:
 
 stdenv.mkDerivation rec {
   pname = "qgroundcontrol";
-  version = "4.4.4";
+  version = "4.4.5";
 
   propagatedBuildInputs = with libsForQt5; [
     qtbase
@@ -87,14 +88,16 @@ stdenv.mkDerivation rec {
   src = fetchFromGitHub {
     owner = "mavlink";
     repo = "qgroundcontrol";
-    rev = "v${version}";
-    hash = "sha256-+BsI79p0XJ1nCjEtaCVgHbD+jseVGLQZOll79xZ5THo=";
+    tag = "v${version}";
+    hash = "sha256-wjrfwE97J+UzBPIARQ6cPadN6xIdqR8i+ZKbtiDproM=";
     fetchSubmodules = true;
   };
 
   patches = [
     ./disable-bad-message.patch
   ];
+
+  passthru.updateScript = nix-update-script { };
 
   meta = {
     description = "Provides full ground station support and configuration for the PX4 and APM Flight Stacks";

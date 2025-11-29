@@ -4,6 +4,7 @@
   fetchpatch,
   fetchurl,
   autoreconfHook,
+  gtk-doc,
   pkg-config,
   atk,
   cairo,
@@ -52,7 +53,11 @@ stdenv.mkDerivation (finalAttrs: {
     pkg-config
     intltool
   ]
-  ++ lib.optionals stdenv.hostPlatform.isDarwin [ autoreconfHook ];
+  ++ lib.optionals stdenv.hostPlatform.isDarwin [
+    autoreconfHook
+    gtk-doc
+  ];
+
   buildInputs = [
     atk
     cairo
@@ -67,10 +72,6 @@ stdenv.mkDerivation (finalAttrs: {
     gnome-common
     gtk-mac-integration-gtk2
   ];
-
-  preConfigure = lib.optionalString stdenv.hostPlatform.isDarwin ''
-    intltoolize --force
-  '';
 
   doCheck = false; # requires X11 daemon
 

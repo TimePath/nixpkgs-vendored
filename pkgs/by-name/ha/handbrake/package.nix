@@ -85,14 +85,14 @@
 }:
 
 let
-  version = "1.9.2";
+  version = "1.10.2";
 
   src = fetchFromGitHub {
     owner = "HandBrake";
     repo = "HandBrake";
     # uses version commit for logic in version.txt
-    rev = "e117cfe7fca37abeec59ea4201e5d93ed7477746";
-    hash = "sha256-cOEgFVvBgV0kYnTc7d1CdzoN7mMjd8rxSmc6i/dbRWI=";
+    rev = "dddf75f756e56d2b8dbb0609175bc12047a4841d";
+    hash = "sha256-CIMpJDJ0IIz95f3/zxeQqpCFpHWEmdgA+VaaUDY516A=";
   };
 
   # Handbrake maintains a set of ffmpeg patches. In particular, these
@@ -100,11 +100,11 @@ let
   # https://github.com/HandBrake/HandBrake/issues/4029
   # base ffmpeg version is specified in:
   # https://github.com/HandBrake/HandBrake/blob/master/contrib/ffmpeg/module.defs
-  ffmpeg-version = "7.1";
+  ffmpeg-version = "7.1.1";
   ffmpeg-hb =
     (ffmpeg_7-full.override {
       version = ffmpeg-version;
-      hash = "sha256-erTkv156VskhYEJWjpWFvHjmcr2hr6qgUi28Ho8NFYk=";
+      hash = "sha256-GyS8imOqfOUPxXrzCiQtzCQIIH6bvWmQAB0fKUcRsW4=";
     }).overrideAttrs
       (old: {
         patches = (old.patches or [ ]) ++ [
@@ -129,10 +129,17 @@ let
           "${src}/contrib/ffmpeg/A15-Expose-the-unmodified-Dolby-Vision-RPU-T35-buffers.patch"
           "${src}/contrib/ffmpeg/A16-avcodec-amfenc-Add-support-for-on-demand-key-frames.patch"
           "${src}/contrib/ffmpeg/A17-avcodec-amfenc-properly-set-primaries-transfer-and-m.patch"
-          "${src}/contrib/ffmpeg/A18-Revert-avcodec-amfenc-GPU-driver-version-check.patch"
-          "${src}/contrib/ffmpeg/A19-lavc-pgssubdec-Add-graphic-plane-and-cropping.patch"
+          "${src}/contrib/ffmpeg/A18-libavcodec-qsvenc-update-has_b_frames-value.patch"
+          "${src}/contrib/ffmpeg/A19-libavcodec-qsv-enable-av1-scc.patch"
+          "${src}/contrib/ffmpeg/A20-Revert-avcodec-amfenc-GPU-driver-version-check.patch"
+          "${src}/contrib/ffmpeg/A21-lavc-pgssubdec-Add-graphic-plane-and-cropping.patch"
+          "${src}/contrib/ffmpeg/A22-avformat-mov-read-and-write-additional-iTunes-style-.patch"
+          "${src}/contrib/ffmpeg/A23-avformat-movenc-write-iTunEXTC-and-iTunMOVI-metadata.patch"
+          "${src}/contrib/ffmpeg/A24-AV1-videotoolbox.patch"
+          "${src}/contrib/ffmpeg/A25-videotoolbox-speedup-decoding.patch"
           "${src}/contrib/ffmpeg/A28-enable-av1_mf-encoder.patch"
-          "${src}/contrib/ffmpeg/A29-Revert-lavc-Check-codec_whitelist-early-in-avcodec_o.patch"
+          "${src}/contrib/ffmpeg/A30-qsv-fixed-BT2020-BT709-conversion.patch"
+          "${src}/contrib/ffmpeg/A31-Parse-EAC3-Atmos-ComplexityIndex-for-MP4-remuxing.patch"
         ];
       });
 
@@ -149,12 +156,14 @@ let
     postPatch = (old.postPatch or "") + ''
       pushd ..
       patch -p1 < ${src}/contrib/x265/A01-Do-not-set-thread-priority-on-Windows.patch
-      # patch -p1 < ${src}/contrib/x265/A02-Apple-Silicon-tuning.patch
-      patch -p1 < ${src}/contrib/x265/A03-fix-crash-when-SEI-length-is-variable.patch
-      patch -p1 < ${src}/contrib/x265/A04-implement-ambient-viewing-environment-sei.patch
-      # patch -p1 < ${src}/contrib/x265/A05-Fix-Dolby-Vision-RPU-memory-management.patch
-      # patch -p1 < ${src}/contrib/x265/A06-Simplify-macOS-cross-compilation.patch
-      # patch -p1 < ${src}/contrib/x265/A07-add-new-matrix-coefficients-from-H.273-v3.patch
+      patch -p1 < ${src}/contrib/x265/A02-Apple-Silicon-tuning.patch
+      patch -p1 < ${src}/contrib/x265/A03-Implement-ambient-viewing-environment-sei.patch
+      patch -p1 < ${src}/contrib/x265/A04-add-new-matrix-coefficients-from-H.273-v3.patch
+      patch -p1 < ${src}/contrib/x265/A05-Fix-Dolby-Vision-RPU-memory-management.patch
+      # patch -p1 < ${src}/contrib/x265/A06-Update-version-strings.patch
+      patch -p1 < ${src}/contrib/x265/A07-Fix-macOS-cross-compilation.patch
+      # patch -p1 < ${src}/contrib/x265/A08-Fix-inconsistent-bitrate-in-second-pass.patch
+      patch -p1 < ${src}/contrib/x265/A09-Ensuring-the-mvdLX-is-compliant.patch
       popd
     '';
   });

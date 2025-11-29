@@ -11,6 +11,7 @@
   numactl,
   libffi,
   llvmPackages,
+  replaceVarsWith,
   coreutils,
   targetPackages,
 
@@ -214,6 +215,20 @@ let
     coreutils # for cat
   ]
   ++ lib.optionals useLLVM [
+    # Allow the use of newer LLVM versions; see the script for details.
+    (replaceVarsWith {
+      name = "subopt";
+      src = ./subopt.bash;
+      dir = "bin";
+      isExecutable = true;
+      preBuild = ''
+        name=opt
+      '';
+      replacements = {
+        inherit (stdenv) shell;
+        opt = lib.getExe' llvmPackages.llvm "opt";
+      };
+    })
     (lib.getBin llvmPackages.llvm)
   ]
   # On darwin, we need unwrapped bintools as well (for otool)
@@ -281,7 +296,7 @@ stdenv.mkDerivation {
       for exe in $(find . -type f -executable); do
         isScript $exe && continue
         ln -fs ${libiconv}/lib/libiconv.dylib $(dirname $exe)/libiconv.dylib
-        install_name_tool -change /usr/lib/libiconv.2.dylib @executable_path/libiconv.dylib -change /usr/local/lib/gcc/6/libgcc_s.1.dylib ${gcc.cc.lib}/lib/libgcc_s.1.dylib $exe
+        install_name_tool -change /usr/lib/libiconv.2.dylib @executable_path/libiconv.dylib $exe
       done
     ''
     +
@@ -432,7 +447,7 @@ stdenv.mkDerivation {
       for exe in $(find "$out" -type f -executable); do
         isScript $exe && continue
         ln -fs ${libiconv}/lib/libiconv.dylib $(dirname $exe)/libiconv.dylib
-        install_name_tool -change /usr/lib/libiconv.2.dylib @executable_path/libiconv.dylib -change /usr/local/lib/gcc/6/libgcc_s.1.dylib ${gcc.cc.lib}/lib/libgcc_s.1.dylib $exe
+        install_name_tool -change /usr/lib/libiconv.2.dylib @executable_path/libiconv.dylib $exe
       done
 
       for file in $(find "$out" -name setup-config); do
@@ -458,13 +473,6 @@ stdenv.mkDerivation {
       package_db=("$out"/lib/ghc-*/lib/package.conf.d "$out"/lib/ghc-*/package.conf.d)
       "$out/bin/ghc-pkg" --package-db="$package_db" recache
     '';
-
-  # GHC cannot currently produce outputs that are ready for `-pie` linking.
-  # Thus, disable `pie` hardening, otherwise `recompile with -fPIE` errors appear.
-  # See:
-  # * https://github.com/NixOS/nixpkgs/issues/129247
-  # * https://gitlab.haskell.org/ghc/ghc/-/issues/19580
-  hardeningDisable = [ "pie" ];
 
   doInstallCheck = true;
   installCheckPhase = ''
@@ -516,5 +524,6 @@ stdenv.mkDerivation {
     # `pkgsMusl`.
     platforms = builtins.attrNames ghcBinDists.${distSetName};
     teams = [ lib.teams.haskell ];
+    sourceProvenance = with lib.sourceTypes; [ binaryNativeCode ];
   };
 }

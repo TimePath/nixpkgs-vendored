@@ -103,6 +103,7 @@ in
             false
             "rocm"
             "cuda"
+            "vulkan"
           ]
         );
         default = null;
@@ -119,6 +120,7 @@ in
             - may require overriding gpu type with `services.ollama.rocmOverrideGfx`
               if rocm doesn't detect your AMD gpu
           - `"cuda"`: supported by most modern NVIDIA GPUs
+          - `"vulkan"`: supported by most modern GPUs on Linux
         '';
       };
       rocmOverrideGfx = lib.mkOption {
@@ -270,7 +272,11 @@ in
         "multi-user.target"
         "ollama.service"
       ];
-      after = [ "ollama.service" ];
+      wants = [ "network-online.target" ];
+      after = [
+        "ollama.service"
+        "network-online.target"
+      ];
       bindsTo = [ "ollama.service" ];
       environment = config.systemd.services.ollama.environment;
       serviceConfig = {

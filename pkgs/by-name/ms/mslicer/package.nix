@@ -11,16 +11,16 @@
 
 rustPlatform.buildRustPackage (finalAttrs: {
   pname = "mslicer";
-  version = "0.2.1";
+  version = "0.3.0";
 
   src = fetchFromGitHub {
     owner = "connorslade";
     repo = "mslicer";
     rev = finalAttrs.version;
-    hash = "sha256-VgbHFUQpxlQcYh3TNyw1IX7vyaWrHRxl4Oe5jake9Qg=";
+    hash = "sha256-k/LoJ+GqtVHZab5BEXQ5k2SJkM9hwbOkPA6c+3i9Ylo=";
   };
 
-  cargoHash = "sha256-Bs/mQTMEQxRvKK9ibIAf4KLv9jzGv3hnduXFYEdjljc=";
+  cargoHash = "sha256-a+nIVDjR+7Bh36GPNtWqKQvQgNo0w3KHWPmYpU7WMkM=";
 
   buildInputs = [
     libglvnd

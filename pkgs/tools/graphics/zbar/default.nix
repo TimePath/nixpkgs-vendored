@@ -9,6 +9,7 @@
   libX11,
   libv4l,
   qtbase,
+  qtwayland,
   qtx11extras,
   wrapQtAppsHook,
   wrapGAppsHook3,
@@ -61,6 +62,11 @@ stdenv.mkDerivation rec {
       url = "https://github.com/mchehab/zbar/commit/a549566ea11eb03622bd4458a1728ffe3f589163.patch";
       hash = "sha256-NY3bAElwNvGP9IR6JxUf62vbjx3hONrqu9pMSqaZcLY=";
     })
+    # PR from fork not yet merged into upstream
+    # See PR: https://github.com/mchehab/zbar/pull/299
+    # Remove this patch if the PR is merged or if the issue is solved another way.
+    # See https://github.com/NixOS/nixpkgs/issues/456461 for discussion of the root issue
+    ./darwin-segfault-optimized-pointer-assignment.patch
   ];
 
   nativeBuildInputs = [
@@ -92,6 +98,7 @@ stdenv.mkDerivation rec {
     libv4l
     gtk3
     qtbase
+    qtwayland
     qtx11extras
   ];
 
@@ -103,6 +110,11 @@ stdenv.mkDerivation rec {
   checkInputs = lib.optionals stdenv.hostPlatform.isDarwin [
     argp-standalone
   ];
+
+  # fix iconv linking on macOS
+  preConfigure = lib.optionalString stdenv.hostPlatform.isDarwin ''
+    export LDFLAGS="-liconv"
+  '';
 
   # Note: postConfigure instead of postPatch in order to include some
   # autoconf-generated files. The template files for the autogen'd scripts are

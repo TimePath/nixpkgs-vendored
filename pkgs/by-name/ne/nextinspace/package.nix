@@ -11,7 +11,7 @@ python3.pkgs.buildPythonApplication rec {
 
   src = fetchFromGitHub {
     owner = "not-stirred";
-    repo = pname;
+    repo = "nextinspace";
     tag = "v${version}";
     hash = "sha256-CrhzCvIA3YAFsWvdemvK1RLMacsM5RtgMjLeiqz5MwY=";
   };
@@ -41,6 +41,6 @@ python3.pkgs.buildPythonApplication rec {
     mainProgram = "nextinspace";
     homepage = "https://github.com/The-Kid-Gid/nextinspace";
     license = licenses.gpl3Only;
-    maintainers = with maintainers; [ penguwin ];
+    maintainers = [ ];
   };
 }

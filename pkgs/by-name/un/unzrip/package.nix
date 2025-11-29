@@ -8,7 +8,7 @@
 
 rustPlatform.buildRustPackage {
   pname = "unzrip";
-  version = "unstable-2023-04-16";
+  version = "0-unstable-2023-04-16";
 
   src = fetchFromGitHub {
     owner = "quininer";
@@ -31,7 +31,7 @@ rustPlatform.buildRustPackage {
     description = "Unzip implementation, support for parallel decompression, automatic detection encoding";
     homepage = "https://github.com/quininer/unzrip";
     license = licenses.mit;
-    maintainers = with maintainers; [ figsoda ];
+    maintainers = [ ];
     mainProgram = "unzrip";
   };
 }

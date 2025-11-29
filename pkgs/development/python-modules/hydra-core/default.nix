@@ -20,7 +20,7 @@
   packaging,
 
   # tests
-  pytestCheckHook,
+  pytest8_3CheckHook,
   pythonAtLeast,
 }:
 
@@ -70,11 +70,10 @@ buildPythonPackage rec {
     packaging
   ];
 
-  nativeCheckInputs = [ pytestCheckHook ];
+  nativeCheckInputs = [ pytest8_3CheckHook ];
 
-  pytestFlagsArray = [
-    "-W"
-    "ignore::UserWarning"
+  pytestFlags = [
+    "-Wignore::UserWarning"
   ];
 
   # Test environment setup broken under Nix for a few tests:

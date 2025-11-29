@@ -18,8 +18,10 @@
   fetchurl,
   fetchpatch,
   autoreconfHook,
+  audit,
   zlib,
   openssl,
+  softhsm,
   libedit,
   ldns,
   pkg-config,
@@ -35,7 +37,7 @@
   nixosTests,
   withSecurityKey ? !stdenv.hostPlatform.isStatic,
   withFIDO ? stdenv.hostPlatform.isUnix && !stdenv.hostPlatform.isMusl && withSecurityKey,
-  withPAM ? stdenv.hostPlatform.isLinux,
+  withPAM ? stdenv.hostPlatform.isLinux && !stdenv.hostPlatform.isStatic,
   # Attempts to mlock the entire sshd process on startup to prevent swapping.
   # Currently disabled when PAM support is enabled due to crashes
   # See https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=1103418
@@ -50,37 +52,24 @@ assert withFIDO -> withSecurityKey;
 stdenv.mkDerivation (finalAttrs: {
   inherit pname version src;
 
+  outputs = [
+    "out"
+    "dev"
+    "man"
+  ];
+
   patches = [
+    # Making openssh pass the LOCALE_ARCHIVE variable to the forked session processes,
+    # so the session 'bash' will receive the proper locale archive, and thus process
+    # UTF-8 properly.
     ./locale_archive.patch
 
     # See discussion in https://github.com/NixOS/nixpkgs/pull/16966
     ./dont_create_privsep_path.patch
 
-    # CVE-2025-61984:
-    # https://github.com/advisories/GHSA-hh67-847q-q3h9
-    # https://ubuntu.com/security/CVE-2025-61984#patch-details
-    (fetchpatch {
-      name = "CVE-2025-61984.patch";
-      url = "https://github.com/openssh/openssh-portable/commit/35d5917652106aede47621bb3f64044604164043.patch";
-      hunks = [ "2-" ];
-      hash = "sha256-HVnMrXCjUUerE7vENS5ZB+kJieVID9lLEkm12YHWi6A=";
-    })
-    # Fixes percent expansions test for the above.
-    (fetchpatch {
-      name = "CVE-2025-61984.test.patch";
-      url = "https://github.com/openssh/openssh-portable/commit/f64701ca25795548a61614d0b13391d6dfa7f38c.patch";
-      hunks = [ "2-" ];
-      hash = "sha256-6lxwwlDs9IUjoGHL2Orb6uJ3kTer/sXwm+cY/VWNDbI=";
-    })
-    # CVE-2025-61985:
-    # https://github.com/advisories/GHSA-8gmf-r74v-362p
-    # https://ubuntu.com/security/CVE-2025-61985#patch-details
-    (fetchpatch {
-      name = "CVE-2025-61985.patch";
-      url = "https://github.com/openssh/openssh-portable/commit/43b3bff47bb029f2299bacb6a36057981b39fdb0.patch";
-      hunks = [ "2-" ];
-      hash = "sha256-BCvaYGw6suLkQwzT9zJTYChLgX2TexzcNnBYzztFRYw=";
-    })
+    # See discussion in https://github.com/NixOS/nixpkgs/issues/453782 and
+    # https://github.com/openssh/openssh-portable/pull/602
+    ./fix_pkcs11_tests.patch
   ]
   ++ extraPatches;
 
@@ -88,7 +77,7 @@ stdenv.mkDerivation (finalAttrs: {
     # On Hydra this makes installation fail (sometimes?),
     # and nix store doesn't allow such fancy permission bits anyway.
     ''
-      substituteInPlace Makefile.in --replace '$(INSTALL) -m 4711' '$(INSTALL) -m 0711'
+      substituteInPlace Makefile.in --replace-fail '$(INSTALL) -m 4711' '$(INSTALL) -m 0711'
     '';
 
   strictDeps = true;
@@ -109,7 +98,8 @@ stdenv.mkDerivation (finalAttrs: {
   ++ lib.optional withFIDO libfido2
   ++ lib.optional withKerberos krb5
   ++ lib.optional withLdns ldns
-  ++ lib.optional withPAM pam;
+  ++ lib.optional withPAM pam
+  ++ lib.optional stdenv.hostPlatform.isStatic audit;
 
   preConfigure = ''
     # Setting LD causes `configure' and `make' to disagree about which linker
@@ -129,7 +119,7 @@ stdenv.mkDerivation (finalAttrs: {
     "--sbindir=\${out}/bin"
     "--localstatedir=/var"
     "--with-pid-dir=/run"
-    "--with-mantype=man"
+    "--with-mantype=doc"
     "--with-libedit=yes"
     "--disable-strip"
     (lib.withFeature withPAM "pam")
@@ -158,60 +148,73 @@ stdenv.mkDerivation (finalAttrs: {
 
   enableParallelBuilding = true;
 
-  hardeningEnable = [ "pie" ];
-
   doCheck = false;
   enableParallelChecking = false;
-  nativeCheckInputs = [ openssl ] ++ lib.optional (!stdenv.hostPlatform.isDarwin) hostname;
-  preCheck = lib.optionalString (stdenv.hostPlatform == stdenv.buildPlatform) ''
-    # construct a dummy HOME
-    export HOME=$(realpath ../dummy-home)
-    mkdir -p ~/.ssh
+  nativeCheckInputs = [
+    openssl
+  ]
+  ++ lib.optional (!stdenv.hostPlatform.isDarwin) hostname
+  ++ lib.optional (!stdenv.hostPlatform.isDarwin && !stdenv.hostPlatform.isMusl) softhsm;
 
-    # construct a dummy /etc/passwd file for the sshd under test
-    # to use to look up the connecting user
-    DUMMY_PASSWD=$(realpath ../dummy-passwd)
-    cat > $DUMMY_PASSWD <<EOF
-    $(whoami)::$(id -u):$(id -g)::$HOME:$SHELL
-    EOF
+  preCheck = lib.optionalString (stdenv.buildPlatform.canExecute stdenv.hostPlatform) (
+    ''
+      # construct a dummy HOME
+      export HOME=$(realpath ../dummy-home)
+      mkdir -p ~/.ssh
 
-    # we need to NIX_REDIRECTS /etc/passwd both for processes
-    # invoked directly and those invoked by the "remote" session
-    cat > ~/.ssh/environment.base <<EOF
-    NIX_REDIRECTS=/etc/passwd=$DUMMY_PASSWD
-    LD_PRELOAD=${libredirect}/lib/libredirect.so
-    EOF
+      # construct a dummy /etc/passwd file for the sshd under test
+      # to use to look up the connecting user
+      DUMMY_PASSWD=$(realpath ../dummy-passwd)
+      cat > $DUMMY_PASSWD <<EOF
+      $(whoami)::$(id -u):$(id -g)::$HOME:$SHELL
+      EOF
 
-    # use an ssh environment file to ensure environment is set
-    # up appropriately for build environment even when no shell
-    # is invoked by the ssh session. otherwise the PATH will
-    # only contain default unix paths like /bin which we don't
-    # have in our build environment
-    cat - regress/test-exec.sh > regress/test-exec.sh.new <<EOF
-    cp $HOME/.ssh/environment.base $HOME/.ssh/environment
-    echo "PATH=\$PATH" >> $HOME/.ssh/environment
-    EOF
-    mv regress/test-exec.sh.new regress/test-exec.sh
+      # we need to NIX_REDIRECTS /etc/passwd both for processes
+      # invoked directly and those invoked by the "remote" session
+      cat > ~/.ssh/environment.base <<EOF
+      NIX_REDIRECTS=/etc/passwd=$DUMMY_PASSWD
+      ${lib.optionalString (!stdenv.hostPlatform.isStatic) "LD_PRELOAD=${libredirect}/lib/libredirect.so"}
+      EOF
 
-    # explicitly enable the PermitUserEnvironment feature
-    substituteInPlace regress/test-exec.sh \
-      --replace \
-        'cat << EOF > $OBJ/sshd_config' \
-        $'cat << EOF > $OBJ/sshd_config\n\tPermitUserEnvironment yes'
+      # use an ssh environment file to ensure environment is set
+      # up appropriately for build environment even when no shell
+      # is invoked by the ssh session. otherwise the PATH will
+      # only contain default unix paths like /bin which we don't
+      # have in our build environment
+      cat - regress/test-exec.sh > regress/test-exec.sh.new <<EOF
+      cp $HOME/.ssh/environment.base $HOME/.ssh/environment
+      echo "PATH=\$PATH" >> $HOME/.ssh/environment
+      EOF
+      mv regress/test-exec.sh.new regress/test-exec.sh
 
-    # some tests want to use files under /bin as example files
-    for f in regress/sftp-cmds.sh regress/forwarding.sh; do
-      substituteInPlace $f --replace '/bin' "$(dirname $(type -p ls))"
-    done
+      # explicitly enable the PermitUserEnvironment feature
+      substituteInPlace regress/test-exec.sh \
+        --replace-fail \
+          'cat << EOF > $OBJ/sshd_config' \
+          $'cat << EOF > $OBJ/sshd_config\n\tPermitUserEnvironment yes'
 
-    # set up NIX_REDIRECTS for direct invocations
-    set -a; source ~/.ssh/environment.base; set +a
-  '';
+      # some tests want to use files under /bin as example files
+      for f in regress/sftp-cmds.sh regress/forwarding.sh; do
+        substituteInPlace $f --replace-fail '/bin' "$(dirname $(type -p ls))"
+      done
+
+      # set up NIX_REDIRECTS for direct invocations
+      set -a; source ~/.ssh/environment.base; set +a
+    ''
+    + lib.optionalString (!stdenv.hostPlatform.isDarwin && !stdenv.hostPlatform.isMusl) ''
+      # The extra tests check PKCS#11 interactions, which softhsm emulates with software only
+      substituteInPlace regress/test-exec.sh \
+        --replace-fail /usr/local/lib/softhsm/libsofthsm2.so ${lib.getLib softhsm}/lib/softhsm/libsofthsm2.so
+    ''
+  );
   # integration tests hard to get working on darwin with its shaky
   # sandbox
   # t-exec tests fail on musl
   checkTarget =
-    lib.optional (!stdenv.hostPlatform.isDarwin && !stdenv.hostPlatform.isMusl) "t-exec"
+    lib.optionals (!stdenv.hostPlatform.isDarwin && !stdenv.hostPlatform.isMusl) [
+      "t-exec"
+      "extra-tests"
+    ]
     # other tests are less demanding of the environment
     ++ [
       "unit"
@@ -223,7 +226,7 @@ stdenv.mkDerivation (finalAttrs: {
     # Install ssh-copy-id, it's very useful.
     cp contrib/ssh-copy-id $out/bin/
     chmod +x $out/bin/ssh-copy-id
-    cp contrib/ssh-copy-id.1 $out/share/man/man1/
+    cp contrib/ssh-copy-id.1 $man/share/man/man1/
   '';
 
   installTargets = [ "install-nokeys" ];
@@ -240,15 +243,25 @@ stdenv.mkDerivation (finalAttrs: {
 
   passthru = {
     inherit withKerberos;
-    tests = {
-      borgbackup-integration = nixosTests.borgbackup;
-      nixosTest = nixosTests.openssh;
-      initrd-network-openssh = nixosTests.initrd-network-ssh;
-      openssh = finalAttrs.finalPackage.overrideAttrs (previousAttrs: {
-        pname = previousAttrs.pname + "-test";
-        doCheck = true;
-      });
-    };
+    tests =
+      let
+        withThisSsh =
+          test:
+          test.extendNixOS {
+            module = {
+              services.openssh.package = lib.mkForce finalAttrs.finalPackage;
+            };
+          };
+      in
+      {
+        borgbackup-integration = withThisSsh nixosTests.borgbackup;
+        nixosTest = withThisSsh nixosTests.openssh;
+        initrd-network-openssh = withThisSsh nixosTests.initrd-network-ssh;
+        openssh = finalAttrs.finalPackage.overrideAttrs (previousAttrs: {
+          pname = previousAttrs.pname + "-test";
+          doCheck = true;
+        });
+      };
   };
 
   meta = {

@@ -96,14 +96,13 @@ applyPatches {
     repo = "$REPO";
     rev = "v\${version}";
     hash = "$HASH";
-
     passthru = {
       inherit version;
       yarnHash = "sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
-      yarnMissingHashes = null;
+      yarnMissingHashes = ./missing-hashes.json;
     };
   };
-  patches = patches ++ [$PATCHES];
+  patches = patches ++ [ $PATCHES];
 }
 EOF
 SOURCE_DIR="$(nix-build --no-out-link -E '(import <nixpkgs> {}).callPackage ./source.nix {}')"
@@ -113,5 +112,7 @@ bundix --lockfile="$SOURCE_DIR/Gemfile.lock" --gemfile="$SOURCE_DIR/Gemfile"
 echo "" >> gemset.nix  # Create trailing newline to please EditorConfig checks
 
 echo "Updating yarnHash"
-YARN_HASH="$(yarn-berry-fetcher prefetch "$SOURCE_DIR/yarn.lock" 2>/dev/null)"
+yarn-berry-fetcher missing-hashes "$SOURCE_DIR/yarn.lock" > missing-hashes.json
+YARN_HASH="$(yarn-berry-fetcher prefetch "$SOURCE_DIR/yarn.lock" ./missing-hashes.json 2>/dev/null)"
 sed -i "s;sha256-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=;$YARN_HASH;g" source.nix
+

@@ -22,7 +22,7 @@
   supportedSystems ? builtins.fromJSON (builtins.readFile ../../ci/supportedSystems.json),
   # The platform triples for which we build bootstrap tools.
   bootstrapConfigs ? [
-    "aarch64-apple-darwin"
+    "arm64-apple-darwin"
     "aarch64-unknown-linux-gnu"
     "aarch64-unknown-linux-musl"
     "i686-unknown-linux-gnu"
@@ -37,6 +37,7 @@
   # Attributes passed to nixpkgs. Don't build packages marked as unfree.
   nixpkgsArgs ? {
     config = {
+      allowAliases = false;
       allowUnfree = false;
       inHydra = true;
       # Exceptional unsafe packages that we still build and distribute,
@@ -110,20 +111,7 @@ let
 
     manual = pkgs.nixpkgs-manual.override { inherit nixpkgs; };
     metrics = import ./metrics.nix { inherit pkgs nixpkgs; };
-    lib-tests = import ../../lib/tests/release.nix {
-      pkgs = import nixpkgs (
-        recursiveUpdate
-          (recursiveUpdate {
-            inherit system;
-            config.allowUnsupportedSystem = true;
-          } nixpkgsArgs)
-          {
-            config.permittedInsecurePackages = nixpkgsArgs.config.permittedInsecurePackages or [ ] ++ [
-              "nix-2.3.18"
-            ];
-          }
-      );
-    };
+    lib-tests = import ../../lib/tests/release.nix { inherit pkgs; };
     pkgs-lib-tests = import ../pkgs-lib/tests { inherit pkgs; };
 
     darwin-tested =
@@ -163,10 +151,9 @@ let
             # jobs.firefox-unwrapped.x86_64-darwin
             jobs.qt5.qtmultimedia.x86_64-darwin
             jobs.inkscape.x86_64-darwin
-            jobs.gimp.x86_64-darwin
+            jobs.gimp2.x86_64-darwin # FIXME replace with gimp once https://github.com/NixOS/nixpkgs/issues/411189 is resoved
             jobs.emacs.x86_64-darwin
             jobs.wireshark.x86_64-darwin
-            jobs.transmission_3-gtk.x86_64-darwin
             jobs.transmission_4-gtk.x86_64-darwin
 
             # Tests
@@ -207,10 +194,9 @@ let
             # jobs.firefox-unwrapped.aarch64-darwin
             jobs.qt5.qtmultimedia.aarch64-darwin
             jobs.inkscape.aarch64-darwin
-            jobs.gimp.aarch64-darwin
+            jobs.gimp2.aarch64-darwin # FIXME replace with gimp once https://github.com/NixOS/nixpkgs/issues/411189 is resoved
             jobs.emacs.aarch64-darwin
             jobs.wireshark.aarch64-darwin
-            jobs.transmission_3-gtk.aarch64-darwin
             jobs.transmission_4-gtk.aarch64-darwin
 
             # Tests
@@ -375,10 +361,6 @@ let
           packages =
             genAttrs
               [
-                # TODO: share this list between release.nix and release-haskell.nix
-                "ghc90"
-                "ghc92"
-                "ghc94"
                 "ghc96"
                 "ghc98"
                 "ghc910"
@@ -412,8 +394,7 @@ let
           "aarch64-linux"
         ];
 
-        # Fails CI in its current state
-        ocamlPackages = { };
+        pkgsRocm = pkgs.rocmPackages.meta.release-packagePlatforms;
       };
       mapTestOn-packages = if attrNamesOnly then packageJobs else mapTestOn packageJobs;
     in

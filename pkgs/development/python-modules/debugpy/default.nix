@@ -2,12 +2,12 @@
   lib,
   stdenv,
   buildPythonPackage,
-  pythonOlder,
   pythonAtLeast,
   fetchFromGitHub,
   replaceVars,
   gdb,
   lldb,
+  setuptools,
   pytestCheckHook,
   pytest-xdist,
   pytest-timeout,
@@ -25,16 +25,14 @@
 
 buildPythonPackage rec {
   pname = "debugpy";
-  version = "1.8.14";
-  format = "setuptools";
-
-  disabled = pythonOlder "3.8";
+  version = "1.8.17";
+  pyproject = true;
 
   src = fetchFromGitHub {
     owner = "microsoft";
     repo = "debugpy";
     tag = "v${version}";
-    hash = "sha256-IOR6Dbbg/HK4/1re0BEWafwmpBMnQJCo5ojDMB2KgV4=";
+    hash = "sha256-U9WeWAX0qDusWcMsFaI1ct4YKlGQEHUYlKZfRiYhma0=";
   };
 
   patches = [
@@ -84,12 +82,14 @@ buildPythonPackage rec {
             "i686-linux" = "-shared -o attach_linux_x86.so";
             "aarch64-linux" = "-shared -o attach_linux_arm64.so";
             "riscv64-linux" = "-shared -o attach_linux_riscv64.so";
-            "x86_64-darwin" = "-D_REENTRANT -dynamiclib -lc -o attach_x86_64.dylib";
-            "aarch64-darwin" = "-D_REENTRANT -dynamiclib -lc -o attach_arm64.dylib";
+            "x86_64-darwin" = "-D_REENTRANT -dynamiclib -lc -o attach.dylib";
+            "aarch64-darwin" = "-D_REENTRANT -dynamiclib -lc -o attach.dylib";
           }
           .${stdenv.hostPlatform.system} or (throw "Unsupported system: ${stdenv.hostPlatform.system}")
         }
       )'';
+
+  build-system = [ setuptools ];
 
   # Disable tests for unmaintained versions of python
   doCheck = pythonAtLeast "3.11";
@@ -136,17 +136,23 @@ buildPythonPackage rec {
     "test_systemexit"
   ];
 
+  disabledTestPaths = lib.optionals stdenv.hostPlatform.isDarwin [
+    # ConnectionResetError: [Errno 54] Connection reset by peer
+    "tests/debugpy/test_breakpoints.py::test_error_in_condition[program-attach_connect(cli)-]"
+    "tests/debugpy/test_breakpoints.py::test_error_in_condition[program-attach_connect(cli)-NameError]"
+  ];
+
   # Fixes hanging tests on Darwin
   __darwinAllowLocalNetworking = true;
 
   pythonImportsCheck = [ "debugpy" ];
 
-  meta = with lib; {
+  meta = {
     description = "Implementation of the Debug Adapter Protocol for Python";
     homepage = "https://github.com/microsoft/debugpy";
     changelog = "https://github.com/microsoft/debugpy/releases/tag/${src.tag}";
-    license = licenses.mit;
-    maintainers = with maintainers; [ kira-bruneau ];
+    license = lib.licenses.mit;
+    maintainers = with lib.maintainers; [ kira-bruneau ];
     platforms = [
       "x86_64-linux"
       "i686-linux"

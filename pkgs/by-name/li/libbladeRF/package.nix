@@ -10,24 +10,25 @@
   ncurses,
   tecla,
   libusb1,
+  curl,
   udev,
 }:
 
 stdenv.mkDerivation rec {
   pname = "libbladeRF";
-  version = "2.5.0";
+  version = "2025.10";
 
   src = fetchFromGitHub {
     owner = "Nuand";
     repo = "bladeRF";
-    rev = "libbladeRF_v${version}";
-    hash = "sha256-H40w5YKp6M3QLrsPhILEnJiWutCYLtbgC4a63sV397Q=";
+    tag = version;
+    hash = "sha256-gp+OnAlECGZs4+JEWNX5Gt7LYdTFJUItpmDdJgeoJO4=";
     fetchSubmodules = true;
   };
 
   patches = [
-    # https://github.com/Nuand/bladeRF/issues/994
-    ./gcc-14-calloc-fixes.diff
+    # fix clang build: https://github.com/Nuand/bladeRF/pull/1045
+    ./clang-fix.patch
   ];
 
   nativeBuildInputs = [
@@ -41,17 +42,20 @@ stdenv.mkDerivation rec {
   buildInputs = [
     tecla
     libusb1
+    curl
+    ncurses
   ]
-  ++ lib.optionals stdenv.hostPlatform.isLinux [ udev ]
-  ++ lib.optionals stdenv.hostPlatform.isDarwin [ ncurses ];
+  ++ lib.optionals stdenv.hostPlatform.isLinux [ udev ];
 
   # Fixup shebang
   prePatch = "patchShebangs host/utilities/bladeRF-cli/src/cmd/doc/generate.bash";
 
-  # Let us avoid nettools as a dependency.
+  # Let us avoid net-tools as a dependency.
   postPatch = ''
     sed -i 's/$(hostname)/hostname/' host/utilities/bladeRF-cli/src/cmd/doc/generate.bash
   '';
+
+  doInstallCheck = true;
 
   cmakeFlags = [
     "-DBUILD_DOCUMENTATION=ON"

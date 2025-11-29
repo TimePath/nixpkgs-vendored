@@ -53,7 +53,6 @@ rustPlatform.buildRustPackage (finalAttrs: {
   checkFlags = [ "--skip=acceptance_criteria_for_upgrades" ];
 
   nativeInstallCheckInputs = [ versionCheckHook ];
-  versionCheckProgram = "${placeholder "out"}/bin/cib";
   versionCheckProgramArg = "--version";
   doInstallCheck = true;
 

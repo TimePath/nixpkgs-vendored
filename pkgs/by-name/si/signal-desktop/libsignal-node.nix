@@ -63,14 +63,16 @@ rustPlatform.buildRustPackage (finalAttrs: {
   ];
   postPatch = ''
     substituteInPlace node/build_node_bridge.py \
-      --replace-fail "'prebuilds'" "'$out/lib'"
+      --replace-fail "'prebuilds'" "'$out/lib'" \
+      --replace-fail "objcopy = shutil.which('%s-linux-gnu-objcopy' % cargo_target.split('-')[0]) or 'objcopy'" \
+                     "objcopy = os.getenv('OBJCOPY', 'objcopy')"
   '';
 
   buildPhase = ''
     runHook preBuild
 
     pushd node
-    npm run build -- --copy-to-prebuilds
+    npm run build -- --copy-to-prebuilds --node-arch ${stdenv.hostPlatform.node.arch}
     popd
 
     runHook postBuild

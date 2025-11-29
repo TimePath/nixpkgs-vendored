@@ -204,8 +204,5 @@ in
     ]
   );
 
-  meta.maintainers = with lib.maintainers; [
-    primeos
-    colemickens
-  ];
+  meta.maintainers = [ ];
 }

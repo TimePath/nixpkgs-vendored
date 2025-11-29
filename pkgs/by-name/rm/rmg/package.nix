@@ -25,17 +25,18 @@
   withWayland ? false,
   # Affects final license
   withAngrylionRdpPlus ? false,
+  withDiscordRpc ? false,
 }:
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "rmg";
-  version = "0.7.8";
+  version = "0.8.0";
 
   src = fetchFromGitHub {
     owner = "Rosalie241";
     repo = "RMG";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-ijoXKZbK4tm1KQ4I7R/g12tCUqrg4wRRRBCPPL03WEk=";
+    hash = "sha256-XMYHzPE5h9gD1fpN8b5YwOpY5zYCsYYQnof2MHDHa3E=";
   };
 
   nativeBuildInputs = [
@@ -48,7 +49,6 @@ stdenv.mkDerivation (finalAttrs: {
 
   buildInputs = [
     boost
-    discord-rpc
     freetype
     hidapi
     libpng
@@ -62,6 +62,7 @@ stdenv.mkDerivation (finalAttrs: {
     xdg-user-dirs
     zlib
   ]
+  ++ lib.optional withDiscordRpc discord-rpc
   ++ (
     with qt6Packages;
     [
@@ -78,6 +79,7 @@ stdenv.mkDerivation (finalAttrs: {
     # everything else.
     (lib.cmakeBool "NO_RUST" true)
     (lib.cmakeBool "USE_ANGRYLION" withAngrylionRdpPlus)
+    (lib.cmakeBool "DISCORD_RPC" withDiscordRpc) # Remove with 0.8.4 update
   ];
 
   qtWrapperArgs =

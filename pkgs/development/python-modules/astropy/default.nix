@@ -1,7 +1,6 @@
 {
   lib,
   fetchPypi,
-  fetchpatch,
   buildPythonPackage,
   pythonOlder,
 
@@ -41,26 +40,29 @@
   bottleneck,
   fsspec,
   s3fs,
+  uncompresspy,
 
   # testing
+  hypothesis,
   pytestCheckHook,
   pytest-xdist,
   pytest-astropy-header,
-  pytest-astropy,
+  pytest-doctestplus,
+  pytest-remotedata,
   threadpoolctl,
 
 }:
 
 buildPythonPackage rec {
   pname = "astropy";
-  version = "7.0.1";
+  version = "7.1.0";
   pyproject = true;
 
   disabled = pythonOlder "3.11";
 
   src = fetchPypi {
     inherit pname version;
-    hash = "sha256-OS/utEOyQ3zUwuBkGmXg8VunkeFI6bHl7X3n38s45GA=";
+    hash = "sha256-yPJUMiKVsbjPJDA9bxVb9+/bbBKCiCuWbOMEDv+MU8U=";
   };
 
   env = lib.optionalAttrs stdenv.cc.isClang {
@@ -113,6 +115,7 @@ buildPythonPackage rec {
       bottleneck
       fsspec
       s3fs
+      uncompresspy
     ]
     ++ self.recommended
     ++ self.ipython
@@ -122,11 +125,16 @@ buildPythonPackage rec {
   });
 
   nativeCheckInputs = [
+    hypothesis
     pytestCheckHook
     pytest-xdist
     pytest-astropy-header
-    pytest-astropy
+    pytest-doctestplus
+    pytest-remotedata
     threadpoolctl
+    # FIXME remove in 7.2.0
+    # see https://github.com/astropy/astropy/pull/18882
+    uncompresspy
   ]
   ++ optional-dependencies.recommended;
 
@@ -143,7 +151,7 @@ buildPythonPackage rec {
     # https://github.com/NixOS/nixpkgs/issues/255262
     cd "$out"
   '';
-  pytestFlagsArray = [
+  pytestFlags = [
     "--hypothesis-profile=ci"
   ];
   postCheck = ''

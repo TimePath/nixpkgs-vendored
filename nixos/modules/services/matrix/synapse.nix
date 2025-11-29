@@ -3,6 +3,7 @@
   lib,
   options,
   pkgs,
+  utils,
   ...
 }:
 
@@ -122,12 +123,13 @@ let
   genLogConfigFile =
     logName:
     format.generate "synapse-log-${logName}.yaml" (
-      cfg.log
-      // optionalAttrs (cfg.log ? handlers.journal) {
-        handlers.journal = cfg.log.handlers.journal // {
-          SYSLOG_IDENTIFIER = logName;
-        };
-      }
+      attrsets.recursiveUpdate cfg.log (
+        optionalAttrs (cfg.log ? handlers.journal) {
+          handlers.journal = cfg.log.handlers.journal // {
+            SYSLOG_IDENTIFIER = logName;
+          };
+        }
+      )
     );
 
   toIntBase8 =
@@ -1296,6 +1298,15 @@ in
           '';
         };
 
+        extraArgs = mkOption {
+          type = types.listOf types.str;
+          default = [ ];
+          example = [ "--no-secrets-in-config" ];
+          description = ''
+            Extra command lines argument that are passed to synapse and workers.
+          '';
+        };
+
         extraConfigFiles = mkOption {
           type = types.listOf types.path;
           default = [ ];
@@ -1433,7 +1444,7 @@ in
     systemd.targets.matrix-synapse = lib.mkIf hasWorkers {
       description = "Synapse Matrix parent target";
       wants = [ "network-online.target" ];
-      after = [ "network-online.target" ] ++ optional hasLocalPostgresDB "postgresql.service";
+      after = [ "network-online.target" ] ++ optional hasLocalPostgresDB "postgresql.target";
       wantedBy = [ "multi-user.target" ];
     };
 
@@ -1445,13 +1456,13 @@ in
               partOf = [ "matrix-synapse.target" ];
               wantedBy = [ "matrix-synapse.target" ];
               unitConfig.ReloadPropagatedFrom = "matrix-synapse.target";
-              requires = optional hasLocalPostgresDB "postgresql.service";
+              requires = optional hasLocalPostgresDB "postgresql.target";
             }
           else
             {
               wants = [ "network-online.target" ];
-              after = [ "network-online.target" ] ++ optional hasLocalPostgresDB "postgresql.service";
-              requires = optional hasLocalPostgresDB "postgresql.service";
+              after = [ "network-online.target" ] ++ optional hasLocalPostgresDB "postgresql.target";
+              requires = optional hasLocalPostgresDB "postgresql.target";
               wantedBy = [ "multi-user.target" ];
             };
         baseServiceConfig = {
@@ -1540,7 +1551,8 @@ in
                         ]
                         ++ cfg.extraConfigFiles
                       )}
-                      --keys-directory ${cfg.dataDir}
+                      --keys-directory ${cfg.dataDir} \
+                      ${utils.escapeSystemdExecArgs cfg.extraArgs}
                   '';
                 };
               }
@@ -1573,7 +1585,8 @@ in
                   ${concatMapStringsSep "\n  " (x: "--config-path ${x} \\") (
                     [ configFile ] ++ cfg.extraConfigFiles
                   )}
-                  --keys-directory ${cfg.dataDir}
+                  --keys-directory ${cfg.dataDir} \
+                  ${utils.escapeSystemdExecArgs cfg.extraArgs}
               '';
             };
           }

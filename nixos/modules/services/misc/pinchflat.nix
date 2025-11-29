@@ -62,6 +62,22 @@ in
         description = "Log level for Pinchflat.";
       };
 
+      user = lib.mkOption {
+        type = lib.types.str;
+        default = "pinchflat";
+        description = ''
+          User account under which Pinchflat runs.
+        '';
+      };
+
+      group = lib.mkOption {
+        type = lib.types.str;
+        default = "pinchflat";
+        description = ''
+          Group under which Pinchflat runs.
+        '';
+      };
+
       extraConfig = mkOption {
         type =
           with types;
@@ -125,11 +141,12 @@ in
 
       serviceConfig = {
         Type = "simple";
-        DynamicUser = true;
+        User = cfg.user;
+        Group = cfg.group;
+
         StateDirectory = baseNameOf stateDir;
         Environment = [
           "PORT=${builtins.toString cfg.port}"
-          "TZ=${config.time.timeZone}"
           "MEDIA_PATH=${cfg.mediaDir}"
           "CONFIG_PATH=${stateDir}"
           "DATABASE_PATH=${stateDir}/db/pinchflat.db"
@@ -142,12 +159,24 @@ in
           "PHX_SERVER=true"
         ]
         ++ optional cfg.selfhosted [ "RUN_CONTEXT=selfhosted" ]
+        ++ optional (!isNull config.time.timeZone) "TZ=${config.time.timeZone}"
         ++ attrValues (mapAttrs (name: value: name + "=" + builtins.toString value) cfg.extraConfig);
         EnvironmentFile = optional (cfg.secretsFile != null) cfg.secretsFile;
         ExecStartPre = "${lib.getExe' cfg.package "migrate"}";
         ExecStart = "${getExe cfg.package} start";
         Restart = "on-failure";
       };
+    };
+
+    users.users = lib.mkIf (cfg.user == "pinchflat") {
+      pinchflat = {
+        group = cfg.group;
+        isSystemUser = true;
+      };
+    };
+
+    users.groups = lib.mkIf (cfg.group == "pinchflat") {
+      pinchflat = { };
     };
 
     networking.firewall = mkIf cfg.openFirewall {

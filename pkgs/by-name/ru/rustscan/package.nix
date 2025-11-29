@@ -39,12 +39,12 @@ rustPlatform.buildRustPackage rec {
     "--skip=resolver_default_cloudflare"
   ];
 
-  meta = with lib; {
+  meta = {
     description = "Faster Nmap Scanning with Rust";
     homepage = "https://github.com/RustScan/RustScan";
     changelog = "https://github.com/RustScan/RustScan/releases/tag/${version}";
-    license = licenses.gpl3Only;
-    maintainers = with maintainers; [ figsoda ];
+    license = lib.licenses.gpl3Only;
+    maintainers = [ ];
     mainProgram = "rustscan";
   };
 }

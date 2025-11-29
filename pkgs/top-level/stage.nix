@@ -54,8 +54,8 @@ in
 
   # `stdenv` without a C compiler. Passing in this helps avoid infinite
   # recursions, and may eventually replace passing in the full stdenv.
-  stdenvNoCC ? (
-    stdenv.override {
+  stdenvNoCC ? stdenv.override (
+    {
       cc = null;
       hasCC = false;
     }
@@ -92,7 +92,7 @@ let
     # The following line guarantees that the output of this function
     # is a well-formed platform with no missing fields.  It will be
     # uncommented in a separate PR, in case it breaks the build.
-    #(x: lib.trivial.pipe x [ (x: builtins.removeAttrs x [ "_type" ]) lib.systems.parse.mkSystem ])
+    #(x: lib.trivial.pipe x [ (x: removeAttrs x [ "_type" ]) lib.systems.parse.mkSystem ])
     (
       parsed
       // {
@@ -333,7 +333,7 @@ let
 
   # The complete chain of package set builders, applied from top to bottom.
   # stdenvOverlays must be last as it brings package forward from the
-  # previous bootstrapping phases which have already been overlayed.
+  # previous bootstrapping phases which have already been overlaid.
   toFix = lib.foldl' (lib.flip lib.extends) (self: { }) (
     [
       stdenvBootstappingAndPlatforms

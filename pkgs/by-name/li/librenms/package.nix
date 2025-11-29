@@ -1,9 +1,8 @@
 {
   lib,
   fetchFromGitHub,
-  fetchpatch,
   unixtools,
-  php82,
+  php,
   python3,
   makeWrapper,
   nixosTests,
@@ -24,41 +23,20 @@
 }:
 
 let
-  phpPackage = php82.withExtensions ({ enabled, all }: enabled ++ [ all.memcached ]);
+  phpPackage = php.withExtensions ({ enabled, all }: enabled ++ [ all.memcached ]);
 in
 phpPackage.buildComposerProject2 rec {
   pname = "librenms";
-  version = "25.4.0";
+  version = "25.10.0";
 
   src = fetchFromGitHub {
     owner = "librenms";
-    repo = pname;
+    repo = "librenms";
     tag = version;
-    sha256 = "sha256-t+RupwKnUtQd3A0VzWhCXNzc+TnVnDMaMJ6Jcgp+Sfg=";
+    hash = "sha256-SzDSeWTnsXy274H2mkGIHOsW26EoL7aony7Xcb+e+h4=";
   };
 
-  vendorHash = "sha256-t/3wBSXJJHqbGR1iKF4zC2Ia99gXNlanabR/iPPlHqw=";
-
-  patches = [
-    (fetchpatch {
-      # https://github.com/advisories/GHSA-gq96-8w38-hhj2
-      name = "CVE-2025-54138.patch";
-      url = "https://github.com/librenms/librenms/commit/ec89714d929ef0cf2321957ed9198b0f18396c81.patch";
-      hash = "sha256-UJy0AZXpvowvjSnJy7m4Z5JPoYWjydUg1R+jz/Pl1s0=";
-    })
-    (fetchpatch {
-      # https://github.com/advisories/GHSA-frc6-pwgr-c28w
-      name = "CVE-2025-62411.patch";
-      url = "https://github.com/librenms/librenms/commit/706a77085f4d5964f7de9444208ef707e1f79450.patch";
-      hash = "sha256-egltEZEg8yn+JCe/rlpxMuVMBbRgruIwR5y9aNwjrGg=";
-    })
-    (fetchpatch {
-      # https://github.com/advisories/GHSA-6g2v-66ch-6xmh
-      name = "CVE-2025-62412.patch";
-      url = "https://github.com/librenms/librenms/commit/d9ec1d500b71b5ad268c71c0d1fde323da70c694.patch";
-      hash = "sha256-DIE92KEegRoZNGSEr5VcbG0NQXNZbaKi0DeIBAyn608=";
-    })
-  ];
+  vendorHash = "sha256-OYQsgwbxsXsOM+sn0mJcABtyXVQAKBa6/ghfbZR1jX4=";
 
   php = phpPackage;
 
@@ -99,7 +77,7 @@ phpPackage.buildComposerProject2 rec {
     patch -p1 -d $out -i ${./broken-binary-paths.diff}
 
     substituteInPlace \
-      $out/misc/config_definitions.json \
+      $out/resources/definitions/config_definitions.json \
       --replace-fail '"default": "/bin/ping",' '"default": "/run/wrappers/bin/ping",' \
       --replace-fail '"default": "fping",' '"default": "/run/wrappers/bin/fping",' \
       --replace-fail '"default": "fping6",' '"default": "/run/wrappers/bin/fping6",' \
@@ -125,7 +103,7 @@ phpPackage.buildComposerProject2 rec {
     substituteInPlace $out/LibreNMS/__init__.py --replace-fail '"/usr/bin/env", "php"' '"${phpPackage}/bin/php"'
     substituteInPlace $out/snmp-scan.py --replace-fail '"/usr/bin/env", "php"' '"${phpPackage}/bin/php"'
 
-    substituteInPlace $out/lnms --replace-fail '\App\Checks::runningUser();' '//\App\Checks::runningUser(); //removed as nix forces ownership to root'
+    substituteInPlace $out/app/Listeners/CommandStartingListener.php --replace-fail '\App\Checks::runningUser();' '//\App\Checks::runningUser(); //removed as nix forces ownership to root'
 
     wrapProgram $out/daily.sh --prefix PATH : ${phpPackage}/bin
 

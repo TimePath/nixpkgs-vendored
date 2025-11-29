@@ -6,7 +6,7 @@
   cmake,
   qt5,
   libxcrypt,
-  llvmPackages_15,
+  llvmPackages,
 }:
 
 stdenv.mkDerivation {
@@ -16,9 +16,21 @@ stdenv.mkDerivation {
 
   postPatch = ''
     cd sources/shiboken2
+    substituteInPlace doc/CMakeLists.txt --replace-fail \
+      "cmake_minimum_required(VERSION 3.1)" \
+      "cmake_minimum_required(VERSION 3.10)"
+    for i in {.,ApiExtractor}/CMakeLists.txt; do
+      substituteInPlace $i --replace-fail \
+        "cmake_minimum_required(VERSION 3.1)" \
+        "cmake_minimum_required(VERSION 3.10)"
+      substituteInPlace $i --replace-fail \
+        "cmake_policy(VERSION 3.1)" \
+        "cmake_policy(VERSION 3.10)"
+    done
+    head CMakeLists.txt
   '';
 
-  CLANG_INSTALL_DIR = llvmPackages_15.libclang.out;
+  CLANG_INSTALL_DIR = llvmPackages.libclang.out;
 
   nativeBuildInputs = [
     cmake
@@ -32,7 +44,7 @@ stdenv.mkDerivation {
   ];
 
   buildInputs = [
-    llvmPackages_15.libclang
+    llvmPackages.libclang
     python.pkgs.setuptools
     qt5.qtbase
     qt5.qtxmlpatterns

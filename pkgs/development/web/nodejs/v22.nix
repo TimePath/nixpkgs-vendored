@@ -14,11 +14,17 @@ let
     inherit openssl;
     python = python3;
   };
+
+  gypPatches =
+    if stdenv.buildPlatform.isDarwin then
+      callPackage ./gyp-patches.nix { patch_tools = false; }
+    else
+      [ ];
 in
 buildNodejs {
   inherit enableNpm;
-  version = "22.20.0";
-  sha256 = "ff7a6a6e8a1312af5875e40058351c4f890d28ab64c32f12b2cc199afa22002d";
+  version = "22.21.1";
+  sha256 = "487d73fd4db00dc2420d659a8221b181a7937fbc5bc73f31c30b1680ad6ded6a";
   patches =
     (
       if (stdenv.hostPlatform.emulatorAvailable buildPackages) then
@@ -44,21 +50,12 @@ buildNodejs {
         hash = "sha256-hSTLljmVzYmc3WAVeRq9EPYluXGXFeWVXkykufGQPVw=";
       })
     ]
+    ++ gypPatches
     ++ [
       ./configure-armv6-vfpv2.patch
-      ./disable-darwin-v8-system-instrumentation-node19.patch
       ./node-npm-build-npm-package-logic.patch
       ./use-correct-env-in-tests.patch
       ./bin-sh-node-run-v22.patch
-
-      # TODO: newer GYP versions have been patched to be more compatible with Nix sandbox. We need
-      # to adapt our patch to this newer version, see https://github.com/NixOS/nixpkgs/pull/434742.
-      (fetchpatch2 {
-        url = "https://github.com/nodejs/node/commit/886e4b3b534a9f3ad2facbc99097419e06615900.patch?full_index=1";
-        hash = "sha256-dg/wVkD3iFS7RNjmvMDGw+ONScEjynlkRXqVxdF45TM=";
-        includes = [ "tools/gyp/pylib/gyp/xcode_emulation.py" ];
-        revert = true;
-      })
-      ./bypass-darwin-xcrun-node16.patch
+      ./use-nix-codesign.patch
     ];
 }

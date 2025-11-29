@@ -16,19 +16,23 @@
   btrfs-progs,
   gitUpdater,
   udevSupport ? true,
+  udevCheckHook,
 }:
 
 stdenv.mkDerivation rec {
   pname = "btrfs-progs";
-  version = "6.14";
+  version = "6.17.1";
 
   src = fetchurl {
     url = "mirror://kernel/linux/kernel/people/kdave/btrfs-progs/btrfs-progs-v${version}.tar.xz";
-    hash = "sha256-31q4BPyzbikcQq2DYfgBrR4QJBtDvTBP5Qzj355+PaE=";
+    hash = "sha256-pL4Kbrs8R2Qn+12Xss8CewzNtrDFX/FjIzIMHoy3dlg=";
   };
 
   nativeBuildInputs = [
     pkg-config
+  ]
+  ++ lib.optionals udevSupport [
+    udevCheckHook
   ]
   ++ [
     (buildPackages.python3.withPackages (
@@ -67,11 +71,17 @@ stdenv.mkDerivation rec {
   ]
   ++ lib.optionals (!udevSupport) [
     "--disable-libudev"
+  ]
+  ++ lib.optionals (stdenv.hostPlatform != stdenv.buildPlatform) [
+    "ac_cv_func_malloc_0_nonnull=yes"
+    "ac_cv_func_realloc_0_nonnull=yes"
   ];
 
   makeFlags = [ "udevruledir=$(out)/lib/udev/rules.d" ];
 
   enableParallelBuilding = true;
+
+  doInstallCheck = true;
 
   passthru.tests = {
     simple-filesystem = runCommand "btrfs-progs-create-fs" { } ''
@@ -89,13 +99,13 @@ stdenv.mkDerivation rec {
     rev-prefix = "v";
   };
 
-  meta = with lib; {
+  meta = {
     description = "Utilities for the btrfs filesystem";
     homepage = "https://btrfs.readthedocs.io/en/latest/";
     changelog = "https://github.com/kdave/btrfs-progs/raw/v${version}/CHANGES";
-    license = licenses.gpl2Only;
+    license = lib.licenses.gpl2Only;
     mainProgram = "btrfs";
-    maintainers = with maintainers; [ raskin ];
-    platforms = platforms.linux;
+    maintainers = with lib.maintainers; [ raskin ];
+    platforms = lib.platforms.linux;
   };
 }

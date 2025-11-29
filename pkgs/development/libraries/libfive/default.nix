@@ -18,13 +18,13 @@
 
 stdenv.mkDerivation {
   pname = "libfive";
-  version = "0-unstable-2025-05-04";
+  version = "0-unstable-2025-11-12";
 
   src = fetchFromGitHub {
     owner = "libfive";
     repo = "libfive";
-    rev = "e704d1096f00bdfde1d1766f40dcae79f6fe5082";
-    hash = "sha256-Yu4LGf5nx9dF+8WXyQQycqFfIq4AZdEnHaekhDSWEpw=";
+    rev = "c9e97343e0af998cd1696e85583eccba95532b96";
+    hash = "sha256-36ahkIkSpUU3NF7cM6JqV55b6J6/ApD3DxRVqBKciY4=";
   };
 
   nativeBuildInputs = [

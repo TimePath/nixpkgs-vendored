@@ -19,6 +19,7 @@
   udevSupport ? true,
   glibcLocales,
   rsync,
+  udevCheckHook,
 }:
 
 stdenv.mkDerivation {
@@ -51,6 +52,9 @@ stdenv.mkDerivation {
   nativeCheckInputs = [
     glibcLocales
     rsync
+  ]
+  ++ lib.optionals udevSupport [
+    udevCheckHook
   ];
 
   postPatch = ''
@@ -70,6 +74,8 @@ stdenv.mkDerivation {
   preCheck = ''
     export LC_ALL="en_US.utf-8"
   '';
+
+  doInstallCheck = true;
 
   meta = with lib; {
     description = "Content-Addressable Data Synchronizer";

@@ -43,7 +43,7 @@
   rubiks,
   blas,
   lapack,
-  flint3,
+  flint,
   gmp,
   mpfr,
   zlib,
@@ -102,6 +102,12 @@ in
 writeTextFile rec {
   name = "sage-env";
   destination = "/${name}";
+
+  passthru = {
+    lib = sagelib;
+    docbuild = sage-docbuild;
+  };
+
   text = ''
     export PKG_CONFIG_PATH='${
       lib.makeSearchPathOutput "dev" "lib/pkgconfig" [
@@ -161,7 +167,7 @@ writeTextFile rec {
         export LDFLAGS='${
           lib.concatStringsSep " " (
             map (pkg: "-L${pkg}/lib") [
-              flint3
+              flint
               gap
               glpk
               gmp
@@ -181,7 +187,7 @@ writeTextFile rec {
               singular
               gmp.dev
               glpk
-              flint3
+              flint
               gap
               mpfr.dev
             ]
@@ -203,9 +209,4 @@ writeTextFile rec {
           ]
         }''${DYLD_LIBRARY_PATH:+:}$DYLD_LIBRARY_PATH"
     '';
-}
-// {
-  # equivalent of `passthru`, which `writeTextFile` doesn't support
-  lib = sagelib;
-  docbuild = sage-docbuild;
 }

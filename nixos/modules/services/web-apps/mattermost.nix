@@ -840,7 +840,7 @@ in
         wantedBy = [ "multi-user.target" ];
         after = mkMerge [
           [ "network.target" ]
-          (mkIf (cfg.database.driver == "postgres" && cfg.database.create) [ "postgresql.service" ])
+          (mkIf (cfg.database.driver == "postgres" && cfg.database.create) [ "postgresql.target" ])
           (mkIf (cfg.database.driver == "mysql" && cfg.database.create) [ "mysql.service" ])
         ];
         requires = after;
@@ -945,7 +945,7 @@ in
         ];
 
         unitConfig.JoinsNamespaceOf = mkMerge [
-          (mkIf (cfg.database.driver == "postgres" && cfg.database.create) [ "postgresql.service" ])
+          (mkIf (cfg.database.driver == "postgres" && cfg.database.create) [ "postgresql.target" ])
           (mkIf (cfg.database.driver == "mysql" && cfg.database.create) [ "mysql.service" ])
         ];
       };
@@ -964,6 +964,13 @@ in
           message = ''
             services.mattermost.host should not include a port. Use services.mattermost.host for the address
             or hostname, and services.mattermost.port to specify the port separately.
+          '';
+        }
+        {
+          # Can't use MySQL on version 11.
+          assertion = versionAtLeast cfg.package.version "11" -> cfg.database.driver == "postgres";
+          message = ''
+            Only Postgres is supported as the database driver in Mattermost 11 and later.
           '';
         }
       ];

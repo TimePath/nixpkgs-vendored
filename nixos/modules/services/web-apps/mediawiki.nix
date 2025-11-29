@@ -705,14 +705,14 @@ in
       before = [ "phpfpm-mediawiki.service" ];
       after =
         optional (cfg.database.type == "mysql" && cfg.database.createLocally) "mysql.service"
-        ++ optional (cfg.database.type == "postgres" && cfg.database.createLocally) "postgresql.service";
+        ++ optional (cfg.database.type == "postgres" && cfg.database.createLocally) "postgresql.target";
       script = ''
         if ! test -e "${stateDir}/secret.key"; then
           tr -dc A-Za-z0-9 </dev/urandom 2>/dev/null | head -c 64 > ${stateDir}/secret.key
         fi
 
-        echo "exit( wfGetDB( DB_PRIMARY )->tableExists( 'user' ) ? 1 : 0 );" | \
-        ${php}/bin/php ${pkg}/share/mediawiki/maintenance/eval.php --conf ${mediawikiConfig} && \
+        echo "exit( \$this->getPrimaryDB()->tableExists( 'user' ) ? 1 : 0 );" | \
+        ${php}/bin/php ${pkg}/share/mediawiki/maintenance/run.php eval --conf ${mediawikiConfig} && \
         ${php}/bin/php ${pkg}/share/mediawiki/maintenance/install.php \
           --confpath /tmp \
           --scriptpath / \
@@ -752,7 +752,7 @@ in
       ) "mysql.service"
       ++ optional (
         cfg.webserver == "apache" && cfg.database.createLocally && cfg.database.type == "postgres"
-      ) "postgresql.service";
+      ) "postgresql.target";
 
     users.users.${user} = {
       inherit group;

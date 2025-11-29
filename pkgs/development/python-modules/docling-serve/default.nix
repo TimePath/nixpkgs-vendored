@@ -6,14 +6,18 @@
   setuptools-scm,
   # python dependencies
   docling,
+  docling-jobkit,
+  docling-mcp,
   fastapi,
   httpx,
   pydantic-settings,
   python-multipart,
+  scalar-fastapi,
   uvicorn,
   websockets,
   tesserocr,
-  rapidocr-onnxruntime,
+  typer,
+  rapidocr,
   onnxruntime,
   torch,
   torchvision,
@@ -28,20 +32,15 @@
 
 buildPythonPackage rec {
   pname = "docling-serve";
-  version = "0.10.1";
+  version = "1.5.1";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "docling-project";
     repo = "docling-serve";
     tag = "v${version}";
-    hash = "sha256-ApI8I14X2BBenEZ9mLXifhgtY1DHdPljMd1LvjbNUXM=";
+    hash = "sha256-JUHXrvsZBF/WHxsMT1xkPzpuX483RxF3ZlO+/NUMZ/8=";
   };
-
-  postPatch = ''
-    substituteInPlace pyproject.toml \
-      --replace-fail '"kfp[kubernetes]>=2.10.0",' ""
-  '';
 
   build-system = [
     hatchling
@@ -52,12 +51,20 @@ buildPythonPackage rec {
     "websockets"
   ];
 
+  pythonRemoveDeps = [
+    "mlx-vlm" # not yet available on nixpkgs
+  ];
+
   dependencies = [
     docling
+    docling-jobkit
+    docling-mcp
     fastapi
     httpx
     pydantic-settings
     python-multipart
+    scalar-fastapi
+    typer
     uvicorn
     websockets
   ]
@@ -76,7 +83,7 @@ buildPythonPackage rec {
       tesserocr
     ];
     rapidocr = [
-      rapidocr-onnxruntime
+      rapidocr
       onnxruntime
     ];
     cpu = [
@@ -98,6 +105,6 @@ buildPythonPackage rec {
     homepage = "https://github.com/docling-project/docling-serve";
     license = lib.licenses.mit;
     mainProgram = "docling-serve";
-    maintainers = with lib.maintainers; [ drupol ];
+    maintainers = [ ];
   };
 }

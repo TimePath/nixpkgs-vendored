@@ -22,6 +22,7 @@ let
           "SpeedMeterIntervalSec"
           "ManageForeignRoutingPolicyRules"
           "ManageForeignRoutes"
+          "ManageForeignNextHops"
           "RouteTable"
           "IPv6PrivacyExtensions"
           "IPv4Forwarding"
@@ -32,6 +33,7 @@ let
         (assertInt "SpeedMeterIntervalSec")
         (assertValueOneOf "ManageForeignRoutingPolicyRules" boolValues)
         (assertValueOneOf "ManageForeignRoutes" boolValues)
+        (assertValueOneOf "ManageForeignNextHops" boolValues)
         (assertValueOneOf "IPv6PrivacyExtensions" (
           boolValues
           ++ [
@@ -100,6 +102,9 @@ let
           "ReceiveQueues"
           "TransmitQueues"
           "TransmitQueueLength"
+          "RxFlowControl"
+          "TxFlowControl"
+          "AutoNegotiationFlowControl"
         ])
         (assertValueOneOf "MACAddressPolicy" [
           "persistent"
@@ -137,6 +142,9 @@ let
         (assertValueOneOf "GenericSegmentationOffload" boolValues)
         (assertValueOneOf "GenericReceiveOffload" boolValues)
         (assertValueOneOf "LargeReceiveOffload" boolValues)
+        (assertValueOneOf "RxFlowControl" boolValues)
+        (assertValueOneOf "TxFlowControl" boolValues)
+        (assertValueOneOf "AutoNegotiationFlowControl" boolValues)
         (assertInt "RxChannels")
         (assertRange "RxChannels" 1 4294967295)
         (assertInt "TxChannels")
@@ -368,6 +376,7 @@ let
             "TOS"
             "TTL"
             "DiscoverPathMTU"
+            "IgnoreDontFragment"
             "IPv6FlowLabel"
             "CopyDSCP"
             "EncapsulationLimit"
@@ -390,6 +399,7 @@ let
           (assertInt "TTL")
           (assertRange "TTL" 0 255)
           (assertValueOneOf "DiscoverPathMTU" boolValues)
+          (assertValueOneOf "IgnoreDontFragment" boolValues)
           (assertValueOneOf "CopyDSCP" boolValues)
           (assertValueOneOf "Mode" [
             "ip6ip6"
@@ -1878,6 +1888,11 @@ let
   networkdOptions = {
     networkConfig = mkOption {
       default = { };
+      defaultText = lib.literalExpression ''
+        {
+          IPv6PrivacyExtensions = true;
+        }
+      '';
       example = {
         SpeedMeter = true;
         ManageForeignRoutingPolicyRules = false;
@@ -3121,7 +3136,10 @@ let
       };
 
       config = {
-        networkConfig = optionalAttrs (config.routeTables != { }) {
+        networkConfig = {
+          IPv6PrivacyExtensions = lib.mkOptionDefault true;
+        }
+        // optionalAttrs (config.routeTables != { }) {
           RouteTable = mapAttrsToList (name: number: "${name}:${toString number}") config.routeTables;
         };
       };

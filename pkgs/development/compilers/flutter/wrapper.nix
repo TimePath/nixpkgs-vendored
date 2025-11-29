@@ -24,7 +24,7 @@
   makeWrapper,
   writeShellScript,
   wrapGAppsHook3,
-  git,
+  gitMinimal,
   which,
   pkg-config,
   atk,
@@ -64,8 +64,8 @@ let
     name = "flutter-cache-dir";
     paths = builtins.attrValues flutterPlatformArtifacts;
     postBuild = ''
-      mkdir -p "$out/bin/cache"
-      ln -s '${flutter}/bin/cache/dart-sdk' "$out/bin/cache"
+      mkdir --parents "$out/bin/cache"
+      ln --symbolic '${flutter}/bin/cache/dart-sdk' "$out/bin/cache"
     '';
     passthru.flutterPlatform = flutterPlatformArtifacts;
   };
@@ -79,7 +79,7 @@ let
 
   # Tools that the Flutter tool depends on.
   tools = [
-    git
+    gitMinimal
     which
   ];
 
@@ -102,11 +102,19 @@ let
     let
       # https://discourse.nixos.org/t/handling-transitive-c-dependencies/5942/3
       deps =
-        pkg:
-        builtins.filter lib.isDerivation ((pkg.buildInputs or [ ]) ++ (pkg.propagatedBuildInputs or [ ]));
-      collect = pkg: lib.unique ([ pkg ] ++ deps pkg ++ builtins.concatMap collect (deps pkg));
+        pkg: lib.filter lib.isDerivation ((pkg.buildInputs or [ ]) ++ (pkg.propagatedBuildInputs or [ ]));
+      withKey = pkg: {
+        key = pkg.outPath;
+        val = pkg;
+      };
+      collect = pkg: lib.map withKey ([ pkg ] ++ deps pkg);
     in
-    builtins.concatMap collect appRuntimeDeps;
+    lib.map (e: e.val) (
+      lib.genericClosure {
+        startSet = lib.map withKey appRuntimeDeps;
+        operator = item: collect item.val;
+      }
+    );
 
   # Some header files and libraries are not properly located by the Flutter SDK.
   # They must be manually included.
@@ -176,7 +184,7 @@ in
         addToSearchPath FLUTTER_PKG_CONFIG_PATH "$path"
       done
 
-      mkdir -p $out/bin
+      mkdir --parents $out/bin
       makeWrapper '${immutableFlutter}' $out/bin/flutter \
         --set-default ANDROID_EMULATOR_USE_SYSTEM_LIBS 1 \
     ''

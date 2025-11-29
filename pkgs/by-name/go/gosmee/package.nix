@@ -1,5 +1,6 @@
 {
   lib,
+  stdenv,
   buildGoModule,
   fetchFromGitHub,
   installShellFiles,
@@ -7,13 +8,13 @@
 
 buildGoModule rec {
   pname = "gosmee";
-  version = "0.26.0";
+  version = "0.28.2";
 
   src = fetchFromGitHub {
     owner = "chmouel";
     repo = "gosmee";
     rev = "v${version}";
-    hash = "sha256-dmv2fxL6jV6bpWvtMiLEtb/yg5vuD+B52P1PWVap1NA=";
+    hash = "sha256-xkdJCmgBJh5oDELvm7qP/pC0FxqmVsXPGBhN7twp3Ug=";
   };
   vendorHash = null;
 
@@ -23,7 +24,7 @@ buildGoModule rec {
     printf ${version} > gosmee/templates/version
   '';
 
-  postInstall = ''
+  postInstall = lib.optionalString (stdenv.buildPlatform.canExecute stdenv.hostPlatform) ''
     installShellCompletion --cmd gosmee \
       --bash <($out/bin/gosmee completion bash) \
       --fish <($out/bin/gosmee completion fish) \

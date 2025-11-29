@@ -6,7 +6,7 @@
   makeBinaryWrapper,
   gitMinimal,
   mercurial,
-  nixForLinking,
+  nix,
 }:
 
 rustPlatform.buildRustPackage rec {
@@ -36,7 +36,7 @@ rustPlatform.buildRustPackage rec {
         lib.makeBinPath [
           gitMinimal
           mercurial
-          nixForLinking
+          nix
         ]
       }
     installManPage artifacts/nurl.1
@@ -47,12 +47,12 @@ rustPlatform.buildRustPackage rec {
     GEN_ARTIFACTS = "artifacts";
   };
 
-  meta = with lib; {
+  meta = {
     description = "Command-line tool to generate Nix fetcher calls from repository URLs";
     homepage = "https://github.com/nix-community/nurl";
     changelog = "https://github.com/nix-community/nurl/blob/v${version}/CHANGELOG.md";
-    license = licenses.mpl20;
-    maintainers = with maintainers; [ figsoda ];
+    license = lib.licenses.mpl20;
+    maintainers = [ ];
     mainProgram = "nurl";
   };
 }

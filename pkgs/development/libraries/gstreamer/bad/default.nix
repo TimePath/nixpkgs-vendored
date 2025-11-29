@@ -24,6 +24,7 @@
   # warning: No decoder available for type 'video/x-h264, stream-format=(string)avc, [...], lcevc=(boolean)false, [...]
   lcevcdecSupport ? false,
   lcevcdec,
+  ldacbtSupport ? lib.meta.availableOn stdenv.hostPlatform ldacbt,
   ldacbt,
   liblc3,
   libass,
@@ -31,6 +32,7 @@
   ladspaH,
   lcms2,
   libnice,
+  webrtcAudioProcessingSupport ? lib.meta.availableOn stdenv.hostPlatform webrtc-audio-processing_1,
   webrtc-audio-processing_1,
   lilv,
   lv2,
@@ -113,7 +115,7 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "gst-plugins-bad";
-  version = "1.26.3";
+  version = "1.26.5";
 
   outputs = [
     "out"
@@ -122,7 +124,7 @@ stdenv.mkDerivation (finalAttrs: {
 
   src = fetchurl {
     url = "https://gstreamer.freedesktop.org/src/gst-plugins-bad/gst-plugins-bad-${finalAttrs.version}.tar.xz";
-    hash = "sha256-lcSNrK8UJ29OWV9MvKlLPP6/wiKF52XiqlbQpydddWE=";
+    hash = "sha256-mJDyYvOyqVZNy2KenraX13uT0fcYl+2hqBcLfc/nMpQ=";
   };
 
   patches = [
@@ -154,10 +156,8 @@ stdenv.mkDerivation (finalAttrs: {
     orc
     json-glib
     lcms2
-    ldacbt
     liblc3
     libass
-    webrtc-audio-processing_1
     libbs2b
     libmodplug
     openjpeg
@@ -259,6 +259,12 @@ stdenv.mkDerivation (finalAttrs: {
   ]
   ++ lib.optionals lcevcdecSupport [
     lcevcdec
+  ]
+  ++ lib.optionals ldacbtSupport [
+    ldacbt
+  ]
+  ++ lib.optionals webrtcAudioProcessingSupport [
+    webrtc-audio-processing_1
   ]
   ++ lib.optionals stdenv.hostPlatform.isDarwin [
     apple-sdk_gstreamer

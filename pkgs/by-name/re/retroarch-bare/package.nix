@@ -5,7 +5,7 @@
   alsa-lib,
   dbus,
   fetchFromGitHub,
-  ffmpeg,
+  ffmpeg_7,
   flac,
   freetype,
   gamemode,
@@ -26,9 +26,10 @@
   libgbm,
   nixosTests,
   nvidia_cg_toolkit,
+  pipewire,
   pkg-config,
   python3,
-  qt5,
+  qt6,
   SDL2,
   spirv-tools,
   udev,
@@ -68,13 +69,13 @@ stdenv.mkDerivation rec {
 
   nativeBuildInputs = [
     pkg-config
-    qt5.wrapQtAppsHook
+    qt6.wrapQtAppsHook
   ]
   ++ lib.optional withWayland wayland
   ++ lib.optional (runtimeLibs != [ ]) makeBinaryWrapper;
 
   buildInputs = [
-    ffmpeg
+    ffmpeg_7
     flac
     freetype
     libGL
@@ -82,7 +83,7 @@ stdenv.mkDerivation rec {
     libxml2
     mbedtls
     python3
-    qt5.qtbase
+    qt6.qtbase
     SDL2
     spirv-tools
     zlib
@@ -105,6 +106,7 @@ stdenv.mkDerivation rec {
     libv4l
     libxkbcommon
     libgbm
+    pipewire
     udev
   ];
 

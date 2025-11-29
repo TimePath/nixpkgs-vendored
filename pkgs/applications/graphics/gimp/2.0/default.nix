@@ -29,6 +29,7 @@
   libwmf,
   zlib,
   libzip,
+  xz,
   ghostscript,
   aalib,
   shared-mime-info,
@@ -63,6 +64,7 @@ stdenv.mkDerivation (finalAttrs: {
   outputs = [
     "out"
     "dev"
+    "man"
   ];
 
   src = fetchurl {
@@ -154,6 +156,11 @@ stdenv.mkDerivation (finalAttrs: {
     })
   ];
 
+  # error: possibly undefined macro: AM_NLS
+  preAutoreconf = ''
+    cp ${gettext}/share/gettext/m4/nls.m4 m4macros
+  '';
+
   nativeBuildInputs = [
     autoreconfHook # hardcode-plugin-interpreters.patch changes Makefile.am
     pkg-config
@@ -193,6 +200,7 @@ stdenv.mkDerivation (finalAttrs: {
     libwmf
     zlib
     libzip
+    xz
     ghostscript
     aalib
     shared-mime-info

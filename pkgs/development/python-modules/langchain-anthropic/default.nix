@@ -2,10 +2,9 @@
   lib,
   buildPythonPackage,
   fetchFromGitHub,
-  nix-update-script,
 
   # build-system
-  pdm-backend,
+  hatchling,
 
   # dependencies
   anthropic,
@@ -13,26 +12,30 @@
   pydantic,
 
   # tests
+  langchain,
   langchain-tests,
   pytest-asyncio,
   pytestCheckHook,
+
+  # passthru
+  gitUpdater,
 }:
 
 buildPythonPackage rec {
   pname = "langchain-anthropic";
-  version = "0.3.12";
+  version = "1.0.0";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "langchain-ai";
     repo = "langchain";
     tag = "langchain-anthropic==${version}";
-    hash = "sha256-UpyACv1cVzvK4A1Up3R6PqVQahy9hAu0LoSkaEen6Sw=";
+    hash = "sha256-3kW5w98t5F199k14MoCY2dZGrC/HdBzKuRpM37EY3LQ=";
   };
 
   sourceRoot = "${src.name}/libs/partners/anthropic";
 
-  build-system = [ pdm-backend ];
+  build-system = [ hatchling ];
 
   dependencies = [
     anthropic
@@ -47,24 +50,28 @@ buildPythonPackage rec {
   ];
 
   nativeCheckInputs = [
+    langchain
     langchain-tests
     pytest-asyncio
     pytestCheckHook
   ];
 
-  pytestFlagsArray = [ "tests/unit_tests" ];
+  disabledTestPaths = [
+    "tests/integration_tests"
+  ];
 
   pythonImportsCheck = [ "langchain_anthropic" ];
 
-  passthru.updateScript = nix-update-script {
-    extraArgs = [
-      "--version-regex"
-      "langchain-anthropic==([0-9.]+)"
-    ];
+  passthru = {
+    # python updater script sets the wrong tag
+    skipBulkUpdate = true;
+    updateScript = gitUpdater {
+      rev-prefix = "langchain-anthropic==";
+    };
   };
 
   meta = {
-    changelog = "https://github.com/langchain-ai/langchain-anthropic/releases/tag/langchain-anthropic==${version}";
+    changelog = "https://github.com/langchain-ai/langchain-anthropic/releases/tag/${src.tag}";
     description = "Build LangChain applications with Anthropic";
     homepage = "https://github.com/langchain-ai/langchain/tree/master/libs/partners/anthropic";
     license = lib.licenses.mit;

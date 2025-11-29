@@ -15,7 +15,7 @@ php.buildComposerProject2 (finalAttrs: {
     hash = "sha256-zBhxuEViLxeQ9m3u1L0wYqeL+YEWWwvJS7PtsFPO5QU=";
   };
 
-  vendorHash = "sha256-vnmp/HLzaOzHu22lzugRXIHL43YQ/hm223gcUbIiLT4=";
+  vendorHash = "sha256-Y1/wNFPXza2aO07ZFybpwI3XbTVBhEvFHs9ygHQbcSo=";
 
   passthru = {
     tests.version = testers.testVersion {
@@ -25,7 +25,7 @@ php.buildComposerProject2 (finalAttrs: {
   };
 
   meta = {
-    description = "The opinionated PHP code formatter";
+    description = "Opinionated PHP code formatter";
     homepage = "https://github.com/lkrms/pretty-php";
     license = lib.licenses.mit;
     mainProgram = "pretty-php";

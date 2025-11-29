@@ -2,7 +2,6 @@
   lib,
   stdenv,
   fetchurl,
-  fetchpatch,
   zlib,
   libtasn1,
   nettle,
@@ -22,7 +21,7 @@
   tpmSupport ? false,
   trousers,
   which,
-  nettools,
+  net-tools,
   libunistring,
   withP11-kit ? !stdenv.hostPlatform.isStatic,
   p11-kit,
@@ -60,11 +59,11 @@ in
 
 stdenv.mkDerivation rec {
   pname = "gnutls";
-  version = "3.8.9";
+  version = "3.8.10";
 
   src = fetchurl {
     url = "mirror://gnupg/gnutls/v${lib.versions.majorMinor version}/gnutls-${version}.tar.xz";
-    hash = "sha256-aeET2ALRZwxNWsG5kECx8tXHwF2uxQA4E8BJtRhIIO0=";
+    hash = "sha256-23+rfM55Hncn677yM0MByCHXmlUOxVye8Ja2ELA+trc=";
   };
 
   outputs = [
@@ -83,52 +82,14 @@ stdenv.mkDerivation rec {
 
   patches = [
     ./nix-ssl-cert-file.patch
-  ]
-  ++ (
-    let
-      fp =
-        name: commit: sha256:
-        fetchpatch {
-          name = "${name}.patch";
-          url = "https://gitlab.com/gnutls/gnutls/-/commit/${commit}.diff";
-          hash = "sha256-${sha256}";
-          excludes = [
-            "NEWS"
-            ".gitignore"
-            "tests/cert-tests/*"
-            "tests/Makefile.am"
-          ];
-        };
-    in
-    [
-      # This list is almost all of git log 3.8.10^..3.8.10
-      (fp "CVE-2025-32989" "8e5ca951257202089246fa37e93a99d210ee5ca2"
-        "I3q8+WyFohVrnWkQn1v2kUfc1NCIrAK/pceIhyddJ7w="
-      )
-      (fp "oss-fuzz-42513990" "208c6478d5c20b9d8a9f0a293e3808aa16ee091f"
-        "Dw3ib8wgw9dxneG8Iv19agxAytfr4JcuHrwxXyGdW7Q="
-      )
-      (fp "oss-fuzz-42536706" "61c0505634a6faacf9fa0723843408aa0d3fb90a"
-        "0la9GZhP2ol7KmKzi/sk9hslC8YcUe8cFJCqYqx44bY="
-      )
-      (fp "CVE-2025-32988" "608829769cbc247679ffe98841109fc73875e573"
-        "Tr0vatliZ0OuMc6KFSHacTwLRYteI54SR7/RtUD5Cb0="
-      )
-      (fp "CVE-2025-32990" "408bed40c36a4cc98f0c94a818f682810f731f32"
-        "Bpt1HcaIdcpqaeDvwZfNq73X1eNisI0Avu18ach7wdY="
-      )
-      (fp "CVE-2025-6395" "23135619773e6ec087ff2abc65405bd4d5676bad"
-        "xBk8bi2memjhFO0mgvTKid695YHRkHDiYXm48Uzqp8E="
-      )
-    ]
-  );
+  ];
 
   # Skip some tests:
   #  - pkg-config: building against the result won't work before installing (3.5.11)
   #  - fastopen: no idea; it broke between 3.6.2 and 3.6.3 (3437fdde6 in particular)
   #  - trust-store: default trust store path (/etc/ssl/...) is missing in sandbox (3.5.11)
   #  - psk-file: no idea; it broke between 3.6.3 and 3.6.4
-  #  - ktls: requires tls module loaded into kernel
+  #  - ktls: requires tls module loaded into kernel and ktls-utils which depends on gnutls
   # Change p11-kit test to use pkg-config to find p11-kit
   postPatch = ''
     sed '2iexit 77' -i tests/{pkgconfig,fastopen}.sh
@@ -141,6 +102,13 @@ stdenv.mkDerivation rec {
   ''
   + lib.optionalString stdenv.hostPlatform.isLinux ''
     sed '2iexit 77' -i tests/{ktls,ktls_keyupdate}.sh
+    sed '/-DUSE_KTLS/d' -i tests/Makefile.{am,in}
+    sed '/gnutls_ktls/d' -i tests/Makefile.am
+    sed '/ENABLE_KTLS_TRUE/d' -i tests/Makefile.in
+  ''
+  # https://gitlab.com/gnutls/gnutls/-/issues/1721
+  + ''
+    sed '2iexit 77' -i tests/system-override-compress-cert.sh
   '';
 
   preConfigure = "patchShebangs .";
@@ -198,7 +166,7 @@ stdenv.mkDerivation rec {
   ]
   ++ lib.optionals doCheck [
     which
-    nettools
+    net-tools
     util-linux
   ];
 

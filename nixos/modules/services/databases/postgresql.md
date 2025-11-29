@@ -56,8 +56,8 @@ invalidated most of its previous use cases:
 - psql >= 15 instead gives only the database owner create permissions
 - Even on psql < 15 (or databases migrated to >= 15), it is
   recommended to manually assign permissions along these lines
-  - https://www.postgresql.org/docs/release/15.0/
-  - https://www.postgresql.org/docs/15/ddl-schemas.html#DDL-SCHEMAS-PRIV
+  - <https://www.postgresql.org/docs/release/15.0/>
+  - <https://www.postgresql.org/docs/15/ddl-schemas.html#DDL-SCHEMAS-PRIV>
 
 ### Assigning ownership {#module-services-postgres-initializing-ownership}
 
@@ -87,29 +87,29 @@ database migrations.
 
 **NOTE:** please make sure that any added migrations are idempotent (re-runnable).
 
-#### as superuser {#module-services-postgres-initializing-extra-permissions-superuser}
+#### in database's setup `postStart` {#module-services-postgres-initializing-extra-permissions-superuser-post-start}
 
-**Advantage:** compatible with postgres < 15, because it's run
-as the database superuser `postgres`.
-
-##### in database `postStart` {#module-services-postgres-initializing-extra-permissions-superuser-post-start}
-
-**Disadvantage:** need to take care of ordering yourself. In this
-example, `mkAfter` ensures that permissions are assigned after any
-databases from `ensureDatabases` and `extraUser1` from `ensureUsers`
-are already created.
+`ensureUsers` is run in `postgresql-setup`, so this is where `postStart` must be added to:
 
 ```nix
 {
-  systemd.services.postgresql.postStart = lib.mkAfter ''
-    $PSQL service1 -c 'GRANT SELECT ON ALL TABLES IN SCHEMA public TO "extraUser1"'
-    $PSQL service1 -c 'GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO "extraUser1"'
+  systemd.services.postgresql-setup.postStart = ''
+    psql service1 -c 'GRANT SELECT ON ALL TABLES IN SCHEMA public TO "extraUser1"'
+    psql service1 -c 'GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO "extraUser1"'
     # ....
   '';
 }
 ```
 
-##### in intermediate oneshot service {#module-services-postgres-initializing-extra-permissions-superuser-oneshot}
+#### in intermediate oneshot service {#module-services-postgres-initializing-extra-permissions-superuser-oneshot}
+
+Make sure to run this service after `postgresql.target`, not `postgresql.service`.
+
+They differ in two aspects:
+- `postgresql.target` includes `postgresql-setup`, so users managed via `ensureUsers` are already created.
+- `postgresql.target` will wait until PostgreSQL is in read-write mode after restoring from backup, while `postgresql.service` will already be ready when PostgreSQL is still recovering in read-only mode.
+
+Both can lead to unexpected errors either during initial database creation or restore, when using `postgresql.service`.
 
 ```nix
 {
@@ -117,54 +117,13 @@ are already created.
     serviceConfig.Type = "oneshot";
     requiredBy = "service1.service";
     before = "service1.service";
-    after = "postgresql.service";
+    after = "postgresql.target";
     serviceConfig.User = "postgres";
-    environment.PSQL = "psql --port=${toString services.postgresql.settings.port}";
+    environment.PGPORT = toString services.postgresql.settings.port;
     path = [ postgresql ];
     script = ''
-      $PSQL service1 -c 'GRANT SELECT ON ALL TABLES IN SCHEMA public TO "extraUser1"'
-      $PSQL service1 -c 'GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO "extraUser1"'
-      # ....
-    '';
-  };
-}
-```
-
-#### as service user {#module-services-postgres-initializing-extra-permissions-service-user}
-
-**Advantage:** re-uses systemd's dependency ordering;
-
-**Disadvantage:** relies on service user having grant permission. To be combined with `ensureDBOwnership`.
-
-##### in service `preStart` {#module-services-postgres-initializing-extra-permissions-service-user-pre-start}
-
-```nix
-{
-  environment.PSQL = "psql --port=${toString services.postgresql.settings.port}";
-  path = [ postgresql ];
-  systemd.services."service1".preStart = ''
-    $PSQL -c 'GRANT SELECT ON ALL TABLES IN SCHEMA public TO "extraUser1"'
-    $PSQL -c 'GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO "extraUser1"'
-    # ....
-  '';
-}
-```
-
-##### in intermediate oneshot service {#module-services-postgres-initializing-extra-permissions-service-user-oneshot}
-
-```nix
-{
-  systemd.services."migrate-service1-db1" = {
-    serviceConfig.Type = "oneshot";
-    requiredBy = "service1.service";
-    before = "service1.service";
-    after = "postgresql.service";
-    serviceConfig.User = "service1";
-    environment.PSQL = "psql --port=${toString services.postgresql.settings.port}";
-    path = [ postgresql ];
-    script = ''
-      $PSQL -c 'GRANT SELECT ON ALL TABLES IN SCHEMA public TO "extraUser1"'
-      $PSQL -c 'GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO "extraUser1"'
+      psql service1 -c 'GRANT SELECT ON ALL TABLES IN SCHEMA public TO "extraUser1"'
+      psql service1 -c 'GRANT SELECT ON ALL SEQUENCES IN SCHEMA public TO "extraUser1"'
       # ....
     '';
   };
@@ -208,7 +167,7 @@ Best practice is to name the map after the database role it manages to avoid nam
 ## Upgrading {#module-services-postgres-upgrading}
 
 ::: {.note}
-The steps below demonstrate how to upgrade from an older version to `pkgs.postgresql_13`.
+The steps below demonstrate how to upgrade from an older version to `pkgs.postgresql_15`.
 These instructions are also applicable to other versions.
 :::
 
@@ -217,8 +176,8 @@ each major version has some internal changes in the databases' state. Because of
 NixOS places the state into {file}`/var/lib/postgresql/&lt;version&gt;` where each `version`
 can be obtained like this:
 ```
-$ nix-instantiate --eval -A postgresql_13.psqlSchema
-"13"
+$ nix-instantiate --eval -A postgresql_15.psqlSchema
+"15"
 ```
 For an upgrade, a script like this can be used to simplify the process:
 ```nix
@@ -234,7 +193,7 @@ For an upgrade, a script like this can be used to simplify the process:
       let
         # XXX specify the postgresql package you'd like to upgrade to.
         # Do not forget to list the extensions you need.
-        newPostgres = pkgs.postgresql_13.withPackages (pp: [
+        newPostgres = pkgs.postgresql_15.withPackages (pp: [
           # pp.plv8
         ]);
         cfg = config.services.postgresql;
@@ -270,22 +229,7 @@ The upgrade process is:
   2. Login as root (`sudo su -`).
   3. Run `upgrade-pg-cluster`. This will stop the old postgresql cluster, initialize a new one and migrate the old one to the new one. You may supply arguments like `--jobs 4` and `--link` to speedup the migration process. See <https://www.postgresql.org/docs/current/pgupgrade.html> for details.
   4. Change the postgresql package in NixOS configuration to the one you were upgrading to via [](#opt-services.postgresql.package). Rebuild NixOS. This should start the new postgres version using the upgraded data directory and all services you stopped during the upgrade.
-  5. After the upgrade it's advisable to analyze the new cluster:
-
-       - For PostgreSQL ≥ 14, use the `vacuumdb` command printed by the upgrades script.
-       - For PostgreSQL < 14, run (as `su -l postgres` in the [](#opt-services.postgresql.dataDir), in this example {file}`/var/lib/postgresql/13`):
-
-         ```
-         $ ./analyze_new_cluster.sh
-         ```
-
-     ::: {.warning}
-     The next step removes the old state-directory!
-     :::
-
-     ```
-     $ ./delete_old_cluster.sh
-     ```
+  5. After the upgrade it's advisable to analyze the new cluster with the `vacuumdb` command printed by the upgrades script.
 
 ## Versioning and End-of-Life {#module-services-postgres-versioning}
 
@@ -300,8 +244,10 @@ PostgreSQL's versioning policy is described [here](https://www.postgresql.org/su
 
 Technically, we'd not want to have EOL'ed packages in a stable NixOS release, which is to be supported until one month after the previous release. Thus, with NixOS' release schedule in May and November, the oldest PostgreSQL version in nixpkgs would have to be supported until December. It could be argued that a soon-to-be-EOL-ed version should thus be removed in May for the .05 release already. But since new security vulnerabilities are first disclosed in February of the following year, we agreed on keeping the oldest PostgreSQL major version around one more cycle in [#310580](https://github.com/NixOS/nixpkgs/pull/310580#discussion_r1597284693).
 
-Thus:
-- In September/October the new major version will be released and added to nixos-unstable.
+Thus, our release workflow is as follows:
+
+- In May, `nixpkgs` packages the beta release for an upcoming major version. This is packaged for nixos-unstable only and will not be part of any stable NixOS release.
+- In September/October the new major version will be released, replacing the beta package in nixos-unstable.
 - In November the last minor version for the oldest major will be released.
 - Both the current stable .05 release and nixos-unstable should be updated to the latest minor that will usually be released in November.
   - This is relevant for people who need to use this major for as long as possible. In that case its desirable to be able to pin nixpkgs to a commit that still has it, at the latest minor available.
@@ -390,6 +336,60 @@ self: super: {
       });
     };
   };
+}
+```
+
+You can add a custom PostgreSQL extension to an environment by calling `postgresqlPackages.callPackage` on the derivation.
+In addition to the correct `postgresql` package, `callPackage` will provide additional functions to build those extensions:
+
+- `postgresqlBuildExtension`, extending `mkDerivation` for C and SQL extensions.
+- `buildPgrxExtension`, extending `mkDerivation` for pgrx (Rust) extensions.
+- `postgresqlTestExtension`, a helper to test these extensions on a PostgreSQL instance.
+
+We can define our extension as such:
+
+```nix
+# my-extension.nix
+{
+  postgresql,
+  postgresqlBuildExtension,
+  # other regular mkDerivation arguments
+  fetchFromGitHub,
+}:
+postgresqlBuildExtension (finalAttrs: {
+  pname = "myext";
+  # ...
+  src = fetchFromGitHub {
+    # ...
+  };
+  meta = {
+    platforms = postgresql.meta.platforms;
+    # other meta properties
+  };
+})
+```
+
+We can then build it with `callPackage`, for instance in a NixOS config:
+
+```nix
+{
+  services.postgresql.extensions =
+    ps: with ps; [
+      pg_repack
+      postgis
+      (ps.callPackage ./my-extension.nix { })
+    ];
+}
+```
+Or to include it in a shell environment:
+
+```nix
+{
+  postgresql_custom = self.postgresql_17.withPackages (ps: [
+    ps.pg_repack
+    ps.postgis
+    (ps.callPackage ./my-extension.nix { })
+  ]);
 }
 ```
 

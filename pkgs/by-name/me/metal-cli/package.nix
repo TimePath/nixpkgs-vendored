@@ -1,5 +1,6 @@
 {
   lib,
+  stdenv,
   buildGoModule,
   fetchFromGitHub,
   installShellFiles,
@@ -29,7 +30,7 @@ buildGoModule (finalAttrs: {
     installShellFiles
   ];
 
-  postInstall = ''
+  postInstall = lib.optionalString (stdenv.buildPlatform.canExecute stdenv.hostPlatform) ''
     installShellCompletion --cmd metal \
       --bash <($out/bin/metal completion bash) \
       --fish <($out/bin/metal completion fish) \
@@ -50,7 +51,6 @@ buildGoModule (finalAttrs: {
     license = lib.licenses.mit;
     maintainers = with lib.maintainers; [
       Br1ght0ne
-      nshalman
       teutat3s
     ];
     mainProgram = "metal";

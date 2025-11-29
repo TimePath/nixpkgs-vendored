@@ -3,8 +3,7 @@
   lib,
   nodejs_22,
   pnpm_10,
-  electron_38,
-  gn_2233,
+  electron_39,
   python3,
   makeWrapper,
   callPackage,
@@ -15,18 +14,21 @@
   replaceVars,
   noto-fonts-color-emoji,
   nixosTests,
+
+  # command line arguments which are always set e.g "--password-store=kwallet6"
+  commandLineArgs ? "",
+
   withAppleEmojis ? false,
 }:
 let
   nodejs = nodejs_22;
   pnpm = pnpm_10.override { inherit nodejs; };
-  electron = electron_38;
-  gn = gn_2233;
+  electron = electron_39;
 
   libsignal-node = callPackage ./libsignal-node.nix { inherit nodejs; };
   signal-sqlcipher = callPackage ./signal-sqlcipher.nix { inherit pnpm nodejs; };
 
-  webrtc = callPackage ./webrtc.nix { inherit gn; };
+  webrtc = callPackage ./webrtc.nix { };
   ringrtc = callPackage ./ringrtc.nix { inherit webrtc; };
 
   # Noto Color Emoji PNG files for emoji replacement; see below.
@@ -50,13 +52,13 @@ let
     '';
   });
 
-  version = "7.79.0";
+  version = "7.80.0";
 
   src = fetchFromGitHub {
     owner = "signalapp";
     repo = "Signal-Desktop";
     tag = "v${version}";
-    hash = "sha256-2eEUOOmJuS/MYC+M7tkWaxFTulnFUGuKE+eiD2gIIpw=";
+    hash = "sha256-CU304F6Ib4j/0/BqGUidV9uYUrsvIahpsCYVgr8MWFg=";
   };
 
   sticker-creator = stdenv.mkDerivation (finalAttrs: {
@@ -132,15 +134,15 @@ stdenv.mkDerivation (finalAttrs: {
     fetcherVersion = 1;
     hash =
       if withAppleEmojis then
-        "sha256-Gx7+/vVjYRM4oBWnUFpxWSLjha2t3nLmaZjjzDlKf+Y="
+        "sha256-7zw9qmnQt5NYRKI4bLCM5Hg0d/6kVKovy1k8CpZ/1R8="
       else
-        "sha256-YhxoyNTvtmpo/v0ef+T9OMMvwHqC/PGEwY3cUQ+EtPg=";
+        "sha256-Mya7v0uhjP4GVyD412SMiQ8/YHaq99fDIjGHCJOIWxY=";
   };
 
   env = {
     ELECTRON_SKIP_BINARY_DOWNLOAD = "1";
     SIGNAL_ENV = "production";
-    SOURCE_DATE_EPOCH = 1762988949;
+    SOURCE_DATE_EPOCH = 1763594452;
   };
 
   preBuild = ''
@@ -197,7 +199,7 @@ stdenv.mkDerivation (finalAttrs: {
 
     pnpm run generate
     pnpm exec electron-builder \
-      --dir \
+      --linux "dir:${stdenv.hostPlatform.node.arch}" \
       --config.extraMetadata.environment=$SIGNAL_ENV \
       -c.electronDist=electron-dist \
       -c.electronVersion=${electron.version}
@@ -219,7 +221,8 @@ stdenv.mkDerivation (finalAttrs: {
     makeWrapper '${lib.getExe electron}' "$out/bin/signal-desktop" \
       --add-flags "$out/share/signal-desktop/app.asar" \
       --set-default ELECTRON_FORCE_IS_PACKAGED 1 \
-      --add-flags "\''${NIXOS_OZONE_WL:+\''${WAYLAND_DISPLAY:+--enable-features=WaylandWindowDecorations --enable-wayland-ime=true}}"
+      --add-flags "\''${NIXOS_OZONE_WL:+\''${WAYLAND_DISPLAY:+--enable-features=WaylandWindowDecorations --enable-wayland-ime=true}}" \
+      --add-flags ${lib.escapeShellArg commandLineArgs}
 
     runHook postInstall
   '';

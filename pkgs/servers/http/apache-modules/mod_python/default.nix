@@ -57,5 +57,6 @@ stdenv.mkDerivation (finalAttrs: {
     mainProgram = "mod_python";
     platforms = lib.platforms.unix;
     maintainers = [ ];
+    broken = stdenv.hostPlatform.isDarwin;
   };
 })

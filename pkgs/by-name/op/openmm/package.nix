@@ -18,15 +18,15 @@
   addDriverRunpath,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "openmm";
-  version = "8.2.0";
+  version = "8.4.0";
 
   src = fetchFromGitHub {
     owner = "openmm";
     repo = "openmm";
-    rev = version;
-    hash = "sha256-p0zjr8ONqGK4Vbnhljt16DeyeZ0bR1kE+YdiIlw/1L0=";
+    rev = finalAttrs.version;
+    hash = "sha256-vD0daqhEwiM+OMqW//mpc3p6ho/TI2muA6VopXyLYVE=";
   };
 
   # "This test is stochastic and may occasionally fail". It does.
@@ -127,4 +127,4 @@ stdenv.mkDerivation rec {
     platforms = platforms.linux;
     maintainers = [ maintainers.sheepforce ];
   };
-}
+})

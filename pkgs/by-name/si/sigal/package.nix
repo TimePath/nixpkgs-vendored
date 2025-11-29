@@ -57,7 +57,6 @@ python3.pkgs.buildPythonApplication rec {
     homepage = "http://sigal.saimon.org/";
     license = licenses.mit;
     maintainers = with maintainers; [
-      domenkozar
       matthiasbeyer
     ];
   };

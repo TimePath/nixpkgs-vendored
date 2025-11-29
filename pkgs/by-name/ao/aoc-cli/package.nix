@@ -12,8 +12,8 @@ rustPlatform.buildRustPackage rec {
 
   src = fetchFromGitHub {
     owner = "scarvalhojr";
-    repo = pname;
-    rev = version;
+    repo = "aoc-cli";
+    tag = version;
     hash = "sha256-UdeCKhEWr1BjQ6OMLP19OLWPlvvP7FGAO+mi+bQUPQA=";
   };
 

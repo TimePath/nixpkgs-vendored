@@ -3,7 +3,8 @@
   dbus,
   eudev,
   fetchFromGitHub,
-  libdisplay-info,
+  installShellFiles,
+  libdisplay-info_0_2,
   libglvnd,
   libinput,
   libxkbcommon,
@@ -15,6 +16,7 @@
   pkg-config,
   rustPlatform,
   seatd,
+  stdenv,
   systemd,
   wayland,
   withDbus ? true,
@@ -50,12 +52,13 @@ rustPlatform.buildRustPackage (finalAttrs: {
   strictDeps = true;
 
   nativeBuildInputs = [
+    installShellFiles
     pkg-config
     rustPlatform.bindgenHook
   ];
 
   buildInputs = [
-    libdisplay-info
+    libdisplay-info_0_2
     libglvnd # For libEGL
     libinput
     libxkbcommon
@@ -93,6 +96,12 @@ rustPlatform.buildRustPackage (finalAttrs: {
   ''
   + lib.optionalString withDinit ''
     install -Dm0644 resources/dinit/niri{-shutdown,} -t $out/lib/dinit.d/user
+  ''
+  + lib.optionalString (stdenv.buildPlatform.canExecute stdenv.hostPlatform) ''
+    installShellCompletion --cmd $pname \
+      --bash <($out/bin/niri completions bash) \
+      --fish <($out/bin/niri completions fish) \
+      --zsh <($out/bin/niri completions zsh)
   '';
 
   env = {
@@ -129,7 +138,6 @@ rustPlatform.buildRustPackage (finalAttrs: {
     changelog = "https://github.com/YaLTeR/niri/releases/tag/v${finalAttrs.version}";
     license = lib.licenses.gpl3Only;
     maintainers = with lib.maintainers; [
-      iogamaster
       foo-dogsquared
       sodiboo
       getchoo

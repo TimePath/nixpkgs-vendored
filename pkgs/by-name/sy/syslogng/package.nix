@@ -35,8 +35,7 @@
   gperf,
   withGrpc ? true,
   grpc,
-  # see https://github.com/syslog-ng/syslog-ng/pull/5263
-  protobuf_29,
+  protobuf,
 }:
 let
   python-deps =
@@ -66,13 +65,13 @@ let
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = "syslog-ng";
-  version = "4.8.2";
+  version = "4.10.2";
 
   src = fetchFromGitHub {
     owner = "syslog-ng";
     repo = "syslog-ng";
-    rev = "syslog-ng-${finalAttrs.version}";
-    hash = "sha256-iWH64e5LBEiIy/A5N8pfOkjbn9wbmAswk2NhGyJ63f8=";
+    tag = "syslog-ng-${finalAttrs.version}";
+    hash = "sha256-hUaDeJBW3jgXRD9uy4yzQsMm0QpprNeQZL8jjP2NOGs=";
     fetchSubmodules = true;
   };
   nativeBuildInputs = [
@@ -111,7 +110,7 @@ stdenv.mkDerivation (finalAttrs: {
     rdkafka
   ]
   ++ (lib.optionals withGrpc [
-    protobuf_29
+    protobuf
     grpc
   ]);
 

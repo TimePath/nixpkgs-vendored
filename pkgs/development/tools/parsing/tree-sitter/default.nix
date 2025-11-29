@@ -28,10 +28,10 @@ let
   # to update:
   # 1) change all these hashes
   # 2) nix-build -A tree-sitter.updater.update-all-grammars
-  # 3) Set NIXPKGS_GITHUB_TOKEN env variable to avoid api rate limit (Use a Personal Access Token from https://github.com/settings/tokens It does not need any permissions)
+  # 3) Set GITHUB_TOKEN env variable to avoid api rate limit (Use a Personal Access Token from https://github.com/settings/tokens It does not need any permissions)
   # 4) run the ./result script that is output by that (it updates ./grammars)
-  version = "0.25.3";
-  hash = "sha256-xafeni6Z6QgPiKzvhCT2SyfPn0agLHo47y+6ExQXkzE=";
+  version = "0.25.10";
+  hash = "sha256-aHszbvLCLqCwAS4F4UmM3wbSb81QuG9FM7BDHTu1ZvM=";
 
   src = fetchFromGitHub {
     owner = "tree-sitter";
@@ -43,7 +43,7 @@ let
 
   update-all-grammars = callPackage ./update.nix { };
 
-  fetchGrammar = (
+  fetchGrammar =
     v:
     fetchgit {
       inherit (v)
@@ -52,8 +52,7 @@ let
         sha256
         fetchSubmodules
         ;
-    }
-  );
+    };
 
   grammars = runCommand "grammars" { } (
     ''
@@ -61,7 +60,7 @@ let
     ''
     + (lib.concatStrings (
       lib.mapAttrsToList (
-        name: grammar: "ln -s ${if grammar ? src then grammar.src else fetchGrammar grammar} $out/${name}\n"
+        name: grammar: "ln -s ${grammar.src or (fetchGrammar grammar)} $out/${name}\n"
       ) (import ./grammars { inherit lib; })
     ))
   );
@@ -172,7 +171,7 @@ rustPlatform.buildRustPackage {
   pname = "tree-sitter";
   inherit src version;
 
-  cargoHash = "sha256-rjUn8F6WSxLQGrFzK23q4ClLePSpcMN2+i7rC02Fisk=";
+  cargoHash = "sha256-4R5Y9yancbg/w3PhACtsWq0+gieUd2j8YnmEj/5eqkg=";
 
   buildInputs = [
     installShellFiles
@@ -271,6 +270,7 @@ rustPlatform.buildRustPackage {
     maintainers = with lib.maintainers; [
       Profpatsch
       uncenter
+      amaanq
     ];
   };
 }

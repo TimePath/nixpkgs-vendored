@@ -27,6 +27,7 @@
   enableUsrp1 ? true,
   enableUsrp2 ? true,
   enableX300 ? true,
+  enableX400 ? true,
   enableN300 ? true,
   enableN320 ? true,
   enableE300 ? true,
@@ -43,7 +44,7 @@ stdenv.mkDerivation (finalAttrs: {
   #
   #     nix-shell maintainers/scripts/update.nix --argstr package uhd --argstr commit true
   #
-  version = "4.7.0.0";
+  version = "4.9.0.0";
 
   outputs = [
     "out"
@@ -56,14 +57,14 @@ stdenv.mkDerivation (finalAttrs: {
     rev = "v${finalAttrs.version}";
     # The updateScript relies on the `src` using `hash`, and not `sha256. To
     # update the correct hash for the `src` vs the `uhdImagesSrc`
-    hash = "sha256-TX1iLs941z8sZY0yQEXuy9jGgsn6HU4uqIdxJmNNahU=";
+    hash = "sha256-XA/ADJ0HjD6DxqFTVMwFa7tRgM56mHAEL+a0paWxKyM=";
   };
   # Firmware images are downloaded (pre-built) from the respective release on Github
   uhdImagesSrc = fetchurl {
     url = "https://github.com/EttusResearch/uhd/releases/download/v${finalAttrs.version}/uhd-images_${finalAttrs.version}.tar.xz";
     # Please don't convert this to a hash, in base64, see comment near src's
     # hash.
-    sha256 = "17g503mhndaabrdl7qai3rdbafr8xx8awsyr7h2bdzwzprzmh4m3";
+    sha256 = "194gsmvn7gmwj7b1lw9sq0d0y0babbd0q1229qbb3qjc6f6m0p0y";
   };
   # This are the minimum required Python dependencies, this attribute might
   # be useful if you want to build a development environment with a python
@@ -138,6 +139,7 @@ stdenv.mkDerivation (finalAttrs: {
     (cmakeBool "ENABLE_USRP1" enableUsrp1)
     (cmakeBool "ENABLE_USRP2" enableUsrp2)
     (cmakeBool "ENABLE_X300" enableX300)
+    (cmakeBool "ENABLE_X400" enableX400)
     (cmakeBool "ENABLE_N300" enableN300)
     (cmakeBool "ENABLE_N320" enableN320)
     (cmakeBool "ENABLE_E300" enableE300)
@@ -174,32 +176,17 @@ stdenv.mkDerivation (finalAttrs: {
       dpdk
     ];
 
+  patches = [
+    ./fix-pkg-config.patch
+  ];
+
   # many tests fails on darwin, according to ofborg
   doCheck = !stdenv.hostPlatform.isDarwin;
 
+  doInstallCheck = true;
+
   # Build only the host software
   preConfigure = "cd host";
-  patches = [
-    # fix for boost 187 remove on next update
-    (substitute {
-      src = fetchpatch {
-        name = "boost-187.patch";
-        url = "https://github.com/EttusResearch/uhd/commit/adfe953d965e58b5931c1b1968899492c8087cf6.patch";
-        hash = "sha256-qzxe6QhGoyBul7YjCiPJfeP+3dIoo1hh2sjgYmc9IiI=";
-      };
-      # The last two hunks in client.cc will fail without these substitutions
-      substitutions = [
-        "--replace-fail"
-        "[buffer, idx, func_name, p, this]"
-        "[=]"
-        "--replace-fail"
-        "[buffer, this]"
-        "[=]"
-      ];
-    })
-    # Disable tests that fail in the sandbox, last checked at version 4.6.0.0
-    ./no-adapter-tests.patch
-  ];
 
   postPhases = [
     "installFirmware"

@@ -24,7 +24,6 @@
   stevedore,
   symengine,
   sympy,
-  tweedledum,
   withVisualization ? false,
   # Python visualization requirements, optional
   ipywidgets,
@@ -83,8 +82,7 @@ buildPythonPackage rec {
   buildInputs = lib.optionals stdenv.hostPlatform.isDarwin [ libiconv ];
 
   cargoDeps = rustPlatform.fetchCargoVendor {
-    inherit src;
-    name = "${pname}-${version}";
+    inherit pname version src;
     hash = "sha256-nTYrNH3h1kAwwPx7OMw6eI61vYy8iFhm4eWDTGhWxt4=";
   };
 
@@ -102,7 +100,6 @@ buildPythonPackage rec {
     stevedore
     symengine
     sympy
-    tweedledum
   ]
   ++ lib.optionals withVisualization visualizationPackages
   ++ lib.optionals withCrosstalkPass crosstalkPackages;
@@ -132,7 +129,7 @@ buildPythonPackage rec {
     # Too many floating point arithmetic errors
     "test/visual/mpl/circuit/test_circuit_matplotlib_drawer.py"
   ];
-  pytestFlagsArray = [ "--durations=10" ];
+  pytestFlags = [ "--durations=10" ];
   disabledTests = [
     "TestUnitarySynthesisPlugin" # use unittest mocks for transpiler.run(), seems incompatible somehow w/ pytest infrastructure
     # matplotlib tests seems to fail non-deterministically
@@ -221,6 +218,6 @@ buildPythonPackage rec {
     downloadPage = "https://github.com/QISKit/qiskit-terra/releases";
     changelog = "https://qiskit.org/documentation/release_notes.html";
     license = licenses.asl20;
-    maintainers = with maintainers; [ drewrisinger ];
+    maintainers = [ ];
   };
 }

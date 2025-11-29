@@ -11,7 +11,7 @@
 {
   bash,
   brotli,
-  buildGo125Module,
+  buildGoModule,
   forgejo,
   git,
   gzip,
@@ -52,7 +52,7 @@ let
     '';
   };
 in
-buildGo125Module rec {
+buildGoModule rec {
   pname = "forgejo" + lib.optionalString lts "-lts";
 
   inherit
@@ -129,7 +129,7 @@ buildGo125Module rec {
     [ "-skip=^${builtins.concatStringsSep "$|^" skippedTests}$" ];
 
   preInstall = ''
-    mv "$GOPATH/bin/forgejo.org" "$GOPATH/bin/gitea"
+    mv "$GOPATH/bin/forgejo.org" "$GOPATH/bin/forgejo"
   '';
 
   postInstall = ''
@@ -137,7 +137,7 @@ buildGo125Module rec {
     cp -R ./{templates,options} ${frontend}/public $data
     mkdir -p $out
     cp -R ./options/locale $out/locale
-    wrapProgram $out/bin/gitea \
+    wrapProgram $out/bin/forgejo \
       --prefix PATH : ${
         lib.makeBinPath [
           bash
@@ -199,8 +199,9 @@ buildGo125Module rec {
       adamcstephens
       marie
       pyrox0
+      tebriel
     ];
     broken = stdenv.hostPlatform.isDarwin;
-    mainProgram = "gitea";
+    mainProgram = "forgejo";
   };
 }

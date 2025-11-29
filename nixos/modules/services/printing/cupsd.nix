@@ -73,7 +73,7 @@ let
     };
 
   cupsFilesFile = writeConf "cups-files.conf" ''
-    SystemGroup root wheel
+    SystemGroup root wheel lpadmin
 
     ServerBin ${bindir}/lib/cups
     DataDir ${bindir}/share/cups
@@ -362,10 +362,15 @@ in
 
   config = mkIf config.services.printing.enable {
 
-    users.users.cups = {
-      uid = config.ids.uids.cups;
-      group = "lp";
-      description = "CUPS printing services";
+    users = {
+      users.cups = {
+        uid = config.ids.uids.cups;
+        group = "lp";
+        description = "CUPS printing services";
+      };
+
+      # It seems that groups provided for `SystemGroup` must exist
+      groups.lpadmin = { };
     };
 
     # We need xdg-open (part of xdg-utils) for the desktop-file to proper open the users default-browser when opening "Manage Printing"

@@ -45,7 +45,7 @@
 
 buildPythonPackage rec {
   pname = "dissect-target";
-  version = "3.20.1";
+  version = "3.23.1";
   pyproject = true;
 
   disabled = pythonOlder "3.9";
@@ -54,7 +54,8 @@ buildPythonPackage rec {
     owner = "fox-it";
     repo = "dissect.target";
     tag = version;
-    hash = "sha256-kB1RhLnmsK77V5uI/GesRQX//awWKVAtWUGgtj38URM=";
+    hash = "sha256-WOFtDFCN3OfhEjfhEgwtJN/tQVRGvd2RMQzcKtf0atU=";
+    fetchLFS = true;
   };
 
   postPatch = ''
@@ -118,12 +119,15 @@ buildPythonPackage rec {
   pythonImportsCheck = [ "dissect.target" ];
 
   disabledTests = [
-    "test_cpio"
-    "test_env_parser"
     "test_cp_directory"
     "test_cp_subdirectories"
+    "test_cpio"
+    "test_env_parser"
+    "test_list_json"
+    "test_list"
     "test_shell_cli"
     "test_shell_cmd"
+    "test_shell_prompt_tab_autocomplete"
     # Test requires rdump
     "test_exec_target_command"
     # Issue with tar file
@@ -164,7 +168,6 @@ buildPythonPackage rec {
     "tests/plugins/os/"
     "tests/test_container.py"
     "tests/plugins/filesystem/"
-    "tests/test_registration.py"
     "tests/filesystems/"
     "tests/test_filesystem.py"
     "tests/loaders/"

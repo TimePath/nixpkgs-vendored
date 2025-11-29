@@ -82,7 +82,7 @@ let
 
   isEnabled = service: cfg.${service}.enable;
 
-  daemonLine = d: "${d}=${if isEnabled d then "yes" else "no"}";
+  daemonLine = d: "${d}=${lib.boolToYesNo (isEnabled d)}";
 
   configFile =
     if cfg.configFile != null then
@@ -297,7 +297,6 @@ in
           Nice = -5;
           Type = "forking";
           NotifyAccess = "all";
-          StartLimitBurst = "3";
           TimeoutSec = 120;
           WatchdogSec = 60;
           RestartSec = 5;
@@ -307,6 +306,9 @@ in
           ExecStart = "${pkgs.frr}/libexec/frr/frrinit.sh start";
           ExecStop = "${pkgs.frr}/libexec/frr/frrinit.sh stop";
           ExecReload = "${pkgs.frr}/libexec/frr/frrinit.sh reload";
+        };
+        unitConfig = {
+          StartLimitBurst = "3";
         };
       };
     };

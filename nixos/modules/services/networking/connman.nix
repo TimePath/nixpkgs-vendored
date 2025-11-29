@@ -59,7 +59,7 @@ in
       };
 
       networkInterfaceBlacklist = lib.mkOption {
-        type = with lib.types; listOf str;
+        type = lib.types.listOf lib.types.str;
         default = [
           "vmnet"
           "vboxnet"
@@ -87,7 +87,7 @@ in
       };
 
       extraFlags = lib.mkOption {
-        type = with lib.types; listOf str;
+        type = lib.types.listOf lib.types.str;
         default = [ ];
         example = [ "--nodnsproxy" ];
         description = ''

@@ -3,23 +3,40 @@
   buildGoModule,
   fetchFromGitHub,
   callPackage,
+  installShellFiles,
   nixosTests,
+  stdenv,
 }:
 
 buildGoModule rec {
   pname = "croc";
-  version = "10.2.2";
+  version = "10.3.1";
 
   src = fetchFromGitHub {
     owner = "schollz";
-    repo = pname;
+    repo = "croc";
     rev = "v${version}";
-    hash = "sha256-tRWkokgs2SZglkgzK+UxwzbTk99GcPgDBcgJkMURNJ8=";
+    hash = "sha256-oNk4ReqteTeWKjsmVPC2yVRv1A9WN9jUbiT40flfM+o=";
   };
 
-  vendorHash = "sha256-oyLjCORfx3Pf8T1EQqM9XBrmQyMSDHy2X2axh1L79PQ=";
+  vendorHash = "sha256-xEF1vjYQaeDYxcC3FTgR0zCFqvziNIrJVpJJT4o1cVU=";
 
   subPackages = [ "." ];
+
+  nativeBuildInputs = [
+    installShellFiles
+  ];
+
+  postInstall = ''
+    installShellCompletion --cmd croc \
+      --bash src/install/bash_autocomplete \
+  ''
+  + lib.optionalString (stdenv.buildPlatform.canExecute stdenv.hostPlatform) ''
+    --fish <($out/bin/croc generate-fish-completion) \
+  ''
+  + ''
+    --zsh src/install/zsh_autocomplete
+  '';
 
   passthru = {
     tests = {

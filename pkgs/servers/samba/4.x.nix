@@ -26,11 +26,11 @@
   talloc,
   jansson,
   ldb,
+  lmdb,
   libtasn1,
   tdb,
   tevent,
   libxcrypt,
-  libxcrypt-legacy,
   cmocka,
   rpcsvc-proto,
   bash,
@@ -49,7 +49,6 @@
   avahi,
   enableDomainController ? false,
   gpgme,
-  lmdb,
   enableRegedit ? true,
   ncurses,
   enableCephFS ? false,
@@ -57,7 +56,7 @@
   enableGlusterFS ? false,
   glusterfs,
   libuuid,
-  enableAcl ? (!stdenv.hostPlatform.isDarwin),
+  enableAcl ? stdenv.hostPlatform.isLinux,
   acl,
   enableLibunwind ? (!stdenv.hostPlatform.isDarwin),
   libunwind,
@@ -66,24 +65,25 @@
 }:
 
 let
-  # samba-tool requires libxcrypt-legacy algorithms
-  python = python3Packages.python.override {
-    self = python;
-    libxcrypt = libxcrypt-legacy;
-  };
-  wrapPython = python3Packages.wrapPython.override {
-    inherit python;
-  };
-
   inherit (lib) optional optionals;
+
+  needsAnswers =
+    stdenv.hostPlatform != stdenv.buildPlatform
+    && !(stdenv.hostPlatform.emulatorAvailable buildPackages);
+  answers =
+    {
+      x86_64-freebsd = ./answers-x86_64-freebsd;
+    }
+    .${stdenv.hostPlatform.system}
+      or (throw "Need pre-generated answers file to compile for ${stdenv.hostPlatform.system}");
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = "samba";
-  version = "4.20.8";
+  version = "4.22.5";
 
   src = fetchurl {
     url = "https://download.samba.org/pub/samba/stable/samba-${finalAttrs.version}.tar.gz";
-    hash = "sha256-db4OjTH0UBPpsmD+fPMEo20tgSg5GRR3JXchXsFzqAc=";
+    hash = "sha256-2FZqFdPb/At3fR6Puy7umIoCTKnHhtysZd0QNHMHQA0=";
   };
 
   outputs = [
@@ -94,7 +94,6 @@ stdenv.mkDerivation (finalAttrs: {
 
   patches = [
     ./4.x-no-persistent-install.patch
-    ./patch-source3__libads__kerberos_keytab.c.patch
     ./4.x-no-persistent-install-dynconfig.patch
     ./4.x-fix-makeflags-parsing.patch
     ./build-find-pre-built-heimdal-build-tools-in-case-of-.patch
@@ -105,18 +104,15 @@ stdenv.mkDerivation (finalAttrs: {
       hash = "sha256-TVKK/7wGsfP1pVf8o1NwazobiR8jVJCCMj/FWji3f2A=";
     })
     (fetchpatch {
-      name = "CVE-2025-9640_CVE-2025-10230.patch";
-      url = "https://www.samba.org/samba/ftp/patches/security/samba-4.21.9-security-2025-10-15.patch";
-      hash = "sha256-AFYffcep1EgdkjOkQUki8XCBLgrWeTqVbfXL5gVPcaY=";
-      excludes = [
-        # does not exist in 4.20.x
-        "selftest/knownfail.d/samba4.nbt.wins.wins_bad_names"
-      ];
+      name = "cross-compile.patch";
+      url = "https://gitlab.com/samba-team/samba/-/merge_requests/3990/diffs.patch?commit_id=52af20db81f24cbfaa6fef8233584fc40fc72d34";
+      hash = "sha256-GMPxM6KMtMPRljhRI+dDD2fOp+y5kpRqbjqkj19Du4Q=";
     })
   ];
 
   nativeBuildInputs = [
     python3Packages.python
+    python3Packages.wrapPython
     wafHook
     pkg-config
     bison
@@ -142,19 +138,21 @@ stdenv.mkDerivation (finalAttrs: {
 
   buildInputs = [
     bash
-    wrapPython
-    python
+    python3Packages.python
     readline
     popt
     dbus
     jansson
-    libbsd
     libarchive
     zlib
     gnutls
     libtasn1
+    lmdb
     tdb
     libxcrypt
+  ]
+  ++ optionals (!stdenv.hostPlatform.isBSD) [
+    libbsd
   ]
   ++ optionals stdenv.hostPlatform.isLinux [
     liburing
@@ -174,7 +172,6 @@ stdenv.mkDerivation (finalAttrs: {
   ++ optional enableMDNS avahi
   ++ optionals enableDomainController [
     gpgme
-    lmdb
     python3Packages.dnspython
   ]
   ++ optional enableRegedit ncurses
@@ -195,12 +192,23 @@ stdenv.mkDerivation (finalAttrs: {
     sed -i "s,\(XML_CATALOG_FILES=\"\),\1$XML_CATALOG_FILES ,g" buildtools/wafsamba/wafsamba.py
 
     patchShebangs ./buildtools/bin
+  ''
+  + lib.optionalString (stdenv.hostPlatform != stdenv.buildPlatform) ''
+    substituteInPlace wscript source3/wscript nsswitch/wscript_build lib/replace/wscript source4/ntvfs/sysdep/wscript_configure --replace-fail 'sys.platform' '"${stdenv.hostPlatform.parsed.kernel.name}"'
   '';
 
   preConfigure = ''
     export PKGCONFIG="$PKG_CONFIG"
     export PYTHONHASHSEED=1
+  ''
+  + lib.optionalString needsAnswers ''
+    cp ${answers} answers
+    chmod +w answers
   '';
+
+  env.NIX_LDFLAGS = lib.optionalString (
+    stdenv.cc.bintools.isLLVM && lib.versionAtLeast stdenv.cc.bintools.version "17"
+  ) "--undefined-version";
 
   wafConfigureFlags = [
     "--with-static-modules=NONE"
@@ -211,7 +219,7 @@ stdenv.mkDerivation (finalAttrs: {
     "--disable-rpath"
     # otherwise third_party/waf/waflib/Tools/python.py would
     # get the wrong pythondir from build platform python
-    "--pythondir=${placeholder "out"}/${python.sitePackages}"
+    "--pythondir=${placeholder "out"}/${python3Packages.python.sitePackages}"
     (lib.enableFeature enablePrinting "cups")
   ]
   ++ optional (!enableDomainController) "--without-ad-dc"
@@ -229,7 +237,12 @@ stdenv.mkDerivation (finalAttrs: {
   ++ optionals (stdenv.hostPlatform != stdenv.buildPlatform) [
     "--bundled-libraries=!asn1_compile,!compile_et"
     "--cross-compile"
-    "--cross-execute=${stdenv.hostPlatform.emulator buildPackages}"
+    (
+      if (stdenv.hostPlatform.emulatorAvailable buildPackages) then
+        "--cross-execute=${stdenv.hostPlatform.emulator buildPackages}"
+      else
+        "--cross-answers=answers"
+    )
   ]
   ++ optionals stdenv.buildPlatform.is32bit [
     # By default `waf configure` spawns as many as available CPUs. On
@@ -297,7 +310,7 @@ stdenv.mkDerivation (finalAttrs: {
     # Samba does its own shebang patching, but uses build Python
     find $out/bin -type f -executable | while read file; do
       isScript "$file" || continue
-      sed -i 's^${lib.getBin buildPackages.python3Packages.python}^${lib.getBin python}^' "$file"
+      sed -i 's^${lib.getBin buildPackages.python3Packages.python}^${lib.getBin python3Packages.python}^' "$file"
     done
   '';
 
@@ -325,17 +338,12 @@ stdenv.mkDerivation (finalAttrs: {
     broken = enableGlusterFS;
     maintainers = with maintainers; [ aneeshusa ];
     pkgConfigModules = [
-      "dcerpc_samr"
-      "dcerpc"
       "ndr_krb5pac"
       "ndr_nbt"
       "ndr_standard"
       "ndr"
       "netapi"
-      "samba-credentials"
-      "samba-hostconfig"
       "samba-util"
-      "samdb"
       "smbclient"
       "wbclient"
     ];

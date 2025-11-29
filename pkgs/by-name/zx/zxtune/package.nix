@@ -49,7 +49,7 @@ let
 in
 stdenv.mkDerivation rec {
   pname = "zxtune";
-  version = "5090";
+  version = "5101";
 
   outputs = [ "out" ];
 
@@ -57,7 +57,7 @@ stdenv.mkDerivation rec {
     owner = "zxtune";
     repo = "zxtune";
     rev = "r${version}";
-    hash = "sha256-2k1I3wGnUSMgwzxXY3SKhS8nBtrFU8zH9VaFwdWYgOU=";
+    hash = "sha256-C+1tmQ8cKGpigWDh5p0mqv9B7/Tv8iJ4JVc835Q4y40=";
   };
 
   passthru.updateScript = nix-update-script {
@@ -115,11 +115,11 @@ stdenv.mkDerivation rec {
     in
     ''
       runHook preBuild
-      make ${builtins.toString makeOptsCommon} -C apps/xtractor
-      make ${builtins.toString makeOptsCommon} -C apps/zxtune123
+      make ${toString makeOptsCommon} -C apps/xtractor
+      make ${toString makeOptsCommon} -C apps/zxtune123
     ''
     + lib.optionalString withQt ''
-      make ${builtins.toString (makeOptsCommon ++ makeOptsQt)} -C apps/zxtune-qt
+      make ${toString (makeOptsCommon ++ makeOptsQt)} -C apps/zxtune-qt
     ''
     + ''
       runHook postBuild

@@ -22,13 +22,13 @@ let
 in
 mkYarnPackage rec {
   pname = "draupnir";
-  version = "2.7.1";
+  version = "2.8.0";
 
   src = fetchFromGitHub {
     owner = "the-draupnir-project";
     repo = "Draupnir";
     tag = "v${version}";
-    hash = "sha256-PJg+ybWe7mtLgqrBZP0xKeKWc2FPv7koyjsHyK5uRKs=";
+    hash = "sha256-I9DYiNxD95pzHVsgZ/hJwHfrsVqE/eBALNiePVNDpy0=";
   };
 
   nativeBuildInputs = [
@@ -102,7 +102,7 @@ mkYarnPackage rec {
   };
 
   meta = with lib; {
-    description = "A moderation tool for Matrix";
+    description = "Moderation tool for Matrix";
     homepage = "https://github.com/the-draupnir-project/Draupnir";
     longDescription = ''
       As an all-in-one moderation tool, it can protect your server from

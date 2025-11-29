@@ -189,6 +189,7 @@ pkgs.buildEmscriptenPackage {
     cp *.json $out/share
     cp *.rng $out/share
     cp README.md $doc/share/${name}
+
     runHook postInstall
   '';
 

@@ -22,17 +22,19 @@ rustPlatform.buildRustPackage rec {
     ronn
   ];
 
+  env.RUSTFLAGS = "-Adangerous_implicit_autorefs";
+
   postInstall = ''
     ronn --roff --organization="termimage developers" termimage.md
     installManPage termimage.1
   '';
 
-  meta = with lib; {
+  meta = {
     description = "Display images in your terminal";
     homepage = "https://github.com/nabijaczleweli/termimage";
     changelog = "https://github.com/nabijaczleweli/termimage/releases/tag/v${version}";
-    license = licenses.mit;
-    maintainers = with maintainers; [ figsoda ];
+    license = lib.licenses.mit;
+    maintainers = [ ];
     mainProgram = "termimage";
   };
 }

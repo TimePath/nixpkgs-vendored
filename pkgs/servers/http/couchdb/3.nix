@@ -5,23 +5,20 @@
   erlang,
   icu,
   openssl,
-  spidermonkey_91,
   python3,
   nixosTests,
 }:
 
 stdenv.mkDerivation rec {
   pname = "couchdb";
-  version = "3.4.3";
+  version = "3.5.0";
 
   src = fetchurl {
     url = "mirror://apache/couchdb/source/${version}/apache-${pname}-${version}.tar.gz";
-    hash = "sha256-A1dRG2/tcOPmT051ql18wgAMsPJk7zAXArGBZCf3LyA=";
+    hash = "sha256-api5CpqYC77yw1tJlqjnGi8a5SJ1RshfBMQ2EBvfeL8=";
   };
 
   postPatch = ''
-    substituteInPlace src/couch/rebar.config.script --replace '/usr/include/mozjs-91' "${spidermonkey_91.dev}/include/mozjs-91"
-    substituteInPlace configure --replace '/usr/include/''${SM_HEADERS}' "${spidermonkey_91.dev}/include/mozjs-91"
     patchShebangs bin/rebar
   ''
   + lib.optionalString stdenv.hostPlatform.isDarwin ''
@@ -37,14 +34,14 @@ stdenv.mkDerivation rec {
   buildInputs = [
     icu
     openssl
-    spidermonkey_91
     (python3.withPackages (ps: with ps; [ requests ]))
   ];
 
   dontAddPrefix = "True";
 
   configureFlags = [
-    "--spidermonkey-version=91"
+    "--js-engine=quickjs"
+    "--disable-spidermonkey"
   ];
 
   buildFlags = [
@@ -68,5 +65,6 @@ stdenv.mkDerivation rec {
     license = licenses.asl20;
     platforms = platforms.all;
     maintainers = with maintainers; [ lostnet ];
+    broken = stdenv.isDarwin && stdenv.isAarch64;
   };
 }

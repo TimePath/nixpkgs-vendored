@@ -36,13 +36,13 @@
 
 stdenv.mkDerivation rec {
   pname = "exaile";
-  version = "4.1.3";
+  version = "4.2.0";
 
   src = fetchFromGitHub {
     owner = "exaile";
     repo = "exaile";
     rev = version;
-    sha256 = "sha256-9SK0nvGdz2j6qp1JTmSuLezxX/kB93CZReSfAnfKZzg=";
+    sha256 = "sha256-33lUlJ7H7lmty46GLzGkIUpgbWIv2EqEcPIzKt87dis=";
   };
 
   nativeBuildInputs = [

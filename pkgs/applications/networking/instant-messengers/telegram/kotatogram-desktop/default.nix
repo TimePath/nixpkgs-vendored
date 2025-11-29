@@ -5,11 +5,19 @@
   fetchpatch,
   libsForQt5,
   yasm,
+  alsa-lib,
+  jemalloc,
+  libopus,
+  libpulseaudio,
   withWebkit ? true,
 }:
 
 let
-  telegram-desktop = libsForQt5.callPackage ../telegram-desktop { inherit stdenv; };
+  telegram-desktop = libsForQt5.callPackage ../telegram-desktop {
+    inherit stdenv;
+    # N/A on Qt5
+    kimageformats = null;
+  };
   version = "1.4.9";
   tg_owt = telegram-desktop.tg_owt.overrideAttrs (oldAttrs: {
     version = "0-unstable-2024-06-15";
@@ -38,7 +46,7 @@ in
 telegram-desktop.override {
   pname = "kotatogram-desktop";
   inherit withWebkit;
-  unwrapped = (telegram-desktop.unwrapped.override { inherit tg_owt; }).overrideAttrs {
+  unwrapped = (telegram-desktop.unwrapped.override { inherit tg_owt; }).overrideAttrs (old: {
     pname = "kotatogram-desktop-unwrapped";
     version = "${version}-unstable-2024-09-27";
 
@@ -52,6 +60,7 @@ telegram-desktop.override {
 
     patches = [
       ./macos-qt5.patch
+      ./glib-2.86.patch
       (fetchpatch {
         url = "https://gitlab.com/mnauw/cppgir/-/commit/c8bb1c6017a6f7f2e47bd10543aea6b3ec69a966.patch";
         stripLen = 1;
@@ -60,19 +69,26 @@ telegram-desktop.override {
       })
     ];
 
-    meta = with lib; {
+    buildInputs = (old.buildInputs or [ ]) ++ [
+      alsa-lib
+      jemalloc
+      libopus
+      libpulseaudio
+    ];
+
+    meta = {
       description = "Kotatogram – experimental Telegram Desktop fork";
       longDescription = ''
         Unofficial desktop client for the Telegram messenger, based on Telegram Desktop.
 
         It contains some useful (or purely cosmetic) features, but they could be unstable. A detailed list is available here: https://kotatogram.github.io/changes
       '';
-      license = licenses.gpl3Only;
-      platforms = platforms.all;
+      license = lib.licenses.gpl3Only;
+      platforms = lib.platforms.all;
       homepage = "https://kotatogram.github.io";
       changelog = "https://github.com/kotatogram/kotatogram-desktop/releases/tag/k${version}";
-      maintainers = with maintainers; [ ilya-fedin ];
+      maintainers = with lib.maintainers; [ ilya-fedin ];
       mainProgram = if stdenv.hostPlatform.isLinux then "kotatogram-desktop" else "Kotatogram";
     };
-  };
+  });
 }

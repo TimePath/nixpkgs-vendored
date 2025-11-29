@@ -6,25 +6,25 @@
   copyDesktopItems,
   makeWrapper,
   fetchFromGitHub,
-  yarn-berry_3,
+  yarn-berry_4,
   python3,
   pkg-config,
   pango,
   cairo,
   pixman,
   libsecret,
-  electron_36,
+  electron_37,
   xcbuild,
   buildPackages,
   callPackage,
   runCommand,
   libGL,
-  typescript,
+  clang_20,
 }:
 
 let
-  electron = electron_36;
-  yarn-berry = yarn-berry_3;
+  electron = electron_37;
+  yarn-berry = yarn-berry_4;
 
   releaseData = lib.importJSON ./release-data.json;
 
@@ -89,7 +89,6 @@ stdenv.mkDerivation (finalAttrs: {
     nodejs
     yarn-berry.yarn-berry-offline
     yarn-berry.yarnBerryConfigHook
-    typescript
     (python3.withPackages (ps: with ps; [ distutils ]))
     pkg-config
     pango
@@ -101,6 +100,7 @@ stdenv.mkDerivation (finalAttrs: {
   ++ lib.optionals stdenv.hostPlatform.isDarwin [
     xcbuild
     buildPackages.cctools
+    clang_20 # clang_21 breaks keytar, sqlite
   ]
   ++ lib.optionals stdenv.hostPlatform.isLinux [
     copyDesktopItems
@@ -167,6 +167,8 @@ stdenv.mkDerivation (finalAttrs: {
 
     # file is expected to be present for Linux build
     mkdir dist && touch dist/AppImage
+
+    yarn gulp before-dist
 
     yarn run electronRebuild
 

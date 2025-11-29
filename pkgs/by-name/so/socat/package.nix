@@ -1,7 +1,7 @@
 {
   lib,
   fetchurl,
-  nettools,
+  net-tools,
   openssl,
   readline,
   stdenv,
@@ -38,13 +38,11 @@ stdenv.mkDerivation rec {
     readline
   ];
 
-  hardeningEnable = [ "pie" ];
-
   enableParallelBuilding = true;
 
   nativeCheckInputs = [
     which
-    nettools
+    net-tools
   ];
   doCheck = false; # fails a bunch, hangs
 

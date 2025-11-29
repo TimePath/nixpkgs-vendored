@@ -11,13 +11,17 @@
   gnutar,
   libsForQt5,
   makeDesktopItem,
-  nettools,
+  net-tools,
   protobuf,
-  python3Packages,
+  python312Packages,
   system-config-printer,
   wget,
 }:
 
+let
+  # shiboken2 is broken on Python > 3.12
+  python3Packages = python312Packages;
+in
 python3Packages.buildPythonApplication rec {
   pname = "rcu";
   version = "4.0.30";
@@ -150,7 +154,7 @@ python3Packages.buildPythonApplication rec {
   + lib.optionalString stdenv.hostPlatform.isLinux ''
     --prefix PATH : ${
       lib.makeBinPath [
-        nettools
+        net-tools
         system-config-printer
       ]
     }
@@ -189,7 +193,10 @@ python3Packages.buildPythonApplication rec {
     description = "All-in-one offline/local management software for reMarkable e-paper tablets";
     homepage = "http://www.davisr.me/projects/rcu/";
     license = lib.licenses.agpl3Plus;
-    maintainers = with lib.maintainers; [ OPNA2608 ];
+    maintainers = with lib.maintainers; [
+      OPNA2608
+      m0streng0
+    ];
     hydraPlatforms = [ ]; # requireFile used as src
   };
 }

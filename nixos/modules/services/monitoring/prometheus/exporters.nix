@@ -79,6 +79,7 @@ let
         "jitsi"
         "json"
         "junos-czerwonk"
+        "kafka"
         "kea"
         "keylight"
         "klipper"
@@ -86,6 +87,7 @@ let
         "libvirt"
         "lnd"
         "mail"
+        "mailman3"
         "mikrotik"
         "modemmanager"
         "mongodb"
@@ -122,8 +124,10 @@ let
         "snmp"
         "sql"
         "statsd"
+        "storagebox"
         "surfboard"
         "systemd"
+        "tailscale"
         "tibber"
         "unbound"
         "unpoller"
@@ -589,6 +593,6 @@ in
 
   meta = {
     doc = ./exporters.md;
-    maintainers = [ maintainers.willibutz ];
+    maintainers = [ ];
   };
 }

@@ -2,7 +2,6 @@
   lib,
   stdenv,
   fetchurl,
-  apple-sdk_12,
   tzdata,
   replaceVars,
   iana-etc,
@@ -10,15 +9,13 @@
   buildPackages,
   pkgsBuildTarget,
   targetPackages,
-  testers,
-  skopeo,
+  # for testing
   buildGo125Module,
+  callPackage,
 }:
 
 let
   goBootstrap = buildPackages.callPackage ./bootstrap122.nix { };
-
-  skopeoTest = skopeo.override { buildGoModule = buildGo125Module; };
 
   # We need a target compiler which is still runnable at build time,
   # to handle the cross-building case where build != host == target
@@ -41,13 +38,9 @@ stdenv.mkDerivation (finalAttrs: {
     ++ lib.optionals stdenv.hostPlatform.isLinux [ stdenv.cc.libc.out ]
     ++ lib.optionals (stdenv.hostPlatform.libc == "glibc") [ stdenv.cc.libc.static ];
 
-  depsTargetTargetPropagated = lib.optionals stdenv.targetPlatform.isDarwin [
-    apple-sdk_12
-  ];
-
   depsBuildTarget = lib.optional isCross targetCC;
 
-  depsTargetTarget = lib.optional stdenv.targetPlatform.isWindows targetPackages.threads.package;
+  depsTargetTarget = lib.optional stdenv.targetPlatform.isMinGW targetPackages.threads.package;
 
   postPatch = ''
     patchShebangs .
@@ -69,6 +62,7 @@ stdenv.mkDerivation (finalAttrs: {
     })
     ./remove-tools-1.11.patch
     ./go_no_vendor_checks-1.23.patch
+    ./go-env-go_ldso.patch
   ];
 
   inherit (stdenv.targetPlatform.go) GOOS GOARCH GOARM;
@@ -85,13 +79,28 @@ stdenv.mkDerivation (finalAttrs: {
 
   GO386 = "softfloat"; # from Arch: don't assume sse2 on i686
   # Wasi does not support CGO
-  CGO_ENABLED = if stdenv.targetPlatform.isWasi then 0 else 1;
+  # ppc64/linux CGO is incomplete/borked, and will likely not receive any further improvements
+  # https://github.com/golang/go/issues/8912
+  # https://github.com/golang/go/issues/13192
+  CGO_ENABLED =
+    if
+      (
+        stdenv.targetPlatform.isWasi
+        || (stdenv.targetPlatform.isPower64 && stdenv.targetPlatform.isBigEndian)
+      )
+    then
+      0
+    else
+      1;
 
   GOROOT_BOOTSTRAP = "${goBootstrap}/share/go";
 
   buildPhase = ''
     runHook preBuild
     export GOCACHE=$TMPDIR/go-cache
+    if [ -f "$NIX_CC/nix-support/dynamic-linker" ]; then
+      export GO_LDSO=$(cat $NIX_CC/nix-support/dynamic-linker)
+    fi
 
     export PATH=$(pwd)/bin:$PATH
 
@@ -99,6 +108,12 @@ stdenv.mkDerivation (finalAttrs: {
       # Independent from host/target, CC should produce code for the building system.
       # We only set it when cross-compiling.
       export CC=${buildPackages.stdenv.cc}/bin/cc
+      # Prefer external linker for cross when CGO is supported, since
+      # we haven't taught go's internal linker to pick the correct ELF
+      # interpreter for cross
+      # When CGO is not supported we rely on static binaries being built
+      # since they don't need an ELF interpreter
+      export GO_EXTLINK_ENABLED=${toString finalAttrs.CGO_ENABLED}
     ''}
     ulimit -a
 
@@ -149,14 +164,10 @@ stdenv.mkDerivation (finalAttrs: {
   disallowedReferences = [ goBootstrap ];
 
   passthru = {
-    inherit goBootstrap skopeoTest;
-    tests = {
-      skopeo = testers.testVersion { package = skopeoTest; };
-      version = testers.testVersion {
-        package = finalAttrs.finalPackage;
-        command = "go version";
-        version = "go${finalAttrs.version}";
-      };
+    inherit goBootstrap;
+    tests = callPackage ./tests.nix {
+      go = finalAttrs.finalPackage;
+      buildGoModule = buildGo125Module;
     };
   };
 
@@ -167,6 +178,13 @@ stdenv.mkDerivation (finalAttrs: {
     license = licenses.bsd3;
     teams = [ teams.golang ];
     platforms = platforms.darwin ++ platforms.linux ++ platforms.wasi ++ platforms.freebsd;
+    badPlatforms = [
+      # Support for big-endian POWER < 8 was dropped in 1.9, but POWER8 users have less of a reason to run in big-endian mode than pre-POWER8 ones
+      # So non-LE ppc64 is effectively unsupported, and Go SIGILLs on affordable ppc64 hardware
+      # https://github.com/golang/go/issues/19074 - Dropped support for big-endian POWER < 8, with community pushback
+      # https://github.com/golang/go/issues/73349 - upstream will not accept submissions to fix this
+      "powerpc64-linux"
+    ];
     mainProgram = "go";
   };
 })

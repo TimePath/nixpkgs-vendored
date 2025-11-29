@@ -101,7 +101,7 @@ in
         # special options as its public anyway
         # As far as I know leaking this secret is just
         # an information leak as one can fetch some basic app
-        # informations from the IDP
+        # information from the IDP
         # To actually do something one still needs to have login
         # data and this secret so this being public will not
         # suffice for anything just decreasing security
@@ -135,10 +135,12 @@ in
                 "$AUTH_SUPPORTED_SCOPES"
                 "$NETBIRD_DRAG_QUERY_PARAMS"
                 "$NETBIRD_GOOGLE_ANALYTICS_ID"
+                "$NETBIRD_GOOGLE_TAG_MANAGER_ID"
                 "$NETBIRD_HOTJAR_TRACK_ID"
                 "$NETBIRD_MGMT_API_ENDPOINT"
                 "$NETBIRD_MGMT_GRPC_API_ENDPOINT"
                 "$NETBIRD_TOKEN_SOURCE"
+                "$NETBIRD_WASM_PATH"
                 "$USE_AUTH0"
               ];
             }

@@ -72,6 +72,8 @@ let
         (with pkgs; [
           # ld-linux-x86-64-linux.so.2 and others
           glibc
+          # required by at least https://github.com/zed-industries/package-version-server
+          openssl
         ])
         ++ additionalPkgs pkgs;
 
@@ -99,7 +101,7 @@ let
 in
 rustPlatform.buildRustPackage (finalAttrs: {
   pname = "zed-editor";
-  version = "0.189.5";
+  version = "0.213.8";
 
   outputs = [
     "out"
@@ -112,37 +114,27 @@ rustPlatform.buildRustPackage (finalAttrs: {
     owner = "zed-industries";
     repo = "zed";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-d1d3WgUVamrYWVosljQiEPZGNNDldtM1YwZhxseX4+w=";
+    hash = "sha256-OB1ZKZRviX2hQL4r8Ve/8OkmeocX/xRs9TLkUn9nGbw=";
   };
 
-  patches = [
-    # Upstream delegates linking on Linux to clang to make use of mold,
-    # but builds fine with our standard linker.
-    # This patch removes their linker override from the cargo config.
-    ./0001-linux-linker.patch
-  ];
-
-  cargoPatches = [
-    ./0002-fix-duplicate-reqwest.patch
-    # Upstream commit doesn't apply cleanly to 0.189.5 and we can't upgrade to newer
-    # releases on 25.05 as they require a newer version of the Rust compiler.
-    # https://github.com/zed-industries/zed/commit/4a93719b6b5666fd04cbe63fd90aba28c3547f0d
-    ./0003-cve-2025-62518.patch
-  ];
-
-  postPatch =
+  postPatch = ''
     # Dynamically link WebRTC instead of static
-    ''
-      substituteInPlace $cargoDepsCopy/webrtc-sys-*/build.rs \
-        --replace-fail "cargo:rustc-link-lib=static=webrtc" "cargo:rustc-link-lib=dylib=webrtc"
+    substituteInPlace $cargoDepsCopy/webrtc-sys-*/build.rs \
+      --replace-fail "cargo:rustc-link-lib=static=webrtc" "cargo:rustc-link-lib=dylib=webrtc"
 
-      # Zed team renamed the function but forgot to update its usage in this file
-      # We rename it ourselves for now, until upstream fixes the issue
-      substituteInPlace $cargoDepsCopy/reqwest-0.12*/src/blocking/client.rs \
-        --replace-fail "inner.redirect(policy)" "inner.redirect_policy(policy)"
-    '';
+    # The generate-licenses script wants a specific version of cargo-about eventhough
+    # newer versions work just as well.
+    substituteInPlace script/generate-licenses \
+      --replace-fail '$CARGO_ABOUT_VERSION' '${cargo-about.version}'
+  '';
 
-  cargoHash = "sha256-86Y2fyeiCYPWdg2ygt7RbUFrHVIc53yDeqvT7Unmndo=";
+  # remove package that has a broken Cargo.toml
+  # see: https://github.com/NixOS/nixpkgs/pull/445924#issuecomment-3334648753
+  depsExtraArgs.postBuild = ''
+    rm -r $out/git/*/candle-book/
+  '';
+
+  cargoHash = "sha256-fPeG+OQOjoXrlod5oatK7o+2aWizi3jagJ3nuCHuT8I=";
 
   nativeBuildInputs = [
     cmake
@@ -232,6 +224,15 @@ rustPlatform.buildRustPackage (finalAttrs: {
   checkFlags = [
     # Flaky: unreliably fails on certain hosts (including Hydra)
     "--skip=zed::tests::test_window_edit_state_restoring_enabled"
+    # The following tests are flaky on at least x86_64-linux and aarch64-darwin,
+    # where they sometimes fail with: "database table is locked: workspaces".
+    "--skip=zed::tests::test_open_file_in_many_spaces"
+    "--skip=zed::tests::test_open_non_existing_file"
+  ]
+  ++ lib.optionals stdenv.hostPlatform.isDarwin [
+    # Flaky: unreliably fails on certain hosts (including Hydra)
+    "--skip=zed::open_listener::tests::test_open_workspace_with_directory"
+    "--skip=zed::open_listener::tests::test_open_workspace_with_nonexistent_files"
   ]
   ++ lib.optionals stdenv.hostPlatform.isLinux [
     # Fails on certain hosts (including Hydra) for unclear reason
@@ -313,6 +314,11 @@ rustPlatform.buildRustPackage (finalAttrs: {
       extraArgs = [
         "--version-regex"
         "^v(?!.*(?:-pre|0\.999999\.0|0\.9999-temporary)$)(.+)$"
+
+        # use github releases instead of git tags
+        # zed sometimes moves git tags, making them unreliable
+        # see: https://github.com/NixOS/nixpkgs/pull/439893#issuecomment-3250497178
+        "--use-github-releases"
       ];
     };
     fhs = fhs { zed-editor = finalAttrs.finalPackage; };

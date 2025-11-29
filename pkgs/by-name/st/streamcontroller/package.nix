@@ -14,6 +14,7 @@
   xdg-desktop-portal,
   xdg-desktop-portal-gtk,
   kdotool,
+  udevCheckHook,
 }:
 let
   # We have to hardcode revision because upstream often create multiple releases for the same version number.
@@ -87,6 +88,7 @@ stdenv.mkDerivation {
   nativeBuildInputs = [
     copyDesktopItems
     wrapGAppsHook4
+    udevCheckHook
     gobject-introspection
   ];
 
@@ -192,6 +194,8 @@ stdenv.mkDerivation {
     webencodings
     websocket-client
   ]);
+
+  doInstallCheck = true;
 
   meta = with lib; {
     description = "Elegant Linux app for the Elgato Stream Deck with support for plugins";

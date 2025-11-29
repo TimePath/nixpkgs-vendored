@@ -3,7 +3,6 @@
   stdenv,
   cmake,
   git,
-  apple-sdk_11,
   ninja,
   fetchFromGitHub,
   SDL2,
@@ -11,9 +10,10 @@
   which,
   autoAddDriverRunpath,
   makeWrapper,
+  nix-update-script,
 
   metalSupport ? stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isAarch64,
-  coreMLSupport ? stdenv.hostPlatform.isDarwin && false, # FIXME currently broken
+  coreMLSupport ? stdenv.hostPlatform.isDarwin && true,
 
   config,
   cudaSupport ? config.cudaSupport,
@@ -37,7 +37,7 @@ assert coreMLSupport -> stdenv.hostPlatform.isDarwin;
 let
   # It's necessary to consistently use backendStdenv when building with CUDA support,
   # otherwise we get libstdc++ errors downstream.
-  # cuda imposes an upper bound on the gcc version, e.g. the latest gcc compatible with cudaPackages_11 is gcc11
+  # cuda imposes an upper bound on the gcc version
   effectiveStdenv = if cudaSupport then cudaPackages.backendStdenv else stdenv;
   inherit (lib)
     cmakeBool
@@ -45,8 +45,6 @@ let
     optional
     optionals
     ;
-
-  darwinBuildInputs = [ apple-sdk_11 ];
 
   cudaBuildInputs = with cudaPackages; [
     cuda_cccl # <nv/target>
@@ -72,13 +70,13 @@ let
 in
 effectiveStdenv.mkDerivation (finalAttrs: {
   pname = "whisper-cpp";
-  version = "1.7.5";
+  version = "1.8.2";
 
   src = fetchFromGitHub {
     owner = "ggml-org";
     repo = "whisper.cpp";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-tvCT0QRdmRGsjtQZcEZMgSe2/47tSkfdaPqS/2MuQTs=";
+    hash = "sha256-OU5mDnLZHmtdSEN5u0syJcU91L+NCO45f9eG6OsgFfU=";
   };
 
   # The upstream download script tries to download the models to the
@@ -91,6 +89,7 @@ effectiveStdenv.mkDerivation (finalAttrs: {
     for target in examples/{bench,command,cli,quantize,server,stream,talk-llama}/CMakeLists.txt; do
       if ! grep -q -F 'install('; then
         echo 'install(TARGETS ''${TARGET} RUNTIME)' >> $target
+        ${lib.optionalString stdenv.isDarwin "echo 'install(TARGETS whisper.coreml LIBRARY)' >> src/CMakeLists.txt"}
       fi
     done
   '';
@@ -109,7 +108,6 @@ effectiveStdenv.mkDerivation (finalAttrs: {
 
   buildInputs =
     optional withSDL SDL2
-    ++ optionals effectiveStdenv.hostPlatform.isDarwin darwinBuildInputs
     ++ optionals cudaSupport cudaBuildInputs
     ++ optionals rocmSupport rocmBuildInputs
     ++ optionals vulkanSupport vulkanBuildInputs;
@@ -170,6 +168,8 @@ effectiveStdenv.mkDerivation (finalAttrs: {
     runHook postInstallCheck
   '';
 
+  passthru.updateScript = nix-update-script { };
+
   meta = {
     description = "Port of OpenAI's Whisper model in C/C++";
     longDescription = ''
@@ -180,7 +180,6 @@ effectiveStdenv.mkDerivation (finalAttrs: {
     license = lib.licenses.mit;
     mainProgram = "whisper-cli";
     platforms = lib.platforms.all;
-    broken = coreMLSupport;
     badPlatforms = optionals cudaSupport lib.platforms.darwin;
     maintainers = with lib.maintainers; [
       dit7ya

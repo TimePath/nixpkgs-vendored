@@ -2,9 +2,10 @@
   stdenv,
   lib,
   fetchFromGitHub,
+  fetchpatch2,
   cmake,
   doctest,
-  fmt_11,
+  fmt,
   perl,
   glib,
   luajit,
@@ -39,16 +40,21 @@ assert (!withHyperscan) || (!withVectorscan);
 
 stdenv.mkDerivation rec {
   pname = "rspamd";
-  version = "3.11.1";
+  version = "3.13.0";
 
   src = fetchFromGitHub {
     owner = "rspamd";
     repo = "rspamd";
     rev = version;
-    hash = "sha256-vG52R8jYJlCgQqhA8zbZLMES1UxfxknAVOt87nhcflM=";
+    hash = "sha256-0qX/rvcEXxzr/PGL2A59T18Mfcalrjz0KJpEWBKJsZg=";
   };
 
-  hardeningEnable = [ "pie" ];
+  patches = [
+    (fetchpatch2 {
+      url = "https://github.com/rspamd/rspamd/commit/d808fd75ff1db1821b1dd817eb4ba9a118b31090.patch";
+      hash = "sha256-v1Gn3dPxN/h92NYK3PTrZomnbwUcVkAWcYeQCFzQNyo=";
+    })
+  ];
 
   nativeBuildInputs = [
     cmake
@@ -59,7 +65,7 @@ stdenv.mkDerivation rec {
 
   buildInputs = [
     doctest
-    fmt_11
+    fmt
     glib
     openssl
     pcre

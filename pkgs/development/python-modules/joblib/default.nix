@@ -21,14 +21,14 @@
 
 buildPythonPackage rec {
   pname = "joblib";
-  version = "1.4.2";
+  version = "1.5.1";
   format = "pyproject";
 
   disabled = pythonOlder "3.7";
 
   src = fetchPypi {
     inherit pname version;
-    hash = "sha256-I4LFgWsmNvvSCgng9Ona1HNnZf37fcpYKUO5wTZrPw4=";
+    hash = "sha256-9PhuNR85/j0NMqnyw9ivHuTOwoWq/LJwA92lIFV2tEQ=";
   };
 
   nativeBuildInputs = [ setuptools ];
@@ -43,7 +43,7 @@ buildPythonPackage rec {
     threadpoolctl
   ];
 
-  pytestFlagsArray = [ "joblib/test" ];
+  enabledTestPaths = [ "joblib/test" ];
 
   disabledTests = [
     "test_disk_used" # test_disk_used is broken: https://github.com/joblib/joblib/issues/57

@@ -1,69 +1,29 @@
 {
   lib,
   stdenvNoCC,
-  buildGoModule,
   bun,
   fetchFromGitHub,
+  fzf,
+  makeBinaryWrapper,
   models-dev,
   nix-update-script,
+  ripgrep,
   testers,
-  tree-sitter,
   writableTmpDirAsHomeHook,
 }:
-
 let
-  opencode-node-modules-hash = {
-    "aarch64-darwin" = "sha256-QfsPK6iPuXXKpT3z1SUDdvCx3uT+U2IZy4msH8UiFg8=";
-    "aarch64-linux" = "sha256-/BpbECRBxLOz+YEQrEHNrtHSr/BaLOrAkJXH0TBHjFE=";
-    "x86_64-darwin" = "sha256-KA3jaU7BD7lueKBuM9cTJuEby6AC0E03JYZMKRxceqY=";
-    "x86_64-linux" = "sha256-us6m4Iwaf+zS3NBSoOEAVBpHoyXPDnt+P9/D/Qbui+Y=";
-  };
-  bun-target = {
-    "aarch64-darwin" = "bun-darwin-arm64";
-    "aarch64-linux" = "bun-linux-arm64";
-    "x86_64-darwin" = "bun-darwin-x64";
-    "x86_64-linux" = "bun-linux-x64";
-  };
-in
-stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "opencode";
-  version = "0.3.112";
+  version = "1.0.105";
   src = fetchFromGitHub {
     owner = "sst";
     repo = "opencode";
-    tag = "v${finalAttrs.version}";
-    hash = "sha256-BeUgZUzuphQ1gqPnDnKP2HMy5nyoD5au4AekGT2deIc=";
-  };
-
-  tui = buildGoModule {
-    pname = "opencode-tui";
-    inherit (finalAttrs) version src;
-
-    modRoot = "packages/tui";
-
-    vendorHash = "sha256-nBwYVaBau1iTnPY3d5F/5/ENyjMCikpQYNI5whEJwBk=";
-
-    subPackages = [ "cmd/opencode" ];
-
-    env.CGO_ENABLED = 0;
-
-    ldflags = [
-      "-s"
-      "-X=main.Version=${finalAttrs.version}"
-    ];
-
-    installPhase = ''
-      runHook preInstall
-
-      install -Dm755 $GOPATH/bin/opencode $out/bin/tui
-
-      runHook postInstall
-    '';
+    tag = "v${version}";
+    hash = "sha256-mwiEOsJ2prQYzN0gd0+iEfelNt1qv+K7slbF2Rk9eng=";
   };
 
   node_modules = stdenvNoCC.mkDerivation {
-    pname = "opencode-node_modules";
-    inherit (finalAttrs) version src;
+    pname = "${pname}-node_modules";
+    inherit version src;
 
     impureEnvVars = lib.fetchers.proxyImpureEnvVars ++ [
       "GIT_PROXY_COMMAND"
@@ -80,13 +40,20 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     buildPhase = ''
       runHook preBuild
 
-       export BUN_INSTALL_CACHE_DIR=$(mktemp -d)
+      export BUN_INSTALL_CACHE_DIR=$(mktemp -d)
 
-       bun install \
-         --filter=opencode \
-         --force \
-         --frozen-lockfile \
-         --no-progress
+      bun install \
+        --cpu="*" \
+        --filter=./packages/opencode \
+        --force \
+        --frozen-lockfile \
+        --ignore-scripts \
+        --no-progress \
+        --os="*" \
+        --production
+
+      bun run ./nix/scripts/canonicalize-node-modules.ts
+      bun run ./nix/scripts/normalize-bun-binaries.ts
 
       runHook postBuild
     '';
@@ -94,54 +61,80 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     installPhase = ''
       runHook preInstall
 
-      mkdir -p $out/node_modules
-      cp -R ./node_modules $out
+      mkdir -p $out
+      while IFS= read -r dir; do
+        rel="''${dir#./}"
+        dest="$out/$rel"
+        mkdir -p "$(dirname "$dest")"
+        cp -R "$dir" "$dest"
+      done < <(find . -type d -name node_modules -prune | sort)
 
       runHook postInstall
     '';
 
-    # Required else we get errors that our fixed-output derivation references store paths
+    # NOTE: Required else we get errors that our fixed-output derivation references store paths
     dontFixup = true;
 
-    outputHash = opencode-node-modules-hash.${stdenvNoCC.hostPlatform.system};
+    outputHash = "sha256-3N7iWxc5vt81EhyTDWYHMVTZ1KbLz1y4wzSYJt5fQCE=";
     outputHashAlgo = "sha256";
     outputHashMode = "recursive";
   };
-
-  buildInputs = [ tree-sitter ];
+in
+stdenvNoCC.mkDerivation (finalAttrs: {
+  inherit
+    pname
+    version
+    src
+    node_modules
+    ;
 
   nativeBuildInputs = [
     bun
+    makeBinaryWrapper
     models-dev
   ];
 
   patches = [
-    # Patch `packages/opencode/src/provider/models-macro.ts` to get contents of
-    # `api.json` from the file bundled with `bun build`.
-    ./local-models-dev.patch
+    # NOTE: Relax Bun version check to be a warning instead of an error
+    ./relax-bun-version-check.patch
   ];
 
   configurePhase = ''
     runHook preConfigure
 
-    cp -R ${finalAttrs.node_modules}/node_modules .
+    cp -R ${node_modules}/. .
 
     runHook postConfigure
   '';
 
-  env.MODELS_DEV_API_JSON = "${models-dev}/dist/api.json";
+  env.MODELS_DEV_API_JSON = "${models-dev}/dist/_api.json";
+  env.OPENCODE_VERSION = finalAttrs.version;
+  env.OPENCODE_CHANNEL = "stable";
+
+  preBuild = ''
+    chmod -R u+w ./packages/opencode/node_modules
+    pushd ./packages/opencode/node_modules/@parcel/
+      for pkg in ../../../../node_modules/.bun/@parcel+watcher-*; do
+        linkName=$(basename "$pkg" | sed 's/@.*+\(.*\)@.*/\1/')
+        ln -sf "$pkg/node_modules/@parcel/$linkName" "$linkName"
+      done
+    popd
+
+    pushd ./packages/opencode/node_modules/@opentui/
+      for pkg in ../../../../node_modules/.bun/@opentui+core-*; do
+        linkName=$(basename "$pkg" | sed 's/@.*+\(.*\)@.*/\1/')
+        ln -sf "$pkg/node_modules/@opentui/$linkName" "$linkName"
+      done
+    popd
+  '';
 
   buildPhase = ''
     runHook preBuild
 
-    bun build \
-      --define OPENCODE_VERSION="'${finalAttrs.version}'" \
-      --compile \
-      --minify \
-      --target=${bun-target.${stdenvNoCC.hostPlatform.system}} \
-      --outfile=opencode \
-      ./packages/opencode/src/index.ts \
-      ${finalAttrs.tui}/bin/tui
+
+    cd ./packages/opencode
+    cp ${./bundle.ts} ./bundle.ts
+    bun run ./bundle.ts
 
     runHook postBuild
   '';
@@ -151,9 +144,53 @@ stdenvNoCC.mkDerivation (finalAttrs: {
   installPhase = ''
     runHook preInstall
 
-    install -Dm755 opencode $out/bin/opencode
+    mkdir -p $out/lib/opencode
+    # Copy the bundled dist directory
+    cp -r dist $out/lib/opencode/
+
+    # Fix WASM paths in worker.ts - use absolute paths to the installed location
+    # Main wasm is tree-sitter-<hash>.wasm, language wasms are tree-sitter-<lang>-<hash>.wasm
+    main_wasm=$(find "$out/lib/opencode/dist" -maxdepth 1 -name 'tree-sitter-[a-z0-9]*.wasm' -print -quit)
+
+    substituteInPlace $out/lib/opencode/dist/worker.ts \
+      --replace-fail 'module2.exports = "../../../tree-sitter-' 'module2.exports = "'"$out"'/lib/opencode/dist/tree-sitter-' \
+      --replace-fail 'new URL("tree-sitter.wasm", import.meta.url).href' "\"$main_wasm\""
+
+    # Copy only the native modules we need (marked as external in bundle.ts)
+    mkdir -p $out/lib/opencode/node_modules/.bun
+    mkdir -p $out/lib/opencode/node_modules/@opentui
+
+    # Copy @opentui/core platform-specific packages
+    for pkg in ../../node_modules/.bun/@opentui+core-*; do
+      if [ -d "$pkg" ]; then
+        cp -r "$pkg" $out/lib/opencode/node_modules/.bun/$(basename "$pkg")
+      fi
+    done
+
+    mkdir -p $out/bin
+    makeWrapper ${lib.getExe bun} $out/bin/opencode \
+      --add-flags "run" \
+      --add-flags "$out/lib/opencode/dist/index.js" \
+      --prefix PATH : ${
+        lib.makeBinPath [
+          fzf
+          ripgrep
+        ]
+      } \
+      --argv0 opencode
 
     runHook postInstall
+  '';
+
+  postInstall = ''
+    # Add symlinks for platform-specific native modules
+    for pkg in $out/lib/opencode/node_modules/.bun/@opentui+core-*; do
+      if [ -d "$pkg" ]; then
+        pkgName=$(basename "$pkg" | sed 's/@opentui+\(core-[^@]*\)@.*/\1/')
+        ln -sf ../.bun/$(basename "$pkg")/node_modules/@opentui/$pkgName \
+               $out/lib/opencode/node_modules/@opentui/$pkgName
+      fi
+    done
   '';
 
   passthru = {
@@ -164,8 +201,6 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     };
     updateScript = nix-update-script {
       extraArgs = [
-        "--subpackage"
-        "tui"
         "--subpackage"
         "node_modules"
       ];
@@ -181,10 +216,11 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     '';
     homepage = "https://github.com/sst/opencode";
     license = lib.licenses.mit;
-    platforms = lib.platforms.unix;
-    maintainers = with lib.maintainers; [
-      zestsystem
-      delafthi
+    platforms = [
+      "aarch64-linux"
+      "x86_64-linux"
+      "aarch64-darwin"
+      "x86_64-darwin"
     ];
     mainProgram = "opencode";
   };

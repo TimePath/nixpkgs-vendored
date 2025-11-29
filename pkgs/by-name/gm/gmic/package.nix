@@ -31,7 +31,7 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "gmic";
-  version = "3.5.4";
+  version = "3.6.2";
 
   outputs = [
     "out"
@@ -44,7 +44,7 @@ stdenv.mkDerivation (finalAttrs: {
     owner = "GreycLab";
     repo = "gmic";
     rev = "v.${finalAttrs.version}";
-    hash = "sha256-WhhEBhwv2bBwsWPPMDIA2jhUzqcD6yJhHg1Eunu8y14=";
+    hash = "sha256-KiX7yHwuy2AWLqqmiHz9YhbvRBEusE9TuXKtaA9YsME=";
   };
 
   # TODO: build this from source

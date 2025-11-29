@@ -17,13 +17,13 @@ in
 
 stdenv.mkDerivation rec {
   pname = "toybox";
-  version = "0.8.12";
+  version = "0.8.13";
 
   src = fetchFromGitHub {
     owner = "landley";
-    repo = pname;
+    repo = "toybox";
     rev = version;
-    sha256 = "sha256-D+tf2bJQlf2pLMNZdMUOoUdE3ea/KgkqoXGsnl1MVOE=";
+    sha256 = "sha256-b5sigIxyg4T4wVc5z8Das+RdEXmNBPFsXpWwXxU/ERE=";
   };
 
   depsBuildBuild = optionals (stdenv.hostPlatform != stdenv.buildPlatform) [
@@ -63,7 +63,18 @@ stdenv.mkDerivation rec {
     make oldconfig
   '';
 
-  makeFlags = [ "PREFIX=$(out)/bin" ] ++ optionals enableStatic [ "LDFLAGS=--static" ];
+  hardeningDisable = lib.optionals (stdenv.hostPlatform.isLinux && stdenv.hostPlatform.isStatic) [
+    # breaks string.h header in musl
+    "fortify"
+  ];
+
+  makeFlags = [
+    "PREFIX=$(out)/bin"
+    "CC=${stdenv.cc.targetPrefix}cc"
+  ]
+  ++ optionals (enableStatic && !stdenv.hostPlatform.isDarwin) [
+    "LDFLAGS=--static"
+  ];
 
   installTargets = [ "install_flat" ];
 

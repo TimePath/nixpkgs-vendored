@@ -1,53 +1,62 @@
 {
   lib,
   stdenv,
-  fetchPypi,
+  fetchFromGitLab,
   buildPythonPackage,
-  isPy27,
   pythonAtLeast,
+
+  # build-system
   setuptools,
-  numpy,
-  scipy,
-  matplotlib,
+
+  # dependencies
   flask,
+  matplotlib,
+  numpy,
   pillow,
   psycopg2,
+  scipy,
   tkinter,
+
+  # tests
+  addBinToPathHook,
   pytestCheckHook,
   pytest-mock,
   pytest-xdist,
+  writableTmpDirAsHomeHook,
 }:
 
 buildPythonPackage rec {
   pname = "ase";
-  version = "3.24.0";
+  version = "3.26.0";
   pyproject = true;
 
-  disabled = isPy27;
-
-  src = fetchPypi {
-    inherit pname version;
-    hash = "sha256-msyT1tqvSM0nuETFb4v0lCi52wVC+qPMMNnVuOGEIZU=";
+  src = fetchFromGitLab {
+    owner = "ase";
+    repo = "ase";
+    tag = version;
+    hash = "sha256-1738NQPgOqSr2PZu1T2b9bL0V+ZzGk2jcWBhLF21VQs=";
   };
 
   build-system = [ setuptools ];
 
   dependencies = [
-    numpy
-    scipy
-    matplotlib
     flask
+    matplotlib
+    numpy
     pillow
     psycopg2
+    scipy
   ]
   ++ lib.optionals stdenv.hostPlatform.isDarwin [
     tkinter
   ];
 
   nativeCheckInputs = [
+    addBinToPathHook
     pytestCheckHook
     pytest-mock
     pytest-xdist
+    writableTmpDirAsHomeHook
   ];
 
   disabledTests = [
@@ -64,16 +73,13 @@ buildPythonPackage rec {
   ]
   ++ lib.optionals (pythonAtLeast "3.12") [ "test_info_calculators" ];
 
-  preCheck = ''
-    export PATH="$out/bin:$PATH"
-  '';
-
   pythonImportsCheck = [ "ase" ];
 
-  meta = with lib; {
+  meta = {
     description = "Atomic Simulation Environment";
-    homepage = "https://wiki.fysik.dtu.dk/ase/";
-    license = licenses.lgpl21Plus;
+    homepage = "https://ase-lib.org/";
+    changelog = "https://ase-lib.org/releasenotes.html";
+    license = lib.licenses.lgpl21Plus;
     maintainers = [ ];
   };
 }

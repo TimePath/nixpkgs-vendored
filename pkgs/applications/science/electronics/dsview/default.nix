@@ -31,6 +31,7 @@ stdenv.mkDerivation (finalAttrs: {
   patches = [
     # Fix absolute install paths
     ./install.patch
+    ./cmake4.patch
   ];
 
   # /build/source/libsigrok4DSL/strutil.c:343:19: error: implicit declaration of function 'strcasecmp'; did you mean 'g_strcasecmp'? []
@@ -53,6 +54,8 @@ stdenv.mkDerivation (finalAttrs: {
     python3
   ]
   ++ lib.optional stdenv.hostPlatform.isLinux qtwayland;
+
+  doInstallCheck = true;
 
   meta = {
     description = "GUI program for supporting various instruments from DreamSourceLab, including logic analyzer, oscilloscope, etc";

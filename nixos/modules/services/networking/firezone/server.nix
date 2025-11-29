@@ -143,7 +143,7 @@ let
     };
 
   commonServiceConfig = {
-    AmbientCapablities = [ ];
+    AmbientCapabilities = [ ];
     CapabilityBoundingSet = [ ];
     LockPersonality = true;
     MemoryDenyWriteExecute = true;
@@ -546,7 +546,6 @@ in
                     };
                 in
                 {
-                  flow_activities = mkFeatureOption "flow_activities" true;
                   policy_conditions = mkFeatureOption "policy_conditions" true;
                   multi_site_resources = mkFeatureOption "multi_site_resources" true;
                   traffic_filters = mkFeatureOption "traffic_filters" true;
@@ -923,9 +922,13 @@ in
           {
             name = "firezone";
             ensureDBOwnership = true;
+            ensureClauses.superuser = true;
           }
         ];
         ensureDatabases = [ "firezone" ];
+        # Firezone uses an internal replication strategy
+        # that depends on a logical wal
+        settings.wal_level = "logical";
       };
 
       services.firezone.server.settings = {
@@ -1104,8 +1107,8 @@ in
       systemd.services.firezone-initialize = {
         description = "Backend initialization service for the Firezone zero-trust access platform";
 
-        after = mkIf cfg.enableLocalDB [ "postgresql.service" ];
-        requires = mkIf cfg.enableLocalDB [ "postgresql.service" ];
+        after = mkIf cfg.enableLocalDB [ "postgresql.target" ];
+        requires = mkIf cfg.enableLocalDB [ "postgresql.target" ];
         wantedBy = [ "firezone.target" ];
         partOf = [ "firezone.target" ];
 

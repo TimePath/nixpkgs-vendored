@@ -134,7 +134,7 @@ def test_build_remote(
                     Path("/path/to/file"),
                 ],
                 extra_env={
-                    "NIX_SSHOPTS": " ".join([*p.SSH_DEFAULT_OPTS, "--ssh opts"])
+                    "NIX_SSHOPTS": " ".join(["--ssh opts", *p.SSH_DEFAULT_OPTS])
                 },
             ),
             call(
@@ -208,7 +208,7 @@ def test_build_remote_flake(
                     Path("/path/to/file"),
                 ],
                 extra_env={
-                    "NIX_SSHOPTS": " ".join([*p.SSH_DEFAULT_OPTS, "--ssh opts"])
+                    "NIX_SSHOPTS": " ".join(["--ssh opts", *p.SSH_DEFAULT_OPTS])
                 },
             ),
             call(
@@ -249,14 +249,13 @@ def test_copy_closure(monkeypatch: MonkeyPatch) -> None:
         mock_run.assert_called_with(
             ["nix-copy-closure", "--copy-flag", "--from", "user@build.host", closure],
             extra_env={
-                "NIX_SSHOPTS": " ".join([*p.SSH_DEFAULT_OPTS, "--ssh build-opt"])
+                "NIX_SSHOPTS": " ".join(["--ssh build-opt", *p.SSH_DEFAULT_OPTS])
             },
         )
 
     monkeypatch.setenv("NIX_SSHOPTS", "--ssh build-target-opt")
-    monkeypatch.setattr(n, "WITH_NIX_2_18", True)
     extra_env = {
-        "NIX_SSHOPTS": " ".join([*p.SSH_DEFAULT_OPTS, "--ssh build-target-opt"])
+        "NIX_SSHOPTS": " ".join(["--ssh build-target-opt", *p.SSH_DEFAULT_OPTS])
     }
     with patch(get_qualified_name(n.run_wrapper, n), autospec=True) as mock_run:
         n.copy_closure(closure, target_host, build_host, {"copy_flag": True})
@@ -274,22 +273,6 @@ def test_copy_closure(monkeypatch: MonkeyPatch) -> None:
                 closure,
             ],
             extra_env=extra_env,
-        )
-
-    monkeypatch.setattr(n, "WITH_NIX_2_18", False)
-    with patch(get_qualified_name(n.run_wrapper, n), autospec=True) as mock_run:
-        n.copy_closure(closure, target_host, build_host)
-        mock_run.assert_has_calls(
-            [
-                call(
-                    ["nix-copy-closure", "--from", "user@build.host", closure],
-                    extra_env=extra_env,
-                ),
-                call(
-                    ["nix-copy-closure", "--to", "user@target.host", closure],
-                    extra_env=extra_env,
-                ),
-            ]
         )
 
 

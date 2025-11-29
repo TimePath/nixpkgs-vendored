@@ -102,6 +102,7 @@ let
     // sdkSourceBuilders;
   };
   packageConfig = generators.linkPackageConfig {
+    inherit pubspecLock;
     packageConfig = pub2nix.generatePackageConfig {
       pname = if args.pname != null then "${args.pname}-${args.version}" else null;
 
@@ -129,7 +130,7 @@ let
 
   baseDerivation = stdenv.mkDerivation (
     finalAttrs:
-    (builtins.removeAttrs args [
+    (removeAttrs args [
       "gitHashes"
       "sdkSourceBuilders"
       "pubspecLock"

@@ -12,10 +12,19 @@
   cargo-auditable,
   buildPackages,
   rustc,
-  libiconv,
   windows,
 }:
 
+let
+  interpolateString =
+    s:
+    if lib.isList s then
+      lib.concatMapStringsSep " " (s: "${s}") (lib.filter (s: s != null) s)
+    else if s == null then
+      ""
+    else
+      "${s}";
+in
 lib.extendMkDerivation {
   constructDrv = stdenv.mkDerivation;
 
@@ -24,6 +33,7 @@ lib.extendMkDerivation {
     "cargoUpdateHook"
     "cargoLock"
     "useFetchCargoVendor"
+    "RUSTFLAGS"
   ];
 
   extendDrvArgs =
@@ -78,11 +88,19 @@ lib.extendMkDerivation {
     assert lib.warnIf (args ? useFetchCargoVendor)
       "buildRustPackage: `useFetchCargoVendor` is non‐optional and enabled by default as of 25.05, remove it"
       true;
+    {
+      env = {
+        PKG_CONFIG_ALLOW_CROSS = if stdenv.buildPlatform != stdenv.hostPlatform then 1 else 0;
+        RUST_LOG = logLevel;
+        RUSTFLAGS =
+          lib.optionalString (
+            stdenv.hostPlatform.isDarwin && buildType == "debug"
+          ) "-C split-debuginfo=packed "
+          # Workaround the existing RUSTFLAGS specified as a list.
+          + interpolateString (args.RUSTFLAGS or "");
+      }
+      // args.env or { };
 
-    lib.optionalAttrs (stdenv.hostPlatform.isDarwin && buildType == "debug") {
-      RUSTFLAGS = "-C split-debuginfo=packed " + (args.RUSTFLAGS or "");
-    }
-    // {
       cargoDeps =
         if cargoVendorDir != null then
           null
@@ -140,21 +158,9 @@ lib.extendMkDerivation {
           cargo
         ];
 
-      buildInputs =
-        buildInputs
-        ++ lib.optionals stdenv.hostPlatform.isDarwin [ libiconv ]
-        ++ lib.optionals stdenv.hostPlatform.isMinGW [ windows.pthreads ];
+      buildInputs = buildInputs ++ lib.optionals stdenv.hostPlatform.isMinGW [ windows.pthreads ];
 
       patches = cargoPatches ++ patches;
-
-      PKG_CONFIG_ALLOW_CROSS = if stdenv.buildPlatform != stdenv.hostPlatform then 1 else 0;
-
-      postUnpack = ''
-        eval "$cargoDepsHook"
-
-        export RUST_LOG=${logLevel}
-      ''
-      + (args.postUnpack or "");
 
       configurePhase =
         args.configurePhase or ''

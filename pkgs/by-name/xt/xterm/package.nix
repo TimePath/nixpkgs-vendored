@@ -16,14 +16,14 @@
 
 stdenv.mkDerivation rec {
   pname = "xterm";
-  version = "397";
+  version = "403";
 
   src = fetchurl {
     urls = [
       "ftp://ftp.invisible-island.net/xterm/${pname}-${version}.tgz"
       "https://invisible-mirror.net/archives/xterm/${pname}-${version}.tgz"
     ];
-    hash = "sha256-Lpt0K5y6ROzsWAdOUTI39s1tWSPxc3yzak5WJfSuhmI=";
+    hash = "sha256-EzGw31kZyyQ//jJtxv8QopHmg6Ji9wzflkpmS+czrYM=";
   };
 
   patches = [ ./sixel-256.support.patch ];
@@ -83,6 +83,8 @@ stdenv.mkDerivation rec {
     echo '#define USE_UTMP_SETGID 1'
   '';
 
+  enableParallelBuilding = true;
+
   postInstall = ''
     for bin in $out/bin/*; do
       wrapProgram $bin --set XAPPLRESDIR $out/lib/X11/app-defaults/
@@ -114,5 +116,6 @@ stdenv.mkDerivation rec {
     maintainers = with lib.maintainers; [ nequissimus ];
     platforms = with lib.platforms; linux ++ darwin;
     changelog = "https://invisible-island.net/xterm/xterm.log.html";
+    mainProgram = "xterm";
   };
 }

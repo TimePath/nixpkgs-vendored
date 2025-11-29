@@ -2,12 +2,10 @@
   lib,
   stdenv,
   fetchFromGitHub,
-  fetchpatch,
   pkgsBuildBuild,
   pkg-config,
   cmake,
   ninja,
-  git,
   libxml2,
   libxcrypt,
   libedit,
@@ -27,6 +25,10 @@
   buildTests ? true,
   llvmTargetsToBuild ? [ "NATIVE" ], # "NATIVE" resolves into x86 or aarch64 depending on stdenv
   llvmProjectsToBuild ? [
+    # Required for building triton>=3.5.0
+    # https://github.com/triton-lang/triton/blob/c3c476f357f1e9768ea4e45aa5c17528449ab9ef/third_party/amd/CMakeLists.txt#L6
+    "lld"
+
     "llvm"
     "mlir"
   ],
@@ -46,7 +48,7 @@ let
     "AMDGPU"
     "NVPTX"
   ]
-  ++ builtins.map inferNativeTarget llvmTargetsToBuild;
+  ++ map inferNativeTarget llvmTargetsToBuild;
 
   # This LLVM version can't seem to find pygments/pyyaml,
   # but a later update will likely fix this (triton-2.1.0)
@@ -66,7 +68,7 @@ let
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = "triton-llvm";
-  version = "19.1.0-rc1"; # One of the tags at https://github.com/llvm/llvm-project/commit/10dc3a8e916d73291269e5e2b82dd22681489aa1
+  version = "22.0.0-unstable-2025-07-15"; # See https://github.com/llvm/llvm-project/blob/main/cmake/Modules/LLVMVersion.cmake
 
   outputs = [
     "out"
@@ -78,29 +80,18 @@ stdenv.mkDerivation (finalAttrs: {
     "man"
   ];
 
-  # See https://github.com/triton-lang/triton/blob/main/python/setup.py
-  # and https://github.com/ptillet/triton-llvm-releases/releases
+  # See https://github.com/triton-lang/triton/blob/main/cmake/llvm-hash.txt
   src = fetchFromGitHub {
     owner = "llvm";
     repo = "llvm-project";
-    rev = "10dc3a8e916d73291269e5e2b82dd22681489aa1";
-    hash = "sha256-9DPvcFmhzw6MipQeCQnr35LktW0uxtEL8axMMPXIfWw=";
+    rev = "7d5de3033187c8a3bb4d2e322f5462cdaf49808f";
+    hash = "sha256-ayW6sOZGvP3SBjfmpXvYQJrPOAElY0MEHPFvj2fq+bM=";
   };
-  patches = [
-    # glibc-2.40 support
-    # [llvm-exegesis] Use correct rseq struct size #100804
-    # https://github.com/llvm/llvm-project/issues/100791
-    (fetchpatch {
-      url = "https://github.com/llvm/llvm-project//commit/84837e3cc1cf17ed71580e3ea38299ed2bfaa5f6.patch";
-      hash = "sha256-QKa+kyXjjGXwTQTEpmKZx5yYjOyBX8A8NQoIYUaGcIw=";
-    })
-  ];
 
   nativeBuildInputs = [
     pkg-config
     cmake
     ninja
-    git
     python
   ]
   ++ lib.optionals (buildDocs || buildMan) [
@@ -231,7 +222,6 @@ stdenv.mkDerivation (finalAttrs: {
     license = with lib.licenses; [ ncsa ];
     maintainers = with lib.maintainers; [
       SomeoneSerge
-      Madouura
     ];
     platforms = with lib.platforms; aarch64 ++ x86;
   };

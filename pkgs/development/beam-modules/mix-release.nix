@@ -27,6 +27,7 @@
   meta ? { },
   enableDebugInfo ? false,
   mixEnv ? "prod",
+  mixTarget ? "host",
   compileFlags ? [ ],
   # Build a particular named release.
   # see https://hexdocs.pm/mix/1.12/Mix.Tasks.Release.html#content
@@ -85,7 +86,7 @@
 }@attrs:
 let
   # Remove non standard attributes that cannot be coerced to strings
-  overridable = builtins.removeAttrs attrs [
+  overridable = removeAttrs attrs [
     "compileFlags"
     "erlangCompilerOptions"
     "mixNixDeps"
@@ -123,6 +124,8 @@ stdenv.mkDerivation (
     buildInputs = buildInputs ++ lib.optionals (escriptBinName != null) [ erlang ];
 
     MIX_ENV = mixEnv;
+    MIX_TARGET = mixTarget;
+    MIX_BUILD_PREFIX = (if mixTarget == "host" then "" else "${mixTarget}_") + "${mixEnv}";
     MIX_DEBUG = if enableDebugInfo then 1 else 0;
     HEX_OFFLINE = 1;
 
@@ -138,8 +141,8 @@ stdenv.mkDerivation (
       in
       "[${lib.concatStringsSep "," options}]";
 
-    LANG = if stdenv.isLinux then "C.UTF-8" else "C";
-    LC_CTYPE = if stdenv.isLinux then "C.UTF-8" else "UTF-8";
+    LANG = if stdenv.hostPlatform.isLinux then "C.UTF-8" else "C";
+    LC_CTYPE = if stdenv.hostPlatform.isLinux then "C.UTF-8" else "UTF-8";
 
     postUnpack = ''
       # Mix and Hex

@@ -588,12 +588,12 @@ in
             if versionAtLeast config.system.stateVersion "23.11" then
               pkgs.gitlab-container-registry
             else
-              pkgs.docker-distribution;
-          defaultText = literalExpression "pkgs.docker-distribution";
+              pkgs.distribution;
+          defaultText = literalExpression "pkgs.distribution";
           description = ''
             Container registry package to use.
 
-            External container registries such as `pkgs.docker-distribution` are not supported
+            External container registries such as `pkgs.distribution` are not supported
             anymore since GitLab 16.0.0.
           '';
         };
@@ -638,7 +638,7 @@ in
           description = "External address used to access registry from the internet";
         };
         externalPort = mkOption {
-          type = types.int;
+          type = types.port;
           description = "External port used to access registry from the internet";
         };
       };
@@ -1179,7 +1179,7 @@ in
         (
           cfg.registry.enable
           && versionAtLeast (getVersion cfg.packages.gitlab) "16.0.0"
-          && cfg.registry.package == pkgs.docker-distribution
+          && cfg.registry.package == pkgs.distribution
         )
         ''
           Support for container registries other than gitlab-container-registry has ended since GitLab 16.0.0 and is scheduled for removal in a future release.
@@ -1296,8 +1296,8 @@ in
         pgsql = config.services.postgresql;
       in
       mkIf databaseActuallyCreateLocally {
-        after = [ "postgresql.service" ];
-        bindsTo = [ "postgresql.service" ];
+        after = [ "postgresql.target" ];
+        bindsTo = [ "postgresql.target" ];
         wantedBy = [ "gitlab.target" ];
         partOf = [ "gitlab.target" ];
         path = [
@@ -1563,12 +1563,12 @@ in
     systemd.services.gitlab-db-config = {
       after = [
         "gitlab-config.service"
-        "gitlab-postgresql.service"
-        "postgresql.service"
+        "gitlab-postgresql.target"
+        "postgresql.target"
       ];
       wants =
-        optional (cfg.databaseHost == "") "postgresql.service"
-        ++ optional databaseActuallyCreateLocally "gitlab-postgresql.service";
+        optional (cfg.databaseHost == "") "postgresql.target"
+        ++ optional databaseActuallyCreateLocally "gitlab-postgresql.target";
       bindsTo = [ "gitlab-config.service" ];
       wantedBy = [ "gitlab.target" ];
       partOf = [ "gitlab.target" ];
@@ -1598,7 +1598,7 @@ in
       after = [
         "network.target"
         "redis-gitlab.service"
-        "postgresql.service"
+        "postgresql.target"
         "gitlab-config.service"
         "gitlab-db-config.service"
       ];
@@ -1606,7 +1606,7 @@ in
         "gitlab-config.service"
         "gitlab-db-config.service"
       ];
-      wants = [ "redis-gitlab.service" ] ++ optional (cfg.databaseHost == "") "postgresql.service";
+      wants = [ "redis-gitlab.service" ] ++ optional (cfg.databaseHost == "") "postgresql.target";
       wantedBy = [ "gitlab.target" ];
       partOf = [ "gitlab.target" ];
       environment =
@@ -1852,7 +1852,7 @@ in
         "gitlab-config.service"
         "gitlab-db-config.service"
       ];
-      wants = [ "redis-gitlab.service" ] ++ optional (cfg.databaseHost == "") "postgresql.service";
+      wants = [ "redis-gitlab.service" ] ++ optional (cfg.databaseHost == "") "postgresql.target";
       requiredBy = [ "gitlab.target" ];
       partOf = [ "gitlab.target" ];
       environment = gitlabEnv;

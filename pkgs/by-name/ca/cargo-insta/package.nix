@@ -6,16 +6,16 @@
 
 rustPlatform.buildRustPackage rec {
   pname = "cargo-insta";
-  version = "1.43.1";
+  version = "1.43.2";
 
   src = fetchFromGitHub {
     owner = "mitsuhiko";
     repo = "insta";
-    rev = version;
-    hash = "sha256-8yFbf0MF5zDuMqG1AsCOvQhJc8D8cBH1WqCGulcXVH0=";
+    tag = version;
+    hash = "sha256-+0FJr1IXTnIc947ytB00z30m81peY/CjnBHMYvcQZl0=";
   };
 
-  cargoHash = "sha256-atPSV+dZgywgS+9M0LRtMqH4JP4UpYGjb2hyGAEwhkw=";
+  cargoHash = "sha256-BYYn+GGJoI0W4mbQcKlQe5IOObIQrV8hTzJeRU6cIZo=";
 
   checkFlags = [
     # Depends on `rustfmt` and does not matter for packaging.
@@ -28,14 +28,13 @@ rustPlatform.buildRustPackage rec {
     "--skip=env::test_get_cargo_workspace_manifest_dir"
   ];
 
-  meta = with lib; {
+  meta = {
     description = "Cargo subcommand for snapshot testing";
     mainProgram = "cargo-insta";
     homepage = "https://github.com/mitsuhiko/insta";
     changelog = "https://github.com/mitsuhiko/insta/blob/${version}/CHANGELOG.md";
-    license = licenses.asl20;
-    maintainers = with maintainers; [
-      figsoda
+    license = lib.licenses.asl20;
+    maintainers = with lib.maintainers; [
       oxalica
       matthiasbeyer
     ];

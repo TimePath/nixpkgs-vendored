@@ -126,7 +126,7 @@ let
       '';
 
   # Get a submodule without any embedded metadata:
-  _filter = x: filterAttrs (k: v: k != "_module") x;
+  _filter = x: removeAttrs x [ "_module" ];
 
   # https://grafana.com/docs/grafana/latest/administration/provisioning/#datasources
   grafanaTypes.datasourceConfig = types.submodule {
@@ -414,7 +414,14 @@ in
     declarativePlugins = mkOption {
       type = with types; nullOr (listOf path);
       default = null;
-      description = "If non-null, then a list of packages containing Grafana plugins to install. If set, plugins cannot be manually installed.";
+      description = ''
+        If non-null, then a list of packages containing Grafana plugins to install. If set, plugins cannot
+        be manually installed.
+
+        Keep in mind that this turns off drilldown: for this to work, you need to add
+        `grafana-metricsdrilldown-app`, `grafana-lokiexplore-app`, `grafana-exploretraces-app`
+        and `grafana-pyroscope-app` to this option.
+      '';
       example = literalExpression "with pkgs.grafanaPlugins; [ grafana-piechart-panel ]";
       # Make sure each plugin is added only once; otherwise building
       # the link farm fails, since the same path is added multiple
@@ -1260,7 +1267,7 @@ in
                 No IP addresses are being tracked, only simple counters to track running instances, versions, dashboard and error counts.
                 Counters are sent every 24 hours.
               '';
-              default = true;
+              default = false;
               type = types.bool;
             };
 
@@ -2040,7 +2047,7 @@ in
       after = [
         "networking.target"
       ]
-      ++ lib.optional usePostgresql "postgresql.service"
+      ++ lib.optional usePostgresql "postgresql.target"
       ++ lib.optional useMysql "mysql.service";
       script = ''
         set -o errexit -o pipefail -o nounset -o errtrace

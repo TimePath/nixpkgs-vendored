@@ -13,15 +13,13 @@
 
 buildPythonPackage rec {
   pname = "python-swiftclient";
-  version = "4.7.0";
+  version = "4.9.0";
   pyproject = true;
-
-  disabled = pythonOlder "3.6";
 
   src = fetchPypi {
     pname = "python_swiftclient";
     inherit version;
-    hash = "sha256-r9dXV1PY5JYXrcsRVQGH/QsSD82Bnx54LAtTjy0JN3M=";
+    hash = "sha256-niB7guwxeG8Q24/vbiBWgcJJl6C2ANKKGU+dFakO13I=";
   };
 
   nativeBuildInputs = [ installShellFiles ];

@@ -126,5 +126,7 @@ stdenv.mkDerivation (
     };
   }
   // lib.optionalAttrs (stdenv.hostPlatform.isDarwin) darwinAttrs
-  // lib.optionalAttrs (stdenv.hostPlatform.isLinux) linuxAttrs.${stdenv.system}
+  //
+    lib.optionalAttrs (stdenv.hostPlatform.isLinux)
+      linuxAttrs.${stdenv.system} or (throw "Unsupported system: ${stdenv.system}")
 )

@@ -14,16 +14,16 @@
 
 rustPlatform.buildRustPackage (finalAttrs: {
   pname = "spider";
-  version = "2.37.18";
+  version = "2.37.180";
 
   src = fetchFromGitHub {
     owner = "spider-rs";
     repo = "spider";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-aJXd8yzDEP1pYe4J8Zi6vmLN1+ki6B0tLFV/mvwkk/k=";
+    hash = "sha256-nUi6y/EoTSce39Ke+zdlr9K+x4doKWBAGv3wZbwSp2k=";
   };
 
-  cargoHash = "sha256-QVh962yXXStDwLyd8LSnmxkik6wNebOfGyH0HuE13kg=";
+  cargoHash = "sha256-x/vlYLRa54a4O9OzgZfXWZtsZjuE+U1mS7VqcejwS88=";
 
   nativeBuildInputs = [
     pkg-config
@@ -54,7 +54,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
     "--skip=pdl_is_fresh"
     "--skip=verify_revision_available"
   ]
-  ++ lib.optionals stdenv.isDarwin [
+  ++ lib.optionals stdenv.hostPlatform.isDarwin [
     # Sandbox limitation: attempted to create a NULL object
     "--skip=website::test_link_duplicates"
     "--skip=website::not_crawl_blacklist"

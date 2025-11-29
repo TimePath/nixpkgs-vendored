@@ -36,7 +36,7 @@ buildPythonPackage rec {
   disabledTests = [
     # test failure reported upstream: https://github.com/adrienverge/yamllint/issues/373
     "test_find_files_recursively"
-    # Issue wih fixture
+    # Issue with fixture
     "test_codec_built_in_equivalent"
   ]
   ++ lib.optionals stdenv.hostPlatform.isDarwin [

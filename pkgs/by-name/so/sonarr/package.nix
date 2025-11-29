@@ -6,7 +6,7 @@
   dotnetCorePackages,
   sqlite,
   withFFmpeg ? true, # replace bundled ffprobe binary with symlink to ffmpeg package.
-  ffmpeg,
+  servarr-ffmpeg,
   fetchYarnDeps,
   yarn,
   fixup-yarn-lock,
@@ -21,7 +21,7 @@
   applyPatches,
 }:
 let
-  version = "4.0.15.2941";
+  version = "4.0.16.2944";
   # The dotnet8 compatibility patches also change `yarn.lock`, so we must pass
   # the already patched lockfile to `fetchYarnDeps`.
   src = applyPatches {
@@ -29,12 +29,16 @@ let
       owner = "Sonarr";
       repo = "Sonarr";
       tag = "v${version}";
-      hash = "sha256-1lBUkodBDFpJD7pyHAFb8HRLrbK8wyAboX0A2oBQnTM=";
+      hash = "sha256-ec/fxCUvKd6/+zrWLccnOsCwnZucZkEeCz9VpzdtjTg=";
     };
-    patches = [
-      ./nuget-config.patch
-    ]
-    ++ lib.optionals (lib.versionOlder version "5.0") [
+    postPatch = ''
+      mv src/NuGet.Config NuGet.Config
+
+      # error CS0104: 'IPNetwork' is an ambiguous reference between 'Microsoft.AspNetCore.HttpOverrides.IPNetwork' and 'System.Net.IPNetwork'
+      substituteInPlace src/NzbDrone.Host/Startup.cs \
+        --replace-fail 'IPNetwork' 'Microsoft.AspNetCore.HttpOverrides.IPNetwork'
+    '';
+    patches = lib.optionals (lib.versionOlder version "5.0") [
       # See https://github.com/Sonarr/Sonarr/issues/7442 and
       # https://github.com/Sonarr/Sonarr/pull/7443.
       # Unfortunately, the .NET 8 upgrade was only merged into the v5 branch,
@@ -71,7 +75,7 @@ buildDotnetModule {
     hash = "sha256-YkBFvv+g4p22HdM/GQAHVGGW1yLYGWpNtRq7+QJiLIw=";
   };
 
-  ffprobe = lib.optionalDrvAttr withFFmpeg (lib.getExe' ffmpeg "ffprobe");
+  ffprobe = lib.optionalDrvAttr withFFmpeg (lib.getExe' servarr-ffmpeg "ffprobe");
 
   postConfigure = ''
     yarn config --offline set yarn-offline-mirror "$yarnOfflineCache"
@@ -128,6 +132,7 @@ buildDotnetModule {
   dotnetFlags = [
     "--property:TargetFramework=net8.0"
     "--property:EnableAnalyzers=false"
+    "--property:SentryUploadSymbols=false" # Fix Sentry upload failed warnings
     # Override defaults in src/Directory.Build.props that use current time.
     "--property:Copyright=Copyright 2014-2025 sonarr.tv (GNU General Public v3)"
     "--property:AssemblyVersion=${version}"

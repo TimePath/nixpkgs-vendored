@@ -25,7 +25,7 @@
 # nixpkgs-update: no auto update
 stdenv.mkDerivation rec {
   pname = "grpc";
-  version = "1.71.0"; # N.B: if you change this, please update:
+  version = "1.76.0"; # N.B: if you change this, please update:
   # pythonPackages.grpcio
   # pythonPackages.grpcio-channelz
   # pythonPackages.grpcio-health-checking
@@ -37,8 +37,8 @@ stdenv.mkDerivation rec {
   src = fetchFromGitHub {
     owner = "grpc";
     repo = "grpc";
-    rev = "v${version}";
-    hash = "sha256-QKSdMpfl0pdKy/r4z8VKcGN0gsQmx9lBRHlCjaaF5Sg=";
+    tag = "v${version}";
+    hash = "sha256-f25ccZC0pJw00ETgxBtXU6+0OnlJsV7zXjK/ayiCIJY=";
     fetchSubmodules = true;
   };
 
@@ -49,9 +49,11 @@ stdenv.mkDerivation rec {
       url = "https://github.com/lopsided98/grpc/commit/a9b917666234f5665c347123d699055d8c2537b2.patch";
       hash = "sha256-Lm0GQsz/UjBbXXEE14lT0dcRzVmCKycrlrdBJj+KLu8=";
     })
-    # fix build of 1.63.0 and newer on darwin: https://github.com/grpc/grpc/issues/36654
   ]
-  ++ (lib.optional stdenv.hostPlatform.isDarwin ./dynamic-lookup-darwin.patch);
+  ++ lib.optionals stdenv.hostPlatform.isDarwin [
+    # fix build of 1.63.0 and newer on darwin: https://github.com/grpc/grpc/issues/36654
+    ./dynamic-lookup-darwin.patch
+  ];
 
   nativeBuildInputs = [
     cmake
@@ -131,12 +133,12 @@ stdenv.mkDerivation rec {
     inherit arrow-cpp;
   };
 
-  meta = with lib; {
+  meta = {
     description = "C based gRPC (C++, Python, Ruby, Objective-C, PHP, C#)";
-    license = licenses.asl20;
-    maintainers = with maintainers; [ lnl7 ];
+    license = lib.licenses.asl20;
+    maintainers = with lib.maintainers; [ lnl7 ];
     homepage = "https://grpc.io/";
-    platforms = platforms.all;
+    platforms = lib.platforms.all;
     changelog = "https://github.com/grpc/grpc/releases/tag/v${version}";
   };
 }

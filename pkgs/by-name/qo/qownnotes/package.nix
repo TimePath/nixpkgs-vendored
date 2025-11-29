@@ -5,23 +5,25 @@
   qt6Packages,
   cmake,
   makeWrapper,
-  botan2,
+  botan3,
+  libgit2,
   pkg-config,
   nixosTests,
   installShellFiles,
   xvfb-run,
   versionCheckHook,
   nix-update-script,
+  aspell,
 }:
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "qownnotes";
   appname = "QOwnNotes";
-  version = "25.5.3";
+  version = "25.11.2";
 
   src = fetchurl {
     url = "https://github.com/pbek/QOwnNotes/releases/download/v${finalAttrs.version}/qownnotes-${finalAttrs.version}.tar.xz";
-    hash = "sha256-853xxUgRMtnL+frLCmzzGL44xstDwnrEMhYBFpL5hmQ=";
+    hash = "sha256-SkHtuS43pYHzPyCxB6tvPI074T/GONm3I/nXGzwMHns=";
   };
 
   nativeBuildInputs = [
@@ -39,13 +41,17 @@ stdenv.mkDerivation (finalAttrs: {
     qt6Packages.qtdeclarative
     qt6Packages.qtsvg
     qt6Packages.qtwebsockets
-    botan2
+    botan3
+    libgit2
+    aspell
   ]
   ++ lib.optionals stdenv.hostPlatform.isLinux [ qt6Packages.qtwayland ];
 
   cmakeFlags = [
     "-DQON_QT6_BUILD=ON"
     "-DBUILD_WITH_SYSTEM_BOTAN=ON"
+    "-DBUILD_WITH_LIBGIT2=ON"
+    "-DBUILD_WITH_ASPELL=ON"
   ];
 
   # Install shell completion on Linux (with xvfb-run)
@@ -100,5 +106,6 @@ stdenv.mkDerivation (finalAttrs: {
       matthiasbeyer
     ];
     platforms = lib.platforms.unix;
+    mainProgram = "qownnotes";
   };
 })

@@ -46,6 +46,10 @@
   tzdata,
   icu,
   libffi,
+  libdeflate,
+  xz,
+  zstd,
+  libwebp,
   cmake,
   libssh2,
   openssl,
@@ -548,6 +552,10 @@ in
       fribidi
       gobject-introspection
       gtk3
+      libdeflate
+      xz
+      libwebp
+      zstd
       cairo
       harfbuzz
       lerc
@@ -629,6 +637,12 @@ in
       substituteInPlace src/ruby/ext/grpc/extconf.rb \
         --replace 'apple_toolchain = ' 'apple_toolchain = false && '
     '';
+  };
+
+  hiredis-client = attrs: {
+    buildInputs = [
+      openssl
+    ];
   };
 
   hpricot = attrs: {
@@ -1033,6 +1047,7 @@ in
       zlib
     ];
     dontUseCmakeConfigure = true;
+    buildFlags = [ "--with-ssh" ];
   };
 
   sassc = attrs: {

@@ -20,6 +20,7 @@
   setuptools,
   aiofiles,
   anyio,
+  brotli,
   diffusers,
   fastapi,
   ffmpy,
@@ -36,6 +37,7 @@
   packaging,
   pandas,
   pillow,
+  polars,
   pydantic,
   python-multipart,
   pydub,
@@ -73,20 +75,20 @@
 
 buildPythonPackage rec {
   pname = "gradio";
-  version = "5.29.0";
+  version = "5.38.2";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "gradio-app";
     repo = "gradio";
     tag = "gradio@${version}";
-    hash = "sha256-zNqWJHnjWezueev5J2Ew8FsbHXUBDkfjCOmWhJJng8k=";
+    hash = "sha256-zKAH/tbF1S+LIi1i+BuKBUWDSI0+Ii5FhsZ3sQaFtto=";
   };
 
   pnpmDeps = pnpm_9.fetchDeps {
     inherit pname version src;
     fetcherVersion = 1;
-    hash = "sha256-h3ulPik0Uf8X687Se3J7h3+8jYzwXtbO6obsO27zyfA=";
+    hash = "sha256-sIEsolHffX3cpAJU79w+ndRY4vvmWLxp2efTryv+j38=";
   };
 
   pythonRelaxDeps = [
@@ -115,6 +117,7 @@ buildPythonPackage rec {
     setuptools # needed for 'pkg_resources'
     aiofiles
     anyio
+    brotli
     diffusers
     fastapi
     ffmpy
@@ -131,6 +134,7 @@ buildPythonPackage rec {
     packaging
     pandas
     pillow
+    polars
     pydantic
     python-multipart
     pydub
@@ -151,6 +155,7 @@ buildPythonPackage rec {
   nativeCheckInputs = [
     altair
     boto3
+    brotli
     docker
     ffmpeg
     gradio-pdf
@@ -242,6 +247,10 @@ buildPythonPackage rec {
 
     # tests if pip and other tools are installed
     "test_get_executable_path"
+
+    # Flaky test (AssertionError when comparing to a fixed array)
+    # https://github.com/gradio-app/gradio/issues/11620
+    "test_auto_datatype"
   ]
   ++ lib.optionals stdenv.hostPlatform.isDarwin [
     # TypeError: argument should be a str or an os.PathLike object where __fspath__ returns a str, not 'NoneType'
@@ -320,10 +329,13 @@ buildPythonPackage rec {
     "test/test_docker/test_reverse_proxy_root_path/test_reverse_proxy_root_path.py"
   ];
 
-  pytestFlagsArray = [
+  disabledTestMarks = [
+    "flaky"
+  ];
+
+  pytestFlags = [
     "-x" # abort on first failure
-    "-m 'not flaky'"
-    #"-W" "ignore" # uncomment for debugging help
+    #"-Wignore" # uncomment for debugging help
   ];
 
   # check the binary works outside the build env

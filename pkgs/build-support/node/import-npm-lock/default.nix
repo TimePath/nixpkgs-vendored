@@ -4,6 +4,7 @@
   stdenv,
   callPackages,
   runCommand,
+  cctools,
 }:
 
 let
@@ -51,7 +52,7 @@ let
                 // fetcherOpts
               ))
             else if lib.hasPrefix "git" module.resolved then
-              (builtins.fetchGit (
+              (fetchGit (
                 {
                   url = module.resolved;
                 }
@@ -209,6 +210,7 @@ lib.fix (self: {
           nodejs.passthru.python
           hooks.npmConfigHook
         ]
+        ++ lib.optionals stdenv.hostPlatform.isDarwin [ cctools ]
         ++ derivationArgs.nativeBuildInputs or [ ];
 
         passAsFile = [

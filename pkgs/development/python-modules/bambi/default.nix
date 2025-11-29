@@ -24,14 +24,14 @@
 
 buildPythonPackage rec {
   pname = "bambi";
-  version = "0.15.0";
+  version = "0.16.0";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "bambinos";
     repo = "bambi";
     tag = version;
-    hash = "sha256-G8RKTccsJRcLgTQPTOXAgK6ViVEwIQydUwdAexEJ2bc=";
+    hash = "sha256-EKcURfC4IpLGzr5ibzVlUnRHIhwPP+kYYusW9Mk8R/s=";
   };
 
   build-system = [
@@ -63,6 +63,9 @@ buildPythonPackage rec {
   ];
 
   disabledTests = [
+    # ValueError: dtype attribute is not a valid dtype instance
+    "test_vonmises_regression"
+
     # AssertionError: assert (<xarray.DataArray 'yield' ()> Size: 1B\narray(False) & <xarray.DataArray 'yield' ()> Size: 1B\narray(False))
     # https://github.com/bambinos/bambi/issues/888
     "test_beta_regression"

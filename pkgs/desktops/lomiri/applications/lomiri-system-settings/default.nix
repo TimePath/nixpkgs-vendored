@@ -5,7 +5,6 @@
   gitUpdater,
   testers,
   accountsservice,
-  ayatana-indicator-datetime,
   biometryd,
   cmake,
   cmake-extras,
@@ -24,6 +23,7 @@
   libqtdbustest,
   libqtdbusmock,
   lomiri-content-hub,
+  lomiri-indicator-datetime,
   lomiri-indicator-network,
   lomiri-schemas,
   lomiri-settings-components,
@@ -121,10 +121,10 @@ stdenv.mkDerivation (finalAttrs: {
 
   # QML components and schemas the wrapper needs
   propagatedBuildInputs = [
-    ayatana-indicator-datetime
     biometryd
     libqofono
     lomiri-content-hub
+    lomiri-indicator-datetime
     lomiri-indicator-network
     lomiri-schemas
     lomiri-settings-components
@@ -198,7 +198,7 @@ stdenv.mkDerivation (finalAttrs: {
     description = "System Settings application for Lomiri";
     homepage = "https://gitlab.com/ubports/development/core/lomiri-system-settings";
     changelog = "https://gitlab.com/ubports/development/core/lomiri-system-settings/-/blob/${
-      if (!builtins.isNull finalAttrs.src.tag) then finalAttrs.src.tag else finalAttrs.src.rev
+      if (!isNull finalAttrs.src.tag) then finalAttrs.src.tag else finalAttrs.src.rev
     }/ChangeLog";
     license = licenses.gpl3Only;
     mainProgram = "lomiri-system-settings";

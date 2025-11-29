@@ -4,18 +4,17 @@
   fetchFromGitHub,
   coreutils,
   testers,
-  skeema,
 }:
 
-buildGoModule rec {
+buildGoModule (finalAttrs: {
   pname = "skeema";
-  version = "1.12.3";
+  version = "1.13.1";
 
   src = fetchFromGitHub {
     owner = "skeema";
     repo = "skeema";
-    rev = "v${version}";
-    hash = "sha256-3sxUy/TkacuRN8UDGgrvkdUQi//6VufoYoVFN1+X3BM=";
+    tag = "v${finalAttrs.version}";
+    hash = "sha256-b4j7JNsAc2AdV6S6e06ioUxjFl2mcKvX3pQ7Mji5eUo=";
   };
 
   vendorHash = null;
@@ -25,6 +24,8 @@ buildGoModule rec {
   ldflags = [
     "-s"
     "-w"
+    "-X main.commit=${finalAttrs.src.rev}"
+    "-X main.date=1970-01-01T00:00:00Z"
   ];
 
   preCheck = ''
@@ -58,7 +59,7 @@ buildGoModule rec {
     [ "-skip=^${builtins.concatStringsSep "$|^" skippedTests}$" ];
 
   passthru.tests.version = testers.testVersion {
-    package = skeema;
+    package = finalAttrs.finalPackage;
   };
 
   meta = {
@@ -68,4 +69,4 @@ buildGoModule rec {
     maintainers = with lib.maintainers; [ aaronjheng ];
     mainProgram = "skeema";
   };
-}
+})

@@ -1,6 +1,6 @@
 {
   lib,
-  rustPackages_1_88,
+  rustPlatform,
   fetchFromGitHub,
   fetchNpmDeps,
   npmHooks,
@@ -16,7 +16,7 @@
   versionCheckHook,
 }:
 
-rustPackages_1_88.rustPlatform.buildRustPackage (finalAttrs: {
+rustPlatform.buildRustPackage (finalAttrs: {
   pname = "matrix-authentication-service";
   version = "1.6.0";
 
@@ -87,7 +87,6 @@ rustPackages_1_88.rustPlatform.buildRustPackage (finalAttrs: {
   '';
 
   nativeInstallCheckInputs = [ versionCheckHook ];
-  versionCheckProgram = "${placeholder "out"}/bin/${finalAttrs.meta.mainProgram}";
   versionCheckProgramArg = "--version";
   doInstallCheck = true;
   passthru.updateScript = nix-update-script {

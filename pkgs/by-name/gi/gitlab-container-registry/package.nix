@@ -1,10 +1,10 @@
 {
   lib,
-  buildGoModule,
+  buildGo124Module,
   fetchFromGitLab,
 }:
 
-buildGoModule rec {
+buildGo124Module rec {
   pname = "gitlab-container-registry";
   version = "4.31.0";
   rev = "v${version}-gitlab";
@@ -42,5 +42,6 @@ buildGoModule rec {
       cyberus
     ];
     platforms = platforms.unix;
+    mainProgram = "registry";
   };
 }

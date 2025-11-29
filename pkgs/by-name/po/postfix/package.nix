@@ -38,6 +38,9 @@ let
       "-DUSE_CYRUS_SASL"
       "-I${cyrus_sasl.dev}/include/sasl"
       "-DHAS_DB_BYPASS_MAKEDEFS_CHECK"
+      # Fix build with gcc15, no upstream fix for stable releases:
+      # https://www.mail-archive.com/postfix-devel@postfix.org/msg01270.html
+      "-std=gnu17"
     ]
     ++ lib.optional withPgSQL "-DHAS_PGSQL"
     ++ lib.optionals withMySQL [
@@ -97,7 +100,6 @@ stdenv.mkDerivation rec {
   ++ lib.optional withTLSRPT libtlsrpt;
 
   hardeningDisable = [ "format" ];
-  hardeningEnable = [ "pie" ];
 
   patches = [
     ./postfix-script-shell.patch
@@ -187,16 +189,16 @@ stdenv.mkDerivation rec {
     updateScript = ./update.sh;
   };
 
-  meta = with lib; {
+  meta = {
     homepage = "http://www.postfix.org/";
     changelog = "https://www.postfix.org/announcements/postfix-${version}.html";
     description = "Fast, easy to administer, and secure mail server";
-    license = with licenses; [
+    license = with lib.licenses; [
       ipl10
       epl20
     ];
-    platforms = platforms.linux;
-    maintainers = with maintainers; [
+    platforms = lib.platforms.linux;
+    maintainers = with lib.maintainers; [
       globin
       dotlambda
       lewo

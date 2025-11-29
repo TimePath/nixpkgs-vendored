@@ -1,6 +1,7 @@
 {
   lib,
   stdenv,
+  fetchpatch,
   fetchurl,
   updateAutotoolsGnuConfigScriptsHook,
   perl,
@@ -29,6 +30,16 @@ stdenv.mkDerivation rec {
     url = "mirror://samba/rsync/src/rsync-${version}.tar.gz";
     hash = "sha256-KSS8s6Hti1UfwQH3QLnw/gogKxFQJ2R89phQ1l/YjFI=";
   };
+
+  patches = [
+    # See: <https://github.com/RsyncProject/rsync/pull/790>
+    ./fix-tests-in-darwin-sandbox.patch
+    # fix compilation with gcc15
+    (fetchpatch {
+      url = "https://github.com/RsyncProject/rsync/commit/a4b926dcdce96b0f2cc0dc7744e95747b233500a.patch";
+      hash = "sha256-UiEQJ+p2gtIDYNJqnxx4qKgItKIZzCpkHnvsgoxBmSE=";
+    })
+  ];
 
   nativeBuildInputs = [
     updateAutotoolsGnuConfigScriptsHook
@@ -69,15 +80,23 @@ stdenv.mkDerivation rec {
 
   passthru.tests = { inherit (nixosTests) rsyncd; };
 
+  doCheck = true;
+
+  __darwinAllowLocalNetworking = true;
+
   meta = with lib; {
     description = "Fast incremental file transfer utility";
     homepage = "https://rsync.samba.org/";
     license = licenses.gpl3Plus;
     mainProgram = "rsync";
     maintainers = with lib.maintainers; [
-      kampfschlaefer
       ivan
     ];
     platforms = platforms.unix;
+    identifiers.cpeParts = {
+      vendor = "samba";
+      inherit version;
+      update = "-";
+    };
   };
 }

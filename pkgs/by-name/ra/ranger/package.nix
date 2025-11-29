@@ -12,18 +12,19 @@
   neoVimSupport ? true,
   improvedEncodingDetection ? true,
   rightToLeftTextSupport ? false,
-  gitUpdater,
+  unstableGitUpdater,
 }:
 
-python3Packages.buildPythonApplication rec {
+python3Packages.buildPythonApplication {
   pname = "ranger";
-  version = "1.9.4";
+  version = "1.9.3-unstable-2025-11-14";
+  format = "setuptools";
 
   src = fetchFromGitHub {
     owner = "ranger";
     repo = "ranger";
-    tag = "v${version}";
-    hash = "sha256-9ehxMXwQj7oVhlotTc3mzCKCkoMSbB9cliPg/NMEoWM=";
+    rev = "08913377c968d39f11fa2d546aa8d53a99bb5e98";
+    hash = "sha256-vn1rAOFB2vq04Y/WAE44iH/b/zamAmvq8putUKwNqR8=";
   };
 
   LC_ALL = "en_US.UTF-8";
@@ -66,7 +67,7 @@ python3Packages.buildPythonApplication rec {
       --replace "set preview_images false" "set preview_images true"
   '';
 
-  passthru.updateScript = gitUpdater { rev-prefix = "v"; };
+  passthru.updateScript = unstableGitUpdater { tagPrefix = "v"; };
 
   meta = {
     description = "File manager with minimalistic curses interface";

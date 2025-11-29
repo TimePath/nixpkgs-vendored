@@ -7,7 +7,7 @@
   iproute2,
   lib,
   makeWrapper,
-  nettools,
+  net-tools,
   pciutils,
   procps,
   stdenv,
@@ -29,7 +29,7 @@ bundlerApp {
       runtimeDependencies = [
         coreutils
         gnugrep
-        nettools
+        net-tools
         pciutils
         procps
         util-linux

@@ -42,7 +42,7 @@ stdenv.mkDerivation (finalAttrs: {
     git
     libsass
   ]
-  ++ lib.optional stdenv.isDarwin xcbuild;
+  ++ lib.optional stdenv.hostPlatform.isDarwin xcbuild;
 
   configurePhase = ''
     runHook preConfigure

@@ -48,15 +48,20 @@ buildGoModule (
         runHook postInstall
       '';
 
+      postFixup = ''
+        find $out -type f -name '*.go' -exec \
+          sed -i -E 's|//.*protoc-gen-go(-grpc)? +v.*$||' {} +
+      '';
+
       outputHashMode = "recursive";
-      outputHash = "sha256-KygZ7NqkfhczYy1YMR824Om4NTq06+KHa/jvmsCty3s=";
+      outputHash = "sha256-wHqXsSV18mF/CfLQ0S4rGtT3QRcLnneYXAa8nXZaHpQ=";
     };
 
     webui = buildNpmPackage {
       pname = "olivetin-webui";
       inherit (finalAttrs) version src;
 
-      npmDepsHash = "sha256-59ImpfuLtsZG2Y6B3R09ePaTEuFbIhklk2jKibaB+wg=";
+      npmDepsHash = "sha256-a1BBNlGusdMlmDXgclGqkO8AywSd4DTQKkuBVzuzAfE=";
 
       sourceRoot = "${finalAttrs.src.name}/webui.dev";
 
@@ -81,18 +86,20 @@ buildGoModule (
 
   {
     pname = "olivetin";
-    version = "2025.6.6";
+    version = "2025.11.25";
 
     src = fetchFromGitHub {
       owner = "OliveTin";
       repo = "OliveTin";
       tag = finalAttrs.version;
-      hash = "sha256-yzAuhrkJEBErf9yYuRoq5B7PT0XA0w668AG5LNSSRFM=";
+      hash = "sha256-HQLInEVXowWpDaSW/4bduUMdYsvQ0Rju1Rl2l9jupYA=";
     };
+
+    patches = [ ./update-go-sum.patch ];
 
     modRoot = "service";
 
-    vendorHash = "sha256-8rPJoB75de2Y56iyIwdI9HPk7OlCgfMPy28TW1i7+sU=";
+    vendorHash = "sha256-xSroaS6fwHrQ0s09uD3bkBZWWxbIndiOGL2JPvKzC6E=";
 
     ldflags = [
       "-s"

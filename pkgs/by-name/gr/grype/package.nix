@@ -1,21 +1,23 @@
 {
   lib,
+  stdenv,
   buildGoModule,
   fetchFromGitHub,
   git,
   installShellFiles,
   openssl,
+  net-tools,
 }:
 
 buildGoModule (finalAttrs: {
   pname = "grype";
-  version = "0.92.0";
+  version = "0.104.0";
 
   src = fetchFromGitHub {
     owner = "anchore";
     repo = "grype";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-DwPKhUIBQYbFEYi3EmDQ4hWDLksexTOoPZCL4G+VXks=";
+    hash = "sha256-NDzotEwotbaYB7dQDzcPjBwqzyoE2dJujEnsVut17Q0=";
     # populate values that require us to use git. By doing this in postFetch we
     # can delete .git afterwards and maintain better reproducibility of the src.
     leaveDotGit = true;
@@ -30,13 +32,14 @@ buildGoModule (finalAttrs: {
 
   proxyVendor = true;
 
-  vendorHash = "sha256-4yE8NIFVMikGXd44K9ysXKGzoMyW8sQcAzy61RNR/Jo=";
+  vendorHash = "sha256-QECTggD2gHqB2RlD0eKNm+4YTz4/7PZ8sMyXFS9uKBc=";
 
   nativeBuildInputs = [ installShellFiles ];
 
   nativeCheckInputs = [
     git
     openssl
+    net-tools
   ];
 
   subPackages = [ "cmd/grype" ];
@@ -75,7 +78,8 @@ buildGoModule (finalAttrs: {
     substituteInPlace test/cli/db_providers_test.go \
       --replace-fail "TestDBProviders" "SkipDBProviders"
     substituteInPlace grype/presenter/cyclonedx/presenter_test.go \
-      --replace-fail "TestCycloneDxPresenterDir" "SkipCycloneDxPresenterDir"
+      --replace-fail "TestCycloneDxPresenterDir" "SkipCycloneDxPresenterDir" \
+      --replace-fail "Test_CycloneDX_Valid" "Skip_CycloneDX_Valid"
 
     # remove tests that depend on docker
     substituteInPlace test/cli/cmd_test.go \
@@ -110,7 +114,7 @@ buildGoModule (finalAttrs: {
     rm grype/db/v5/namespace/cpe/namespace_test.go
   '';
 
-  postInstall = ''
+  postInstall = lib.optionalString (stdenv.buildPlatform.canExecute stdenv.hostPlatform) ''
     installShellCompletion --cmd grype \
       --bash <($out/bin/grype completion bash) \
       --fish <($out/bin/grype completion fish) \

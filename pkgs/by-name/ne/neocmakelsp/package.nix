@@ -7,16 +7,16 @@
 
 rustPlatform.buildRustPackage rec {
   pname = "neocmakelsp";
-  version = "0.8.22";
+  version = "0.9.0";
 
   src = fetchFromGitHub {
     owner = "Decodetalkers";
     repo = "neocmakelsp";
     rev = "v${version}";
-    hash = "sha256-AFnGMKcPAn1rFfFDZWvg/iIhKHGKgCLA3bueP5k9oY4=";
+    hash = "sha256-TFan3gJ5j2sCfM3p8a2bqPwqzn1hFN8ZyCAwAdHRZBU=";
   };
 
-  cargoHash = "sha256-XsRtkQpNfXCZxEbgkQo11lQM78E6+8PJWc+5FBXM2Ro=";
+  cargoHash = "sha256-lqD6o+QXapd6JWMEYUWpAmZK4EWkIlqc5ZN/fMmySTs=";
 
   nativeBuildInputs = [
     installShellFiles
@@ -34,7 +34,7 @@ rustPlatform.buildRustPackage rec {
     license = lib.licenses.mit;
     platforms = lib.platforms.unix;
     maintainers = with lib.maintainers; [
-      rewine
+      wineee
       multivac61
     ];
     mainProgram = "neocmakelsp";

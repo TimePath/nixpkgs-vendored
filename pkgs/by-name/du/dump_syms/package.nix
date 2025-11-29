@@ -21,7 +21,7 @@ rustPlatform.buildRustPackage {
 
   src = fetchFromGitHub {
     owner = "mozilla";
-    repo = pname;
+    repo = "dump_syms";
     rev = "v${version}";
     hash = "sha256-zxYGxqnh6urXDC/ZQf3aFzBqOj5QNulyDpTsZ47BDkU=";
   };
@@ -47,12 +47,12 @@ rustPlatform.buildRustPackage {
     inherit firefox-esr-unwrapped firefox-unwrapped thunderbird-unwrapped;
   };
 
-  meta = with lib; {
+  meta = {
     changelog = "https://github.com/mozilla/dump_syms/blob/v${version}/CHANGELOG.md";
     description = "Command-line utility for parsing the debugging information the compiler provides in ELF or stand-alone PDB files";
     mainProgram = "dump_syms";
-    license = licenses.asl20;
+    license = lib.licenses.asl20;
     homepage = "https://github.com/mozilla/dump_syms/";
-    maintainers = with maintainers; [ hexa ];
+    maintainers = with lib.maintainers; [ hexa ];
   };
 }

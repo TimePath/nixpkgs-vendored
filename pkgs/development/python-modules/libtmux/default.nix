@@ -13,14 +13,14 @@
 
 buildPythonPackage rec {
   pname = "libtmux";
-  version = "0.46.1";
+  version = "0.47.0";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "tmux-python";
     repo = "libtmux";
     tag = "v${version}";
-    hash = "sha256-x+zEfHFTAF0m6j/WFmelcBVOzh7oJE02BdB3bz/EcNM=";
+    hash = "sha256-yrz9fMr33yj/u0uGUNHYv0zOTvtfJ2u0TKToBO8ha6U=";
   };
 
   postPatch = ''
@@ -38,7 +38,7 @@ buildPythonPackage rec {
     pytestCheckHook
   ];
 
-  pytestFlagsArray = [ "tests" ];
+  enabledTestPaths = [ "tests" ];
 
   disabledTests = [
     # Fail with: 'no server running on /tmp/tmux-1000/libtmux_test8sorutj1'.

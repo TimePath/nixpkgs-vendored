@@ -87,6 +87,9 @@ stdenv.mkDerivation (
       ./cpp-precomp.patch
       ./sw_vers.patch
     ]
+    # fixes build failure due to missing d_fdopendir/HAS_FDOPENDIR configure option
+    # https://github.com/arsv/perl-cross/pull/159
+    ++ lib.optional (crossCompiling && (lib.versionAtLeast version "5.40.0")) ./cross-fdopendir.patch
     ++ lib.optional (crossCompiling && (lib.versionAtLeast version "5.40.0")) ./cross540.patch
     ++ lib.optional (crossCompiling && (lib.versionOlder version "5.40.0")) ./cross.patch;
 
@@ -125,6 +128,8 @@ stdenv.mkDerivation (
             "-Dlibpth=\"\""
             "-Dglibpth=\"\""
             "-Ddefault_inc_excludes_dot"
+            # https://github.com/arsv/perl-cross/issues/158
+            "-Dd_gnulibc=define"
           ]
         else
           (
@@ -303,12 +308,13 @@ stdenv.mkDerivation (
         "$mini/lib/perl5/cross_perl/${version}:$out/lib/perl5/${version}:$out/lib/perl5/${version}/$runtimeArch"
     ''; # */
 
-    meta = with lib; {
+    meta = {
       homepage = "https://www.perl.org/";
       description = "Standard implementation of the Perl 5 programming language";
-      license = licenses.artistic1;
+      license = lib.licenses.artistic1;
       maintainers = [ ];
-      platforms = platforms.all;
+      teams = [ lib.teams.perl ];
+      platforms = lib.platforms.all;
       priority = 6; # in `buildEnv' (including the one inside `perl.withPackages') the library files will have priority over files in `perl`
       mainProgram = "perl";
     };
@@ -323,11 +329,8 @@ stdenv.mkDerivation (
       rev = crossVersion;
       hash = "sha256-mG9ny+eXGBL4K/rXqEUPSbar+4Mq4IaQrGRFIHIyAAw=";
     };
-    patches = [
-      # fixes build failure due to missing d_fdopendir/HAS_FDOPENDIR configure option
-      # https://github.com/arsv/perl-cross/pull/159
-      ./cross-fdopendir.patch
-    ];
+
+    # Patches are above!!!
 
     depsBuildBuild = [
       buildPackages.stdenv.cc

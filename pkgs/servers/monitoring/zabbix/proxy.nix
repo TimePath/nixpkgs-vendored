@@ -8,6 +8,7 @@
   libiconv,
   openssl,
   pcre,
+  pcre2,
   zlib,
   buildPackages,
   odbcSupport ? true,
@@ -52,6 +53,8 @@ import ./versions.nix (
       inherit hash;
     };
 
+    enableParallelBuilding = true;
+
     nativeBuildInputs = [
       pkg-config
     ]
@@ -61,7 +64,7 @@ import ./versions.nix (
       libevent
       libiconv
       openssl
-      pcre
+      (if (lib.versions.major version >= "7" && lib.versions.minor version >= "4") then pcre2 else pcre)
       zlib
     ]
     ++ optional odbcSupport unixODBC

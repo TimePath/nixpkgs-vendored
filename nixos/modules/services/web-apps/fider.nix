@@ -88,8 +88,8 @@ in
       after = [
         "network.target"
       ]
-      ++ lib.optionals (cfg.database.url == "local") [ "postgresql.service" ];
-      requires = lib.optionals (cfg.database.url == "local") [ "postgresql.service" ];
+      ++ lib.optionals (cfg.database.url == "local") [ "postgresql.target" ];
+      requires = lib.optionals (cfg.database.url == "local") [ "postgresql.target" ];
       environment =
         let
           localPostgresqlUrl = "postgres:///fider?host=/run/postgresql";
@@ -117,7 +117,6 @@ in
 
   meta = {
     maintainers = with lib.maintainers; [
-      drupol
       niklaskorz
     ];
     # doc = ./fider.md;

@@ -13,16 +13,16 @@
 
 rustPlatform.buildRustPackage rec {
   pname = "termscp";
-  version = "0.17.0";
+  version = "0.19.0";
 
   src = fetchFromGitHub {
     owner = "veeso";
     repo = "termscp";
     tag = "v${version}";
-    hash = "sha256-ClCPXux1sM3hRbtJ3YngrAmc4btTgQmg/Bg/7uFHCOw=";
+    hash = "sha256-wmoZneXmhstEX1Ocd9gkVRaZ9UGaYJERU5FlIUoHOI4=";
   };
 
-  cargoHash = "sha256-k/6+EWHAXd8BN551xDlQkYsBZsP/jgT+NO5GbVXJkVI=";
+  cargoHash = "sha256-EZJszeFAo9vjtk+RJ8nqFqpKD7BpQ/mCImD472NXZNM=";
 
   nativeBuildInputs = [
     pkg-config
@@ -48,6 +48,7 @@ rustPlatform.buildRustPackage rec {
     "--skip=cli::remote::test::test_should_make_remote_args_from_one_bookmark_and_one_remote_with_local_dir"
     "--skip=cli::remote::test::test_should_make_remote_args_from_two_bookmarks_and_local_dir"
     "--skip=cli::remote::test::test_should_make_remote_args_from_two_remotes_and_local_dir"
+    "--skip=system::auto_update::test::test_should_check_whether_github_api_is_reachable"
   ]
   ++ lib.optionals stdenvNoCC.hostPlatform.isDarwin [
     "--skip=system::watcher::test::should_poll_file_removed"

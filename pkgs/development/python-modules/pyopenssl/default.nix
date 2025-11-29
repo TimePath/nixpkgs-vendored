@@ -16,14 +16,14 @@
 
 buildPythonPackage rec {
   pname = "pyopenssl";
-  version = "25.0.0";
+  version = "25.1.0";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "pyca";
     repo = "pyopenssl";
     tag = version;
-    hash = "sha256-CQHLEtNb2jX7WNAYlmv5EIgepetMl81Xl3AJuRqOHow=";
+    hash = "sha256-QF511MVyjfddmkTd2H7RNJeoWs+e0me4i55YGP4t910=";
   };
 
   outputs = [
@@ -64,6 +64,8 @@ buildPythonPackage rec {
     "test_wantWriteError"
     # https://github.com/pyca/pyopenssl/issues/1043
     "test_alpn_call_failure"
+    # https://github.com/pyca/pyopenssl/issues/1455
+    "test_client_receives_servers_data"
   ]
   ++ lib.optionals (lib.hasPrefix "libressl" openssl.meta.name) [
     # https://github.com/pyca/pyopenssl/issues/791

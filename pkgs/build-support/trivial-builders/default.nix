@@ -94,7 +94,7 @@ rec {
         preferLocalBuild = true;
         allowSubstitutes = false;
       })
-      // builtins.removeAttrs derivationArgs [ "passAsFile" ]
+      // removeAttrs derivationArgs [ "passAsFile" ]
     );
 
   # Docs in doc/build-helpers/trivial-build-helpers.chapter.md
@@ -182,7 +182,7 @@ rec {
     path: text:
     writeTextFile {
       inherit text;
-      name = builtins.baseNameOf path;
+      name = baseNameOf path;
       destination = "/${path}";
     };
 
@@ -203,6 +203,7 @@ rec {
       inherit name text;
       executable = true;
       destination = "/bin/${name}";
+      meta.mainProgram = name;
     };
 
   # See doc/build-helpers/trivial-build-helpers.chapter.md
@@ -349,12 +350,10 @@ rec {
         ${lib.concatMapStringsSep "\n" (option: "set -o ${option}") bashOptions}
       ''
       + lib.optionalString (runtimeEnv != null) (
-        lib.concatStrings (
-          lib.mapAttrsToList (name: value: ''
-            ${lib.toShellVar name value}
-            export ${name}
-          '') runtimeEnv
-        )
+        lib.concatMapAttrsStringSep "" (name: value: ''
+          ${lib.toShellVar name value}
+          export ${name}
+        '') runtimeEnv
       )
       + lib.optionalString (runtimeInputs != [ ]) ''
 
@@ -670,8 +669,8 @@ rec {
           throw "linkFarm entries must be either attrs or a list!";
 
       linkCommands = lib.mapAttrsToList (name: path: ''
-        mkdir -p "$(dirname ${lib.escapeShellArg "${name}"})"
-        ln -s ${lib.escapeShellArg "${path}"} ${lib.escapeShellArg "${name}"}
+        mkdir -p -- "$(dirname -- ${lib.escapeShellArg "${name}"})"
+        ln -s -- ${lib.escapeShellArg "${path}"} ${lib.escapeShellArg "${name}"}
       '') entries';
     in
     runCommand name
@@ -957,7 +956,6 @@ rec {
       outputHashAlgo = hashAlgo_;
       outputHash = hash_;
       preferLocalBuild = true;
-      allowSubstitutes = false;
       builder = writeScript "restrict-message" ''
         source ${stdenvNoCC}/setup
         cat <<_EOF_
@@ -982,7 +980,7 @@ rec {
 
   # TODO: move copyPathsToStore docs to the Nixpkgs manual
   # Copy a list of paths to the Nix store.
-  copyPathsToStore = builtins.map copyPathToStore;
+  copyPathsToStore = map copyPathToStore;
 
   # TODO: move applyPatches docs to the Nixpkgs manual
   /*
@@ -1008,7 +1006,7 @@ rec {
       name ?
         (
           if builtins.typeOf src == "path" then
-            builtins.baseNameOf src
+            baseNameOf src
           else if builtins.isAttrs src && builtins.hasAttr "name" src then
             src.name
           else
@@ -1020,6 +1018,12 @@ rec {
       postPatch ? "",
       ...
     }@args:
+    assert lib.assertMsg (
+      !args ? meta
+    ) "applyPatches will not merge 'meta', change it in 'src' instead";
+    assert lib.assertMsg (
+      !args ? passthru
+    ) "applyPatches will not merge 'passthru', change it in 'src' instead";
     if patches == [ ] && prePatch == "" && postPatch == "" then
       src # nothing to do, so use original src to avoid additional drv
     else
@@ -1050,19 +1054,17 @@ rec {
           phases = "unpackPhase patchPhase installPhase";
           installPhase = "cp -R ./ $out";
         }
-        # Carry and merge information from the underlying `src` if present.
-        // (optionalAttrs (src ? meta || args ? meta) {
-          meta = src.meta or { } // args.meta or { };
+        # Carry (and merge) information from the underlying `src` if present.
+        // (optionalAttrs (src ? meta) {
+          inherit (src) meta;
         })
-        // (optionalAttrs (extraPassthru != { } || src ? passthru || args ? passthru) {
-          passthru = extraPassthru // src.passthru or { } // args.passthru or { };
+        // (optionalAttrs (extraPassthru != { } || src ? passthru) {
+          passthru = extraPassthru // src.passthru or { };
         })
-        # Forward any additional arguments to the derviation
+        # Forward any additional arguments to the derivation
         // (removeAttrs args [
           "src"
           "name"
-          "meta"
-          "passthru"
           "patches"
           "prePatch"
           "postPatch"

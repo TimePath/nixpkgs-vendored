@@ -9,17 +9,17 @@
 
 rustPlatform.buildRustPackage (finalAttrs: {
   pname = "nu_plugin_highlight";
-  version = "1.4.5+0.104.0";
+  version = "1.4.10+0.108.0";
 
   src = fetchFromGitHub {
     owner = "cptpiepmatz";
     repo = "nu-plugin-highlight";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-B2CkdftlxczA6KHJsNmbPH7Grzq4MG7r6CRMvVTMkzQ=";
+    hash = "sha256-ynvLvGMxFiYOYGPDdlv1509lWU5DpfBK9Mwa9gLeHsI=";
     fetchSubmodules = true;
   };
 
-  cargoHash = "sha256-3bLATtK9r4iVpxdbg5eCvzeGpIqWMl/GTDGCORuQfgY=";
+  cargoHash = "sha256-Xq7ctnzcrSPzo3M3p3Vxtj0U0U9Miw+2VuyYs6P3GlQ=";
 
   nativeBuildInputs = [ pkg-config ] ++ lib.optionals stdenv.cc.isClang [ rustPlatform.bindgenHook ];
 
@@ -29,7 +29,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
   passthru.updateScript = nix-update-script { };
 
   meta = {
-    description = "A nushell plugin for syntax highlighting.";
+    description = "`nushell` plugin for syntax highlighting";
     mainProgram = "nu_plugin_highlight";
     homepage = "https://github.com/cptpiepmatz/nu-plugin-highlight";
     license = lib.licenses.mit;

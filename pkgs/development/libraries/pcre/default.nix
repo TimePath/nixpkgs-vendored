@@ -14,7 +14,6 @@
 assert lib.elem variant [
   null
   "cpp"
-  "pcre16"
   "pcre32"
 ];
 
@@ -80,7 +79,7 @@ stdenv.mkDerivation rec {
   '';
 
   meta = {
-    homepage = "http://www.pcre.org/";
+    homepage = "https://www.pcre.org/";
     description = "Library for Perl Compatible Regular Expressions";
     license = lib.licenses.bsd3;
 

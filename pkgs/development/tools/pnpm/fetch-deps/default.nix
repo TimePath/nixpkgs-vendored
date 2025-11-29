@@ -10,19 +10,28 @@
   yq,
 }:
 
+let
+  pnpm' = pnpm;
+
+  supportedFetcherVersions = [
+    1 # First version. Here to preserve backwards compatibility
+    2 # Ensure consistent permissions. See https://github.com/NixOS/nixpkgs/pull/422975
+  ];
+in
 {
-  fetchDeps =
+  fetchDeps = lib.makeOverridable (
     {
       hash ? "",
       pname,
+      pnpm ? pnpm',
       pnpmWorkspaces ? [ ],
       prePnpmInstall ? "",
       pnpmInstallFlags ? [ ],
-      fetcherVersion ? 1,
+      fetcherVersion ? null,
       ...
     }@args:
     let
-      args' = builtins.removeAttrs args [
+      args' = removeAttrs args [
         "hash"
         "pname"
       ];
@@ -42,6 +51,14 @@
       "pnpm.fetchDeps: `pnpmWorkspace` is no longer supported, please migrate to `pnpmWorkspaces`."
     ) true;
 
+    assert (lib.throwIf (fetcherVersion == null)
+      "pnpm.fetchDeps: `fetcherVersion` is not set, see https://nixos.org/manual/nixpkgs/stable/#javascript-pnpm-fetcherVersion."
+    ) true;
+
+    assert (lib.throwIf (!(builtins.elem fetcherVersion supportedFetcherVersions))
+      "pnpm.fetchDeps `fetcherVersion` is not set to a supported value (${lib.concatStringsSep ", " (map toString supportedFetcherVersions)}), see https://nixos.org/manual/nixpkgs/stable/#javascript-pnpm-fetcherVersion."
+    ) true;
+
     stdenvNoCC.mkDerivation (
       finalAttrs:
       (
@@ -53,7 +70,7 @@
             cacert
             jq
             moreutils
-            pnpm
+            args.pnpm or pnpm'
             yq
           ];
 
@@ -133,7 +150,7 @@
           passthru = {
             inherit fetcherVersion;
             serve = callPackage ./serve.nix {
-              inherit pnpm;
+              pnpm = args.pnpm or pnpm';
               pnpmDeps = finalAttrs.finalPackage;
             };
           };
@@ -144,10 +161,15 @@
         }
         // hash'
       )
-    );
+    )
+  );
 
   configHook = makeSetupHook {
     name = "pnpm-config-hook";
     propagatedBuildInputs = [ pnpm ];
+    substitutions = {
+      npmArch = stdenvNoCC.targetPlatform.node.arch;
+      npmPlatform = stdenvNoCC.targetPlatform.node.platform;
+    };
   } ./pnpm-config-hook.sh;
 }

@@ -1,7 +1,7 @@
 {
   lib,
   stdenv,
-  rustPackages_1_89,
+  rustPlatform,
   fetchFromGitHub,
   nix-update-script,
 
@@ -24,7 +24,6 @@
   yasm,
 
   # runtime deps
-  apple-sdk_14,
   fontconfig,
   freetype,
   gst_all_1,
@@ -43,8 +42,6 @@
 }:
 
 let
-  inherit (rustPackages_1_89) rustPlatform;
-
   # match .python-version
   customPython = python311.withPackages (
     ps: with ps; [
@@ -134,9 +131,6 @@ rustPlatform.buildRustPackage (finalAttrs: {
     xorg.libxcb
     udev
     vulkan-loader
-  ]
-  ++ lib.optionals stdenv.hostPlatform.isDarwin [
-    apple-sdk_14
   ];
 
   # Builds with additional features for aarch64, see https://github.com/servo/servo/issues/36819
@@ -171,7 +165,9 @@ rustPlatform.buildRustPackage (finalAttrs: {
   };
 
   meta = {
-    description = "The embeddable, independent, memory-safe, modular, parallel web rendering engine";
+    # undefined libmozjs_sys symbols during linking
+    broken = stdenv.hostPlatform.isDarwin;
+    description = "Embeddable, independent, memory-safe, modular, parallel web rendering engine";
     homepage = "https://servo.org";
     license = lib.licenses.mpl20;
     maintainers = with lib.maintainers; [

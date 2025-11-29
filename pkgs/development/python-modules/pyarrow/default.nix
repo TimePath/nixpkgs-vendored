@@ -163,6 +163,7 @@ buildPythonPackage rec {
     "flight"
     "fs"
     "json"
+    "orc"
     "parquet"
   ];
 

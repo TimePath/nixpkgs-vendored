@@ -55,7 +55,7 @@ let
 
   passthru.updateScript = ./update.sh;
 in
-if stdenvNoCC.isDarwin then
+if stdenvNoCC.hostPlatform.isDarwin then
   stdenvNoCC.mkDerivation {
     inherit
       pname
@@ -65,11 +65,16 @@ if stdenvNoCC.isDarwin then
       passthru
       ;
 
+    nativeBuildInputs = [ makeWrapper ];
+
     installPhase = ''
       runHook preInstall
-      APP_DIR="$out/Applications"
-      mkdir -p "$APP_DIR"
-      cp -r . "$APP_DIR"
+      OSU_WRAPPER="$out/Applications/osu!.app/Contents"
+      OSU_CONTENTS="osu!.app/Contents"
+      mkdir -p "$OSU_WRAPPER/MacOS"
+      cp -r "$OSU_CONTENTS/Info.plist" "$OSU_CONTENTS/Resources" "$OSU_WRAPPER"
+      cp -r "osu!.app" "$OSU_WRAPPER/Resources/osu-wrapped.app"
+      makeWrapper "$OSU_WRAPPER/Resources/osu-wrapped.app/Contents/MacOS/osu!" "$OSU_WRAPPER/MacOS/osu!" --set OSU_EXTERNAL_UPDATE_PROVIDER 1
       runHook postInstall
     '';
   }
@@ -84,6 +89,11 @@ else
       ;
 
     extraPkgs = pkgs: with pkgs; [ icu ];
+
+    # fix OpenGL renderer on nvidia + wayland
+    extraBwrapArgs = [
+      "--ro-bind-try /etc/egl/egl_external_platform.d /etc/egl/egl_external_platform.d"
+    ];
 
     extraInstallCommands =
       let

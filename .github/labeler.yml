@@ -28,6 +28,7 @@
               - nixos/modules/services/x11/desktop-managers/cinnamon.nix
               - nixos/tests/cinnamon.nix
               - nixos/tests/cinnamon-wayland.nix
+              - pkgs/by-name/ci/cinnamon/**/*
               - pkgs/by-name/ci/cinnamon-*/**/*
               - pkgs/by-name/cj/cjs/**/*
               - pkgs/by-name/mu/muffin/**/*
@@ -57,6 +58,8 @@
               - nixos/modules/services/display-managers/cosmic-greeter.nix
               - nixos/tests/cosmic.nix
               - pkgs/by-name/co/cosmic-*/**/*
+              - pkgs/by-name/li/libcosmicAppHook/*
+              - pkgs/by-name/po/pop-launcher/*
               - pkgs/by-name/xd/xdg-desktop-portal-cosmic/*
 
 "6.topic: crystal":
@@ -162,7 +165,7 @@
           - any-glob-to-any-file:
               - doc/languages-frameworks/gnome.section.md
               - nixos/modules/services/desktops/gnome/**/*
-              - nixos/modules/services/x11/desktop-managers/gnome.nix
+              - nixos/modules/services/desktop-managers/gnome.nix
               - nixos/tests/gnome-xorg.nix
               - nixos/tests/gnome.nix
               - pkgs/desktops/gnome/**/*
@@ -258,7 +261,8 @@
   - any:
       - changed-files:
           - any-glob-to-any-file:
-              - nixos/modules/services/cluster/k3s/**/*
+              - nixos/modules/services/cluster/rancher/default.nix
+              - nixos/modules/services/cluster/rancher/k3s.nix
               - nixos/tests/k3s/**/*
               - pkgs/applications/networking/cluster/k3s/**/*
 
@@ -392,7 +396,7 @@
       - changed-files:
           - any-glob-to-any-file:
               - nixos/modules/services/desktops/pantheon/**/*
-              - nixos/modules/services/x11/desktop-managers/pantheon.nix
+              - nixos/modules/services/desktop-managers/pantheon.nix
               - nixos/modules/services/x11/display-managers/lightdm-greeters/pantheon.nix
               - nixos/tests/pantheon.nix
               - pkgs/desktops/pantheon/**/*
@@ -430,12 +434,9 @@
       - changed-files:
           - any-glob-to-any-file:
               - doc/languages-frameworks/qt.section.md
-              - nixos/modules/services/x11/desktop-managers/plasma5.nix
-              - nixos/tests/plasma5.nix
-              - pkgs/applications/kde/**/*
-              - pkgs/desktops/plasma-5/**/*
-              - pkgs/development/libraries/kde-frameworks/**/*
-              - pkgs/development/libraries/qt-5/**/*
+              - nixos/modules/services/desktop-managers/plasma6.nix
+              - nixos/tests/plasma6.nix
+              - pkgs/kde/**/*
 
 "6.topic: R":
   - any:
@@ -586,6 +587,7 @@
   - any:
       - changed-files:
           - any-glob-to-any-file:
+              - doc/release-notes/**/*
               - nixos/doc/manual/release-notes/**/*
 
 "8.has: maintainer-list (update)":

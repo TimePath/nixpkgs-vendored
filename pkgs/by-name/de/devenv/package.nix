@@ -1,13 +1,13 @@
 {
   lib,
   fetchFromGitHub,
+  gitMinimal,
   makeBinaryWrapper,
   installShellFiles,
-  rustPackages_1_89,
+  rustPlatform,
   testers,
   cachix,
   nixVersions,
-  gitMinimal,
   openssl,
   dbus,
   pkg-config,
@@ -35,7 +35,7 @@ let
         __intentionallyOverridingVersion = true;
       });
 in
-rustPackages_1_89.rustPlatform.buildRustPackage {
+rustPlatform.buildRustPackage {
   pname = "devenv";
   inherit version;
 
@@ -112,6 +112,6 @@ rustPackages_1_89.rustPlatform.buildRustPackage {
     homepage = "https://github.com/cachix/devenv";
     license = lib.licenses.asl20;
     mainProgram = "devenv";
-    maintainers = with lib.maintainers; [ domenkozar ];
+    teams = [ lib.teams.cachix ];
   };
 }

@@ -3,6 +3,7 @@
   rustPlatform,
   fetchFromGitea,
   pkg-config,
+  udevCheckHook,
   xz,
 }:
 
@@ -22,11 +23,14 @@ rustPlatform.buildRustPackage rec {
 
   nativeBuildInputs = [
     pkg-config
+    udevCheckHook
   ];
 
   buildInputs = [
     xz
   ];
+
+  doInstallCheck = true;
 
   postInstall = ''
     mkdir -p $out/etc/udev/rules.d

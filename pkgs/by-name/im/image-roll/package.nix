@@ -14,7 +14,7 @@ rustPlatform.buildRustPackage rec {
 
   src = fetchFromGitHub {
     owner = "weclaw1";
-    repo = pname;
+    repo = "image-roll";
     rev = version;
     sha256 = "sha256-CC40TU38bJFnbJl2EHqeB9RBvbVUrBmRdZVS2GxqGu4=";
   };
@@ -48,6 +48,6 @@ rustPlatform.buildRustPackage rec {
     mainProgram = "image-roll";
     homepage = "https://github.com/weclaw1/image-roll";
     license = licenses.mit;
-    maintainers = with maintainers; [ figsoda ];
+    maintainers = [ ];
   };
 }

@@ -196,13 +196,13 @@ in
           after =
             optional cfg.database.clickhouse.setup "clickhouse.service"
             ++ optionals cfg.database.postgres.setup [
-              "postgresql.service"
+              "postgresql.target"
               "plausible-postgres.service"
             ];
           requires =
             optional cfg.database.clickhouse.setup "clickhouse.service"
             ++ optionals cfg.database.postgres.setup [
-              "postgresql.service"
+              "postgresql.target"
               "plausible-postgres.service"
             ];
 
@@ -223,7 +223,7 @@ in
             # Thus, disable distribution for improved simplicity and security:
             #
             # When distribution is enabled,
-            # Elixir spwans the Erlang VM, which will listen by default on all
+            # Elixir spawns the Erlang VM, which will listen by default on all
             # interfaces for messages between Erlang nodes (capable of
             # remote code execution); it can be protected by a cookie; see
             # https://erlang.org/doc/reference_manual/distributed.html#security).
@@ -307,7 +307,7 @@ in
       (mkIf cfg.database.postgres.setup {
         # `plausible' requires the `citext'-extension.
         plausible-postgres = {
-          after = [ "postgresql.service" ];
+          after = [ "postgresql.target" ];
           partOf = [ "plausible.service" ];
           serviceConfig = {
             Type = "oneshot";

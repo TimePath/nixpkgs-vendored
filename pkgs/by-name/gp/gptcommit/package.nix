@@ -17,7 +17,7 @@ rustPlatform.buildRustPackage {
 
   src = fetchFromGitHub {
     owner = "zurawiki";
-    repo = pname;
+    repo = "gptcommit";
     rev = "v${version}";
     hash = "sha256-MB78QsJA90Au0bCUXfkcjnvfPagTPZwFhFVqxix+Clw=";
   };
@@ -36,7 +36,7 @@ rustPlatform.buildRustPackage {
   };
 
   meta = with lib; {
-    description = "Git prepare-commit-msg hook for authoring commit messages with GPT-3.";
+    description = "Git prepare-commit-msg hook for authoring commit messages with GPT-3";
     mainProgram = "gptcommit";
     homepage = "https://github.com/zurawiki/gptcommit";
     license = with licenses; [ asl20 ];

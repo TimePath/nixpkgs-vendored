@@ -403,7 +403,7 @@ in
       }
     ];
     services.public-inbox.settings = filterAttrsRecursive (n: v: v != null) {
-      publicinbox = mapAttrs (n: filterAttrs (n: v: n != "description")) cfg.inboxes;
+      publicinbox = mapAttrs (n: v: removeAttrs v [ "description" ]) cfg.inboxes;
     };
     users = {
       users.public-inbox = {
@@ -426,7 +426,7 @@ in
     };
     services.postfix = mkIf (cfg.postfix.enable && cfg.mda.enable) {
       # Not sure limiting to 1 is necessary, but better safe than sorry.
-      config.public-inbox_destination_recipient_limit = "1";
+      settings.main.public-inbox_destination_recipient_limit = "1";
 
       # Register the addresses as existing
       virtual = concatStringsSep "\n" (
@@ -443,7 +443,7 @@ in
       );
 
       # The public-inbox transport
-      masterConfig.public-inbox = {
+      settings.master.public-inbox = {
         type = "unix";
         privileged = true; # Required for user=
         command = "pipe";

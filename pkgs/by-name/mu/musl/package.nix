@@ -1,11 +1,17 @@
 {
   stdenv,
+  stdenvNoLibc,
   lib,
   fetchurl,
   linuxHeaders ? null,
   useBSDCompatHeaders ? true,
 }:
 let
+  stdenv' = if stdenv.hostPlatform != stdenv.buildPlatform then stdenvNoLibc else stdenv;
+in
+let
+  stdenv = stdenv';
+
   cdefs_h = fetchurl {
     name = "sys-cdefs.h";
     url = "https://git.alpinelinux.org/aports/plain/main/libc-dev/sys-cdefs.h?id=7ca0ed62d4c0d713d9c7dd5b9a077fba78bce578";
@@ -163,11 +169,11 @@ stdenv.mkDerivation rec {
 
   passthru.linuxHeaders = linuxHeaders;
 
-  meta = with lib; {
+  meta = {
     description = "Efficient, small, quality libc implementation";
     homepage = "https://musl.libc.org/";
     changelog = "https://git.musl-libc.org/cgit/musl/tree/WHATSNEW?h=v${version}";
-    license = licenses.mit;
+    license = lib.licenses.mit;
     platforms = [
       "aarch64-linux"
       "armv5tel-linux"
@@ -183,6 +189,7 @@ stdenv.mkDerivation rec {
       "mips64-linux"
       "mips64el-linux"
       "mipsel-linux"
+      "powerpc-linux"
       "powerpc64-linux"
       "powerpc64le-linux"
       "riscv32-linux"
@@ -190,7 +197,11 @@ stdenv.mkDerivation rec {
       "s390x-linux"
       "x86_64-linux"
     ];
-    maintainers = with maintainers; [
+    badPlatforms = [
+      # On 64-bit POWER, musl is ELFv2-only
+      (lib.recursiveUpdate lib.systems.inspect.patterns.isPower64 lib.systems.inspect.patterns.isAbiElfv1)
+    ];
+    maintainers = with lib.maintainers; [
       thoughtpolice
       dtzWill
     ];

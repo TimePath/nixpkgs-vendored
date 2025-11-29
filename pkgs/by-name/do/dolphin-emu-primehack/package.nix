@@ -52,14 +52,14 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "dolphin-emu-primehack";
-  version = "1.0.7a";
+  version = "1.0.8";
 
   src = fetchFromGitHub {
     owner = "shiiion";
     repo = "dolphin";
     tag = finalAttrs.version;
     fetchSubmodules = true;
-    hash = "sha256-vuTSXQHnR4HxAGGiPg5tUzfiXROU3+E9kyjH+T6zVmc=";
+    hash = "sha256-/9AabEJ2ZOvHeSGXWRuOucmjleBMRcJfhX+VDeldbgo=";
   };
 
   nativeBuildInputs = [
@@ -138,6 +138,8 @@ stdenv.mkDerivation (finalAttrs: {
       --replace-fail 'if(LIBUSB_FOUND AND NOT APPLE)' 'if(LIBUSB_FOUND)'
   '';
 
+  doInstallCheck = true;
+
   postInstall = ''
     mv $out/bin/dolphin-emu $out/bin/dolphin-emu-primehack
     mv $out/bin/dolphin-emu-nogui $out/bin/dolphin-emu-primehack-nogui
@@ -166,7 +168,6 @@ stdenv.mkDerivation (finalAttrs: {
     homepage = "https://github.com/shiiion/dolphin";
     description = "Gamecube/Wii/Triforce emulator for x86_64 and ARMv8";
     license = lib.licenses.gpl2Plus;
-    maintainers = with lib.maintainers; [ Madouura ];
     broken = stdenv.hostPlatform.isDarwin;
     platforms = lib.platforms.unix;
   };

@@ -11,13 +11,13 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "liboqs";
-  version = "0.13.0";
+  version = "0.15.0";
 
   src = fetchFromGitHub {
     owner = "open-quantum-safe";
     repo = "liboqs";
     rev = finalAttrs.version;
-    hash = "sha256-E3wOiWeQSgWzzu4zoYfLV1kGV3jsFE+XEnUezWSqkcA=";
+    hash = "sha256-ATnI1QFFljTmMib6oOCiieDQMTwnEe+xIvcAzrz3bbI=";
   };
 
   patches = [
@@ -39,8 +39,6 @@ stdenv.mkDerivation (finalAttrs: {
     "-DOQS_DIST_BUILD=ON"
     "-DOQS_BUILD_ONLY_LIB=ON"
   ];
-
-  dontFixCmake = true; # fix CMake file will give an error
 
   outputs = [
     "out"

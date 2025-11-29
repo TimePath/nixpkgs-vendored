@@ -1,10 +1,7 @@
 {
   stdenv,
   lib,
-  buildPackages,
   fetchFromGitHub,
-  fetchpatch,
-  perl,
   buildLinux,
   rpiVersion,
   ...
@@ -12,8 +9,9 @@
 
 let
   # NOTE: raspberrypifw & raspberryPiWirelessFirmware should be updated with this
-  modDirVersion = "6.6.51";
-  tag = "stable_20241008";
+  modDirVersion = "6.12.47";
+  tag = "stable_20250916";
+  hash = "sha256-HG8Oc04V2t54l0SOn4gKmNJWQUrZfjWusgKcWvx74H0==";
 in
 lib.overrideDerivation
   (buildLinux (
@@ -26,15 +24,14 @@ lib.overrideDerivation
       src = fetchFromGitHub {
         owner = "raspberrypi";
         repo = "linux";
-        rev = tag;
-        hash = "sha256-phCxkuO+jUGZkfzSrBq6yErQeO2Td+inIGHxctXbD5U=";
+        inherit tag hash;
       };
 
       defconfig =
         {
           "1" = "bcmrpi_defconfig";
           "2" = "bcm2709_defconfig";
-          "3" = if stdenv.hostPlatform.isAarch64 then "bcmrpi3_defconfig" else "bcm2709_defconfig";
+          "3" = if stdenv.hostPlatform.isAarch64 then "bcm2711_defconfig" else "bcm2709_defconfig";
           "4" = "bcm2711_defconfig";
         }
         .${toString rpiVersion};

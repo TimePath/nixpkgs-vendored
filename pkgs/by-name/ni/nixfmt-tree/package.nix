@@ -2,14 +2,14 @@
   lib,
   runCommand,
   treefmt,
-  nixfmt-rfc-style,
+  nixfmt,
   nixfmt-tree,
   git,
   writableTmpDirAsHomeHook,
 
   settings ? { },
   runtimeInputs ? [ ],
-  nixfmtPackage ? nixfmt-rfc-style,
+  nixfmtPackage ? nixfmt,
 
   # NOTE: `runtimePackages` is deprecated. Use `nixfmtPackage` and/or `runtimeInputs`.
   runtimePackages ? [ nixfmtPackage ],
@@ -23,7 +23,7 @@ let
   treefmtWithConfig = treefmt.withConfig {
     name = "nixfmt-tree";
 
-    settings = [
+    settings = lib.mkMerge [
       # Default settings
       {
         _file = ./package.nix;

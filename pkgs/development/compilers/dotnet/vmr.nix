@@ -1,5 +1,5 @@
 {
-  clangStdenv,
+  llvmPackages_20,
   lib,
   fetchurl,
   fetchpatch,
@@ -9,7 +9,6 @@
   git,
   cmake,
   pkg-config,
-  llvm,
   zlib,
   icu,
   lttng-ust_2_12,
@@ -19,7 +18,6 @@
   darwin,
   xcbuild,
   swiftPackages,
-  apple-sdk_13,
   openssl,
   getconf,
   python3,
@@ -38,7 +36,9 @@
 }:
 
 let
-  stdenv = if clangStdenv.hostPlatform.isDarwin then swiftPackages.stdenv else clangStdenv;
+  llvmPackages = llvmPackages_20;
+
+  stdenv = llvmPackages.stdenv;
 
   inherit (stdenv)
     isLinux
@@ -102,7 +102,7 @@ stdenv.mkDerivation rec {
     # this gets copied into the tree, but we still need the sandbox profile
     bootstrapSdk
     # the propagated build inputs in llvm.dev break swift compilation
-    llvm.out
+    llvmPackages.llvm.out
     zlib
     _icu
     openssl
@@ -111,15 +111,12 @@ stdenv.mkDerivation rec {
     krb5
     lttng-ust_2_12
   ]
-  ++ lib.optionals isDarwin (
-    [
-      xcbuild
-      swift
-      krb5
-      sigtool
-    ]
-    ++ lib.optional (lib.versionAtLeast version "10") apple-sdk_13
-  );
+  ++ lib.optionals isDarwin [
+    xcbuild
+    swift
+    krb5
+    sigtool
+  ];
 
   # This is required to fix the error:
   # > CSSM_ModuleLoad(): One or more parameters passed to a function were not valid.
@@ -143,9 +140,11 @@ stdenv.mkDerivation rec {
     ]
     ++ lib.optionals (lib.versionAtLeast version "9" && lib.versionOlder version "10") [
       ./UpdateNuGetConfigPackageSourcesMappings-don-t-add-em.patch
+      ./vmr-compiler-opt-v9.patch
     ]
     ++ lib.optionals (lib.versionOlder version "9") [
       ./fix-aspnetcore-portable-build.patch
+      ./vmr-compiler-opt-v8.patch
     ];
 
   postPatch = ''
@@ -194,14 +193,6 @@ stdenv.mkDerivation rec {
     substituteInPlace \
       src/runtime/src/native/libs/CMakeLists.txt \
       --replace-fail 'add_compile_options(-Weverything)' 'add_compile_options(-Wall)'
-
-    # strip native symbols in runtime
-    # see: https://github.com/dotnet/source-build/issues/2543
-    xmlstarlet ed \
-      --inplace \
-      -s //Project -t elem -n PropertyGroup \
-      -s \$prev -t elem -n KeepNativeSymbols -v false \
-      src/runtime/Directory.Build.props
   ''
   + lib.optionalString (lib.versionAtLeast version "9") (
     ''
@@ -236,6 +227,8 @@ stdenv.mkDerivation rec {
       substituteInPlace \
         src/runtime/src/coreclr/ilasm/CMakeLists.txt \
         --replace-fail 'set_source_files_properties( prebuilt/asmparse.cpp PROPERTIES COMPILE_FLAGS "-O0" )' ""
+    ''
+    + lib.optionalString (lib.versionOlder version "10") ''
 
       # https://github.com/dotnet/source-build/issues/4444
       xmlstarlet ed \
@@ -243,8 +236,6 @@ stdenv.mkDerivation rec {
         -s '//Project/Target/MSBuild[@Targets="Restore"]' \
         -t attr -n Properties -v "NUGET_PACKAGES='\$(CurrentRepoSourceBuildPackageCache)'" \
         src/aspnetcore/eng/Tools.props
-    ''
-    + lib.optionalString (lib.versionOlder version "10") ''
       # patch packages installed from npm cache
       xmlstarlet ed \
         --inplace \
@@ -398,6 +389,10 @@ stdenv.mkDerivation rec {
   # bash: warning: setlocale: LC_ALL: cannot change locale (en_US.UTF-8)
   LOCALE_ARCHIVE = lib.optionalString isLinux "${glibcLocales}/lib/locale/locale-archive";
 
+  # clang: error: argument unused during compilation: '-Wa,--compress-debug-sections' [-Werror,-Wunused-command-line-argument]
+  # caused by separateDebugInfo
+  NIX_CFLAGS_COMPILE = "-Wno-unused-command-line-argument";
+
   buildFlags = [
     "--with-packages"
     bootstrapSdk.artifacts
@@ -455,11 +450,11 @@ stdenv.mkDerivation rec {
     ''
       runHook preInstall
 
-      mkdir "$out"
+      mkdir -p "$out"/lib
 
       pushd "artifacts/${assets}/Release"
       find . -name \*.tar.gz | while read archive; do
-        target=$out/$(basename "$archive" .tar.gz)
+        target=$out/lib/$(basename "$archive" .tar.gz)
         # dotnet 9 currently has two copies of the sdk tarball
         [[ ! -e "$target" ]] || continue
         mkdir "$target"
@@ -468,7 +463,7 @@ stdenv.mkDerivation rec {
       popd
 
       local -r unpacked="$PWD/.unpacked"
-      for nupkg in $out/Private.SourceBuilt.Artifacts.*.${targetRid}/{,SourceBuildReferencePackages/}*.nupkg; do
+      for nupkg in $out/lib/Private.SourceBuilt.Artifacts.*.${targetRid}/{,SourceBuildReferencePackages/}*.nupkg; do
           rm -rf "$unpacked"
           unzip ${unzipFlags} "$unpacked" "$nupkg"
           chmod -R +rw "$unpacked"
@@ -487,9 +482,6 @@ stdenv.mkDerivation rec {
     echo ${sigtool} > "$out"/nix-support/manual-sdk-deps
   '';
 
-  # dotnet cli is in the root, so we need to strip from there
-  # TODO: should we install in $out/share/dotnet?
-  stripDebugList = [ "." ];
   # stripping dlls results in:
   # Failed to load System.Private.CoreLib.dll (error code 0x8007000B)
   # stripped crossgen2 results in:
@@ -498,6 +490,8 @@ stdenv.mkDerivation rec {
   preFixup = ''
     stripExclude=(\*.dll crossgen2)
   '';
+
+  separateDebugInfo = true;
 
   passthru = {
     inherit releaseManifest buildRid targetRid;

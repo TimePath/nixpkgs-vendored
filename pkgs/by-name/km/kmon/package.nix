@@ -29,14 +29,13 @@ rustPlatform.buildRustPackage rec {
       --zsh $releaseDir/../completions/_kmon
   '';
 
-  meta = with lib; {
+  meta = {
     description = "Linux Kernel Manager and Activity Monitor";
     homepage = "https://github.com/orhun/kmon";
     changelog = "https://github.com/orhun/kmon/blob/v${version}/CHANGELOG.md";
-    license = licenses.gpl3Only;
-    platforms = platforms.linux;
-    maintainers = with maintainers; [
-      figsoda
+    license = lib.licenses.gpl3Only;
+    platforms = lib.platforms.linux;
+    maintainers = with lib.maintainers; [
       matthiasbeyer
     ];
     mainProgram = "kmon";

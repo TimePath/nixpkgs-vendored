@@ -5,7 +5,7 @@
   clang,
   libclang,
   libllvm,
-  flint3,
+  flint,
   mpfr,
   pplite,
   ocaml,
@@ -44,7 +44,7 @@ buildDunePackage rec {
 
   propagatedBuildInputs = [
     apron
-    flint3
+    flint
     libclang
     pplite
     yojson
@@ -75,7 +75,7 @@ buildDunePackage rec {
   meta = {
     license = lib.licenses.lgpl3Plus;
     homepage = "https://mopsa.lip6.fr/";
-    description = "A Modular and Open Platform for Static Analysis using Abstract Interpretation";
+    description = "Modular and Open Platform for Static Analysis using Abstract Interpretation";
     maintainers = [ lib.maintainers.vbgl ];
   };
 

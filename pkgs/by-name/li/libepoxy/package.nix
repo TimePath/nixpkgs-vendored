@@ -21,7 +21,7 @@ stdenv.mkDerivation (finalAttrs: {
     with finalAttrs;
     fetchFromGitHub {
       owner = "anholt";
-      repo = pname;
+      repo = "libepoxy";
       rev = version;
       sha256 = "sha256-gZiyPOW2PeTMILcPiUTqPUGRNlMM5mI1z9563v4SgEs=";
     };
@@ -63,8 +63,8 @@ stdenv.mkDerivation (finalAttrs: {
     ];
 
   mesonFlags = [
-    "-Degl=${if (x11Support && !stdenv.hostPlatform.isDarwin) then "yes" else "no"}"
-    "-Dglx=${if x11Support then "yes" else "no"}"
+    "-Degl=${lib.boolToYesNo (x11Support && !stdenv.hostPlatform.isDarwin)}"
+    "-Dglx=${lib.boolToYesNo x11Support}"
     "-Dtests=${lib.boolToString finalAttrs.finalPackage.doCheck}"
     "-Dx11=${lib.boolToString x11Support}"
   ];

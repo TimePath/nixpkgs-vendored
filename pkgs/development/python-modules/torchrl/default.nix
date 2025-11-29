@@ -5,24 +5,47 @@
   fetchFromGitHub,
 
   # build-system
+  cmake,
   ninja,
+  numpy,
+  pybind11,
   setuptools,
-  which,
+  torch,
 
   # dependencies
   cloudpickle,
-  numpy,
   packaging,
+  pyvers,
   tensordict,
-  torch,
 
   # optional-dependencies
-  ale-py,
-  gym,
-  pygame,
-  torchsnapshot,
+  # atari
   gymnasium,
+  # brax
+  brax,
+  jax,
+  # checkpointing
+  torchsnapshot,
+  # dm-control
+  dm-control,
+  # gym-continuous
   mujoco,
+  # llm
+  accelerate,
+  datasets,
+  einops,
+  immutabledict,
+  langdetect,
+  nltk,
+  playwright,
+  protobuf,
+  safetensors,
+  sentencepiece,
+  transformers,
+  vllm,
+  # marl
+  pettingzoo,
+  # offline-data
   h5py,
   huggingface-hub,
   minari,
@@ -32,7 +55,9 @@
   scikit-learn,
   torchvision,
   tqdm,
+  # rendering
   moviepy,
+  # utils
   git,
   hydra-core,
   tensorboard,
@@ -48,40 +73,73 @@
 
 buildPythonPackage rec {
   pname = "torchrl";
-  version = "0.8.0";
+  version = "0.10.1";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "pytorch";
     repo = "rl";
     tag = "v${version}";
-    hash = "sha256-icT+QeA2FNhZjwD0ykui4aq5WswDv2i1QRh7dNlA4Cg=";
+    hash = "sha256-Vd/w11P4NVrx2xki+VYlXQaM8F+vpdokke8ZAHg6h0Q=";
   };
 
+  postPatch = ''
+    substituteInPlace pyproject.toml \
+      --replace-fail "pybind11[global]" "pybind11"
+  '';
+
   build-system = [
+    cmake
     ninja
+    numpy
+    pybind11
     setuptools
-    which
+    torch
   ];
+  dontUseCmakeConfigure = true;
 
   dependencies = [
     cloudpickle
     numpy
     packaging
     tensordict
+    pyvers
     torch
   ];
 
   optional-dependencies = {
     atari = [
-      ale-py
-      gym
-      pygame
+      gymnasium
+    ]
+    ++ gymnasium.optional-dependencies.atari;
+    brax = [
+      brax
+      jax
     ];
     checkpointing = [ torchsnapshot ];
+    dm-control = [ dm-control ];
     gym-continuous = [
       gymnasium
       mujoco
+    ];
+    llm = [
+      accelerate
+      datasets
+      einops
+      immutabledict
+      langdetect
+      nltk
+      playwright
+      protobuf
+      safetensors
+      sentencepiece
+      transformers
+      vllm
+    ];
+    marl = [
+      # dm-meltingpot (unpackaged)
+      pettingzoo
+      # vmas (unpackaged)
     ];
     offline-data = [
       h5py
@@ -94,10 +152,15 @@ buildPythonPackage rec {
       torchvision
       tqdm
     ];
+    open-spiel = [
+      # open-spiel (unpackaged)
+    ];
     rendering = [ moviepy ];
+    replay-buffer = [ torch ];
     utils = [
       git
       hydra-core
+      # hydra-submitit-launcher (unpackaged)
       tensorboard
       tqdm
       wandb
@@ -130,9 +193,30 @@ buildPythonPackage rec {
   ]
   ++ optional-dependencies.atari
   ++ optional-dependencies.gym-continuous
+  ++ optional-dependencies.llm
   ++ optional-dependencies.rendering;
 
   disabledTests = [
+    # Require network
+    "test_create_or_load_dataset"
+    "test_from_text_env_tokenizer"
+    "test_from_text_env_tokenizer_catframes"
+    "test_from_text_rb_slicesampler"
+    "test_generate"
+    "test_get_dataloader"
+    "test_get_scores"
+    "test_preproc_data"
+    "test_prompt_tensordict_tokenizer"
+    "test_reward_model"
+    "test_tensordict_tokenizer"
+    "test_transform_compose"
+    "test_transform_model"
+    "test_transform_no_env"
+    "test_transform_rb"
+
+    # ray.exceptions.RuntimeEnvSetupError: Failed to set up runtime environment
+    "TestRayCollector"
+
     # torchrl is incompatible with gymnasium>=1.0
     # https://github.com/pytorch/rl/discussions/2483
     "test_resetting_strategies"
@@ -190,6 +274,16 @@ buildPythonPackage rec {
     # Flaky
     # AssertionError: assert tensor([51.]) == ((5 * 11) + 2)
     "test_vecnorm_parallel_auto"
+  ];
+
+  disabledTestPaths = [
+    # ERROR collecting test/smoke_test.py
+    # import file mismatch:
+    # imported module 'smoke_test' has this __file__ attribute:
+    #   /build/source/test/llm/smoke_test.py
+    # which is not the same as the test file we want to collect:
+    #   /build/source/test/smoke_test.py
+    "test/llm"
   ];
 
   meta = {

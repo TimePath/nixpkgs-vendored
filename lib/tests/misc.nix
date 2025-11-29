@@ -69,6 +69,7 @@ let
     id
     ifilter0
     isStorePath
+    join
     lazyDerivation
     length
     lists
@@ -77,6 +78,8 @@ let
     makeIncludePath
     makeOverridable
     mapAttrs
+    mapAttrsToListRecursive
+    mapAttrsToListRecursiveCond
     mapCartesianProduct
     matchAttrs
     mergeAttrs
@@ -113,6 +116,7 @@ let
     toIntBase10
     toShellVars
     types
+    uniqueStrings
     updateManyAttrsByPath
     versions
     xor
@@ -391,33 +395,19 @@ runTests {
     expected = 9223372036854775807;
   };
 
+  testFromHexStringLeadingZeroes = {
+    expr = fromHexString "00ffffffffffffff";
+    expected = 72057594037927935;
+  };
+
   testFromHexStringWithPrefix = {
-    expr = fromHexString "0Xf";
+    expr = fromHexString "0xf";
     expected = 15;
   };
 
-  # FIXME: This might be bad and should potentially be deprecated.
-  testFromHexStringQuestionableMixedCase = {
+  testFromHexStringMixedCase = {
     expr = fromHexString "eEeEe";
     expected = 978670;
-  };
-
-  # FIXME: This is probably bad and should potentially be deprecated.
-  testFromHexStringQuestionableUnderscore = {
-    expr = fromHexString "F_f";
-    expected = 255;
-  };
-
-  # FIXME: This is definitely bad and should be deprecated.
-  testFromHexStringBadComment = {
-    expr = fromHexString "0 # oops";
-    expected = 0;
-  };
-
-  # FIXME: Oh my god.
-  testFromHexStringAwfulInjection = {
-    expr = fromHexString "1\nwhoops = {}";
-    expected = 1;
   };
 
   testToBaseDigits = {
@@ -445,6 +435,15 @@ runTests {
   };
 
   # STRINGS
+
+  testJoin = {
+    expr = join "," [
+      "a"
+      "b"
+      "c"
+    ];
+    expected = "a,b,c";
+  };
 
   testConcatMapStrings = {
     expr = concatMapStrings (x: x + ";") [
@@ -994,6 +993,28 @@ runTests {
   };
 
   testToSentenceCasePath = testingThrow (strings.toSentenceCase ./.);
+
+  testToCamelCase = {
+    expr = strings.toCamelCase "hello world";
+    expected = "helloWorld";
+  };
+
+  testToCamelCaseFromKebab = {
+    expr = strings.toCamelCase "hello-world";
+    expected = "helloWorld";
+  };
+
+  testToCamelCaseFromSnake = {
+    expr = strings.toCamelCase "hello_world";
+    expected = "helloWorld";
+  };
+
+  testToCamelCaseFromPascal = {
+    expr = strings.toCamelCase "HelloWorld";
+    expected = "helloWorld";
+  };
+
+  testToCamelCasePath = testingThrow (strings.toCamelCase ./.);
 
   testToInt = testAllTrue [
     # Naive
@@ -1930,6 +1951,69 @@ runTests {
       4
     ];
     expected = false;
+  };
+
+  testUniqueStrings_empty = {
+    expr = uniqueStrings [ ];
+    expected = [ ];
+  };
+  testUniqueStrings_singles = {
+    expr = uniqueStrings [
+      "all"
+      "unique"
+      "already"
+    ];
+    expected = [
+      "all"
+      "already"
+      "unique"
+    ];
+  };
+  testUniqueStrings_allDuplicates = {
+    expr = uniqueStrings [
+      "dup"
+      "dup"
+      "dup"
+    ];
+    expected = [ "dup" ];
+  };
+  testUniqueStrings_some_duplicates = {
+    expr = uniqueStrings [
+      "foo"
+      "foo"
+      "bar"
+      "bar"
+      "baz"
+    ];
+    expected = [
+      "bar"
+      "baz"
+      "foo"
+    ];
+  };
+  testUniqueStrings_unicode = {
+    expr = uniqueStrings [
+      "café"
+      "@"
+      "#"
+      "@"
+      "#"
+      "$"
+      "😎"
+      "😎"
+      "🙃"
+      ""
+      ""
+    ];
+    expected = [
+      ""
+      "#"
+      "$"
+      "@"
+      "café"
+      "😎"
+      "🙃"
+    ];
   };
 
   # ATTRSETS
@@ -3022,6 +3106,86 @@ runTests {
     expected = "-X PUT --data '{\"id\":0}' --retry 3 --url https://example.com/foo --url https://example.com/bar --verbose";
   };
 
+  testToCommandLine = {
+    expr =
+      let
+        optionFormat = optionName: {
+          option = "-${optionName}";
+          sep = "=";
+          explicitBool = true;
+        };
+      in
+      cli.toCommandLine optionFormat {
+        v = true;
+        verbose = [
+          true
+          true
+          false
+          null
+        ];
+        i = ".bak";
+        testsuite = [
+          "unit"
+          "integration"
+        ];
+        e = [
+          "s/a/b/"
+          "s/b/c/"
+        ];
+        n = false;
+        data = builtins.toJSON { id = 0; };
+      };
+
+    expected = [
+      "-data={\"id\":0}"
+      "-e=s/a/b/"
+      "-e=s/b/c/"
+      "-i=.bak"
+      "-n=false"
+      "-testsuite=unit"
+      "-testsuite=integration"
+      "-v=true"
+      "-verbose=true"
+      "-verbose=true"
+      "-verbose=false"
+    ];
+  };
+
+  testToCommandLineGNU = {
+    expr = cli.toCommandLineGNU { } {
+      v = true;
+      verbose = [
+        true
+        true
+        false
+        null
+      ];
+      i = ".bak";
+      testsuite = [
+        "unit"
+        "integration"
+      ];
+      e = [
+        "s/a/b/"
+        "s/b/c/"
+      ];
+      n = false;
+      data = builtins.toJSON { id = 0; };
+    };
+
+    expected = [
+      "--data={\"id\":0}"
+      "-es/a/b/"
+      "-es/b/c/"
+      "-i.bak"
+      "--testsuite=unit"
+      "--testsuite=integration"
+      "-v"
+      "--verbose"
+      "--verbose"
+    ];
+  };
+
   testSanitizeDerivationNameLeadingDots = testSanitizeDerivationName {
     name = "..foo";
     expected = "foo";
@@ -3134,6 +3298,111 @@ runTests {
         "bar"
       ]
     ];
+  };
+
+  testDocOptionVisiblity = {
+    expr =
+      let
+        submodule =
+          { lib, ... }:
+          {
+            freeformType = lib.types.attrsOf (
+              lib.types.submodule {
+                options.bar = lib.mkOption { };
+              }
+            );
+            options.foo = lib.mkOption { };
+          };
+
+        module =
+          { lib, ... }:
+          {
+            options = {
+              shallow = lib.mkOption {
+                type = lib.types.submodule submodule;
+                visible = "shallow";
+              };
+              transparent = lib.mkOption {
+                type = lib.types.submodule submodule;
+                visible = "transparent";
+              };
+              "true" = lib.mkOption {
+                type = lib.types.submodule submodule;
+                visible = true;
+              };
+              "false" = lib.mkOption {
+                type = lib.types.submodule submodule;
+                visible = false;
+              };
+              "internal" = lib.mkOption {
+                type = lib.types.submodule submodule;
+                internal = true;
+              };
+            };
+          };
+
+        options =
+          (evalModules {
+            modules = [ module ];
+          }).options;
+      in
+      pipe options [
+        optionAttrSetToDocList
+        (filter (opt: !(builtins.elem "_module" opt.loc)))
+        (map (
+          opt:
+          nameValuePair opt.name {
+            inherit (opt) visible internal;
+          }
+        ))
+        listToAttrs
+      ];
+    expected = {
+      shallow = {
+        visible = true;
+        internal = false;
+      };
+      transparent = {
+        visible = false;
+        internal = false;
+      };
+      "transparent.foo" = {
+        visible = true;
+        internal = false;
+      };
+      "transparent.<name>.bar" = {
+        visible = true;
+        internal = false;
+      };
+      "true" = {
+        visible = true;
+        internal = false;
+      };
+      "true.foo" = {
+        visible = true;
+        internal = false;
+      };
+      "true.<name>.bar" = {
+        visible = true;
+        internal = false;
+      };
+      "false" = {
+        visible = false;
+        internal = false;
+      };
+      "internal" = {
+        visible = true;
+        internal = true;
+      };
+      "internal.foo" = {
+        visible = true;
+        internal = false;
+      };
+      "internal.<name>.bar" = {
+        visible = true;
+        internal = false;
+      };
+    };
   };
 
   testAttrsWithName = {
@@ -3492,6 +3761,118 @@ runTests {
       133
       233
       333
+    ];
+  };
+
+  testMapAttrsToListRecursive = {
+    expr = mapAttrsToListRecursive (p: v: "${concatStringsSep "." p}=${v}") {
+      a = {
+        b = "A";
+      };
+      c = {
+        d = "B";
+        e = {
+          f = "C";
+          g = "D";
+        };
+      };
+      h = {
+        i = {
+          j = {
+            k = "E";
+          };
+        };
+      };
+    };
+    expected = [
+      "a.b=A"
+      "c.d=B"
+      "c.e.f=C"
+      "c.e.g=D"
+      "h.i.j.k=E"
+    ];
+  };
+
+  testMapAttrsToListRecursiveWithLists = {
+    expr = mapAttrsToListRecursive (p: v: v) {
+      a = [ ];
+      b = {
+        c = [ [ ] ];
+      };
+      d = {
+        e = {
+          f = [ [ [ ] ] ];
+        };
+      };
+    };
+    expected = [
+      [ ]
+      [ [ ] ]
+      [ [ [ ] ] ]
+    ];
+  };
+
+  testMapAttrsToListRecursiveCond = {
+    expr = mapAttrsToListRecursiveCond (p: as: !(as ? stop)) (p: v: v) {
+      a = {
+        b = "A";
+      };
+      c = {
+        d = "B";
+        e = {
+          stop = null;
+          f = "C";
+          g = {
+            h = "D";
+          };
+        };
+      };
+    };
+    expected = [
+      "A"
+      "B"
+      {
+        stop = null;
+        f = "C";
+        g = {
+          h = "D";
+        };
+      }
+    ];
+  };
+
+  testMapAttrsToListRecursiveCondPath = {
+    expr = mapAttrsToListRecursiveCond (p: as: length p < 2) (p: v: v) {
+      a = {
+        b = "A";
+      };
+      c = {
+        d = "B";
+        e = {
+          f = "C";
+          g = "D";
+        };
+      };
+      h = {
+        i = {
+          j = {
+            k = "E";
+          };
+        };
+      };
+    };
+    expected = [
+      "A"
+      "B"
+      {
+        f = "C";
+        g = "D";
+      }
+      {
+        j = {
+          k = "E";
+        };
+      }
     ];
   };
 
@@ -4189,6 +4570,34 @@ runTests {
     };
   };
 
+  # Make sure that passing a string for the `directory` works.
+  #
+  # See: https://github.com/NixOS/nixpkgs/pull/361424#discussion_r1934813568
+  # See: https://github.com/NixOS/nix/issues/9428
+  testPackagesFromDirectoryRecursiveStringDirectory = {
+    expr = packagesFromDirectoryRecursive {
+      callPackage = path: overrides: import path overrides;
+      # Do NOT remove the `builtins.toString` call here!!!
+      directory = toString ./packages-from-directory/plain;
+    };
+    expected = {
+      a = "a";
+      b = "b";
+      # Note: Other files/directories in `./test-data/c/` are ignored and can be
+      # used by `package.nix`.
+      c = "c";
+      my-namespace = {
+        d = "d";
+        e = "e";
+        f = "f";
+        my-sub-namespace = {
+          g = "g";
+          h = "h";
+        };
+      };
+    };
+  };
+
   # Check that `packagesFromDirectoryRecursive` can process a directory with a
   # top-level `package.nix` file into a single package.
   testPackagesFromDirectoryRecursiveTopLevelPackageNix = {
@@ -4286,4 +4695,153 @@ runTests {
         };
       };
     };
+
+  testFilesystemResolveDefaultNixFile1 = {
+    expr = lib.filesystem.resolveDefaultNix ./foo.nix;
+    expected = ./foo.nix;
+  };
+
+  testFilesystemResolveDefaultNixFile2 = {
+    expr = lib.filesystem.resolveDefaultNix ./default.nix;
+    expected = ./default.nix;
+  };
+
+  testFilesystemResolveDefaultNixDir1 = {
+    expr = lib.filesystem.resolveDefaultNix ./.;
+    expected = ./default.nix;
+  };
+
+  testFilesystemResolveDefaultNixFile1_toString = {
+    expr = lib.filesystem.resolveDefaultNix (toString ./foo.nix);
+    expected = toString ./foo.nix;
+  };
+
+  testFilesystemResolveDefaultNixFile2_toString = {
+    expr = lib.filesystem.resolveDefaultNix (toString ./default.nix);
+    expected = toString ./default.nix;
+  };
+
+  testFilesystemResolveDefaultNixDir1_toString = {
+    expr = lib.filesystem.resolveDefaultNix (toString ./.);
+    expected = toString ./default.nix;
+  };
+
+  testFilesystemResolveDefaultNixDir1_toString2 = {
+    expr = lib.filesystem.resolveDefaultNix (toString ./.);
+    expected = toString ./. + "/default.nix";
+  };
+
+  testFilesystemResolveDefaultNixNonExistent = {
+    expr = lib.filesystem.resolveDefaultNix "/non-existent/this/does/not/exist/for/real/please-dont-mess-with-your-local-fs";
+    expected = "/non-existent/this/does/not/exist/for/real/please-dont-mess-with-your-local-fs";
+  };
+
+  testFilesystemResolveDefaultNixNonExistentDir = {
+    expr = lib.filesystem.resolveDefaultNix "/non-existent/this/does/not/exist/for/real/please-dont-mess-with-your-local-fs/";
+    expected = "/non-existent/this/does/not/exist/for/real/please-dont-mess-with-your-local-fs/default.nix";
+  };
+
+  testRenameCrossIndexFrom = {
+    expr = lib.renameCrossIndexFrom "pkgs" {
+      pkgsBuildBuild = "dummy-build-build";
+      pkgsBuildHost = "dummy-build-host";
+      pkgsBuildTarget = "dummy-build-target";
+      pkgsHostHost = "dummy-host-host";
+      pkgsHostTarget = "dummy-host-target";
+      pkgsTargetTarget = "dummy-target-target";
+    };
+    expected = {
+      buildBuild = "dummy-build-build";
+      buildHost = "dummy-build-host";
+      buildTarget = "dummy-build-target";
+      hostHost = "dummy-host-host";
+      hostTarget = "dummy-host-target";
+      targetTarget = "dummy-target-target";
+    };
+  };
+
+  testRenameCrossIndexTo = {
+    expr = lib.renameCrossIndexTo "self" {
+      buildBuild = "dummy-build-build";
+      buildHost = "dummy-build-host";
+      buildTarget = "dummy-build-target";
+      hostHost = "dummy-host-host";
+      hostTarget = "dummy-host-target";
+      targetTarget = "dummy-target-target";
+    };
+    expected = {
+      selfBuildBuild = "dummy-build-build";
+      selfBuildHost = "dummy-build-host";
+      selfBuildTarget = "dummy-build-target";
+      selfHostHost = "dummy-host-host";
+      selfHostTarget = "dummy-host-target";
+      selfTargetTarget = "dummy-target-target";
+    };
+  };
+
+  testMapCrossIndex = {
+    expr = lib.mapCrossIndex (x: x * 10) {
+      buildBuild = 1;
+      buildHost = 2;
+      buildTarget = 3;
+      hostHost = 4;
+      hostTarget = 5;
+      targetTarget = 6;
+    };
+    expected = {
+      buildBuild = 10;
+      buildHost = 20;
+      buildTarget = 30;
+      hostHost = 40;
+      hostTarget = 50;
+      targetTarget = 60;
+    };
+  };
+
+  testMapCrossIndexString = {
+    expr = lib.mapCrossIndex (x: "prefix-${x}") {
+      buildBuild = "bb";
+      buildHost = "bh";
+      buildTarget = "bt";
+      hostHost = "hh";
+      hostTarget = "ht";
+      targetTarget = "tt";
+    };
+    expected = {
+      buildBuild = "prefix-bb";
+      buildHost = "prefix-bh";
+      buildTarget = "prefix-bt";
+      hostHost = "prefix-hh";
+      hostTarget = "prefix-ht";
+      targetTarget = "prefix-tt";
+    };
+  };
+
+  testThrowTestFailuresEmpty = {
+    expr = lib.debug.throwTestFailures {
+      failures = [ ];
+    };
+
+    expected = null;
+  };
+
+  testThrowTestFailures = testingThrow (
+    lib.debug.throwTestFailures {
+      failures = [
+        {
+          name = "testDerivation";
+          expected = builtins.derivation {
+            name = "a";
+            builder = "bash";
+            system = "x86_64-linux";
+          };
+          result = builtins.derivation {
+            name = "b";
+            builder = "bash";
+            system = "x86_64-linux";
+          };
+        }
+      ];
+    }
+  );
 }

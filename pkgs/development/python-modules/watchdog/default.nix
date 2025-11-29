@@ -36,12 +36,6 @@ buildPythonPackage rec {
   ++ optional-dependencies.watchmedo
   ++ lib.optionals (pythonOlder "3.13") [ eventlet ];
 
-  postPatch = ''
-    substituteInPlace setup.cfg \
-      --replace "--cov=watchdog" "" \
-      --replace "--cov-report=term-missing" ""
-  '';
-
   disabledTestPaths = [
     "tests/test_emitter.py::test_create_wrong_encoding"
     "tests/test_emitter.py::test_close"

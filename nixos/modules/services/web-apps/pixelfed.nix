@@ -53,9 +53,9 @@ let
       "mysql" = "/run/mysqld/mysqld.sock";
     }
     .${cfg.database.type};
-  dbService =
+  dbUnit =
     {
-      "pgsql" = "postgresql.service";
+      "pgsql" = "postgresql.target";
       "mysql" = "mysql.service";
     }
     .${cfg.database.type};
@@ -173,7 +173,7 @@ in
           default = "mysql";
           description = ''
             Database engine to use.
-            Note that PGSQL is not well supported: https://github.com/pixelfed/pixelfed/issues/2727
+            Note that PGSQL is not well supported: <https://github.com/pixelfed/pixelfed/issues/2727>
           '';
         };
 
@@ -355,7 +355,7 @@ in
       "pixelfed-horizon.service"
       "pixelfed-data-setup.service"
     ]
-    ++ lib.optional cfg.database.createLocally dbService
+    ++ lib.optional cfg.database.createLocally dbUnit
     ++ lib.optional cfg.redis.createLocally redisService;
     # Ensure image optimizations programs are available.
     systemd.services.phpfpm-pixelfed.path = extraPrograms;
@@ -369,7 +369,7 @@ in
       requires = [
         "pixelfed-data-setup.service"
       ]
-      ++ (lib.optional cfg.database.createLocally dbService)
+      ++ (lib.optional cfg.database.createLocally dbUnit)
       ++ (lib.optional cfg.redis.createLocally redisService);
       wantedBy = [ "multi-user.target" ];
       # Ensure image optimizations programs are available.
@@ -413,8 +413,8 @@ in
     systemd.services.pixelfed-data-setup = {
       description = "Pixelfed setup: migrations, environment file update, cache reload, data changes";
       wantedBy = [ "multi-user.target" ];
-      after = lib.optional cfg.database.createLocally dbService;
-      requires = lib.optional cfg.database.createLocally dbService;
+      after = lib.optional cfg.database.createLocally dbUnit;
+      requires = lib.optional cfg.database.createLocally dbUnit;
       path =
         with pkgs;
         [

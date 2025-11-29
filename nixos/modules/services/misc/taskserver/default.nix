@@ -137,6 +137,7 @@ let
   nixos-taskserver =
     with pkgs.python3.pkgs;
     buildPythonApplication {
+      format = "setuptools";
       name = "nixos-taskserver";
 
       src = pkgs.runCommand "nixos-taskserver-src" { preferLocalBuild = true; } ''
@@ -328,7 +329,7 @@ in
       };
 
       listenPort = lib.mkOption {
-        type = lib.types.int;
+        type = lib.types.port;
         default = 53589;
         description = ''
           Port number of the Taskserver.

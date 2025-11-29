@@ -1,67 +1,63 @@
 {
   lib,
-  buildPythonPackage,
-  fetchFromGitHub,
-
-  # build-system
-  poetry-core,
-  setuptools,
-
-  # dependencies
   aiofiles,
   aiohttp,
+  buildPythonPackage,
   certifi,
   docutils,
   fastapi,
+  fetchFromGitHub,
   httpx,
   ifaddr,
   itsdangerous,
   jinja2,
+  libsass,
   markdown2,
+  matplotlib,
   orjson,
+  pandas,
+  pkgs,
+  plotly,
+  poetry-core,
+  poetry-dynamic-versioning,
+  polars,
+  pyecharts,
   pygments,
+  pytest-asyncio,
+  pytest-selenium,
+  pytestCheckHook,
   python-multipart,
   python-socketio,
+  pywebview,
+  redis,
   requests,
+  setuptools,
   typing-extensions,
   urllib3,
   uvicorn,
   vbuild,
   watchfiles,
-
-  # optional-dependencies
-  matplotlib,
-  pywebview,
-  plotly,
-  libsass,
-  redis,
-
-  # tests
-  pandas,
-  pkgs,
-  polars,
-  pyecharts,
-  pytest-asyncio,
-  pytest-selenium,
-  pytestCheckHook,
   webdriver-manager,
   writableTmpDirAsHomeHook,
 }:
 
 buildPythonPackage rec {
   pname = "nicegui";
-  version = "2.15.0";
+  version = "3.1.0";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "zauberzeug";
     repo = "nicegui";
     tag = "v${version}";
-    hash = "sha256-pwR+9QBCIMZXFK9n8GRESl9UFsh7zcgOxTngdgdyMuc=";
+    hash = "sha256-otHPWOdTrlmf2VQUOhr3196MhN6ihk97y5sOEmnXuAw=";
   };
+
+  pythonRelaxDeps = [ "requests" ];
 
   build-system = [
     poetry-core
+    poetry-dynamic-versioning
     setuptools
   ];
 

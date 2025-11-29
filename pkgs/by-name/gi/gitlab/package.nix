@@ -9,7 +9,7 @@
   gitlabEnterprise ? false,
   lib,
   makeWrapper,
-  nettools,
+  net-tools,
   nixosTests,
   nodejs_20,
   replace,
@@ -147,7 +147,7 @@ let
       sha256 = data.yarn_hash;
     };
     frontendIslandsYarnOfflineCache = fetchYarnDeps {
-      yarnLock = src + "/ee/frontend_islands/apps/duo_next/yarn.lock";
+      yarnLock = src + "/ee/frontend_islands/yarn.lock";
       sha256 = data.frontend_islands_yarn_hash;
     };
 
@@ -194,7 +194,7 @@ let
     + lib.optionalString gitlabEnterprise ''
       # Get node modules for frontend islands
       export HOME=$(mktemp -d)
-      pushd ee/frontend_islands/apps/duo_next
+      pushd ee/frontend_islands
       yarn config --offline set yarn-offline-mirror "$frontendIslandsYarnOfflineCache"
       fixup-yarn-lock yarn.lock
       yarn install \
@@ -246,7 +246,7 @@ stdenv.mkDerivation {
     rubyEnv.bundler
     tzdata
     git
-    nettools
+    net-tools
   ];
 
   patches = [

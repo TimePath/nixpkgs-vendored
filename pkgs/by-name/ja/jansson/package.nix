@@ -41,6 +41,12 @@ stdenv.mkDerivation (finalAttrs: {
     "-DCMAKE_POLICY_VERSION_MINIMUM=3.10"
   ];
 
+  postFixup = ''
+    # Incorrectly references the dev output, libjansson.so is in out
+    substituteInPlace $dev/lib/cmake/jansson/janssonTargets-release.cmake \
+      --replace-fail "\''${_IMPORT_PREFIX}/lib" "$out/lib"
+  '';
+
   passthru = {
     tests.pkg-config = testers.hasPkgConfigModules { package = finalAttrs.finalPackage; };
     updateScript = nix-update-script { };

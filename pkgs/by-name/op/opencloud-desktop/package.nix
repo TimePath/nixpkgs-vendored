@@ -3,6 +3,7 @@
   cmake,
   kdePackages,
   fetchFromGitHub,
+  fetchFromGitLab,
   libre-graph-api-cpp-qt-client,
   kdsingleapplication,
   nix-update-script,
@@ -10,18 +11,43 @@
   versionCheckHook,
   stdenv,
 }:
+let
+  # See issue https://github.com/NixOS/nixpkgs/issues/455981
+  # It was spotted upstream that ecm 6.19.0 caused this issue
+  # Therefore we pin ecm 6.18.0 which makes opencloud function correctly
+  ecm618 = kdePackages.extra-cmake-modules.overrideAttrs (
+    finalAttrs: prevAttrs: {
+      version = "6.18.0";
+      src = fetchFromGitLab {
+        domain = "invent.kde.org";
+        owner = "frameworks";
+        repo = "extra-cmake-modules";
+        tag = "v${finalAttrs.version}";
+        hash = "sha256-hpqczRaV32yyXXRWxR30tOBEUNWDkeSzVrv0SHMrz1Y=";
+      };
+      patches = [ ];
+    }
+  );
+
+in
 stdenv.mkDerivation (finalAttrs: {
   pname = "opencloud-desktop";
-  version = "1.0.0";
+  version = "2.0.0";
   src = fetchFromGitHub {
     owner = "opencloud-eu";
     repo = "desktop";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-sGbjFPidPncCu9LqaeClrXoKQUzhbR1XbX8RoLuz+N8=";
+    hash = "sha256-NM9SspeMXu1q3tfpcFk4OuLapu/clbotJLu2u4nmAlY=";
   };
 
+  # Fix build with Qt 6.10.1
+  # Submitted upstream: https://github.com/opencloud-eu/desktop/pull/710
+  patches = [
+    ./qt-6.10.1.patch
+  ];
+
   buildInputs = [
-    kdePackages.extra-cmake-modules
+    ecm618
     qt6.qtbase
     qt6.qtdeclarative
     qt6.qttools

@@ -2,6 +2,7 @@
   lib,
   stdenv,
   fetchFromGitHub,
+  fetchpatch,
   perl,
   which,
   # Most packages depending on openblas expect integer width to match
@@ -101,6 +102,21 @@ let
       USE_OPENMP = !stdenv.hostPlatform.isMusl;
     };
 
+    x86_64-windows = {
+      BINARY = 64;
+      TARGET = setTarget "ATHLON";
+      DYNAMIC_ARCH = setDynamicArch true;
+      NO_AVX512 = !enableAVX512;
+      USE_OPENMP = false;
+    };
+
+    powerpc64-linux = {
+      BINARY = 64;
+      TARGET = setTarget "POWER4";
+      DYNAMIC_ARCH = setDynamicArch false;
+      USE_OPENMP = !stdenv.hostPlatform.isMusl;
+    };
+
     powerpc64le-linux = {
       BINARY = 64;
       TARGET = setTarget "POWER5";
@@ -165,7 +181,7 @@ let
 in
 stdenv.mkDerivation rec {
   pname = "openblas";
-  version = "0.3.29";
+  version = "0.3.30";
 
   outputs = [
     "out"
@@ -176,8 +192,21 @@ stdenv.mkDerivation rec {
     owner = "OpenMathLib";
     repo = "OpenBLAS";
     rev = "v${version}";
-    hash = "sha256-n/3FGmZxnNiOEKYHSIuqX2LJS1BzYPCwLWT9DSwEoPI=";
+    hash = "sha256-foP2OXUL6ttgYvCxLsxUiVdkPoTvGiHomdNudbSUmSE=";
   };
+
+  patches = [
+    # Remove this once https://github.com/OpenMathLib/OpenBLAS/issues/5414 is
+    # resolved.
+    ./disable-sme-sgemm-kernel.patch
+
+    # https://github.com/OpenMathLib/OpenBLAS/issues/5460
+    (fetchpatch {
+      name = "0001-openblas-Use-generic-kernels-for-SCAL-on-POWER4-5.patch";
+      url = "https://github.com/OpenMathLib/OpenBLAS/commit/14c9dcaac70d9382de00ba4418643d9587f4950e.patch";
+      hash = "sha256-mIOqRc7tE1rV/krrAu630JwApZHdeHCdVmO5j6eDC8U=";
+    })
+  ];
 
   postPatch = ''
     # cc1: error: invalid feature modifier 'sve2' in '-march=armv8.5-a+sve+sve2+bf16'
@@ -260,6 +289,9 @@ stdenv.mkDerivation rec {
     })
   );
 
+  # The default "all" target unconditionally builds the "tests" target.
+  buildFlags = lib.optionals (!doCheck) [ "shared" ];
+
   doCheck = true;
   checkTarget = "tests";
 
@@ -277,6 +309,9 @@ stdenv.mkDerivation rec {
         done
 
         # Setup symlinks for blas / lapack
+  ''
+  + lib.optionalString stdenv.hostPlatform.isMinGW ''
+    ln -s $out/bin/*.dll $out/lib
   ''
   + lib.optionalString enableShared ''
     ln -s $out/lib/libopenblas${shlibExt} $out/lib/libblas${shlibExt}

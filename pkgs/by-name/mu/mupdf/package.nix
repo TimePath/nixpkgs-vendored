@@ -3,6 +3,7 @@
   lib,
   fetchurl,
   fetchFromGitHub,
+  fetchpatch,
   copyDesktopItems,
   makeDesktopItem,
   desktopToDarwinBundle,
@@ -36,17 +37,14 @@
   swig,
   xcbuild,
   gitUpdater,
-
+  enableBarcode ? false,
   # for passthru.tests
   cups-filters,
   zathura,
   mupdf,
 }:
-
 assert enablePython -> enableCxx;
-
 let
-
   freeglut-mupdf = freeglut.overrideAttrs (old: rec {
     pname = "freeglut-mupdf";
     version = "3.0.0-r${src.rev}";
@@ -56,17 +54,23 @@ let
       rev = "13ae6aa2c2f9a7b4266fc2e6116c876237f40477";
       hash = "sha256-0fuE0lm9rlAaok2Qe0V1uUrgP4AjMWgp3eTbw8G6PMM=";
     };
+
+    patches = [ ];
+
+    # cmake 4 compatibility, upstream is dead
+    postPatch = ''
+      substituteInPlace CMakeLists.txt \
+        --replace-fail "CMAKE_MINIMUM_REQUIRED(VERSION 2.8.8 FATAL_ERROR)" "CMAKE_MINIMUM_REQUIRED(VERSION 3.10 FATAL_ERROR)"
+    '';
   });
-
 in
-
 stdenv.mkDerivation rec {
-  version = "1.25.3";
+  version = "1.26.10";
   pname = "mupdf";
 
   src = fetchurl {
     url = "https://mupdf.com/downloads/archive/${pname}-${version}-source.tar.gz";
-    hash = "sha256-uXTXBqloBTPRBLQRIiTHvz3pPye+fKQbS/tRVSYk8Kk=";
+    hash = "sha256-FlPzW9j72XDwVSPv3H+G5B6XKOJWSjKVKW4Dz1mlFDc=";
   };
 
   patches = [
@@ -76,10 +80,23 @@ stdenv.mkDerivation rec {
     # Upstream C++ wrap script only defines fixed-sized integers on macOS but
     # this is required on aarch64-linux too.
     ./fix-cpp-build.patch
+  ]
+  # fix compatibility with Clang >= 20
+  ++ lib.optionals enableCxx [
+    (fetchpatch {
+      name = "scripts-wrap-parse.py-get_args-improve-caching-of-re.patch";
+      url = "https://github.com/ArtifexSoftware/mupdf/commit/559e45ac8c134712cd8eaee01536ea3841e3a449.patch";
+      hash = "sha256-gI3hzrNo6jj9eqQ9E/BJ3jxXi/sl1C5WRyYlkG3Gkfg=";
+    })
+    (fetchpatch {
+      name = "scripts-wrap-parse.py-get_args-fix-for-libclang-20.patch";
+      url = "https://github.com/ArtifexSoftware/mupdf/commit/4bbf411898341d3ba30f521a6c137a788793cd45.patch";
+      hash = "sha256-cxKNziAGjpDwEw/9ZQHslMeJbiqYo80899BDkUOIX8g=";
+    })
   ];
 
   postPatch = ''
-    substituteInPlace Makerules --replace "(shell pkg-config" "(shell $PKG_CONFIG"
+    substituteInPlace Makerules --replace-fail "(shell pkg-config" "(shell $PKG_CONFIG"
 
     patchShebangs scripts/mupdfwrap.py
 
@@ -88,7 +105,7 @@ stdenv.mkDerivation rec {
 
     # fix libclang unnamed struct format
     for wrapper in ./scripts/wrap/{cpp,state}.py; do
-      substituteInPlace "$wrapper" --replace 'struct (unnamed' '(unnamed struct'
+      substituteInPlace "$wrapper" --replace-fail 'struct (unnamed' '(unnamed struct'
     done
   '';
 
@@ -100,7 +117,11 @@ stdenv.mkDerivation rec {
   ]
   ++ lib.optionals (!enableX11) [ "HAVE_X11=no" ]
   ++ lib.optionals (!enableGL) [ "HAVE_GLUT=no" ]
-  ++ lib.optionals enableOcr [ "USE_TESSERACT=yes" ];
+  ++ lib.optionals enableOcr [ "USE_TESSERACT=yes" ]
+  ++ lib.optionals enableBarcode [
+    "barcode=yes"
+    "USE_SYSTEM_ZXINGCPP=no"
+  ];
 
   nativeBuildInputs = [
     pkg-config
@@ -158,7 +179,7 @@ stdenv.mkDerivation rec {
   ];
 
   preConfigure = ''
-    # Don't remove mujs because upstream version is incompatible
+    # Don't remove mujs or zxing-cpp because upstream version is incompatible
     rm -rf thirdparty/{curl,freetype,glfw,harfbuzz,jbig2dec,libjpeg,openjpeg,zlib}
   '';
 
@@ -226,7 +247,7 @@ stdenv.mkDerivation rec {
   '')
   + (lib.optionalString (enableX11 || enableGL) ''
     mkdir -p $bin/share/icons/hicolor/48x48/apps
-    cp docs/logo/mupdf-icon-48.png $bin/share/icons/hicolor/48x48/apps
+    cp docs/logo/mupdf-icon-48.png $bin/share/icons/hicolor/48x48/apps/mupdf.png
   '')
   + (
     if enableGL then
@@ -240,7 +261,7 @@ stdenv.mkDerivation rec {
   )
   + (lib.optionalString enableCxx ''
     cp platform/c++/include/mupdf/*.h $out/include/mupdf
-    cp build/*/libmupdfcpp.so $out/lib
+    cp build/*/libmupdfcpp.so* $out/lib
   '')
   + (lib.optionalString enablePython (
     ''
@@ -255,7 +276,7 @@ stdenv.mkDerivation rec {
 
   enableParallelBuilding = true;
 
-  env.USE_SONAME = "no";
+  env.USE_SONAME = lib.boolToYesNo (!stdenv.hostPlatform.isDarwin);
 
   passthru = {
     tests = {
@@ -271,18 +292,18 @@ stdenv.mkDerivation rec {
     };
 
     updateScript = gitUpdater {
-      url = "https://git.ghostscript.com/mupdf.git";
+      url = "https://cgit.ghostscript.com/cgi-bin/cgit.cgi/mupdf.git";
       ignoredVersions = ".rc.*";
     };
   };
 
-  meta = with lib; {
+  meta = {
     homepage = "https://mupdf.com";
     description = "Lightweight PDF, XPS, and E-book viewer and toolkit written in portable C";
-    changelog = "https://git.ghostscript.com/?p=mupdf.git;a=blob_plain;f=CHANGES;hb=${version}";
-    license = licenses.agpl3Plus;
-    maintainers = with maintainers; [ fpletz ];
-    platforms = platforms.unix;
+    changelog = "https://cgit.ghostscript.com/cgi-bin/cgit.cgi/mupdf.git/plain/CHANGES?h=refs/tags/${version}";
+    license = lib.licenses.agpl3Plus;
+    maintainers = with lib.maintainers; [ fpletz ];
+    platforms = lib.platforms.unix;
     mainProgram = "mupdf";
   };
 }

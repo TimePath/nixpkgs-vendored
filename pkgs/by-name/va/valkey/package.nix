@@ -2,10 +2,11 @@
   lib,
   stdenv,
   fetchFromGitHub,
-  fetchpatch2,
+  fetchpatch,
   lua,
   jemalloc,
   pkg-config,
+  nixosTests,
   tcl,
   which,
   ps,
@@ -24,23 +25,16 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "valkey";
-  version = "8.0.6";
+  version = "8.1.4";
 
   src = fetchFromGitHub {
     owner = "valkey-io";
     repo = "valkey";
     rev = finalAttrs.version;
-    hash = "sha256-sY/FKh8ZYnjp1y0lEgodnzxCKV85JTNKpfg6ADZ2Vbs=";
+    hash = "sha256-obtmiDobMs/POqYH5XjqpzmjVrEC6gUsTc1rREDJ8tw=";
   };
 
-  patches = [
-    (fetchpatch2 {
-      name = "CVE-2025-27151.patch";
-      url = "https://github.com/valkey-io/valkey/commit/73696bf6e2cf754acc3ec24eaf9ca6b879bfc5d7.patch?full_index=1";
-      hash = "sha256-9yt2GXfC8piyLskkMkXouEX5ZQwZLtL+MN6n6HuC/V4=";
-    })
-  ]
-  ++ lib.optional useSystemJemalloc ./use_system_jemalloc.patch;
+  patches = lib.optional useSystemJemalloc ./use_system_jemalloc.patch;
 
   nativeBuildInputs = [ pkg-config ];
 
@@ -69,8 +63,6 @@ stdenv.mkDerivation (finalAttrs: {
   ++ lib.optionals tlsSupport [ "BUILD_TLS=yes" ];
 
   enableParallelBuilding = true;
-
-  hardeningEnable = lib.optionals (!stdenv.hostPlatform.isDarwin) [ "pie" ];
 
   env.NIX_CFLAGS_COMPILE = toString (lib.optionals stdenv.cc.isClang [ "-std=c11" ]);
 
@@ -102,16 +94,23 @@ stdenv.mkDerivation (finalAttrs: {
     fi
 
     # Skip some more flaky tests.
+    # Skip test requiring custom jemalloc (unit/memefficiency).
     ./runtest \
       --no-latency \
       --timeout 2000 \
       --clients "$CLIENTS" \
       --tags -leaks \
+      --skipunit unit/memefficiency \
       --skipunit integration/failover \
       --skipunit integration/aof-multi-part
 
     runHook postCheck
   '';
+
+  passthru = {
+    tests.redis = nixosTests.redis;
+    serverBin = "valkey-server";
+  };
 
   meta = with lib; {
     homepage = "https://valkey.io/";

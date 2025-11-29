@@ -3,7 +3,6 @@
   lib,
   buildPythonPackage,
   fetchFromGitHub,
-  fetchpatch,
   pythonAtLeast,
 
   # buildInputs
@@ -34,23 +33,15 @@
 
 buildPythonPackage rec {
   pname = "accelerate";
-  version = "1.5.2";
+  version = "1.11.0";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "huggingface";
     repo = "accelerate";
     tag = "v${version}";
-    hash = "sha256-J4eDm/PcyKK3256l6CAWUj4AWTB6neTKgxbBmul0BPE=";
+    hash = "sha256-RdqApMgf5EoiFjNAUhVNS3xaqszl2myMF9B5HJBfHOA=";
   };
-
-  patches = [
-    # Fix tests on darwin: https://github.com/huggingface/accelerate/pull/3464
-    (fetchpatch {
-      url = "https://github.com/huggingface/accelerate/commit/8b31a2fe2c6d0246fff9885fb1f8456fb560abc7.patch";
-      hash = "sha256-Ek9Ou4Y/H1jt3qanf2g3HowBoTsN/bn4yV9O3ogcXMo=";
-    })
-  ];
 
   buildInputs = [ llvmPackages.openmp ];
 
@@ -78,7 +69,7 @@ buildPythonPackage rec {
   preCheck = lib.optionalString config.cudaSupport ''
     export TRITON_PTXAS_PATH="${lib.getExe' cudatoolkit "ptxas"}"
   '';
-  pytestFlagsArray = [ "tests" ];
+  enabledTestPaths = [ "tests" ];
   disabledTests = [
     # try to download data:
     "FeatureExamplesTests"
@@ -93,6 +84,9 @@ buildPythonPackage rec {
     "test_no_split_modules"
     "test_remote_code"
     "test_transformers_model"
+    "test_extract_model_keep_torch_compile"
+    "test_extract_model_remove_torch_compile"
+    "test_regions_are_compiled"
 
     # nondeterministic, tests GC behaviour by thresholding global ram usage
     "test_free_memory_dereferences_prepared_components"
@@ -150,6 +144,17 @@ buildPythonPackage rec {
     "test_state_dict_type"
     "test_with_save_limit"
     "test_with_scheduler"
+
+    # torch._inductor.exc.InductorError: TypeError: cannot determine truth value of Relational
+    "test_regional_compilation_cold_start"
+    "test_regional_compilation_inference_speedup"
+
+    # Fails in nixpkgs-review due to a port conflict with simultaneous python builds
+    "test_config_compatibility"
+
+    # Fails with `sandbox=false` by mis-configuring the model it's using.
+    # AttributeError: 'DistributedDataParallel' object has no attribute '_ignored_modules'. Did you mean: 'named_modules'?
+    "test_ignored_modules_regex"
   ]
   ++ lib.optionals (stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isx86_64) [
     # RuntimeError: torch_shm_manager: execl failed: Permission denied
@@ -171,7 +176,7 @@ buildPythonPackage rec {
   meta = {
     homepage = "https://huggingface.co/docs/accelerate";
     description = "Simple way to train and use PyTorch models with multi-GPU, TPU, mixed-precision";
-    changelog = "https://github.com/huggingface/accelerate/releases/tag/v${version}";
+    changelog = "https://github.com/huggingface/accelerate/releases/tag/${src.tag}";
     license = lib.licenses.asl20;
     maintainers = with lib.maintainers; [ bcdarwin ];
     mainProgram = "accelerate";

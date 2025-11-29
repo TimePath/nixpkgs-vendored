@@ -24,6 +24,13 @@
 let
   # Copied from the `prismlauncher` package
   runtimeLibs = [
+    # lwjgl
+    libGL
+    glfw
+    openal
+    (lib.getLib stdenv.cc.cc)
+  ]
+  ++ lib.optionals stdenv.hostPlatform.isLinux [
     libX11
     libXext
     libXcursor
@@ -32,10 +39,6 @@ let
 
     # lwjgl
     libpulseaudio
-    libGL
-    glfw
-    openal
-    (lib.getLib stdenv.cc.cc)
 
     # oshi
     udev
@@ -69,7 +72,7 @@ python3Packages.buildPythonApplication rec {
 
   # Note: Tests use networking, so we don't run them
 
-  postInstall = ''
+  postInstall = lib.optionalString (stdenv.buildPlatform.canExecute stdenv.hostPlatform) ''
     installShellCompletion --cmd portablemc \
         --bash <($out/bin/portablemc show completion bash) \
         --zsh <($out/bin/portablemc show completion zsh)

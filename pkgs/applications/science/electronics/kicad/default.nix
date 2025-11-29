@@ -178,7 +178,7 @@ stdenv.mkDerivation rec {
   passthru.libraries = callPackages ./libraries.nix { inherit libSrc; };
   passthru.callPackage = newScope { inherit addonPath python3; };
   base = callPackage ./base.nix {
-    inherit stable testing baseName;
+    inherit stable testing;
     inherit kicadSrc kicadVersion;
     inherit wxGTK python wxPython;
     inherit withNgspice withScripting withI18n;
@@ -266,13 +266,13 @@ stdenv.mkDerivation rec {
         "pcb_calculator"
         "pl_editor"
         "bitmap2component"
+        "kicad-cli"
       ];
       utils = [
         "dxf2idf"
         "idf2vrml"
         "idfcyl"
         "idfrect"
-        "kicad-cli"
       ];
     in
     (concatStringsSep "\n" (flatten [
@@ -326,7 +326,7 @@ stdenv.mkDerivation rec {
       The Programs handle Schematic Capture, and PCB Layout with Gerber output.
     '';
     license = lib.licenses.gpl3Plus;
-    maintainers = with lib.maintainers; [ evils ];
+    maintainers = [ ];
     platforms = lib.platforms.all;
     broken = stdenv.hostPlatform.isDarwin;
     mainProgram = "kicad";

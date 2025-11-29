@@ -3,6 +3,7 @@
   aioquic,
   argon2-cffi,
   asgiref,
+  bcrypt,
   brotli,
   buildPythonPackage,
   certifi,
@@ -17,7 +18,7 @@
   ldap3,
   mitmproxy-rs,
   msgpack,
-  passlib,
+  nixosTests,
   publicsuffix2,
   pyopenssl,
   pyparsing,
@@ -38,23 +39,29 @@
 
 buildPythonPackage rec {
   pname = "mitmproxy";
-  version = "12.1.1";
+  version = "12.2.0";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "mitmproxy";
     repo = "mitmproxy";
     tag = "v${version}";
-    hash = "sha256-RTHL5+lbR+AbkiE4+z4ZbxZSV2E4NGTmShbMIMRKJPA=";
+    hash = "sha256-2ldebsgR0xZV4WiCLV7DBUKXZo3oE+M6cmvRbSeCSLQ=";
   };
 
   pythonRelaxDeps = [
+    "bcrypt"
+    "brotli"
     "cryptography"
     "flask"
     "h2"
-    "passlib"
+    "kaitaistruct"
     "pyopenssl"
+    "pyperclip"
     "tornado"
+    "typing-extensions"
+    "urwid"
+    "zstandard"
   ];
 
   build-system = [ setuptools ];
@@ -64,6 +71,7 @@ buildPythonPackage rec {
     argon2-cffi
     asgiref
     brotli
+    bcrypt
     certifi
     cryptography
     flask
@@ -74,7 +82,6 @@ buildPythonPackage rec {
     ldap3
     mitmproxy-rs
     msgpack
-    passlib
     publicsuffix2
     pyopenssl
     pyparsing
@@ -140,6 +147,10 @@ buildPythonPackage rec {
   dontUsePytestXdist = true;
 
   pythonImportsCheck = [ "mitmproxy" ];
+
+  passthru.tests = {
+    inherit (nixosTests) mitmproxy;
+  };
 
   meta = with lib; {
     description = "Man-in-the-middle proxy";

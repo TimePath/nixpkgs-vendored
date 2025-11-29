@@ -17,7 +17,7 @@
   spectra,
   stdenv,
   swig,
-  tbb,
+  onetbb,
   # Boolean flags
   runTests ? false, # tests take an hour to build on a 48-core machine
   enablePython ? false,
@@ -25,13 +25,13 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "openturns";
-  version = "1.24";
+  version = "1.25.1";
 
   src = fetchFromGitHub {
     owner = "openturns";
     repo = "openturns";
     rev = "v${finalAttrs.version}";
-    hash = "sha256-88wxgifLuF/P/qeMLVP0S5Agutf022Dsysu38mh9+8w=";
+    hash = "sha256-TwM6RvXG4+IBNxH2Ajg9atcaOGlC4kzusH8+6VbI6m4=";
   };
 
   nativeBuildInputs = [
@@ -53,7 +53,7 @@ stdenv.mkDerivation (finalAttrs: {
     pagmo2
     spectra
     swig
-    tbb
+    onetbb
   ]
   ++ lib.optionals enablePython [
     python3Packages.dill

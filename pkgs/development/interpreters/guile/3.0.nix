@@ -14,6 +14,7 @@
   libxcrypt,
   makeWrapper,
   pkg-config,
+  autoreconfHook,
   pkgsBuildBuild,
   readline,
   writeScript,
@@ -42,11 +43,16 @@ builder rec {
   depsBuildBuild = [
     buildPackages.stdenv.cc
   ]
-  ++ lib.optional (stdenv.hostPlatform != stdenv.buildPlatform) pkgsBuildBuild.guile_3_0;
+  ++ lib.optional (
+    !lib.systems.equals stdenv.hostPlatform stdenv.buildPlatform
+  ) pkgsBuildBuild.guile_3_0;
+
   nativeBuildInputs = [
     makeWrapper
     pkg-config
-  ];
+  ]
+  ++ lib.optional (!lib.systems.equals stdenv.hostPlatform stdenv.buildPlatform) autoreconfHook;
+
   buildInputs = [
     libffi
     libtool
@@ -71,15 +77,23 @@ builder rec {
     libxcrypt
   ];
 
+  strictDeps = true;
+
   # According to
   # https://git.savannah.gnu.org/cgit/guix.git/tree/gnu/packages/guile.scm?h=a39207f7afd977e4e4299c6f0bb34bcb6d153818#n405
   # starting with Guile 3.0.8, parallel builds can be done
   # bit-reproducibly as long as we're not cross-compiling
-  enableParallelBuilding = stdenv.buildPlatform == stdenv.hostPlatform;
+  enableParallelBuilding = lib.systems.equals stdenv.buildPlatform stdenv.hostPlatform;
 
   patches = [
     ./eai_system.patch
   ]
+  # Fix cross-compilation, can be removed at next release (as well as the autoreconfHook)
+  # Include this only conditionally so we don't have to run the autoreconfHook for the native build.
+  ++ lib.optional (!lib.systems.equals stdenv.hostPlatform stdenv.buildPlatform) (fetchpatch {
+    url = "https://cgit.git.savannah.gnu.org/cgit/guile.git/patch/?id=c117f8edc471d3362043d88959d73c6a37e7e1e9";
+    hash = "sha256-GFwJiwuU8lT1fNueMOcvHh8yvA4HYHcmPml2fY/HSjw=";
+  })
   ++ lib.optional (coverageAnalysis != null) ./gcov-file-name.patch
   ++ lib.optional stdenv.hostPlatform.isDarwin (fetchpatch {
     url = "https://gitlab.gnome.org/GNOME/gtk-osx/raw/52898977f165777ad9ef169f7d4818f2d4c9b731/patches/guile-clocktime.patch";
@@ -112,6 +126,9 @@ builder rec {
   #  https://github.com/NixOS/nixpkgs/pull/160051#issuecomment-1046193028
   ++ lib.optional (stdenv.hostPlatform.isDarwin) "--disable-lto";
 
+  # Fix build with gcc15
+  env.NIX_CFLAGS_COMPILE = toString [ "-std=gnu17" ];
+
   postInstall = ''
     wrapProgram $out/bin/guile-snarf --prefix PATH : "${gawk}/bin"
   ''
@@ -133,8 +150,12 @@ builder rec {
   doCheck = false;
   doInstallCheck = doCheck;
 
-  # In procedure bytevector-u8-ref: Argument 2 out of range
-  dontStrip = stdenv.hostPlatform.isDarwin;
+  # guile-3 uses ELF files to store bytecode. strip does not
+  # always handle them correctly and destroys the image:
+  # darwin: In procedure bytevector-u8-ref: Argument 2 out of range
+  # linux binutils-2.45: $ guile --version
+  # Pre-boot error; key: misc-error, args: ("load-thunk-from-memory" "missing DT_GUILE_ENTRY" () #f)Aborted
+  dontStrip = true;
 
   setupHook = ./setup-hook-3.0.sh;
 

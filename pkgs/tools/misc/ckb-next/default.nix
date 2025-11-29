@@ -18,6 +18,7 @@
   withPulseaudio ? stdenv.hostPlatform.isLinux,
   libpulseaudio,
   quazip,
+  udevCheckHook,
 }:
 
 stdenv.mkDerivation rec {
@@ -47,6 +48,7 @@ stdenv.mkDerivation rec {
     wrapQtAppsHook
     pkg-config
     cmake
+    udevCheckHook
   ];
 
   cmakeFlags = [
@@ -62,6 +64,8 @@ stdenv.mkDerivation rec {
       inherit kmod;
     })
   ];
+
+  doInstallCheck = true;
 
   postInstall = ''
     substituteInPlace "$out/lib/udev/rules.d/99-ckb-next-daemon.rules" \

@@ -37,14 +37,14 @@
 
 stdenv.mkDerivation rec {
   pname = "mame";
-  version = "0.277";
+  version = "0.281";
   srcVersion = builtins.replaceStrings [ "." ] [ "" ] version;
 
   src = fetchFromGitHub {
     owner = "mamedev";
     repo = "mame";
     rev = "mame${srcVersion}";
-    hash = "sha256-mGKTZ8/gvGQv9oXK4pgbJk580GAAXUS16hRQu4uHhdA=";
+    hash = "sha256-GWb6yu62WDoHz9mWhwjtDUN06r22pXit8pXYhFp/LBw=";
   };
 
   outputs = [
@@ -121,8 +121,10 @@ stdenv.mkDerivation rec {
   # Since the bug described in https://github.com/NixOS/nixpkgs/issues/135438,
   # it is not possible to use substituteAll
   postPatch = ''
-    substituteInPlace src/emu/emuopts.cpp \
-      --subst-var-by mamePath "$out/opt/mame"
+    for file in src/emu/emuopts.cpp src/osd/modules/lib/osdobj_common.cpp; do
+      substituteInPlace "$file" \
+        --subst-var-by mamePath "$out/opt/mame"
+    done
   ''
   # MAME's build system uses `sw_vers` to test whether it needs to link with
   # the Metal framework or not. However:
@@ -167,7 +169,7 @@ stdenv.mkDerivation rec {
   installPhase =
     let
       icon = fetchurl {
-        url = "https://raw.githubusercontent.com/PapirusDevelopmentTeam/papirus-icon-theme/refs/heads/master/Papirus/32x32/apps/mame.svg";
+        url = "https://raw.githubusercontent.com/PapirusDevelopmentTeam/papirus-icon-theme/4256be4cf56870aa1fbd85c48cafeafa187160e0/Papirus/32x32/apps/mame.svg";
         hash = "sha256-s44Xl9UGizmddd/ugwABovM8w35P0lW9ByB69MIpG+E=";
       };
     in

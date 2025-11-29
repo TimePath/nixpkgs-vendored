@@ -36,8 +36,13 @@ let
 
   fetchedMavenDeps = stdenv.mkDerivation (
     {
-      name = "${pname}-${version}-maven-deps";
-      inherit src sourceRoot patches;
+      pname = "maven-deps-${pname}";
+      inherit
+        src
+        sourceRoot
+        patches
+        version
+        ;
 
       nativeBuildInputs = [
         maven
@@ -71,13 +76,13 @@ let
       + lib.optionalString buildOffline ''
         mvn $MAVEN_EXTRA_ARGS de.qaware.maven:go-offline-maven-plugin:1.2.8:resolve-dependencies -Dmaven.repo.local=$out/.m2 ${mvnDepsParameters}
 
-        for artifactId in ${builtins.toString manualMvnArtifacts}
+        for artifactId in ${toString manualMvnArtifacts}
         do
           echo "downloading manual $artifactId"
           mvn $MAVEN_EXTRA_ARGS dependency:get -Dartifact="$artifactId" -Dmaven.repo.local=$out/.m2
         done
 
-        for artifactId in ${builtins.toString manualMvnSources}
+        for artifactId in ${toString manualMvnSources}
         do
           group=$(echo $artifactId | cut -d':' -f1)
           artifact=$(echo $artifactId | cut -d':' -f2)
@@ -115,7 +120,7 @@ let
   );
 in
 stdenv.mkDerivation (
-  builtins.removeAttrs args [ "mvnFetchExtraArgs" ]
+  removeAttrs args [ "mvnFetchExtraArgs" ]
   // {
     inherit fetchedMavenDeps;
 

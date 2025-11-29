@@ -30,7 +30,7 @@
   # arguments
   name,
   version,
-  imageFileBasename,
+  baseName,
   compression,
   fileSystems,
   finalPartitions,
@@ -126,7 +126,7 @@ let
       "zstd" = "zstd --no-progress --threads=$NIX_BUILD_CORES -${toString compression.level}";
       "xz" = "xz --keep --verbose --threads=$NIX_BUILD_CORES -${toString compression.level}";
       "zstd-seekable" =
-        "zeekstd --quiet --max-frame-size 2M --compression-level ${toString compression.level}";
+        "zeekstd --no-progress --frame-size 2M --compression-level ${toString compression.level}";
     }
     ."${compression.algorithm}";
 in
@@ -171,10 +171,12 @@ stdenvNoCC.mkDerivation (
       "--architecture=${systemdArch}"
       "--dry-run=no"
       "--size=auto"
-      "--seed=${seed}"
       "--definitions=${finalAttrs.finalRepartDefinitions}"
       "--split=${lib.boolToString split}"
       "--json=pretty"
+    ]
+    ++ lib.optionals (seed != null) [
+      "--seed=${seed}"
     ]
     ++ lib.optionals createEmpty [
       "--empty=create"
@@ -185,6 +187,7 @@ stdenvNoCC.mkDerivation (
 
     dontUnpack = true;
     dontConfigure = true;
+    dontFixup = true;
     doCheck = false;
 
     patchPhase = ''
@@ -202,7 +205,7 @@ stdenvNoCC.mkDerivation (
       echo "Building image with systemd-repart..."
       unshare --map-root-user fakeroot systemd-repart \
         ''${systemdRepartFlags[@]} \
-        ${imageFileBasename}.raw \
+        ${baseName}.raw \
         | tee repart-output.json
 
       runHook postBuild
@@ -217,14 +220,14 @@ stdenvNoCC.mkDerivation (
     # separate derivation to allow users to save disk space. Disk images are
     # already very space intensive so we want to allow users to mitigate this.
     + lib.optionalString compression.enable ''
-      for f in ${imageFileBasename}*; do
+      for f in ${baseName}*; do
         echo "Compressing $f with ${compression.algorithm}..."
         # Keep the original file when compressing and only delete it afterwards
         ${compressionCommand} $f && rm $f
       done
     ''
     + ''
-      mv -v repart-output.json ${imageFileBasename}* $out
+      mv -v repart-output.json ${baseName}* $out
 
       runHook postInstall
     '';

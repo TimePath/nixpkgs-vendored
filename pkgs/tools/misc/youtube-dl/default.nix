@@ -29,6 +29,7 @@ buildPythonPackage rec {
   # downloads break constantly. Because of that, updates should always be backported
   # to the latest stable release.
   version = "2021.12.17";
+  format = "setuptools";
 
   src = fetchurl {
     url = "https://yt-dl.org/downloads/${version}/${pname}-${version}.tar.gz";
@@ -105,7 +106,7 @@ buildPythonPackage rec {
       the public domain, which means you can modify it, redistribute it or use
       it however you like.
     '';
-    license = licenses.publicDomain;
+    license = licenses.unlicense;
     maintainers = with maintainers; [
       fpletz
     ];

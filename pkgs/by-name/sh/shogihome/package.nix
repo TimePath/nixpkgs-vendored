@@ -10,6 +10,11 @@
   copyDesktopItems,
   commandLineArgs ? [ ],
   nix-update-script,
+  _experimental-update-script-combinators,
+  writeShellApplication,
+  nix,
+  jq,
+  gnugrep,
 }:
 
 let
@@ -123,11 +128,30 @@ buildNpmPackage (finalAttrs: {
   ];
 
   passthru = {
-    updateScript = nix-update-script {
-      extraArgs = [
-        "--version-regex=^v([\\d\\.]+)$"
-      ];
-    };
+    updateScript = _experimental-update-script-combinators.sequence [
+      (nix-update-script {
+        extraArgs = [
+          "--version-regex=^v([\\d\\.]+)$"
+        ];
+      })
+      (lib.getExe (writeShellApplication {
+        name = "${finalAttrs.pname}-electron-updater";
+        runtimeInputs = [
+          nix
+          jq
+          gnugrep
+        ];
+        runtimeEnv = {
+          PNAME = finalAttrs.pname;
+          PKG_FILE = toString ./package.nix;
+        };
+        text = ''
+          new_src="$(nix-build --attr "pkgs.$PNAME.src" --no-out-link)"
+          new_electron_major="$(jq '.devDependencies.electron' "$new_src/package.json" | grep --perl-regexp --only-matching '\d+' | head -n 1)"
+          sed -i -E "s/electron_[0-9]+/electron_$new_electron_major/g" "$PKG_FILE"
+        '';
+      }))
+    ];
   };
 
   meta = {

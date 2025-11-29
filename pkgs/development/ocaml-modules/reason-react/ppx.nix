@@ -16,16 +16,13 @@ buildDunePackage {
     url = "https://github.com/reasonml/reason-react/releases/download/${version}/reason-react-${version}.tbz";
     hash = "sha256-esPB+mvHHTQ3mUYILrkOjMELJxRDIsWleFcxIwOPQ1w=";
   };
-  buildInputs = [
-    ppxlib
-  ];
+  buildInputs = [ ppxlib ];
   doCheck = false; # Needs to run in reason-react, see default.nix
   meta = {
     description = "React.js JSX PPX";
     homepage = "https://github.com/reasonml/reason-react";
     license = lib.licenses.mit;
-    maintainers = [
-      lib.maintainers.vog
-    ];
+    maintainers = [ lib.maintainers.vog ];
+    broken = lib.versionAtLeast ppxlib.version "0.36";
   };
 }

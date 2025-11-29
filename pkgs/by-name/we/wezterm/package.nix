@@ -16,7 +16,6 @@
   python3,
   runCommand,
   rustPlatform,
-  unstableGitUpdater,
   vulkan-loader,
   wayland,
   wezterm,
@@ -29,14 +28,14 @@
 
 rustPlatform.buildRustPackage rec {
   pname = "wezterm";
-  version = "0-unstable-2025-05-18";
+  version = "0-unstable-2025-10-14";
 
   src = fetchFromGitHub {
-    owner = "wez";
+    owner = "wezterm";
     repo = "wezterm";
-    rev = "5663e749948df3ed3c2d8ee0bfea6c85226310d9";
+    rev = "64f2907c635b7bab407ac300b2261c77a85c1c8e";
     fetchSubmodules = true;
-    hash = "sha256-SQ1H16jy6GVjM8tEKZZC7AGIADLR1NyGfOT/6pFcFA0=";
+    hash = "sha256-o/SSN18DmoN5LsB9RvWuAw7voGevOR5DqPBheqmq7AI=";
   };
 
   postPatch = ''
@@ -59,7 +58,7 @@ rustPlatform.buildRustPackage rec {
   # https://github.com/wezterm/wezterm/blob/main/nix/flake.nix#L134
   auditable = false;
 
-  cargoHash = "sha256-9pdkXpkIbe5HeVGvgusRaI4A6ZjDGssO5k0ULVnO6k8=";
+  cargoHash = "sha256-QjYxDcWTbLTmtQEK6/ujwaDwdY+4C6EIOZ8I0hYIx00=";
 
   nativeBuildInputs = [
     installShellFiles
@@ -117,7 +116,12 @@ rustPlatform.buildRustPackage rec {
       cp -r assets/macos/WezTerm.app "$OUT_APP"
       rm $OUT_APP/*.dylib
       cp -r assets/shell-integration/* "$OUT_APP"
-      ln -s $out/bin/{wezterm,wezterm-mux-server,wezterm-gui,strip-ansi-escapes} "$OUT_APP"
+      # https://github.com/wezterm/wezterm/pull/6886
+      # macOS will only recognize our application bundle
+      # if the binaries are inside of it. Move them there
+      # and create symbolic links for them in bin/.
+      mv $out/bin/{wezterm,wezterm-mux-server,wezterm-gui,strip-ansi-escapes} "$OUT_APP"
+      ln -s "$OUT_APP"/{wezterm,wezterm-mux-server,wezterm-gui,strip-ansi-escapes} "$out/bin"
     '';
 
   passthru = {
@@ -147,21 +151,17 @@ rustPlatform.buildRustPackage rec {
       #terminal-emulators = nixosTests.terminal-emulators.wezterm;
     };
 
-    # upstream tags are composed with timestamp+commit, e.g.:
-    # 20240203-110809-5046fc22
-    # doesn't make much sense if we are following unstable
-    updateScript = unstableGitUpdater { hardcodeZeroVersion = true; };
+    updateScript = ./update.sh;
   };
 
   meta = with lib; {
     description = "GPU-accelerated cross-platform terminal emulator and multiplexer written by @wez and implemented in Rust";
-    homepage = "https://wezfurlong.org/wezterm";
+    homepage = "https://wezterm.org";
     license = licenses.mit;
     mainProgram = "wezterm";
     maintainers = with maintainers; [
       mimame
       SuperSandro2000
-      thiagokokada
     ];
   };
 }

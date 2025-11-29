@@ -5,7 +5,7 @@
   fetchFromGitHub,
 
   # build-system
-  pdm-backend,
+  hatchling,
 
   # dependencies
   jsonpatch,
@@ -31,26 +31,24 @@
   syrupy,
 
   # passthru
-  nix-update-script,
+  gitUpdater,
 }:
 
 buildPythonPackage rec {
   pname = "langchain-core";
-  version = "0.3.59";
+  version = "1.0.7";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "langchain-ai";
     repo = "langchain";
     tag = "langchain-core==${version}";
-    hash = "sha256-qfNt6rH2nHIFfzqZCTsIhWfXntRXvSKnzfQrNS3LWcs=";
+    hash = "sha256-esMMA9z8z9Q909buPGZP1jujEWzdXT+Mxlwvjz0XqKk=";
   };
 
   sourceRoot = "${src.name}/libs/core";
 
-  build-system = [ pdm-backend ];
-
-  pythonRelaxDeps = [ "tenacity" ];
+  build-system = [ hatchling ];
 
   dependencies = [
     jsonpatch
@@ -71,7 +69,6 @@ buildPythonPackage rec {
     blockbuster
     freezegun
     grandalf
-    httpx
     langchain-tests
     numpy
     pytest-asyncio
@@ -81,18 +78,16 @@ buildPythonPackage rec {
     syrupy
   ];
 
-  pytestFlagsArray = [ "tests/unit_tests" ];
+  enabledTestPaths = [ "tests/unit_tests" ];
 
   passthru = {
     tests.pytest = langchain-core.overridePythonAttrs (_: {
       doCheck = true;
     });
-
-    updateScript = nix-update-script {
-      extraArgs = [
-        "--version-regex"
-        "langchain-core==([0-9.]+)"
-      ];
+    # python updater script sets the wrong tag
+    skipBulkUpdate = true;
+    updateScript = gitUpdater {
+      rev-prefix = "langchain-core==";
     };
   };
 
@@ -139,7 +134,7 @@ buildPythonPackage rec {
   meta = {
     description = "Building applications with LLMs through composability";
     homepage = "https://github.com/langchain-ai/langchain/tree/master/libs/core";
-    changelog = "https://github.com/langchain-ai/langchain/releases/tag/v${version}";
+    changelog = "https://github.com/langchain-ai/langchain/releases/tag/${src.tag}";
     license = lib.licenses.mit;
     maintainers = with lib.maintainers; [
       natsukium

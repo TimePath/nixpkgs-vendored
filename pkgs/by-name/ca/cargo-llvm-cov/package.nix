@@ -39,7 +39,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
   # pull in fixtures needed for the test suite
   src = fetchFromGitHub {
     inherit owner;
-    repo = pname;
+    repo = "cargo-llvm-cov";
     rev = "v${version}";
     sha256 = "sha256-LAiN9Opc0XQVepQ9IhK9JFWGoeRR3U6V680jgGiaDGo=";
   };
