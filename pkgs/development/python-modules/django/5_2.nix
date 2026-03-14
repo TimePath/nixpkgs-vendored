@@ -3,7 +3,6 @@
   stdenv,
   buildPythonPackage,
   fetchFromGitHub,
-  pythonAtLeast,
   pythonOlder,
   replaceVars,
 
@@ -43,7 +42,7 @@
 
 buildPythonPackage rec {
   pname = "django";
-  version = "5.2.9";
+  version = "5.2.11";
   pyproject = true;
 
   disabled = pythonOlder "3.10";
@@ -52,20 +51,20 @@ buildPythonPackage rec {
     owner = "django";
     repo = "django";
     rev = "refs/tags/${version}";
-    hash = "sha256-9URe8hB15WP92AU1YgGGFfZhVxn59gfBRrORZ04L+F0=";
+    hash = "sha256-Ldscb87ts0CPbt5uBiL3DK3qhU6SzTmsEUl90Afko84=";
   };
 
   patches = [
-    (replaceVars ./django_5_set_zoneinfo_dir.patch {
+    (replaceVars ./5.2/zoneinfo.patch {
       zoneinfo = tzdata + "/share/zoneinfo";
     })
     # prevent tests from messing with our pythonpath
-    ./django_5_tests_pythonpath.patch
+    ./5.2/pythonpath.patch
     # disable test that expects timezone issues
-    ./django_5_disable_failing_tests.patch
+    ./5.2/disable-failing-test.patch
   ]
   ++ lib.optionals withGdal [
-    (replaceVars ./django_5_set_geos_gdal_lib.patch {
+    (replaceVars ./5.2/gdal.patch {
       geos = geos;
       gdal = gdal;
       extension = stdenv.hostPlatform.extensions.sharedLibrary;

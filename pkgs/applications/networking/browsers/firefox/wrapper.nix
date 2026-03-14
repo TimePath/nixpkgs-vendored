@@ -344,13 +344,13 @@ let
       ]
       ++ lib.optionals (!hasMozSystemDirPatch && allNativeMessagingHosts != [ ]) [
         "--run"
-        ''mkdir -p ''${MOZ_HOME:-~/.mozilla}/native-messaging-hosts''
+        "mkdir -p \${MOZ_HOME:-~/.mozilla}/native-messaging-hosts"
 
       ]
       ++ lib.optionals (!hasMozSystemDirPatch) (
         lib.concatMap (ext: [
           "--run"
-          ''ln -sfLt ''${MOZ_HOME:-~/.mozilla}/native-messaging-hosts ${ext}/lib/mozilla/native-messaging-hosts/*''
+          "ln -sfLt \${MOZ_HOME:-~/.mozilla}/native-messaging-hosts ${ext}/lib/mozilla/native-messaging-hosts/*"
         ]) allNativeMessagingHosts
       );
 
@@ -407,10 +407,21 @@ let
           # Maybe related to how omni.ja file is mmapped into memory. See:
           # https://github.com/mozilla/gecko-dev/blob/b1662b447f306e6554647914090d4b73ac8e1664/modules/libjar/nsZipArchive.cpp#L204
           #
-          # The *.dylib files are copied, otherwise some basic functionality, e.g. Crypto API, is broken.
-          for file in $(find . -name "omni.ja" -o -name "*.dylib"); do
+          # Mach-O shared libraries must be copied, not symlinked, otherwise some
+          # functionality like the Crypto API and audio decoding is broken.
+          find . -type l -print0 |
+          while IFS= read -r -d "" file; do
+            case "$(basename "$file")" in
+              omni.ja)
+                ;;
+              *)
+                # Copy if the symlink resolves to a Mach-O dylib
+                otool -l "$file" 2>/dev/null | grep -q 'LC_ID_DYLIB' || continue
+                ;;
+            esac
+
             rm "$file"
-            cp "${browser}/${appPath}/$file" "$file"
+            cp "${browser}/${appPath}/''${file#./}" "$file"
           done
 
           # Copy any embedded .app directories; plugin-container fails to start otherwise.

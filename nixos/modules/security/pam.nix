@@ -583,6 +583,13 @@ let
           '';
         };
 
+        enableUMask = lib.mkOption {
+          default = config.security.pam.enableUMask;
+          defaultText = lib.literalExpression "config.security.pam.enableUMask";
+          type = lib.types.bool;
+          description = "If enabled, the pam_umask module will be loaded.";
+        };
+
         failDelay = {
           enable = lib.mkOption {
             type = lib.types.bool;
@@ -1011,6 +1018,7 @@ let
                       modulePath = "${config.boot.zfs.package}/lib/security/pam_zfs_key.so";
                       settings = {
                         inherit (config.security.pam.zfs) homes;
+                        mount_recursively = config.security.pam.zfs.mountRecursively;
                       };
                     }
                     {
@@ -1202,6 +1210,7 @@ let
                 modulePath = "${config.boot.zfs.package}/lib/security/pam_zfs_key.so";
                 settings = {
                   inherit (config.security.pam.zfs) homes;
+                  mount_recursively = config.security.pam.zfs.mountRecursively;
                 };
               }
               {
@@ -1291,6 +1300,12 @@ let
                 };
               }
               {
+                name = "umask";
+                enable = cfg.enableUMask;
+                control = "optional";
+                modulePath = "${package}/lib/security/pam_umask.so";
+              }
+              {
                 name = "systemd_home";
                 enable = config.services.homed.enable;
                 control = "required";
@@ -1362,6 +1377,7 @@ let
                 settings = {
                   inherit (config.security.pam.zfs) homes;
                   nounmount = config.security.pam.zfs.noUnmount;
+                  mount_recursively = config.security.pam.zfs.mountRecursively;
                 };
               }
               {
@@ -2195,7 +2211,17 @@ in
           Do not unmount home dataset on logout.
         '';
       };
+
+      mountRecursively = lib.mkOption {
+        default = false;
+        type = lib.types.bool;
+        description = ''
+          Mount child datasets of home dataset.
+        '';
+      };
     };
+
+    security.pam.enableUMask = lib.mkEnableOption "umask PAM module";
 
     security.pam.enableEcryptfs = lib.mkEnableOption "eCryptfs PAM module (mounting ecryptfs home directory on login)";
     security.pam.enableFscrypt = lib.mkEnableOption ''

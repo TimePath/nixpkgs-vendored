@@ -18,20 +18,20 @@
 }:
 stdenv.mkDerivation (finalAttrs: {
   pname = "n8n";
-  version = "1.120.4";
+  version = "1.123.23";
 
   src = fetchFromGitHub {
     owner = "n8n-io";
     repo = "n8n";
     tag = "n8n@${finalAttrs.version}";
-    hash = "sha256-gUqQM/eA7GnvFYiduSGkj/MCvgWNQPhDLExAJz67bHg=";
+    hash = "sha256-titXxxegfr+vYxoFaq6MvvV6bBphlVocixfUbSR0K8s=";
   };
 
   pnpmDeps = fetchPnpmDeps {
     inherit (finalAttrs) pname version src;
     pnpm = pnpm_10;
-    fetcherVersion = 2;
-    hash = "sha256-UWiN3NvI8We16KwY5JspyX0ok1PJWVg0T5zw+0SnrWk=";
+    fetcherVersion = 3;
+    hash = "sha256-+uL/31loW4o4B7h/xKC9Klm91kkEPf6T0L4EkTdeBLc=";
   };
 
   nativeBuildInputs = [

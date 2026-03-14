@@ -85,13 +85,13 @@ in
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "imagemagick";
-  version = "7.1.2-9";
+  version = "7.1.2-13";
 
   src = fetchFromGitHub {
     owner = "ImageMagick";
     repo = "ImageMagick";
     tag = finalAttrs.version;
-    hash = "sha256-bXVVnjJhtmcbczZI9rsy2JQ3p2oYX5g5vp3YdsQkdrE=";
+    hash = "sha256-meADRjoV1c48laD35TuWAwuE95L90agROuuKBd++Kn8=";
   };
 
   outputs = [
@@ -173,7 +173,7 @@ stdenv.mkDerivation (finalAttrs: {
     configDestination=($out/share/ImageMagick-*)
     grep -v '/nix/store' $dev/lib/ImageMagick-*/config-Q16HDRI/configure.xml > $configDestination/configure.xml
     for file in "$dev"/bin/*-config; do
-      substituteInPlace "$file" --replace pkg-config \
+      substituteInPlace "$file" --replace-fail "$PKG_CONFIG" \
         "PKG_CONFIG_PATH='$dev/lib/pkgconfig' '$(command -v $PKG_CONFIG)'"
     done
   ''

@@ -79,6 +79,11 @@
   bzip2,
   libcap,
 
+  # Fonts (See issue #463615)
+  makeFontsConf,
+  noto-fonts-cjk-sans,
+  noto-fonts-cjk-serif,
+
   # Necessary for USB audio devices.
   libpulseaudio,
   pulseSupport ? true,
@@ -96,6 +101,9 @@
 
   # For QT support
   qt6,
+
+  # Create a symlink at $out/bin/google-chrome
+  withSymlink ? false,
 }:
 
 let
@@ -170,11 +178,11 @@ let
 
   linux = stdenvNoCC.mkDerivation (finalAttrs: {
     inherit pname meta passthru;
-    version = "143.0.7499.169";
+    version = "146.0.7680.71";
 
     src = fetchurl {
       url = "https://dl.google.com/linux/chrome/deb/pool/main/g/google-chrome-stable/google-chrome-stable_${finalAttrs.version}-1_amd64.deb";
-      hash = "sha256-j9eDgZfP9Ii6B3XhLYF6t6oZq8zWRpl0Tkm4GuCDPKE=";
+      hash = "sha256-FPn7nUUNLnMKw1phMhohi6t9AY1N8i9cSnNAQdwKuqQ=";
     };
 
     # With strictDeps on, some shebangs were not being patched correctly
@@ -205,6 +213,13 @@ let
 
     rpath = lib.makeLibraryPath deps + ":" + lib.makeSearchPathOutput "lib" "lib64" deps;
     binpath = lib.makeBinPath deps;
+
+    fontsConf = makeFontsConf {
+      fontDirectories = [
+        noto-fonts-cjk-sans
+        noto-fonts-cjk-serif
+      ];
+    };
 
     installPhase = ''
       runHook preInstall
@@ -253,6 +268,7 @@ let
         --prefix PATH            : "$binpath" \
         --suffix PATH            : "${lib.makeBinPath [ xdg-utils ]}" \
         --prefix XDG_DATA_DIRS   : "$XDG_ICON_DIRS:$GSETTINGS_SCHEMAS_PATH:${addDriverRunpath.driverLink}/share" \
+        --set FONTCONFIG_FILE "${finalAttrs.fontsConf}" \
         --set CHROME_WRAPPER  "google-chrome-$dist" \
         --add-flags "\''${NIXOS_OZONE_WL:+\''${WAYLAND_DISPLAY:+--ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime=true}}" \
         --add-flags "--simulate-outdated-no-au='Tue, 31 Dec 2099 23:59:59 GMT'" \
@@ -268,15 +284,19 @@ let
 
       runHook postInstall
     '';
+
+    postInstall = lib.optionalString withSymlink ''
+      ln -s $out/bin/google-chrome-stable $out/bin/google-chrome
+    '';
   });
 
   darwin = stdenvNoCC.mkDerivation (finalAttrs: {
     inherit pname meta passthru;
-    version = "143.0.7499.170";
+    version = "146.0.7680.72";
 
     src = fetchurl {
-      url = "http://dl.google.com/release2/chrome/mhjgbmlx5vzoqorxvxcf4zts4y_143.0.7499.170/GoogleChrome-143.0.7499.170.dmg";
-      hash = "sha256-WoT/+dTPh3YVcMoKmmuRb0+9E3N91ffPiw0fkMlaR5o=";
+      url = "http://dl.google.com/release2/chrome/geomnvhpdzrdrct4xeyekmx3aq_146.0.7680.72/GoogleChrome-146.0.7680.72.dmg";
+      hash = "sha256-st6vm+/ATQmpeMiJVY0PEYtN/zXhxnYRy3s2/MrfoO4=";
     };
 
     dontPatch = true;
@@ -305,6 +325,10 @@ let
         --add-flags ${lib.escapeShellArg commandLineArgs}
       runHook postInstall
     '';
+
+    postInstall = lib.optionalString withSymlink ''
+      ln -s $out/bin/google-chrome-stable $out/bin/google-chrome
+    '';
   });
 
   passthru.updateScript = ./update.sh;
@@ -315,7 +339,7 @@ let
     homepage = "https://www.google.com/chrome/browser/";
     license = lib.licenses.unfree;
     maintainers = with lib.maintainers; [
-      johnrtitor
+      iedame
       mdaniels5757
     ];
     platforms = lib.platforms.darwin ++ [ "x86_64-linux" ];

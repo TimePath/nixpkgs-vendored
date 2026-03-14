@@ -92,12 +92,12 @@ let
     cfg.extraFlags
     ++ [
       "--config.file=${if cfg.enableReload then "/etc/prometheus/prometheus.yaml" else prometheusYml}"
-      "--web.listen-address=${cfg.listenAddress}:${builtins.toString cfg.port}"
+      "--web.listen-address=${cfg.listenAddress}:${toString cfg.port}"
     ]
     ++ (
       if (cfg.enableAgentMode) then
         [
-          "--enable-feature=agent"
+          "--agent"
         ]
       else
         [

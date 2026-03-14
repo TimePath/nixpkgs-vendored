@@ -91,6 +91,7 @@
   fribidi,
   harfbuzz,
   bison,
+  h3_3,
   flex,
   pango,
   python3,
@@ -475,57 +476,6 @@ in
     meta.mainProgram = "rbprettier";
   };
 
-  prometheus-client-mmap =
-    attrs:
-    {
-      dontBuild = false;
-      postPatch =
-        let
-          getconf = if stdenv.hostPlatform.isGnu then stdenv.cc.libc else getconf;
-        in
-        ''
-          substituteInPlace lib/prometheus/client/page_size.rb --replace "getconf" "${lib.getBin getconf}/bin/getconf"
-        '';
-    }
-    // lib.optionalAttrs (lib.versionAtLeast attrs.version "1.0") {
-      cargoDeps = rustPlatform.fetchCargoVendor {
-        src = stdenv.mkDerivation {
-          inherit (buildRubyGem { inherit (attrs) gemName version source; })
-            name
-            src
-            unpackPhase
-            nativeBuildInputs
-            ;
-          dontBuilt = true;
-          installPhase = ''
-            cp -R ext/fast_mmaped_file_rs $out
-            rm $out/Cargo.lock
-            cp Cargo.lock $out
-          '';
-        };
-        hash = "sha256-mukk+tWWeG62q4GcDzkk8TyxVsDjShz30wEj82cElt4=";
-      };
-
-      nativeBuildInputs = [
-        cargo
-        rustc
-        rustPlatform.cargoSetupHook
-        rustPlatform.bindgenHook
-      ];
-
-      disallowedReferences = [
-        rustc.unwrapped
-      ];
-
-      preInstall = ''
-        export CARGO_HOME="$PWD/../.cargo/"
-      '';
-
-      postInstall = ''
-        find $out -type f -name .rustc_info.json -delete
-      '';
-    };
-
   glib2 = attrs: {
     nativeBuildInputs = [ pkg-config ] ++ lib.optionals stdenv.hostPlatform.isDarwin [ DarwinTools ];
     buildInputs = [
@@ -636,6 +586,21 @@ in
       # For >= v1.48.0
       substituteInPlace src/ruby/ext/grpc/extconf.rb \
         --replace 'apple_toolchain = ' 'apple_toolchain = false && '
+    '';
+  };
+
+  h3 = attrs: {
+    # This gem attempts to build h3 using cmake, but fails because that is not in the path
+    # Use h3 from nixpkgs instead, and reduce closure size by deleting the h3 source code
+    dontBuild = false; # allow applying patches
+    postPatch = ''
+      substituteInPlace ext/h3/Makefile \
+        --replace-fail 'cd src; cmake . -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DBUILD_SHARED_LIBS=true -DBUILD_FILTERS=OFF -DBUILD_BENCHMARKS=OFF -DENABLE_LINTING=OFF; make' ':'
+      substituteInPlace lib/h3/bindings/base.rb \
+        --replace-fail '__dir__ + "/../../../ext/h3/src/lib"' '"${h3_3}/lib"'
+    '';
+    postInstall = ''
+      rm -rf $out/${ruby.gemPath}/gems/h3-${attrs.version}/ext/h3/src
     '';
   };
 

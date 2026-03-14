@@ -37,6 +37,7 @@ let
     subtractLists
     types
     unique
+    versionAtLeast
     ;
 
   cfg = config.services.kanidm;
@@ -63,13 +64,12 @@ let
   # Merge bind mount paths and remove paths where a prefix is already mounted.
   # This makes sure that if e.g. the tls_chain is in the nix store and /nix/store is already in the mount
   # paths, no new bind mount is added. Adding subpaths caused problems on ofborg.
-  hasPrefixInList =
-    list: newPath: any (path: hasPrefix (builtins.toString path) (builtins.toString newPath)) list;
+  hasPrefixInList = list: newPath: any (path: hasPrefix (toString path) (toString newPath)) list;
   mergePaths = foldl' (
     merged: newPath:
     let
       # If the new path is a prefix to some existing path, we need to filter it out
-      filteredPaths = filter (p: !hasPrefix (builtins.toString newPath) (builtins.toString p)) merged;
+      filteredPaths = filter (p: !hasPrefix (toString newPath) (toString p)) merged;
       # If a prefix of the new path is already in the list, do not add it
       filteredNew = optional (!hasPrefixInList filteredPaths newPath) newPath;
     in
@@ -140,12 +140,14 @@ let
     builtins.toJSON { inherit (cfg.provision) groups persons systems; }
   );
 
+  scriptingArg = optionalString (versionAtLeast cfg.package.version "1.9") "scripting";
+
   # Only recover the admin account if a password should explicitly be provisioned
   # for the account. Otherwise it is not needed for provisioning.
   maybeRecoverAdmin = optionalString (cfg.provision.adminPasswordFile != null) ''
     KANIDM_ADMIN_PASSWORD=$(< ${cfg.provision.adminPasswordFile})
     # We always reset the admin account password if a desired password was specified.
-    if ! KANIDM_RECOVER_ACCOUNT_PASSWORD=$KANIDM_ADMIN_PASSWORD ${cfg.package}/bin/kanidmd recover-account -c ${serverConfigFile} admin --from-environment >/dev/null; then
+    if ! KANIDM_RECOVER_ACCOUNT_PASSWORD=$KANIDM_ADMIN_PASSWORD ${cfg.package}/bin/kanidmd ${scriptingArg} recover-account -c ${serverConfigFile} admin --from-environment >/dev/null; then
       echo "Failed to recover admin account" >&2
       exit 1
     fi
@@ -159,8 +161,23 @@ let
       ''
         KANIDM_IDM_ADMIN_PASSWORD=$(< ${cfg.provision.idmAdminPasswordFile})
         # We always reset the idm_admin account password if a desired password was specified.
-        if ! KANIDM_RECOVER_ACCOUNT_PASSWORD=$KANIDM_IDM_ADMIN_PASSWORD ${cfg.package}/bin/kanidmd recover-account -c ${serverConfigFile} idm_admin --from-environment >/dev/null; then
+        if ! KANIDM_RECOVER_ACCOUNT_PASSWORD=$KANIDM_IDM_ADMIN_PASSWORD ${cfg.package}/bin/kanidmd ${scriptingArg} recover-account -c ${serverConfigFile} idm_admin --from-environment >/dev/null; then
           echo "Failed to recover idm_admin account" >&2
+          exit 1
+        fi
+      ''
+    else if versionAtLeast cfg.package.version "1.9" then
+      ''
+        # Recover idm_admin account
+        if ! recover_out=$(${cfg.package}/bin/kanidmd scripting recover-account -c ${serverConfigFile} idm_admin); then
+          echo "$recover_out" >&2
+          echo "kanidm provision: Failed to recover idm_admin account" >&2
+          exit 1
+        fi
+
+        if ! KANIDM_IDM_ADMIN_PASSWORD=$(${getExe pkgs.jq} -r .output <<< "$recover_out"); then
+          echo "$recover_out" >&2
+          echo "kanidm provision: Failed to parse password for idm_admin account" >&2
           exit 1
         fi
       ''
@@ -169,9 +186,10 @@ let
         # Recover idm_admin account
         if ! recover_out=$(${cfg.package}/bin/kanidmd recover-account -c ${serverConfigFile} idm_admin -o json); then
           echo "$recover_out" >&2
-          echo "kanidm provision: Failed to recover admin account" >&2
+          echo "kanidm provision: Failed to recover idm_admin account" >&2
           exit 1
         fi
+
         if ! KANIDM_IDM_ADMIN_PASSWORD=$(grep '{"password' <<< "$recover_out" | ${getExe pkgs.jq} -r .password); then
           echo "$recover_out" >&2
           echo "kanidm provision: Failed to parse password for idm_admin account" >&2
@@ -904,6 +922,7 @@ in
           StateDirectory = "kanidm";
           StateDirectoryMode = "0700";
           RuntimeDirectory = "kanidmd";
+          ExecStartPre = "${cfg.package}/bin/kanidmd domain rename -c ${serverConfigFile}";
           ExecStart = "${cfg.package}/bin/kanidmd server -c ${serverConfigFile}";
           ExecStartPost = mkIf cfg.provision.enable postStartScript;
           User = "kanidm";

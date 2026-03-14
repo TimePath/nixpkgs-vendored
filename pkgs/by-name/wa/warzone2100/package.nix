@@ -9,7 +9,7 @@
   asciidoctor,
   gettext,
 
-  SDL2,
+  sdl3,
   libtheora,
   libvorbis,
   libopus,
@@ -49,15 +49,15 @@ in
 
 stdenv.mkDerivation (finalAttrs: {
   inherit pname;
-  version = "4.6.1";
+  version = "4.6.3";
 
   src = fetchurl {
     url = "mirror://sourceforge/project/warzone2100/releases/${finalAttrs.version}/warzone2100_src.tar.xz";
-    hash = "sha256-JqxVOEYCQ/ihSdMSZNpxyqTTPvaoAQA37/JOdyeMpQs=";
+    hash = "sha256-Qx/iQ2z/loeOLtTtxtBzlFOtYpPWQwtYMt6bUi/wsTo=";
   };
 
   buildInputs = [
-    SDL2
+    sdl3
     libtheora
     libvorbis
     libopus

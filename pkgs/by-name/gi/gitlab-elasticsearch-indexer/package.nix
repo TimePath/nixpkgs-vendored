@@ -11,17 +11,17 @@ let
 in
 buildGoModule rec {
   pname = "gitlab-elasticsearch-indexer";
-  version = "5.10.1";
+  version = "5.13.3";
 
   # nixpkgs-update: no auto update
   src = fetchFromGitLab {
     owner = "gitlab-org";
     repo = "gitlab-elasticsearch-indexer";
     rev = "v${version}";
-    hash = "sha256-UB3rR6Fk/5M8rpixyg7R0Zd5JZYpG4gEEDHXOQ4b3vI=";
+    hash = "sha256-0FLAqjbafYsmr21OwNJceikC5Qdr5BIAuHnl1x8oiXs=";
   };
 
-  vendorHash = "sha256-EM41vNyE4nkv5IcGyRXqn+d7EHGMju2e76KWfHuOTmY=";
+  vendorHash = "sha256-2RlRCkqxupOvmyBe/zQC3Lyp9x0KHnTa6UnxldK1YZQ=";
 
   buildInputs = [ icu ];
   nativeBuildInputs = [ pkg-config ];

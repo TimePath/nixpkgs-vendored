@@ -343,6 +343,10 @@ with lib.maintainers;
     enableFeatureFreezePing = true;
   };
 
+  feel-co = {
+    github = "feel-co";
+  };
+
   flutter = {
     enableFeatureFreezePing = false;
     github = "flutter";
@@ -622,14 +626,7 @@ with lib.maintainers;
   };
 
   lxc = {
-    members = [
-      aanderse
-      adamcstephens
-      megheaiulian
-      mkg20001
-    ];
-    scope = "All things linuxcontainers. Incus, LXC, and related packages.";
-    shortName = "lxc";
+    github = "lxc";
   };
 
   lxqt = {

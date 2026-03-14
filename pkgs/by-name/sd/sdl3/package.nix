@@ -61,7 +61,7 @@ assert lib.assertMsg (ibusSupport -> dbusSupport) "SDL3 requires dbus support to
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "sdl3";
-  version = "3.2.26";
+  version = "3.2.28";
 
   outputs = [
     "lib"
@@ -74,24 +74,34 @@ stdenv.mkDerivation (finalAttrs: {
     owner = "libsdl-org";
     repo = "SDL";
     tag = "release-${finalAttrs.version}";
-    hash = "sha256-edcub/zeho4mB3tItp+PSD5l+H6jUPm3seiBP6ppT0k=";
+    hash = "sha256-nfnvzog1bON2IaBOeWociV82lmRY+qXgdeXBe6GYlww=";
   };
 
   postPatch =
     # Tests timeout on Darwin
-    # `testtray` loads assets from a relative path, which we are patching to be absolute
     lib.optionalString (finalAttrs.finalPackage.doCheck) ''
       substituteInPlace test/CMakeLists.txt \
         --replace-fail 'set(noninteractive_timeout 10)' 'set(noninteractive_timeout 30)'
-
-      substituteInPlace test/testtray.c \
-        --replace-warn '../test/' '${placeholder "installedTests"}/share/assets/'
     ''
     + lib.optionalString waylandSupport ''
       substituteInPlace src/video/wayland/SDL_waylandmessagebox.c \
         --replace-fail '"zenity"' '"${lib.getExe zenity}"'
       substituteInPlace src/dialog/unix/SDL_zenitydialog.c \
         --replace-fail '"zenity"' '"${lib.getExe zenity}"'
+    ''
+    # https://github.com/libsdl-org/SDL/issues/14805
+    + ''
+      substituteInPlace src/video/x11/SDL_x11vulkan.c \
+                        src/video/wayland/SDL_waylandvulkan.c \
+                        src/video/offscreen/SDL_offscreenvulkan.c \
+                        src/video/kmsdrm/SDL_kmsdrmvulkan.c \
+                        src/video/vivante/SDL_vivantevulkan.c \
+                        src/video/android/SDL_androidvulkan.c \
+        --replace-fail 'libvulkan.so' '${lib.getLib vulkan-loader}/lib/libvulkan.so'
+    ''
+    + lib.optionalString x11Support ''
+      substituteInPlace src/video/x11/SDL_x11vulkan.c \
+        --replace-fail 'libX11-xcb.so' '${lib.getLib xorg.libX11}/lib/libX11-xcb.so'
     '';
 
   strictDeps = true;

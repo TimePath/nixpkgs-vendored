@@ -2,7 +2,7 @@
   lib,
   stdenv,
   callPackage,
-  fetchFromGitea,
+  fetchFromCodeberg,
   libGL,
   libX11,
   libevdev,
@@ -25,15 +25,14 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "river-classic";
-  version = "0.3.13";
+  version = "0.3.14";
 
   outputs = [ "out" ] ++ lib.optionals withManpages [ "man" ];
 
-  src = fetchFromGitea {
-    domain = "codeberg.org";
+  src = fetchFromCodeberg {
     owner = "river";
     repo = "river-classic";
-    hash = "sha256-XLWvxSChYN5wyhr8R8/3Pfykw61k451XmvgoM45zkEk=";
+    hash = "sha256-UhWA7jmBDhktHqHds06C0GY+xzlQZZezYopsLmIAGgI=";
     tag = "v${finalAttrs.version}";
   };
 
@@ -94,7 +93,7 @@ stdenv.mkDerivation (finalAttrs: {
       the river 0.4.0 release.
     '';
     changelog = "https://codeberg.org/river/river-classic/releases/tag/v${finalAttrs.version}";
-    license = lib.licenses.gpl3Plus;
+    license = lib.licenses.gpl3Only;
     maintainers = with lib.maintainers; [
       adamcstephens
       moni

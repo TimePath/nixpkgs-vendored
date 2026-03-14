@@ -47,6 +47,7 @@
   wrapGAppsHook3,
   zlib-ng,
   zstd,
+  brotli,
 
   withQt ? true,
   qt6 ? null,
@@ -58,7 +59,7 @@ assert withQt -> qt6 != null;
 
 stdenv.mkDerivation rec {
   pname = "wireshark-${if withQt then "qt" else "cli"}";
-  version = "4.6.2";
+  version = "4.6.3";
 
   outputs = [
     "out"
@@ -69,7 +70,7 @@ stdenv.mkDerivation rec {
     repo = "wireshark";
     owner = "wireshark";
     rev = "v${version}";
-    hash = "sha256-fojQ0D7v6xSDltpL3Y6iIzLj6pRZU/0U0ww+sVaWDZ8=";
+    hash = "sha256-DthYkAW6UYnsDLQf2h3jgJB8RZoasjREWV1NTtZv7PQ=";
   };
 
   patches = [
@@ -127,6 +128,7 @@ stdenv.mkDerivation rec {
     speexdsp
     zlib-ng
     zstd
+    brotli
   ]
   ++ lib.optionals withQt (
     with qt6;

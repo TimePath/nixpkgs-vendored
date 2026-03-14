@@ -1,30 +1,29 @@
 {
   lib,
   fetchurl,
-  fetchFromGitea,
+  fetchFromCodeberg,
   buildGo124Module,
   nixosTests,
 }:
 let
-  domain = "codeberg.org";
   owner = "superseriousbusiness";
   repo = "gotosocial";
 
-  version = "0.20.2";
+  version = "0.21.0";
 
   web-assets = fetchurl {
-    url = "https://${domain}/${owner}/${repo}/releases/download/v${version}/${repo}_${version}_web-assets.tar.gz";
-    hash = "sha256-85tFn3LsuMbLoiH6FFtBK60GhclfTsSiI7K/iNLadjY=";
+    url = "https://codeberg.org/${owner}/${repo}/releases/download/v${version}/${repo}_${version}_web-assets.tar.gz";
+    hash = "sha256-eExVquNTXkvxg0SAR60kXi5mnROp+tHNO3os1K+rWzU=";
   };
 in
 buildGo124Module rec {
   inherit version;
   pname = repo;
 
-  src = fetchFromGitea {
-    inherit domain owner repo;
+  src = fetchFromCodeberg {
+    inherit owner repo;
     tag = "v${version}";
-    hash = "sha256-H5+1BZ1jIISU6EPszIuOhqowoMe9WF36BGwV7TpAqj8=";
+    hash = "sha256-ifSm3tV8P435v7WUS2BYXfVS3FHu9Axz3IQWGdTw3Bg=";
   };
 
   vendorHash = null;

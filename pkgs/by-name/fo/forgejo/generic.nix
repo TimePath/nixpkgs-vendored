@@ -24,14 +24,13 @@
   xorg,
   runCommand,
   stdenv,
-  fetchFromGitea,
+  fetchFromCodeberg,
   buildNpmPackage,
   writableTmpDirAsHomeHook,
 }:
 
 let
-  src = fetchFromGitea {
-    domain = "codeberg.org";
+  src = fetchFromCodeberg {
     owner = "forgejo";
     repo = "forgejo";
     inherit rev hash;
@@ -114,6 +113,9 @@ buildGoModule rec {
     getGoDirs() {
       make show-backend-tests
     }
+
+    # TestRunHookPrePostReceive (cmd/hook_test.go) needs .git to pass
+    git init
   '';
 
   checkFlags =

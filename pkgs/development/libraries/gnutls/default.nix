@@ -32,7 +32,7 @@
   emacs,
   ffmpeg,
   haskellPackages,
-  knot-resolver,
+  knot-resolver_5,
   ngtcp2-gnutls,
   ocamlPackages,
   pkgsStatic,
@@ -59,11 +59,11 @@ in
 
 stdenv.mkDerivation rec {
   pname = "gnutls";
-  version = "3.8.11";
+  version = "3.8.12";
 
   src = fetchurl {
     url = "mirror://gnupg/gnutls/v${lib.versions.majorMinor version}/gnutls-${version}.tar.xz";
-    hash = "sha256-kb0jxKhuvGFS6BMD0gz2zq65e8j4QmbQ+uxuKfF7qiA=";
+    hash = "sha256-p7NBQhv9RZrPejdMpK87ngZgjc1715Kyv0cL6gErjlE=";
   };
 
   outputs = [
@@ -203,7 +203,7 @@ stdenv.mkDerivation rec {
       ffmpeg
       emacs
       qemu
-      knot-resolver
+      knot-resolver_5
       samba
       openconnect
       ;

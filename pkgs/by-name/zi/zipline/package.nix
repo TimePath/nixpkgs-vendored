@@ -7,7 +7,7 @@
   pnpmConfigHook,
   nodejs_24,
   makeWrapper,
-  prisma-engines,
+  prisma-engines_6,
   ffmpeg,
   openssl,
   vips,
@@ -24,11 +24,11 @@ let
     NEXT_TELEMETRY_DISABLED = "1";
     FFMPEG_PATH = lib.getExe ffmpeg;
     FFPROBE_PATH = lib.getExe' ffmpeg "ffprobe";
-    PRISMA_SCHEMA_ENGINE_BINARY = lib.getExe' prisma-engines "schema-engine";
-    PRISMA_QUERY_ENGINE_BINARY = lib.getExe' prisma-engines "query-engine";
-    PRISMA_QUERY_ENGINE_LIBRARY = "${prisma-engines}/lib/libquery_engine.node";
-    PRISMA_INTROSPECTION_ENGINE_BINARY = lib.getExe' prisma-engines "introspection-engine";
-    PRISMA_FMT_BINARY = lib.getExe' prisma-engines "prisma-fmt";
+    PRISMA_SCHEMA_ENGINE_BINARY = lib.getExe' prisma-engines_6 "schema-engine";
+    PRISMA_QUERY_ENGINE_BINARY = lib.getExe' prisma-engines_6 "query-engine";
+    PRISMA_QUERY_ENGINE_LIBRARY = "${prisma-engines_6}/lib/libquery_engine.node";
+    PRISMA_INTROSPECTION_ENGINE_BINARY = lib.getExe' prisma-engines_6 "introspection-engine";
+    PRISMA_FMT_BINARY = lib.getExe' prisma-engines_6 "prisma-fmt";
   };
 
   pnpm' = pnpm_10.override { nodejs = nodejs_24; };
@@ -36,13 +36,13 @@ in
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "zipline";
-  version = "4.4.0";
+  version = "4.4.1";
 
   src = fetchFromGitHub {
     owner = "diced";
     repo = "zipline";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-H3WzCe1AgnYYI5oskWPi4k1NdpyXCFMmeulPJtwvuIo=";
+    hash = "sha256-9+r3padIhpmLNfiL68eut7e+VemhsqhvRcJhyOdA7+k=";
     leaveDotGit = true;
     postFetch = ''
       git -C $out rev-parse --short HEAD > $out/.git_head
@@ -54,7 +54,7 @@ stdenv.mkDerivation (finalAttrs: {
     inherit (finalAttrs) pname version src;
     pnpm = pnpm';
     fetcherVersion = 2;
-    hash = "sha256-JphaLunhwPdeKxlHdpMNGAl8um7wsOkNCCWYxQhLuBM=";
+    hash = "sha256-cYoZNalVDI1rLEYFLhJZ9pAZQCvieZL+Rj5VK7Q2/vk=";
   };
 
   buildInputs = [
@@ -128,7 +128,7 @@ stdenv.mkDerivation (finalAttrs: {
   doInstallCheck = true;
 
   passthru = {
-    inherit prisma-engines;
+    prisma-engines = prisma-engines_6;
     tests = { inherit (nixosTests) zipline; };
     updateScript = nix-update-script { };
   };

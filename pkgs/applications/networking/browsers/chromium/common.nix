@@ -2,6 +2,7 @@
   stdenv,
   lib,
   fetchpatch,
+  fetchurl,
   zstd,
   fetchFromGitiles,
   fetchNpmDeps,
@@ -196,6 +197,14 @@ let
       }
     );
 
+  rustTools = symlinkJoin {
+    name = "rustTools";
+    paths = [
+      buildPackages.rust-bindgen
+      buildPackages.rustfmt
+    ];
+  };
+
   chromiumRosettaStone = {
     cpu =
       platform:
@@ -221,6 +230,7 @@ let
 
   isElectron = packageName == "electron";
   rustcVersion = buildPackages.rustc.version;
+  llvmVersion = buildPackages.rustc.llvmPackages.llvm.version;
   # libpng has been replaced by the png rust crate
   # https://github.com/image-rs/image-png/discussions/562
   needsLibpng = !chromiumVersionAtLeast "143";
@@ -504,11 +514,12 @@ let
       # https://chromium-review.googlesource.com/c/chromium/src/+/6897026
       ./patches/chromium-141-rust.patch
     ]
-    ++ lib.optionals stdenv.hostPlatform.isAarch64 [
+    ++ lib.optionals (!chromiumVersionAtLeast "145" && stdenv.hostPlatform.isAarch64) [
       # Reverts decommit pooled pages which causes random crashes of tabs on systems
       # with page sizes different than 4k. It 'supports' runtime page sizes, but has
       # a hardcode for aarch64 systems.
       # https://issues.chromium.org/issues/378017037
+      # Started failing to apply with M145, but this is no longer needed anyway.
       (fetchpatch {
         name = "reverted-v8-decommit-pooled-paged-by-default.patch";
         # https://chromium-review.googlesource.com/c/v8/v8/+/5864909
@@ -597,6 +608,73 @@ let
         decode = "base64 -d";
         revert = true;
         hash = "sha256-bYcJqPMbE7hMvhZVnzqHok1crUAdqrzqxr+4IHNzAtg=";
+      })
+    ]
+    ++ lib.optionals (versionRange "144" "146") [
+      # Patch rustc_nightly_capability to eval to false instead of true.
+      # https://chromium-review.googlesource.com/c/chromium/src/+/7022369
+      ./patches/chromium-144-rustc_nightly_capability.patch
+    ]
+    ++ lib.optionals (versionRange "144.0.7559.132" "145" && !ungoogled) [
+      # Rollup was swapped with esbuild because of compile failures on Windows,
+      # which is not compatible with our build yet. So let's revert it for now.
+      # Ungoogled ships its own variant of this patch upstream.
+      # https://issues.chromium.org/issues/461602362
+      (fetchpatch {
+        name = "revert-devtools-frontend-esbuild-instead-of-rollup.patch";
+        # https://chromium-review.googlesource.com/c/devtools/devtools-frontend/+/7526345
+        url = "https://chromium.googlesource.com/devtools/devtools-frontend/+/f130475580017f9f87502343dbcfc0c76dccefe8^!?format=TEXT";
+        decode = "base64 -d";
+        stripLen = 1;
+        extraPrefix = "third_party/devtools-frontend/src/";
+        revert = true;
+        hash = "sha256-k+xCfhDuHxtuGhY7LVE8HvbDJt8SEFkslBcJe7t5CAg=";
+      })
+    ]
+    ++ lib.optionals (chromiumVersionAtLeast "146" && !ungoogled) [
+      # Same as the patch above, but from ungoogled-chromium and much
+      # cleaner (and smaller) than reverting an endless chain of CLs.
+      (fetchpatch {
+        name = "ungoogled-chromium-145-build-with-wasm-rollup.patch";
+        # https://github.com/ungoogled-software/ungoogled-chromium/blob/145.0.7632.159-1/patches/core/ungoogled-chromium/build-with-wasm-rollup.patch
+        url = "https://github.com/ungoogled-software/ungoogled-chromium/raw/refs/tags/145.0.7632.159-1/patches/core/ungoogled-chromium/build-with-wasm-rollup.patch";
+        hash = "sha256-Ho5I33FOgtYHvKSZlWXWuBaqnSHqy4+f6EZdiL+/rRQ=";
+      })
+    ]
+    ++ lib.optionals (chromiumVersionAtLeast "146" && !ungoogled) [
+      # Revert CL 7457194 to fix the following error:
+      #  ERROR at //chrome/test/BUILD.gn:6355:9: Unable to load "/build/src/components/variations/test_data/cipd/BUILD.gn".
+      #  "//components/variations/test_data/cipd:single_group_per_study_prefer_existing_behavior_seed",
+      (fetchpatch {
+        name = "chromium-146-revert-Add-finch-seeds-to-desktop-perf-builds.patch";
+        # https://chromium-review.googlesource.com/c/chromium/src/+/7457194
+        url = "https://chromium.googlesource.com/chromium/src/+/d2e8a550eece6051372da94a475a8661da203106^!?format=TEXT";
+        decode = "base64 -d";
+        revert = true;
+        hash = "sha256-tJ//HE7o9R8nSQDGhi+MKXdNUwnkCZI++CzpAmFn2YY=";
+      })
+    ]
+    ++ lib.optionals (chromiumVersionAtLeast "146" && lib.versionOlder llvmVersion "23") [
+      # clang++: error: unknown argument: '-fsanitize-ignore-for-ubsan-feature=array-bounds'
+      (fetchpatch {
+        name = "chromium-146-revert-Update-fsanitizer=array-bounds-config.patch";
+        # https://chromium-review.googlesource.com/c/chromium/src/+/7539408
+        url = "https://chromium.googlesource.com/chromium/src/+/acb47d9a6b56c4889a2ed4216e9968cfc740086c^!?format=TEXT";
+        decode = "base64 -d";
+        revert = true;
+        hash = "sha256-WZsN2qm6lX121bDf7SoN75flXtCTmPPpwtHK0ayjkPc=";
+      })
+    ]
+    ++ lib.optionals (versionRange "146" "147") [
+      # Backport CL 7594600 from M147 to fix the following error:
+      #  error[E0277]: the trait bound `LaneCount<N>: SupportedLaneCount` is not satisfied
+      #  --> ../../third_party/rust/chromium_crates_io/vendor/bytemuck-v1/src/pod.rs:152:40
+      (fetchpatch {
+        name = "chromium-146-backport-Remove-now-obsolete-invalid-patch-on-bytemuck-v1.patch";
+        # https://chromium-review.googlesource.com/c/chromium/src/+/7594600
+        url = "https://chromium.googlesource.com/chromium/src/+/90b77efcecb262823fadb67b0ce218846cd9e756^!?format=TEXT";
+        decode = "base64 -d";
+        hash = "sha256-iDhDdVscy0tinQCRKXOghrn4ZRwlc8YjPZ0xPv0UMEU=";
       })
     ];
 
@@ -835,7 +913,8 @@ let
         use_system_libffi = true;
         # Use nixpkgs Rust compiler instead of the one shipped by Chromium.
         rust_sysroot_absolute = "${buildPackages.rustc}";
-        rust_bindgen_root = "${buildPackages.rust-bindgen}";
+        rust_bindgen_root =
+          if chromiumVersionAtLeast "144" then "${rustTools}" else "${buildPackages.rust-bindgen}";
         enable_rust = true;
         # While we technically don't need the cache-invalidation rustc_version provides, rustc_version
         # is still used in some scripts (e.g. build/rust/std/find_std_rlibs.py).
@@ -864,12 +943,20 @@ let
       // (extraAttrs.gnFlags or { })
     );
 
-    preConfigure = lib.optionalString (!isElectron) ''
-      (
-        cd third_party/node
-        grep patch update_npm_deps | sh
-      )
-    '';
+    preConfigure =
+      lib.optionalString (!isElectron) ''
+        (
+          cd third_party/node
+          grep patch update_npm_deps | sh
+        )
+      ''
+      # Our node_modules, unlike the tarball from chromium, includes @lit/reactive-element/development,
+      # which causes a "error: TS2403: Subsequent variable declarations must have the same type" later in the build.
+      # TypeScript is parsing both @lit/reactive-element/reactive-element.d.ts and @lit/reactive-element/development/reactive-element.d.ts,
+      # but lit_reactive_element.patch only patches the former.
+      + lib.optionalString (chromiumVersionAtLeast "146") ''
+        rm -r third_party/node/node_modules/@lit/reactive-element/development
+      '';
 
     configurePhase = ''
       runHook preConfigure
@@ -906,7 +993,12 @@ let
           TERM=dumb ninja -C "${buildPath}" -j$NIX_BUILD_CORES "${target}"
           bash -s << EOL
           (
-            source chrome/installer/linux/common/installer.include
+            source ${
+              if chromiumVersionAtLeast "144" then
+                "remoting/host/installer/linux/"
+              else
+                "chrome/installer/linux/common"
+            }/installer.include
             PACKAGE=$packageName
             MENUNAME="Chromium"
             process_template chrome/app/resources/manpage.1.in "${buildPath}/chrome.1"

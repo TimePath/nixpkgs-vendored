@@ -1,21 +1,21 @@
 {
   lib,
   fetchFromGitHub,
-  buildGoModule,
+  buildGo126Module,
   versionCheckHook,
 }:
 
-buildGoModule (finalAttrs: {
+buildGo126Module (finalAttrs: {
   pname = "fleet";
-  version = "4.76.1";
-
+  version = "4.81.0";
   src = fetchFromGitHub {
     owner = "fleetdm";
     repo = "fleet";
     tag = "fleet-v${finalAttrs.version}";
-    hash = "sha256-DWrErGFKhhAP+qePYz5VJ26dySMOicGkHEN16J9qOx4=";
+    hash = "sha256-LPbMcaQ3YIfh5qwIBB7BwJFgMPurCJudrOzUPm5+VcM=";
   };
-  vendorHash = "sha256-VLxhlzuQqt/jtUwllCutj2CO2tXWFgLRpU2mGtZM6RE=";
+
+  vendorHash = "sha256-kudomUa5c0OJA2LgqLQ2Az0mDH/s9go3jHdyeALGgs8=";
 
   subPackages = [
     "cmd/fleet"
@@ -31,6 +31,8 @@ buildGoModule (finalAttrs: {
   nativeInstallCheckInputs = [
     versionCheckHook
   ];
+
+  __darwinAllowLocalNetworking = true;
 
   meta = {
     homepage = "https://github.com/fleetdm/fleet";
