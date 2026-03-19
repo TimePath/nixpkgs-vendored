@@ -14,14 +14,14 @@
 
 rustPlatform.buildRustPackage (finalAttrs: {
   pname = "ty";
-  version = "0.0.1-alpha.32";
+  version = "0.0.23";
 
   src = fetchFromGitHub {
     owner = "astral-sh";
     repo = "ty";
     tag = finalAttrs.version;
     fetchSubmodules = true;
-    hash = "sha256-Kc5jxDpQv7bm4J7EdejkrUv/lz7hRc01riUIEdv+wmY=";
+    hash = "sha256-ft94sem5OuJNN3q99BnFqXAFdTnY7LMZFntYAvTjXvs=";
   };
 
   # For Darwin platforms, remove the integration test for file notifications,
@@ -35,7 +35,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
 
   cargoBuildFlags = [ "--package=ty" ];
 
-  cargoHash = "sha256-GEf/gU2DXz+u7kPHAB1NRqkmn0f7NV3M5U9u17adtkI=";
+  cargoHash = "sha256-TD5FLdi4YJwDzJpCctNKYxUNj/VgMnB/OBp3exk3cZw=";
 
   nativeBuildInputs = [ installShellFiles ];
 
@@ -60,12 +60,15 @@ rustPlatform.buildRustPackage (finalAttrs: {
     # Flaky:
     # called `Result::unwrap()` on an `Err` value: Os { code: 26, kind: ExecutableFileBusy, message: "Text file busy" }
     "--skip=python_environment::ty_environment_and_active_environment"
+    "--skip=python_environment::ty_environment_and_discovered_venv"
     "--skip=python_environment::ty_environment_is_only_environment"
     "--skip=python_environment::ty_environment_is_system_not_virtual"
+
+    # flaky: unmatched assertion: revealed: Literal[1]
+    "--skip=mdtest::generics/pep695/functions.md"
   ];
 
   nativeInstallCheckInputs = [ versionCheckHook ];
-  versionCheckProgramArg = "--version";
   doInstallCheck = true;
 
   postInstall = lib.optionalString (stdenv.hostPlatform.emulatorAvailable buildPackages) (
@@ -81,7 +84,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
   );
 
   passthru = {
-    updateScript = nix-update-script { extraArgs = [ "--version=unstable" ]; };
+    updateScript = nix-update-script { };
   };
 
   meta = {
@@ -92,6 +95,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
     mainProgram = "ty";
     maintainers = with lib.maintainers; [
       bengsparks
+      figsoda
       GaetanLepage
     ];
   };

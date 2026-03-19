@@ -10,6 +10,7 @@
   xdg-user-dirs,
   keybinder3,
   libnotify,
+  gst_all_1,
 }:
 
 let
@@ -17,11 +18,11 @@ let
     rec {
       x86_64-linux = {
         urlSuffix = "linux-x86_64.tar.gz";
-        hash = "sha256-q5hFX4qO4BJdrsCvZJICCHwOEUYMjk9mnJ61/MCycxs=";
+        hash = "sha256-87mauW50ccOaPyK04O4I7+0bsvxVrdFxhi/Muc53wDY=";
       };
       x86_64-darwin = {
         urlSuffix = "macos-universal.zip";
-        hash = "sha256-0deWxb0nUSkCQ7eXo3XqfonlMTItQHixuAC2iYry8Ec=";
+        hash = "sha256-a1WhOQ8NU3/aGAdaw8o3y7ckRdBsNgLZZ2nOrMsQdOA=";
       };
       aarch64-darwin = x86_64-darwin;
     }
@@ -30,7 +31,7 @@ let
 in
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "appflowy";
-  version = "0.10.3";
+  version = "0.10.6";
 
   src = fetchzip {
     url = "https://github.com/AppFlowy-IO/appflowy/releases/download/${finalAttrs.version}/AppFlowy-${finalAttrs.version}-${dist.urlSuffix}";
@@ -48,6 +49,8 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     gtk3
     keybinder3
     libnotify
+    gst_all_1.gstreamer
+    gst_all_1.gst-plugins-base
   ];
 
   dontBuild = true;

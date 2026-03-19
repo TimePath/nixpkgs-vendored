@@ -20,8 +20,6 @@ buildPythonPackage rec {
   version = "2.4.0";
   pyproject = true;
 
-  disabled = pythonOlder "3.7";
-
   src = fetchFromGitHub {
     owner = "pypiserver";
     repo = "pypiserver";
@@ -57,7 +55,7 @@ buildPythonPackage rec {
     webtest
     build
   ]
-  ++ lib.flatten (builtins.attrValues optional-dependencies);
+  ++ lib.concatAttrValues optional-dependencies;
 
   __darwinAllowLocalNetworking = true;
 

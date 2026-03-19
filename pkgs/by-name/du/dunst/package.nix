@@ -7,18 +7,18 @@
   which,
   perl,
   jq,
-  libXrandr,
+  libxrandr,
   coreutils,
   cairo,
   dbus,
   systemd,
   gdk-pixbuf,
   glib,
-  libX11,
-  libXScrnSaver,
+  libx11,
+  libxscrnsaver,
   wayland,
   wayland-protocols,
-  libXinerama,
+  libxinerama,
   libnotify,
   pango,
   xorgproto,
@@ -58,11 +58,11 @@ stdenv.mkDerivation (finalAttrs: {
     librsvg
   ]
   ++ lib.optionals withX11 [
-    libX11
-    libXScrnSaver
-    libXinerama
+    libx11
+    libxscrnsaver
+    libxinerama
     xorgproto
-    libXrandr
+    libxrandr
   ]
   ++ lib.optionals withWayland [
     wayland
@@ -77,7 +77,8 @@ stdenv.mkDerivation (finalAttrs: {
   makeFlags = [
     "PREFIX=$(out)"
     "VERSION=$(version)"
-    "SYSCONFDIR=$(out)/etc"
+    "SYSCONFDIR=/etc/xdg"
+    "SYSCONF_FORCE_NEW=0"
     "SERVICEDIR_DBUS=$(out)/share/dbus-1/services"
     "SERVICEDIR_SYSTEMD=$(out)/lib/systemd/user"
   ]
@@ -106,7 +107,6 @@ stdenv.mkDerivation (finalAttrs: {
   nativeInstallCheckInputs = [
     versionCheckHook
   ];
-  versionCheckProgramArg = "--version";
   doInstallCheck = true;
 
   passthru = {

@@ -20,9 +20,9 @@ let
     hash = "sha256-/1ZtJT+1IMyYqw3N0bVJ/T3vbmex169lzx+SlY5WsnA=";
   };
 
-  appimageContents = (appimageTools.extract { inherit pname version src; }).overrideAttrs (oA: {
+  appimageContents = (appimageTools.extract { inherit pname version src; }).overrideAttrs (old: {
     buildCommand = ''
-      ${oA.buildCommand}
+      ${old.buildCommand}
 
       # Remove left-over node-gyp executable symlinks
       # https://github.com/nodejs/node-gyp/issues/2713
@@ -70,7 +70,10 @@ appimageTools.wrapAppImage {
     homepage = "https://www.flexoptix.net";
     changelog = "https://www.flexoptix.net/en/flexoptix-app/?os=linux#flexapp__modal__changelog";
     license = lib.licenses.unfree;
-    teams = [ lib.teams.helsinki-systems ];
+    maintainers = with lib.maintainers; [
+      das_j
+      helsinki-Jo
+    ];
     platforms = [ "x86_64-linux" ];
   };
 }

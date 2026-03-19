@@ -29,7 +29,7 @@ stdenv.mkDerivation {
   ];
 
   meta = {
-    maintainers = with lib.maintainers; [ matthewbauer ];
+    maintainers = [ ];
     description = "Compiles CocoaTouch .xib files into .nib";
     license = lib.licenses.mit;
     platforms = lib.platforms.unix;

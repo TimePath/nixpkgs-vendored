@@ -10,14 +10,14 @@
   gpgme,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "xmppc";
   version = "0.1.2";
 
   src = fetchFromCodeberg {
     owner = "Anoxinon_e.V.";
     repo = "xmppc";
-    rev = version;
+    rev = finalAttrs.version;
     sha256 = "07cy3j4g7vycagdiva3dqb59361lw7s5f2yydpczmyih29v7hkm8";
   };
 
@@ -45,4 +45,4 @@ stdenv.mkDerivation rec {
     platforms = lib.platforms.unix;
     maintainers = [ lib.maintainers.jugendhacker ];
   };
-}
+})

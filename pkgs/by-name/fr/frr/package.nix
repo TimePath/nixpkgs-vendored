@@ -80,18 +80,18 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "frr";
-  version = "10.4.1";
+  version = "10.5.2";
 
   src = fetchFromGitHub {
     owner = "FRRouting";
     repo = "frr";
     rev = "frr-${finalAttrs.version}";
-    hash = "sha256-pEnMOy1/gIs8a/XCGixF3ZkSwUZ1PPuaSFBminY86DA=";
+    hash = "sha256-/SO4KELX5NQzbkeoO6QIY6NMUI30ABTRqcAztIAv6/Y=";
   };
 
   # Without the std explicitly set, we may run into abseil-cpp
   # compilation errors.
-  CXXFLAGS = "-std=gnu++23";
+  env.CXXFLAGS = "-std=gnu++23";
 
   nativeBuildInputs = [
     autoreconfHook

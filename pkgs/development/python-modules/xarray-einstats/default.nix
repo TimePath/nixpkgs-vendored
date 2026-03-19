@@ -7,7 +7,6 @@
   numba,
   numpy,
   pytestCheckHook,
-  pythonOlder,
   scipy,
   xarray,
 }:
@@ -16,8 +15,6 @@ buildPythonPackage rec {
   pname = "xarray-einstats";
   version = "0.9.1";
   pyproject = true;
-
-  disabled = pythonOlder "3.10";
 
   src = fetchFromGitHub {
     owner = "arviz-devs";
@@ -39,7 +36,7 @@ buildPythonPackage rec {
     numba = [ numba ];
   };
 
-  nativeCheckInputs = [ pytestCheckHook ] ++ lib.flatten (builtins.attrValues optional-dependencies);
+  nativeCheckInputs = [ pytestCheckHook ] ++ lib.concatAttrValues optional-dependencies;
 
   pythonImportsCheck = [ "xarray_einstats" ];
 

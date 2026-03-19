@@ -2,21 +2,19 @@
   lib,
   buildPythonPackage,
   fetchFromGitHub,
-  pythonOlder,
   hatchling,
   httpx,
-  typing-extensions,
 }:
 buildPythonPackage rec {
   pname = "gotenberg-client";
-  version = "0.12.0";
+  version = "0.13.1";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "stumpylog";
     repo = "gotenberg-client";
     tag = version;
-    hash = "sha256-+beO1Pp+ikfk4gqpfvIEHCOPZGLanGX6Kw4mqJglJTI=";
+    hash = "sha256-JYb0+Dj4QowcN+I6MMoWlv+Q5YoK4nfzYB/UNwhnRu8=";
   };
 
   build-system = [ hatchling ];
@@ -24,7 +22,6 @@ buildPythonPackage rec {
   dependencies = [
     httpx
   ]
-  ++ lib.optionals (pythonOlder "3.11") [ typing-extensions ]
   ++ httpx.optional-dependencies.http2;
 
   # requires running gotenberg service

@@ -2,7 +2,6 @@
   lib,
   buildPythonPackage,
   fetchFromGitHub,
-  pythonOlder,
   # required dependencies
   requests,
   setuptools,
@@ -19,8 +18,6 @@ buildPythonPackage rec {
   pname = "pydruid";
   version = "0.6.8";
   format = "setuptools";
-
-  disabled = pythonOlder "3.6";
 
   src = fetchFromGitHub {
     repo = "pydruid";
@@ -42,7 +39,7 @@ buildPythonPackage rec {
     pytestCheckHook
     pycurl
   ]
-  ++ lib.flatten (lib.attrValues optional-dependencies);
+  ++ lib.concatAttrValues optional-dependencies;
 
   pythonImportsCheck = [ "pydruid" ];
 

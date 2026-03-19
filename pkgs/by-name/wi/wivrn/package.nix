@@ -28,8 +28,8 @@
   libpulseaudio,
   librsvg,
   libva,
-  libX11,
-  libXrandr,
+  libx11,
+  libxrandr,
   makeDesktopItem,
   nix-update-script,
   nlohmann_json,
@@ -112,8 +112,8 @@ stdenv.mkDerivation (finalAttrs: {
     glm
     harfbuzz
     libGL
-    libX11
-    libXrandr
+    libx11
+    libxrandr
     openxr-loader
     shaderc
     systemd

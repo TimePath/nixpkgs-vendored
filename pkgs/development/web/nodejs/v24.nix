@@ -6,7 +6,6 @@
   fetchpatch2,
   openssl,
   python3,
-  enableNpm ? true,
 }:
 
 let
@@ -24,9 +23,8 @@ let
       [ ];
 in
 buildNodejs {
-  inherit enableNpm;
-  version = "24.14.0";
-  sha256 = "9fe025ef4028aba95d16e7810518bf4a5e8abfb0bdc07d8a3fdbb0afd538d77f";
+  version = "24.13.0";
+  sha256 = "320fe909cbb347dcf516201e4964ef177b8138df9a7f810d0d54950481b3158b";
   patches =
     (
       if (stdenv.hostPlatform.emulatorAvailable buildPackages) then
@@ -67,5 +65,11 @@ buildNodejs {
         hash = "sha256-BBBShQwU20TSY8GtPehQ9i3AH4ZKUGIr8O0bRsgrpNo=";
         revert = true;
       })
+    ]
+    ++ lib.optionals stdenv.is32bit [
+      # see: https://github.com/nodejs/node/issues/58458
+      ./v24-32bit.patch
+      # see: https://github.com/nodejs/node/issues/61025
+      ./sab-test-32bit.patch
     ];
 }

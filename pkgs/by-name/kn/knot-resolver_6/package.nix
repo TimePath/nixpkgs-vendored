@@ -143,15 +143,16 @@ let
       inherit (finalAttrs) finalPackage;
     };
 
-    meta = with lib; {
+    meta = {
       description = "Caching validating DNS resolver, from .cz domain registry";
       homepage = "https://knot-resolver.cz";
-      license = licenses.gpl3Plus;
-      platforms = platforms.unix;
+      license = lib.licenses.gpl3Plus;
+      platforms = lib.platforms.unix;
       maintainers = [
-        maintainers.vcunat # upstream developer
+        lib.maintainers.vcunat # upstream developer
+        lib.maintainers.leona
+        lib.maintainers.osnyx
       ];
-      teams = [ teams.flyingcircus ];
       mainProgram = "kresd";
     };
   });

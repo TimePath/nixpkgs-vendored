@@ -1,7 +1,10 @@
 {
   lib,
+  stdenv,
   buildPythonPackage,
   fetchFromGitHub,
+  pythonAtLeast,
+  util-linux,
 
   # build-system
   setuptools,
@@ -28,26 +31,35 @@
 
   # tests
   hypothesis,
+  psutil,
   pytest-asyncio,
   pytest-cov-stub,
   pytest-mock,
   pytest-rerunfailures,
+  pytest-timeout,
   pytest-xdist,
   pytestCheckHook,
   versionCheckHook,
 }:
 
-buildPythonPackage rec {
+buildPythonPackage (finalAttrs: {
   pname = "dask";
-  version = "2025.11.0";
+  version = "2026.1.2";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "dask";
     repo = "dask";
-    tag = version;
-    hash = "sha256-cU4w4dqJQ3ew+fRyD7Lc4URNfW738kKqls6k6j65pIo=";
+    tag = finalAttrs.version;
+    hash = "sha256-cyeAU5r8uYb7aAII9HztKY+3On44/nOC9eU9stYYWzE=";
   };
+
+  postPatch = lib.optionalString stdenv.hostPlatform.isLinux ''
+    substituteInPlace dask/tests/test_system.py \
+      --replace-fail \
+        '"taskset",' \
+        '"${lib.getExe' util-linux "taskset"}",'
+  '';
 
   build-system = [
     setuptools
@@ -89,18 +101,19 @@ buildPythonPackage rec {
 
   nativeCheckInputs = [
     hypothesis
+    psutil
     pyarrow
     pytest-asyncio
     pytest-cov-stub
     pytest-mock
     pytest-rerunfailures
+    pytest-timeout
     pytest-xdist
     pytestCheckHook
     versionCheckHook
   ]
-  ++ optional-dependencies.array
-  ++ optional-dependencies.dataframe;
-  versionCheckProgramArg = "--version";
+  ++ finalAttrs.passthru.optional-dependencies.array
+  ++ finalAttrs.passthru.optional-dependencies.dataframe;
 
   pytestFlags = [
     # Rerun failed tests up to three times
@@ -110,6 +123,11 @@ buildPythonPackage rec {
   disabledTestMarks = [
     # Don't run tests that require network access
     "network"
+  ];
+
+  # https://github.com/dask/dask/issues/12042
+  disabledTests = lib.optionals (pythonAtLeast "3.14") [
+    "test_multiple_repartition_partition_size"
   ];
 
   __darwinAllowLocalNetworking = true;
@@ -136,4 +154,4 @@ buildPythonPackage rec {
     license = lib.licenses.bsd3;
     maintainers = with lib.maintainers; [ GaetanLepage ];
   };
-}
+})

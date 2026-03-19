@@ -2,7 +2,6 @@
   lib,
   stdenv,
   buildPythonPackage,
-  pythonOlder,
   fetchFromGitHub,
   beautifulsoup4,
   boto3,
@@ -19,17 +18,14 @@
 
 buildPythonPackage rec {
   pname = "bx-py-utils";
-  version = "113";
-
-  disabled = pythonOlder "3.10";
-
+  version = "116";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "boxine";
     repo = "bx_py_utils";
     tag = "v${version}";
-    hash = "sha256-rpDRLiqcbg/aRzdmKwGJAGrhBJTA+7tXsjPUIeeC03I=";
+    hash = "sha256-wrPEwYeM4HjhgRO51XyPx6e/TsX52378bFhPw1NZreM=";
   };
 
   postPatch = ''
@@ -78,10 +74,8 @@ buildPythonPackage rec {
     "test_assert_html_snapshot_by_css_selector"
     # test accesses the internet
     "test_happy_path"
-    # test assumes a virtual environment
-    "test_code_style"
-    # AssertionError: Lists differ: ['my...
-    "test_import_all_files"
+    # cli_base module not found
+    "test_doctests"
   ];
 
   disabledTestPaths = [

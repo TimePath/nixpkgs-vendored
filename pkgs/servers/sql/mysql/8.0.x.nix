@@ -124,7 +124,7 @@ stdenv.mkDerivation (finalAttrs: {
     homepage = "https://www.mysql.com/";
     description = "World's most popular open source database";
     license = lib.licenses.gpl2Only;
-    maintainers = with lib.maintainers; [ orivej ];
+    maintainers = [ ];
     platforms = lib.platforms.unix;
   };
 })

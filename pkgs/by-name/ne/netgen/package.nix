@@ -17,7 +17,7 @@
   zlib,
   tcl,
   tk,
-  xorg,
+  libxmu,
   libjpeg,
   ffmpeg,
   catch2,
@@ -108,7 +108,7 @@ stdenv.mkDerivation (finalAttrs: {
     tcl
     tk
     libGLU
-    xorg.libXmu
+    libxmu
     libjpeg
     ffmpeg
     mpi

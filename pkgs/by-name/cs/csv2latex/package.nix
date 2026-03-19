@@ -4,12 +4,12 @@
   fetchurl,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "csv2latex";
   version = "0.23.1";
 
   src = fetchurl {
-    url = "http://brouits.free.fr/csv2latex/csv2latex-${version}.tar.gz";
+    url = "http://brouits.free.fr/csv2latex/csv2latex-${finalAttrs.version}.tar.gz";
     sha256 = "sha256-k1vQyrVJmfaJ7jVaoW2dkPD7GO8EoDqJY5m8O2U/kYw=";
   };
 
@@ -22,7 +22,6 @@ stdenv.mkDerivation rec {
     description = "Command-line CSV to LaTeX file converter";
     homepage = "http://brouits.free.fr/csv2latex/";
     license = lib.licenses.gpl2Only;
-    maintainers = [ lib.maintainers.catern ];
     mainProgram = "csv2latex";
   };
-}
+})

@@ -36,9 +36,6 @@
   commandLineArgs ? "",
   pkgsBuildBuild,
   pkgs,
-
-  nodejs_24,
-  pkgsBuildHost,
 }:
 
 let
@@ -74,24 +71,16 @@ let
   chromium = rec {
     inherit stdenv upstream-info;
 
-    mkChromiumDerivation = callPackage ./common.nix (
-      {
-        inherit chromiumVersionAtLeast versionRange;
-        inherit
-          proprietaryCodecs
-          cupsSupport
-          pulseSupport
-          ungoogled
-          ;
-        gnChromium = buildPackages.gn.override upstream-info.deps.gn;
-      }
-      // lib.optionalAttrs (lib.versionAtLeast upstream-info.version "144") {
-        nodejs = nodejs_24;
-        pkgsBuildHost = pkgsBuildHost // {
-          nodejs = pkgsBuildHost.nodejs_24;
-        };
-      }
-    );
+    mkChromiumDerivation = callPackage ./common.nix {
+      inherit chromiumVersionAtLeast versionRange;
+      inherit
+        proprietaryCodecs
+        cupsSupport
+        pulseSupport
+        ungoogled
+        ;
+      gnChromium = buildPackages.gn.override upstream-info.deps.gn;
+    };
 
     browser = callPackage ./browser.nix {
       inherit chromiumVersionAtLeast enableWideVine ungoogled;

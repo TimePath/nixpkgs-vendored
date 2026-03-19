@@ -7,11 +7,11 @@
   kdePackages,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "kdbg";
   version = "3.2.0";
   src = fetchurl {
-    url = "mirror://sourceforge/kdbg/${version}/kdbg-${version}.tar.gz";
+    url = "mirror://sourceforge/kdbg/${finalAttrs.version}/kdbg-${finalAttrs.version}.tar.gz";
     hash = "sha256-GoWLKWD/nWXBTiTbDLxeNArDMyPI/gSzADqyOgxrNHE=";
   };
 
@@ -49,6 +49,5 @@ stdenv.mkDerivation rec {
     '';
     mainProgram = "kdbg";
     license = lib.licenses.gpl2;
-    maintainers = [ lib.maintainers.catern ];
   };
-}
+})

@@ -15,7 +15,7 @@ bundlerApp {
     description = "REPL for x86-64 assembly language";
     homepage = "https://github.com/tenderlove/asmrepl";
     license = lib.licenses.asl20;
-    maintainers = with lib.maintainers; [ lom ];
+    maintainers = [ ];
     platforms = lib.platforms.x86_64;
   };
 }

@@ -31,14 +31,14 @@
 
 buildPythonPackage rec {
   pname = "odc-stac";
-  version = "0.4.0";
+  version = "0.5.2";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "opendatacube";
     repo = "odc-stac";
     tag = "v${version}";
-    hash = "sha256-Ekyavcin13B4DAxv0/XG5QTBuLE7PRospAXe40fHeX0=";
+    hash = "sha256-OlqUFyysbteZ+Ek48+F4U0YLrTx624974O7DnnUuxag=";
   };
 
   build-system = [ flit-core ];

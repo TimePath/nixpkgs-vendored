@@ -11,15 +11,15 @@
   libxml2,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "libvisio2svg";
-  version = "0.5.5";
+  version = "0.5.6";
 
   src = fetchFromGitHub {
     owner = "kakwa";
     repo = "libvisio2svg";
-    rev = version;
-    sha256 = "14m37mmib1596c76j9w178jqhwxyih2sy5w5q9xglh8cmlfn1hfx";
+    rev = finalAttrs.version;
+    sha256 = "sha256-MklZ/pY04kw8BJxoGcBQAWdXytAPkrDz0N0W1t9I5Is=";
   };
 
   nativeBuildInputs = [ cmake ];
@@ -45,4 +45,4 @@ stdenv.mkDerivation rec {
     license = lib.licenses.gpl2Only;
     platforms = [ "x86_64-linux" ];
   };
-}
+})

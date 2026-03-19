@@ -5,18 +5,18 @@
   nix-update-script,
 }:
 
-buildGoModule rec {
+buildGoModule (finalAttrs: {
   pname = "certinfo-go";
-  version = "0.1.47";
+  version = "0.1.51";
 
   src = fetchFromGitHub {
     owner = "paepckehh";
     repo = "certinfo";
-    tag = "v${version}";
-    hash = "sha256-2/P2hg8y1Ac7ztRshsNR8S4tUy7VV7zy4XIOVDCVLtw=";
+    tag = "v${finalAttrs.version}";
+    hash = "sha256-8CN3mu7xLSXDQ4nTVlJSCZwDCRQyUGE3oIdJTbpWKzQ=";
   };
 
-  vendorHash = "sha256-pGAoQi397/ZQU/I73H9aK4gDKYoXuK5FU0RxL1+FgX8=";
+  vendorHash = "sha256-VU40TmdABNbbROl9kL0m+k2ITBiPfs5CaXB3Ntd89ig=";
 
   ldflags = [
     "-s"
@@ -26,11 +26,11 @@ buildGoModule rec {
   passthru.updateScript = nix-update-script { };
 
   meta = {
-    changelog = "https://github.com/paepckehh/certinfo/releases/tag/v${version}";
+    changelog = "https://github.com/paepckehh/certinfo/releases/tag/v${finalAttrs.version}";
     homepage = "https://paepcke.de/certinfo";
     description = "Tool to analyze and troubleshoot x.509 & ssh certificates, encoded keys";
     license = lib.licenses.bsd3;
     mainProgram = "certinfo";
     maintainers = with lib.maintainers; [ paepcke ];
   };
-}
+})

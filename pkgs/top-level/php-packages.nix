@@ -11,7 +11,7 @@
   bzip2,
   curl,
   cyrus_sasl,
-  enchant2,
+  enchant,
   freetds,
   gd,
   gettext,
@@ -453,7 +453,7 @@ lib.makeScope pkgs.newScope (
             }
             {
               name = "enchant";
-              buildInputs = [ enchant2 ];
+              buildInputs = [ enchant ];
               configureFlags = [ "--with-enchant" ];
               doCheck = false;
             }

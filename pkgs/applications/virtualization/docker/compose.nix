@@ -2,33 +2,36 @@
   lib,
   buildGoModule,
   fetchFromGitHub,
+  versionCheckHook,
 }:
 
 buildGoModule rec {
   pname = "docker-compose";
-  version = "2.40.3";
+  version = "5.0.2";
 
   src = fetchFromGitHub {
     owner = "docker";
     repo = "compose";
-    rev = "v${version}";
-    hash = "sha256-wLzuCNhW0/mpFf6FtgbRk+CnGkrafLx9y2idpjBk6xU=";
+    tag = "v${version}";
+    hash = "sha256-2lyjTNd4jf+wTtnFZaRT10ga0MHZondzb+0cM0ftCuY=";
   };
 
-  postPatch = ''
-    # entirely separate package that breaks the build
-    rm -rf pkg/e2e/
+  vendorHash = "sha256-A9RHSM6BmcaIVHWOou50T1+N/Vh8H1+KtSKeh/ZJ2JQ=";
+
+  nativeInstallCheckInputs = [ versionCheckHook ];
+
+  modPostBuild = ''
+    patch -d vendor/github.com/docker/cli/ -p1 < ${./cli-system-plugin-dir-from-env.patch}
   '';
 
-  vendorHash = "sha256-a9p8SxvUgnvkavFSBsIM65fNPx2jL/RCo78c6pgp5po=";
-
   ldflags = [
-    "-X github.com/docker/compose/v2/internal.Version=${version}"
+    "-X github.com/docker/compose/v5/internal.Version=${version}"
     "-s"
     "-w"
   ];
 
   doCheck = false;
+  doInstallCheck = true;
   installPhase = ''
     runHook preInstall
     install -D $GOPATH/bin/cmd $out/libexec/docker/cli-plugins/docker-compose

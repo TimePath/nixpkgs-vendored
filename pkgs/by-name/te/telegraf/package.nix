@@ -8,27 +8,27 @@
   telegraf,
 }:
 
-buildGoModule rec {
+buildGoModule (finalAttrs: {
   pname = "telegraf";
-  version = "1.36.4";
+  version = "1.38.0";
 
   subPackages = [ "cmd/telegraf" ];
 
   src = fetchFromGitHub {
     owner = "influxdata";
     repo = "telegraf";
-    rev = "v${version}";
-    hash = "sha256-sqFknEDhBR370w7MRHV34mz/j+TNzY2+vNDqouDAiwA=";
+    rev = "v${finalAttrs.version}";
+    hash = "sha256-y5SmQ6e0pySB8w34w82jy2bFkXfHsFEJTW2WAoIbPuA=";
   };
 
-  vendorHash = "sha256-8Dtztt5Z8Wn2ZsDCOJ5NiID6w3/xNXwEy0WnQYNwFg4=";
+  vendorHash = "sha256-2R7hxIprCzpB6iAnZzF7SBiqnGXR9Gy9KmrCkQ3kvso=";
   proxyVendor = true;
 
   ldflags = [
     "-s"
     "-w"
-    "-X=github.com/influxdata/telegraf/internal.Commit=${src.rev}"
-    "-X=github.com/influxdata/telegraf/internal.Version=${version}"
+    "-X=github.com/influxdata/telegraf/internal.Commit=${finalAttrs.src.rev}"
+    "-X=github.com/influxdata/telegraf/internal.Version=${finalAttrs.version}"
   ];
 
   passthru.tests = {
@@ -44,7 +44,7 @@ buildGoModule rec {
     description = "Plugin-driven server agent for collecting & reporting metrics";
     mainProgram = "telegraf";
     homepage = "https://www.influxdata.com/time-series-platform/telegraf/";
-    changelog = "https://github.com/influxdata/telegraf/blob/${src.rev}/CHANGELOG.md";
+    changelog = "https://github.com/influxdata/telegraf/blob/${finalAttrs.src.rev}/CHANGELOG.md";
     license = lib.licenses.mit;
     maintainers = with lib.maintainers; [
       mic92
@@ -53,4 +53,4 @@ buildGoModule rec {
       zowoq
     ];
   };
-}
+})

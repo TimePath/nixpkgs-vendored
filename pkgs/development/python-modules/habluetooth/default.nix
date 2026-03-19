@@ -15,22 +15,19 @@
   pytest-codspeed,
   pytest-cov-stub,
   pytestCheckHook,
-  pythonOlder,
   setuptools,
 }:
 
 buildPythonPackage rec {
   pname = "habluetooth";
-  version = "5.7.0";
+  version = "5.8.0";
   pyproject = true;
-
-  disabled = pythonOlder "3.11";
 
   src = fetchFromGitHub {
     owner = "Bluetooth-Devices";
     repo = "habluetooth";
     tag = "v${version}";
-    hash = "sha256-1/KbehOIQdclPskp2HtJ3fut4DqkKw/+FdqwmVvfZmU=";
+    hash = "sha256-VbD4fAOZtDtPIGGYb3ISP7c9YLBXAXeOIICqf9Pm5ho=";
   };
 
   build-system = [

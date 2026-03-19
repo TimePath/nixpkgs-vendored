@@ -316,6 +316,13 @@
               - nixos/modules/services/x11/desktop-managers/mate.nix
               - nixos/tests/mate.nix
               - pkgs/desktops/mate/**/*
+              - pkgs/by-name/ca/caja/**/*
+              - pkgs/by-name/ca/caja-*/**/*
+              - pkgs/by-name/li/libmatekbd/**/*
+              - pkgs/by-name/li/libmatemixer/**/*
+              - pkgs/by-name/li/libmateweather/**/*
+              - pkgs/by-name/ma/marco/**/*
+              - pkgs/by-name/ma/mate-*/**/*
 
 "6.topic: module system":
   - any:
@@ -332,6 +339,7 @@
       - changed-files:
           - any-glob-to-any-file:
               - pkgs/os-specific/linux/musl/**/*
+              - pkgs/by-name/mu/musl/**/*
 
 "6.topic: nim":
   - any:
@@ -588,6 +596,15 @@
               - nixos/modules/services/x11/desktop-managers/xfce.nix
               - nixos/tests/xfce.nix
               - pkgs/desktops/xfce/**/*
+              - pkgs/by-name/ga/garcon/**/*
+              - pkgs/by-name/li/libxfce4*/**/*
+              - pkgs/by-name/th/thunar/**/*
+              - pkgs/by-name/th/thunar-*/**/*
+              - pkgs/by-name/tu/tumbler/**/*
+              - pkgs/by-name/xf/xfce4-*/**/*
+              - pkgs/by-name/xf/xfconf/**/*
+              - pkgs/by-name/xf/xfdesktop/**/*
+              - pkgs/by-name/xf/xfwm4/**/*
 
 "6.topic: zig":
   - any:

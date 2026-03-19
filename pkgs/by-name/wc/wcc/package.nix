@@ -95,7 +95,6 @@ stdenv.mkDerivation (finalAttrs: {
       "aarch64-linux"
     ];
     maintainers = with lib.maintainers; [
-      orivej
       DieracDelta
     ];
     mainProgram = "wcc";

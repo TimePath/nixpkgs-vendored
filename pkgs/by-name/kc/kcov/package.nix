@@ -87,7 +87,6 @@ let
 
       maintainers = with lib.maintainers; [
         gal_bolle
-        ekleog
       ];
       platforms = lib.platforms.linux;
     };

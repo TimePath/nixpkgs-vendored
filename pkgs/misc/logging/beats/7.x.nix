@@ -32,7 +32,6 @@ let
           homepage = "https://www.elastic.co/products/beats";
           license = lib.licenses.asl20;
           maintainers = with lib.maintainers; [
-            fadenb
             basvandijk
             dfithian
           ];

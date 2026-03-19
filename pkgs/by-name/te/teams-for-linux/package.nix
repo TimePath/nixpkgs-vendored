@@ -16,16 +16,16 @@
 
 buildNpmPackage rec {
   pname = "teams-for-linux";
-  version = "2.7.5";
+  version = "2.7.10";
 
   src = fetchFromGitHub {
     owner = "IsmaelMartinez";
     repo = "teams-for-linux";
     tag = "v${version}";
-    hash = "sha256-TOoaH5F1Ji5UvonqFu/26OMckZ+l71UF0lQf7jEoStg=";
+    hash = "sha256-ROst4Dc2ddJRe0xu5OjxsejZIOepuhbrpi+MxZNRd1Y=";
   };
 
-  npmDepsHash = "sha256-apw2Dg7MmcC+eOrYS+FpHuNIBH564BAUWefNBs/frU0=";
+  npmDepsHash = "sha256-ICv240Iw5Dld7EO59hxCtW0KhOF8AvnxUOEkYFGtIOU=";
 
   nativeBuildInputs = [
     makeWrapper
@@ -120,8 +120,6 @@ buildNpmPackage rec {
   ];
 
   passthru.updateScript = nix-update-script { };
-
-  versionCheckProgramArg = "--version";
 
   meta = {
     description = "Unofficial Microsoft Teams client for Linux";

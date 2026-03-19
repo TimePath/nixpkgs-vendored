@@ -4,15 +4,15 @@
   python3,
 }:
 
-python3.pkgs.buildPythonApplication rec {
+python3.pkgs.buildPythonApplication (finalAttrs: {
   pname = "keymapviz";
   version = "1.14.1";
-  format = "pyproject";
+  pyproject = true;
 
   src = fetchFromGitHub {
     owner = "yskoht";
     repo = "keymapviz";
-    rev = version;
+    rev = finalAttrs.version;
     sha256 = "sha256-eCvwgco22uPEDDsT8FfTRon1xCGy5p1PBp0pDfNprMs=";
   };
 
@@ -26,7 +26,7 @@ python3.pkgs.buildPythonApplication rec {
     description = "Qmk keymap.c visualizer";
     homepage = "https://github.com/yskoht/keymapviz";
     license = lib.licenses.mit;
-    maintainers = with lib.maintainers; [ lom ];
+    maintainers = [ ];
     mainProgram = "keymapviz";
   };
-}
+})

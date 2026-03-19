@@ -91,6 +91,7 @@
   et-xmlfile,
   networkx,
   numpy,
+  numba,
   openpyxl,
   pandas,
   xlrd,
@@ -116,7 +117,7 @@
   grpcio,
 }:
 let
-  version = "0.18.20";
+  version = "0.18.28";
 in
 buildPythonPackage rec {
   pname = "unstructured";
@@ -127,7 +128,7 @@ buildPythonPackage rec {
     owner = "Unstructured-IO";
     repo = "unstructured";
     tag = version;
-    hash = "sha256-BeoIjFhLu/EM0iAErW3eST5/D+TBuAOZ4lDPTXEqpzc=";
+    hash = "sha256-zs7T52SkC9PDnx0O/XChHMfnRnPwbbOz8/8ea3jyjNA=";
   };
 
   build-system = [ setuptools ];
@@ -160,6 +161,7 @@ buildPythonPackage rec {
     mypy-extensions
     nest-asyncio
     nltk
+    numba
     numpy
     olefile
     orderly-set

@@ -31,10 +31,8 @@
 
 buildPythonPackage rec {
   pname = "sqlalchemy-utils";
-  version = "0.42.2";
+  version = "0.41.2";
   pyproject = true;
-
-  disabled = pythonOlder "3.10";
 
   src = fetchFromGitHub {
     owner = "kvesteri";
@@ -75,7 +73,7 @@ buildPythonPackage rec {
     pymysql
     pyodbc
   ]
-  ++ lib.flatten (builtins.attrValues optional-dependencies)
+  ++ lib.concatAttrValues optional-dependencies
   ++ lib.optionals (pythonOlder "3.12") [
     # requires distutils, which were removed in 3.12
     psycopg2cffi

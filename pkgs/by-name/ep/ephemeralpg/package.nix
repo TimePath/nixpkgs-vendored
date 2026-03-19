@@ -6,11 +6,11 @@
   getopt,
   makeWrapper,
 }:
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "ephemeralpg";
   version = "3.4";
   src = fetchurl {
-    url = "https://eradman.com/ephemeralpg/code/${pname}-${version}.tar.gz";
+    url = "https://eradman.com/ephemeralpg/code/ephemeralpg-${finalAttrs.version}.tar.gz";
     hash = "sha256-IwAIJFW/ahDXGgINi4N9mG3XKw74JXK6+SLxGMZ8tS0=";
   };
   nativeBuildInputs = [ makeWrapper ];
@@ -30,8 +30,7 @@ stdenv.mkDerivation rec {
     homepage = "https://eradman.com/ephemeralpg/";
     platforms = lib.platforms.all;
     maintainers = with lib.maintainers; [
-      hrdinka
       medv
     ];
   };
-}
+})

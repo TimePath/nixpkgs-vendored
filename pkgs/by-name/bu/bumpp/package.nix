@@ -12,19 +12,19 @@
 }:
 stdenv.mkDerivation (finalAttrs: {
   pname = "bumpp";
-  version = "10.3.1";
+  version = "11.0.0";
 
   src = fetchFromGitHub {
     owner = "antfu-collective";
     repo = "bumpp";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-krJzPHlGgtEukOlSX0sXfCwXmdItDLhf6hS+zamNrN4=";
+    hash = "sha256-opZYlEQSZo6V+McFy6gFMfchLYuu5oEP4XuqEkd18F0=";
   };
 
   pnpmDeps = fetchPnpmDeps {
     inherit (finalAttrs) pname version src;
     fetcherVersion = 2;
-    hash = "sha256-N6boJiwq5G4L/vOqp+GoYWtSI1sYScYadxXueeJgGMo=";
+    hash = "sha256-rI0DhnncVWd4Wp5pvTnL8IerXbFDwJzkhC4uIe6WJto=";
   };
 
   nativeBuildInputs = [
@@ -48,7 +48,6 @@ stdenv.mkDerivation (finalAttrs: {
   nativeInstallCheckInputs = [
     versionCheckHook
   ];
-  versionCheckProgramArg = "--version";
   doInstallCheck = true;
 
   passthru.updateScript = nix-update-script { };

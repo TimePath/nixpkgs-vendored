@@ -53,7 +53,7 @@ python3.pkgs.buildPythonApplication rec {
     hash = "sha256-buHCwrG3S28AgzBqJN/a0uBDDq2IM8LdE51baGFGLwM=";
   };
 
-  format = "pyproject";
+  pyproject = true;
 
   buildInputs = [
     gtk4

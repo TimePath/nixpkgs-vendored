@@ -17,14 +17,14 @@ stdenv.mkDerivation (finalAttrs: {
   src = fetchFromGitHub {
     owner = "idealvin";
     repo = "coost";
-    rev = "v${finalAttrs.version}";
+    tag = "v${finalAttrs.version}";
     hash = "sha256-HbMenAL/UWsqQ1o7cMeWfwXkLh4GxIKV7iuZQD3hDA8=";
   };
 
   postPatch = ''
     substituteInPlace cmake/coost.pc.in \
-      --replace '$'{exec_prefix}/@CMAKE_INSTALL_LIBDIR@ @CMAKE_INSTALL_FULL_LIBDIR@ \
-      --replace '$'{prefix}/@CMAKE_INSTALL_INCLUDEDIR@ @CMAKE_INSTALL_FULL_INCLUDEDIR@ \
+      --replace-fail '$'{exec_prefix}/@CMAKE_INSTALL_LIBDIR@ @CMAKE_INSTALL_FULL_LIBDIR@ \
+      --replace-fail '$'{prefix}/@CMAKE_INSTALL_INCLUDEDIR@ @CMAKE_INSTALL_FULL_INCLUDEDIR@ \
   '';
 
   nativeBuildInputs = [ cmake ];

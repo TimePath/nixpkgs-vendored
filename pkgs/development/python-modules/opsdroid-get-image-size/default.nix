@@ -2,7 +2,6 @@
   lib,
   buildPythonPackage,
   fetchPypi,
-  pythonOlder,
   setuptools,
   versioneer,
 }:
@@ -11,8 +10,6 @@ buildPythonPackage rec {
   pname = "opsdroid-get-image-size";
   version = "0.2.2";
   pyproject = true;
-
-  disabled = pythonOlder "3.10";
 
   src = fetchPypi {
     pname = "opsdroid_get_image_size";
@@ -39,7 +36,7 @@ buildPythonPackage rec {
     homepage = "https://github.com/opsdroid/image_size";
     changelog = "https://github.com/opsdroid/image_size/releases/tag/${version}";
     license = lib.licenses.mit;
-    maintainers = with lib.maintainers; [ globin ];
+    maintainers = [ ];
     mainProgram = "get-image-size";
   };
 }

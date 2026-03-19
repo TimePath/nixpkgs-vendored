@@ -8,16 +8,16 @@
 
 buildGoModule (finalAttrs: {
   pname = "git-pages-cli";
-  version = "1.3.1";
+  version = "1.6.0";
 
   src = fetchFromCodeberg {
     owner = "git-pages";
     repo = "git-pages-cli";
     rev = "v${finalAttrs.version}";
-    hash = "sha256-BApqy0eTTl7OyJGnnNiVXiPKNN4tPoq88ucA/Ipe16Q=";
+    hash = "sha256-VImFTyV1REHIWWEY5Kqd3WJ+YF5OupQhEa4/VWnrHi4=";
   };
 
-  vendorHash = "sha256-5vjUhN3lCr41q91lOD7v0F9c6a8GJj7wBGnnzgFBhJU=";
+  vendorHash = "sha256-Vp6cqGM4Lhsfhjgv0Tz6Bmdz20EAGyPGR2Y91dnGejA=";
 
   ldflags = [
     "-X"

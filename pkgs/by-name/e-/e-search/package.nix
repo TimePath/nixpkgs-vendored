@@ -9,7 +9,7 @@
   gobject-introspection,
   makeWrapper,
   nodejs_20,
-  pnpm_10,
+  pnpm_10_29_2,
   fetchPnpmDeps,
   pnpmConfigHook,
   electron,
@@ -26,14 +26,18 @@
   libsForQt5,
   pango,
   pangomm,
-  xorg,
+  libxt,
+  libxtst,
+  libxrandr,
+  libx11,
+  libxcb,
   zlib,
   nix-update-script,
   commandLineArgs ? "",
 }:
 
 let
-  pnpm' = pnpm_10.override { nodejs = nodejs_20; };
+  pnpm' = pnpm_10_29_2.override { nodejs = nodejs_20; };
   eSearch-OCR-ch = fetchzip {
     url = "https://github.com/xushengfeng/eSearch-OCR/releases/download/4.0.0/ch.zip";
     hash = "sha256-0NCXuy8k9/AdpK4ie49S8032u37gNhX6Jc6bOGufrV4=";
@@ -54,13 +58,13 @@ let
 in
 stdenv.mkDerivation (finalAttrs: {
   pname = "e-search";
-  version = "15.2.1";
+  version = "15.2.3";
 
   src = fetchFromGitHub {
     owner = "xushengfeng";
     repo = "eSearch";
     tag = finalAttrs.version;
-    hash = "sha256-K4GFLUeq/IbJC3FZBgvKnZq7JrXkqe6eVGsUxxlpWF0=";
+    hash = "sha256-wzSspt1qJpBgw4MyiK+vhRjoybNcaaa9nWBPV0bctiM=";
   };
 
   pnpmDeps = fetchPnpmDeps {
@@ -68,7 +72,7 @@ stdenv.mkDerivation (finalAttrs: {
     nativeBuildInputs = [ gitMinimal ];
     pnpm = pnpm';
     fetcherVersion = 2;
-    hash = "sha256-wPwsFY7wvbE1LW5PMwMZKejELtqmdsYO2RVrEuOzdcg=";
+    hash = "sha256-q0+6vkDZdcDXwsTxby2RuQUYTgEnxGx1CeXROSrG9lU=";
   };
 
   nativeBuildInputs = [
@@ -108,11 +112,11 @@ stdenv.mkDerivation (finalAttrs: {
     libsForQt5.qt5.qtxmlpatterns
     pango
     pangomm
-    xorg.libX11
-    xorg.libXrandr
-    xorg.libXt
-    xorg.libXtst
-    xorg.libxcb
+    libx11
+    libxrandr
+    libxt
+    libxtst
+    libxcb
     zlib
   ];
 

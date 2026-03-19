@@ -7,14 +7,14 @@
   pulseaudio,
 }:
 
-python3.pkgs.buildPythonApplication rec {
+python3.pkgs.buildPythonApplication (finalAttrs: {
   pname = "quisk";
-  version = "4.2.46";
+  version = "4.2.50";
   pyproject = true;
 
   src = fetchPypi {
-    inherit pname version;
-    hash = "sha256-Tp6ctOZLGYyRe3q5EU1dZjAZTCXTsHywFzE5jKF2Ssc=";
+    inherit (finalAttrs) pname version;
+    hash = "sha256-HFZhVJxDUeFDFboWYGiuJYG8fb+xeWBKKi/6uBiDp84=";
   };
 
   buildInputs = [
@@ -59,4 +59,4 @@ python3.pkgs.buildPythonApplication rec {
     ];
     platforms = lib.platforms.linux;
   };
-}
+})

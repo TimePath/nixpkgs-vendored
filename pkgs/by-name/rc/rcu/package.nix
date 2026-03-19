@@ -26,7 +26,7 @@ python3Packages.buildPythonApplication rec {
   pname = "rcu";
   version = "4.0.33";
 
-  format = "other";
+  pyproject = false;
 
   src =
     let

@@ -3,15 +3,12 @@ src: version:
   lib,
   fetchYarnDeps,
   dart-sass,
-  nodePackages_latest,
+  nodejs,
   fixup-yarn-lock,
   stdenv,
   yarn,
   writableTmpDirAsHomeHook,
 }:
-let
-  nodejs = nodePackages_latest.nodejs;
-in
 stdenv.mkDerivation {
   name = "mealie-frontend";
   inherit version;

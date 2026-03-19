@@ -29,7 +29,6 @@ rustPlatform.buildRustPackage rec {
     changelog = "https://github.com/mdzk-rs/mdzk/blob/main/CHANGELOG.md";
     license = lib.licenses.mpl20;
     maintainers = with lib.maintainers; [
-      bryanasdev000
       ratsclub
     ];
     mainProgram = "mdzk";

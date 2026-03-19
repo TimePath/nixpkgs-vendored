@@ -4,7 +4,6 @@
   callPackage,
   python3Packages,
   fetchFromGitHub,
-  fetchpatch,
   installShellFiles,
   platformio,
   esptool,
@@ -34,14 +33,14 @@ let
 in
 python.pkgs.buildPythonApplication rec {
   pname = "esphome";
-  version = "2025.11.5";
+  version = "2026.2.4";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "esphome";
     repo = "esphome";
     tag = version;
-    hash = "sha256-ln+LuV//FVb+Jy6cMNth6RaFtusf/ZCLtYowlDnBybE=";
+    hash = "sha256-SN9XfXFFogxKwstcS4ZQxJEGHpLpjyGzRWz2X0XQdIc=";
   };
 
   patches = [
@@ -50,12 +49,6 @@ python.pkgs.buildPythonApplication rec {
     # own python environment through `python -m esptool` and then fails to find
     # the esptool library.
     ./esp32-post-build-esptool-reference.patch
-
-    (fetchpatch {
-      name = "CVE-2026-23833.patch";
-      url = "https://github.com/esphome/esphome/commit/69d7b6e9210390051318bd8e6410727689de08d6.patch";
-      hash = "sha256-TuKsj5tSxV49U9f3OpJECe7UcpKYhkvwPclRtDkK3KU=";
-    })
   ];
 
   build-system = with python.pkgs; [
@@ -75,8 +68,8 @@ python.pkgs.buildPythonApplication rec {
 
   postPatch = ''
     substituteInPlace pyproject.toml \
-      --replace-fail "setuptools==80.9.0" "setuptools" \
-      --replace-fail "wheel>=0.43,<0.46" "wheel"
+      --replace-fail "setuptools==82.0.0" "setuptools" \
+      --replace-fail "wheel>=0.43,<0.47" "wheel"
   '';
 
   # Remove esptool and platformio from requirements
@@ -102,6 +95,8 @@ python.pkgs.buildPythonApplication rec {
     pyparsing
     pyserial
     pyyaml
+    requests
+    resvg-py
     ruamel-yaml
     tornado
     tzdata
@@ -184,8 +179,6 @@ python.pkgs.buildPythonApplication rec {
     "test_clang_tidy_mode_targeted_scan"
   ];
 
-  versionCheckProgramArg = "--version";
-
   passthru = {
     dashboard = python.pkgs.esphome-dashboard;
     updateScript = callPackage ./update.nix { };
@@ -202,6 +195,7 @@ python.pkgs.buildPythonApplication rec {
     ];
     maintainers = with lib.maintainers; [
       hexa
+      picnoir
       thanegill
     ];
     mainProgram = "esphome";

@@ -12,20 +12,20 @@
 }:
 stdenv.mkDerivation (finalAttrs: {
   pname = "taze";
-  version = "19.9.0";
+  version = "19.10.0";
 
   src = fetchFromGitHub {
     owner = "antfu-collective";
     repo = "taze";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-Xpi5Wc8YP3hUSbEnfEM6uNvdlNiVMRz0oqZAJCBkLHQ=";
+    hash = "sha256-jkVbPEHSO2ZZwxfxzq6GUsAi0O/BJYv2YLghpiLM66g=";
   };
 
   pnpmDeps = fetchPnpmDeps {
     inherit (finalAttrs) pname version src;
     pnpm = pnpm_9;
     fetcherVersion = 1;
-    hash = "sha256-g1LGiCb2NESywYN4tTVf8sXbuJla2whCm5amvPsdmRc=";
+    hash = "sha256-+kORi1CwLD567b2L0PRs+t16Qi7HegpYoc8W127rp9k=";
   };
 
   nativeBuildInputs = [
@@ -49,7 +49,6 @@ stdenv.mkDerivation (finalAttrs: {
   nativeInstallCheckInputs = [
     versionCheckHook
   ];
-  versionCheckProgramArg = "--version";
   doInstallCheck = true;
 
   passthru.updateScript = nix-update-script { };

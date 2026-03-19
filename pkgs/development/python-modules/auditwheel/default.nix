@@ -1,7 +1,6 @@
 {
   lib,
   buildPythonPackage,
-  pythonOlder,
   fetchPypi,
   setuptools-scm,
   pyelftools,
@@ -17,14 +16,12 @@
 
 buildPythonPackage rec {
   pname = "auditwheel";
-  version = "6.4.2";
+  version = "6.6.0";
   pyproject = true;
-
-  disabled = pythonOlder "3.9";
 
   src = fetchPypi {
     inherit pname version;
-    hash = "sha256-t6Ya/JGDtrXGYd5ZylhvnHIARFpAnFjN8gSdb3FjbVE=";
+    hash = "sha256-J387MVrQsE3wor4tEmw/05kwvCZd8PlYnXjJcP8G9Ss=";
   };
 
   build-system = [ setuptools-scm ];

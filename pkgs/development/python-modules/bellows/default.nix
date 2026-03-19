@@ -7,7 +7,6 @@
   pytest-asyncio,
   pytest-timeout,
   pytestCheckHook,
-  pythonOlder,
   setuptools,
   voluptuous,
   zigpy,
@@ -15,14 +14,14 @@
 
 buildPythonPackage rec {
   pname = "bellows";
-  version = "0.47.2";
+  version = "0.49.0";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "zigpy";
     repo = "bellows";
     tag = version;
-    hash = "sha256-1gWmXrRCYmU0VemhW5TCn1/rnOmz07q8bQ6W3a2mXro=";
+    hash = "sha256-haWej3ZcUPd9Rpqf2PH8r0useylnLDaPiSctrwLz71Q=";
   };
 
   postPatch = ''

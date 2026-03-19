@@ -41,14 +41,14 @@
 
 buildPythonPackage rec {
   pname = "django-allauth";
-  version = "65.12.0";
+  version = "65.14.3";
   pyproject = true;
 
   src = fetchFromCodeberg {
     owner = "allauth";
     repo = "django-allauth";
     tag = version;
-    hash = "sha256-LM9XU8oMzg2WlYnwPmmZY+8gzZWT1br2ciZ7gCTbH7I=";
+    hash = "sha256-Kr6iYN+qM1ZdtQAJ9Ks+zC70AiiUi2IY2O/G9S+tTmI=";
   };
 
   nativeBuildInputs = [ gettext ];
@@ -68,6 +68,10 @@ buildPythonPackage rec {
   '';
 
   optional-dependencies = {
+    headless = [
+      pyjwt
+    ]
+    ++ pyjwt.optional-dependencies.crypto;
     headless-spec = [ pyyaml ];
     idp-oidc = [
       oauthlib
@@ -101,7 +105,7 @@ buildPythonPackage rec {
     pytestCheckHook
     pyyaml
   ]
-  ++ lib.flatten (builtins.attrValues optional-dependencies);
+  ++ lib.concatAttrValues optional-dependencies;
 
   disabledTests = [
     # Tests require network access

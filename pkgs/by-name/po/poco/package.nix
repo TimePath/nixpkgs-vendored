@@ -52,8 +52,10 @@ stdenv.mkDerivation rec {
     "dev"
   ];
 
-  MYSQL_DIR = libmysqlclient;
-  MYSQL_INCLUDE_DIR = "${MYSQL_DIR}/include/mysql";
+  env = {
+    MYSQL_DIR = libmysqlclient;
+    MYSQL_INCLUDE_DIR = "${env.MYSQL_DIR}/include/mysql";
+  };
 
   cmakeFlags =
     let
@@ -112,7 +114,6 @@ stdenv.mkDerivation rec {
     description = "Cross-platform C++ libraries with a network/internet focus";
     license = lib.licenses.boost;
     maintainers = with lib.maintainers; [
-      orivej
       tomodachi94
     ];
     platforms = lib.platforms.unix;

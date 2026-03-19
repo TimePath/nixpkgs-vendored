@@ -89,7 +89,7 @@ let
     ;
 
   # Mark versions older than minSupportedVersion as EOL.
-  minSupportedVersion = "4.18";
+  minSupportedVersion = "4.17";
 
   scriptDeps =
     let
@@ -329,7 +329,7 @@ stdenv.mkDerivation (finalAttrs: {
     # We also need to wrap pygrub, which lies in $out/libexec/xen/bin.
     ''
       wrapPythonPrograms
-      wrapPythonProgramsIn "$out/libexec/xen/bin" "$out $pythonPath"
+      wrapPythonProgramsIn "$out/libexec/xen/bin" "$out ''${pythonPath[*]}"
     '';
 
   postFixup = ''

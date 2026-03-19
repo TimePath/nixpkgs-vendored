@@ -8,8 +8,6 @@
   vendor-hash,
 
   rustPlatform,
-  fetchpatch,
-
   cargo-tauri,
   jq,
   moreutils,
@@ -23,16 +21,13 @@
   kdePackages,
   libayatana-appindicator,
   libsForQt5,
-  libsoup,
+  libsoup_3,
   openssl,
   webkitgtk_4_1,
 }:
 rustPlatform.buildRustPackage {
   inherit version src meta;
   pname = "${pname}-unwrapped";
-
-  cargoRoot = "src-tauri";
-  buildAndTestSubdir = "src-tauri";
 
   cargoHash = vendor-hash;
 
@@ -43,7 +38,7 @@ rustPlatform.buildRustPackage {
       src
       ;
     pnpm = pnpm_9;
-    fetcherVersion = 1;
+    fetcherVersion = 3;
     hash = pnpm-hash;
   };
 
@@ -51,11 +46,9 @@ rustPlatform.buildRustPackage {
     OPENSSL_NO_VENDOR = 1;
   };
 
-  patches = [
-    (fetchpatch {
-      url = "https://github.com/clash-verge-rev/clash-verge-rev/commit/645b92bc2815fe55bbc827907bff0edbfee48674.patch";
-      hash = "sha256-BH0SvVofW6YJ3e/LOHojisenMwcxYfm3gG/dbxvYBMs=";
-    })
+  cargoPatches = [
+    # Duplicate versions of tao-macros make fetchCargoVendor fail, keep one of them.
+    ./patch-cargo-lock.patch
   ];
 
   postPatch = ''
@@ -106,7 +99,7 @@ rustPlatform.buildRustPackage {
 
   buildInputs = [
     libayatana-appindicator
-    libsoup
+    libsoup_3
     openssl
     webkitgtk_4_1
   ];

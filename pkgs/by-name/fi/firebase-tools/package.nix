@@ -3,6 +3,7 @@
   stdenv,
   buildNpmPackage,
   fetchFromGitHub,
+  nodejs_22,
   python3,
   xcbuild,
   nix-update-script,
@@ -10,16 +11,17 @@
 
 buildNpmPackage rec {
   pname = "firebase-tools";
-  version = "14.26.0";
+  version = "15.9.1";
+  nodejs = nodejs_22;
 
   src = fetchFromGitHub {
     owner = "firebase";
     repo = "firebase-tools";
     tag = "v${version}";
-    hash = "sha256-rtLjvD7HYqc2acteeBZEnFqMkAK3f5/5X8hgwPVMv+k=";
+    hash = "sha256-FSgDzxd0C8DmDfcRmo3i8G1xkOYvyeQEaWxMYVdUOr4=";
   };
 
-  npmDepsHash = "sha256-BqMXNV0sSfy+hitq4Ngv1OrYgC/vyqZCG39S0HMJh4o=";
+  npmDepsHash = "sha256-uMSNrXHg9FWaYDok/BxKkpy2cF+Go7YbgjFJZbnktoo=";
 
   # No more package-lock.json in upstream src
   postPatch = ''

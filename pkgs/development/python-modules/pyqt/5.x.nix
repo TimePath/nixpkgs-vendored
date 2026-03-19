@@ -29,7 +29,7 @@
 buildPythonPackage rec {
   pname = "pyqt5";
   version = "5.15.10";
-  format = "pyproject";
+  pyproject = true;
 
   disabled = isPy27;
 
@@ -203,6 +203,5 @@ buildPythonPackage rec {
     homepage = "https://riverbankcomputing.com/";
     license = lib.licenses.gpl3Only;
     inherit (mesa.meta) platforms;
-    maintainers = with lib.maintainers; [ sander ];
   };
 }

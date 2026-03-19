@@ -25,9 +25,9 @@
   buildPackages,
   gobject-introspection,
   enableX11 ? stdenv.hostPlatform.isLinux,
-  libXext,
-  libXi,
-  libXv,
+  libxext,
+  libxi,
+  libxv,
   libdrm,
   enableWayland ? stdenv.hostPlatform.isLinux,
   wayland-scanner,
@@ -111,9 +111,9 @@ stdenv.mkDerivation (finalAttrs: {
     alsa-lib
   ]
   ++ lib.optionals enableX11 [
-    libXext
-    libXi
-    libXv
+    libxext
+    libxi
+    libxv
   ]
   ++ lib.optionals enableWayland [
     wayland
@@ -170,6 +170,10 @@ stdenv.mkDerivation (finalAttrs: {
 
   doCheck = false; # fails, wants DRI access for OpenGL
 
+  preFixup = ''
+    moveToOutput "lib/gstreamer-1.0/pkgconfig" "$dev"
+  '';
+
   passthru = {
     # Downstream `gst-*` packages depending on `gst-plugins-base`
     # have meson build options like 'gl' etc. that depend
@@ -202,6 +206,6 @@ stdenv.mkDerivation (finalAttrs: {
       "gstreamer-video-1.0"
     ];
     platforms = lib.platforms.unix;
-    maintainers = with lib.maintainers; [ matthewbauer ];
+    maintainers = [ ];
   };
 })

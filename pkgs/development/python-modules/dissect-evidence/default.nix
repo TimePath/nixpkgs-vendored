@@ -7,21 +7,19 @@
   setuptools,
   setuptools-scm,
   pytestCheckHook,
-  pythonOlder,
+  pythonAtLeast,
 }:
 
 buildPythonPackage rec {
   pname = "dissect-evidence";
-  version = "3.11";
+  version = "3.12";
   pyproject = true;
-
-  disabled = pythonOlder "3.10";
 
   src = fetchFromGitHub {
     owner = "fox-it";
     repo = "dissect.evidence";
     tag = version;
-    hash = "sha256-1MXOlPhiSAOJtX2MDaLFw4tFpp+GaGUxlU3jq/Mereo=";
+    hash = "sha256-kSM2fXaK3H6os/RexwOGg2d8UptoAlHnYK7FlMTg2bI=";
   };
 
   build-system = [
@@ -35,6 +33,11 @@ buildPythonPackage rec {
   ];
 
   nativeCheckInputs = [ pytestCheckHook ];
+
+  disabledTests = lib.optionals (pythonAtLeast "3.14") [
+    # https://github.com/fox-it/dissect.evidence/issues/46
+    "test_ewf"
+  ];
 
   pythonImportsCheck = [ "dissect.evidence" ];
 

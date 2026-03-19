@@ -72,13 +72,13 @@ let
   );
 
 in
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "postfix";
-  version = "3.10.7";
+  version = "3.11.1";
 
   src = fetchurl {
-    url = "https://de.postfix.org/ftpmirror/official/postfix-${version}.tar.gz";
-    hash = "sha256-/NP/cIBq5/CoLntcMB4vT8+mpomi27Oz8bXlIIEVeIo=";
+    url = "http://ftp.porcupine.org/mirrors/postfix-release/official/postfix-${finalAttrs.version}.tar.gz";
+    hash = "sha256-ZZJlYG7ZtiQpZLbUSiqvXmB9j7mtJUECekoyDd+4ncE=";
   };
 
   nativeBuildInputs = [
@@ -147,7 +147,9 @@ stdenv.mkDerivation rec {
 
   enableParallelBuilding = true;
 
-  NIX_LDFLAGS = lib.optionalString withLDAP "-llber";
+  env = lib.optionalAttrs withLDAP {
+    NIX_LDFLAGS = "-llber";
+  };
 
   installTargets = [ "non-interactive-package" ];
 
@@ -191,7 +193,7 @@ stdenv.mkDerivation rec {
 
   meta = {
     homepage = "http://www.postfix.org/";
-    changelog = "https://www.postfix.org/announcements/postfix-${version}.html";
+    changelog = "https://www.postfix.org/announcements/postfix-${finalAttrs.version}.html";
     description = "Fast, easy to administer, and secure mail server";
     license = with lib.licenses; [
       ipl10
@@ -199,9 +201,8 @@ stdenv.mkDerivation rec {
     ];
     platforms = lib.platforms.linux;
     maintainers = with lib.maintainers; [
-      globin
       dotlambda
       lewo
     ];
   };
-}
+})

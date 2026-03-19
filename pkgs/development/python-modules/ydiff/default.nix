@@ -12,14 +12,14 @@
 
 buildPythonPackage rec {
   pname = "ydiff";
-  version = "1.4.2";
+  version = "1.5";
   format = "setuptools";
 
   src = fetchFromGitHub {
     owner = "ymattw";
     repo = "ydiff";
     tag = version;
-    hash = "sha256-JaGkABroj+/7MrgpFYI2vE1bndsilIodopMUnfmNhwA=";
+    hash = "sha256-9a7M6+CqGRvO1yainImN2RQVH3XMxE9PTLXJGKekXLg=";
   };
 
   patchPhase = ''
@@ -55,6 +55,9 @@ buildPythonPackage rec {
     '';
     homepage = "https://github.com/ymattw/ydiff";
     license = lib.licenses.bsd3;
-    teams = [ lib.teams.deshaw ];
+    maintainers = with lib.maintainers; [
+      de11n
+      despsyched
+    ];
   };
 }

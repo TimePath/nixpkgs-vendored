@@ -42,7 +42,6 @@ crystal.buildCrystalPackage rec {
     mainProgram = "oq";
     homepage = "https://blacksmoke16.github.io/oq/";
     license = lib.licenses.mit;
-    maintainers = with lib.maintainers; [ Br1ght0ne ];
     platforms = lib.platforms.unix;
   };
 }

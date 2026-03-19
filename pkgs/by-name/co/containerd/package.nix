@@ -31,7 +31,15 @@ buildGoModule rec {
     hash = "sha256-fDOfN0XESrBTDW7Nxj9niqU93BQ5/JaGLwAR3u6Xaik=";
   };
 
-  postPatch = "patchShebangs .";
+  postPatch = ''
+    patchShebangs .
+  ''
+  + lib.optionalString (!stdenv.buildPlatform.canExecute stdenv.hostPlatform) ''
+    # When cross-compiling with CGO_ENABLED=0, we can't use -extldflags "-static"
+    # Remove it from SHIM_GO_LDFLAGS to avoid linking errors
+    substituteInPlace Makefile \
+      --replace-fail '-extldflags "-static"' ""
+  '';
 
   vendorHash = null;
 
@@ -95,7 +103,6 @@ buildGoModule rec {
     changelog = "https://github.com/containerd/containerd/releases/tag/v${version}";
     license = lib.licenses.asl20;
     maintainers = with lib.maintainers; [
-      offline
       vdemeester
       getchoo
     ];

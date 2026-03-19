@@ -93,7 +93,6 @@ lib.makeOverridable (
 
       meta = {
         maintainers = with lib.maintainers; [
-          matthewbauer
           qyliss
         ];
         platforms = lib.platforms.unix;

@@ -35,7 +35,7 @@
 }:
 rustPlatform.buildRustPackage (finalAttrs: {
   pname = "rerun";
-  version = "0.27.2";
+  version = "0.30.2";
 
   outputs = [
     "out"
@@ -46,7 +46,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
     owner = "rerun-io";
     repo = "rerun";
     tag = finalAttrs.version;
-    hash = "sha256-az/NylYwhWoNvrOvsB+cRywoPrjngy/KX1B2hohcl0Q=";
+    hash = "sha256-KDtDX7qt+wOJDUVkqjJQPFp2umH7vYja8WyYven5emM=";
   };
 
   # The path in `build.rs` is wrong for some reason, so we patch it to make the passthru tests work
@@ -55,13 +55,18 @@ rustPlatform.buildRustPackage (finalAttrs: {
       --replace-fail '"rerun_sdk/rerun_cli/rerun"' '"rerun_sdk/rerun"'
   '';
 
-  cargoHash = "sha256-wU2Bv9BzcHI9vhIzGpQY2oYCRCNTwXkBrUruf6+W7g8=";
+  cargoHash = "sha256-/VAPPz1KYy8kbNRyPq198x3uyX2/vbEqWJxY18+b7BI=";
 
   cargoBuildFlags = [
-    "--package rerun-cli"
-    "--package rerun_c"
+    "--package"
+    "rerun-cli"
+    "--package"
+    "rerun_c"
   ];
-  cargoTestFlags = [ "--package rerun-cli" ];
+  cargoTestFlags = [
+    "--package"
+    "rerun-cli"
+  ];
   buildNoDefaultFeatures = true;
   buildFeatures = [
     "native_viewer"
@@ -186,7 +191,6 @@ rustPlatform.buildRustPackage (finalAttrs: {
   nativeInstallCheckInputs = [
     versionCheckHook
   ];
-  versionCheckProgramArg = "--version";
   doInstallCheck = true;
 
   passthru = {

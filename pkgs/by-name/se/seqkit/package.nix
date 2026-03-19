@@ -4,18 +4,18 @@
   buildGoModule,
 }:
 
-buildGoModule rec {
+buildGoModule (finalAttrs: {
   pname = "seqkit";
-  version = "2.11.0";
+  version = "2.13.0";
 
   src = fetchFromGitHub {
     owner = "shenwei356";
     repo = "seqkit";
-    rev = "v${version}";
-    sha256 = "sha256-8AffU5u7Pw3WX+MaLioPKVwg3WnTLjHcY6Yvo5lrHwk=";
+    rev = "v${finalAttrs.version}";
+    sha256 = "sha256-IZhQHB96uFQGfAqCJiT4EdkDT605EHu7eSQa/i4d3hQ=";
   };
 
-  vendorHash = "sha256-TsL7iYZoxCGR2gl2YlNCnmssVui8TLKN8JTtLAzgvH4=";
+  vendorHash = "sha256-HDyytwFIfvDGMmcMVH0F2NAttygTUu8PS4RvKK0TzLE=";
 
   meta = {
     description = "Cross-platform and ultrafast toolkit for FASTA/Q file manipulation";
@@ -23,4 +23,4 @@ buildGoModule rec {
     license = lib.licenses.mit;
     maintainers = with lib.maintainers; [ bzizou ];
   };
-}
+})

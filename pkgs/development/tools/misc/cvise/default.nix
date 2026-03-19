@@ -20,7 +20,7 @@
 buildPythonApplication rec {
   pname = "cvise";
   version = "2.12.0";
-  format = "other";
+  pyproject = false;
 
   src = fetchFromGitHub {
     owner = "marxin";
@@ -94,7 +94,7 @@ buildPythonApplication rec {
     homepage = "https://github.com/marxin/cvise";
     description = "Super-parallel Python port of C-Reduce";
     license = lib.licenses.ncsa;
-    maintainers = with lib.maintainers; [ orivej ];
+    maintainers = [ ];
     platforms = lib.platforms.linux;
   };
 }

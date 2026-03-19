@@ -8,23 +8,23 @@
   nix-update-script,
 }:
 
-buildGoModule rec {
+buildGoModule (finalAttrs: {
   pname = "supabase-cli";
-  version = "2.60.0";
+  version = "2.75.0";
 
   src = fetchFromGitHub {
     owner = "supabase";
     repo = "cli";
-    rev = "v${version}";
-    hash = "sha256-GW5ikbbFIkFSZSHhpzI9tMfSqjdH9444n+3m3ZbOGF8=";
+    rev = "v${finalAttrs.version}";
+    hash = "sha256-AroDni0IQ6jMn5mOXt4+8j5tTwEk1upIUo2qvbWY9Jo=";
   };
 
-  vendorHash = "sha256-r1QBFcNDJQrz2oE8KA5b6uoNP3H7KoI63uNu5iAglFg=";
+  vendorHash = "sha256-+qFZHCBcZ8tfSrDoYzw7wrVhZM+cUU5okiii8eeDCek=";
 
   ldflags = [
     "-s"
     "-w"
-    "-X=github.com/supabase/cli/internal/utils.Version=${version}"
+    "-X=github.com/supabase/cli/internal/utils.Version=${finalAttrs.version}"
   ];
 
   subPackages = [ "." ];
@@ -63,4 +63,4 @@ buildGoModule rec {
     ];
     mainProgram = "supabase";
   };
-}
+})

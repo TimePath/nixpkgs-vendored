@@ -39,6 +39,8 @@
 assert (securityLevel == null) || (securityLevel >= 0 && securityLevel <= 5);
 
 let
+  useBinaryWrapper = !(stdenv.hostPlatform.isWindows || stdenv.hostPlatform.isCygwin);
+
   common =
     {
       version,
@@ -98,7 +100,10 @@ let
           (finalAttrs.finalPackage.doCheck && stdenv.hostPlatform.libc != stdenv.buildPlatform.libc)
           ''
             rm test/recipes/02-test_errstr.t
-          '';
+          ''
+      + lib.optionalString stdenv.hostPlatform.isCygwin ''
+        rm test/recipes/01-test_symbol_presence.t
+      '';
 
       outputs = [
         "bin"
@@ -121,7 +126,7 @@ let
         && stdenv.cc.isGNU;
 
       nativeBuildInputs =
-        lib.optional (!stdenv.hostPlatform.isWindows) makeBinaryWrapper
+        lib.optional useBinaryWrapper makeBinaryWrapper
         ++ [ perl ]
         ++ lib.optionals static [ removeReferencesTo ];
       buildInputs = lib.optional withCryptodev cryptodev ++ lib.optional withZlib zlib;
@@ -175,6 +180,8 @@ let
               "./Configure linux-generic${toString stdenv.hostPlatform.parsed.cpu.bits}"
           else if stdenv.hostPlatform.isiOS then
             "./Configure ios${toString stdenv.hostPlatform.parsed.cpu.bits}-cross"
+          else if stdenv.hostPlatform.isCygwin then
+            "./Configure Cygwin-${stdenv.hostPlatform.linuxArch}"
           else
             throw "Not sure what configuration to use for ${stdenv.hostPlatform.config}"
         );
@@ -290,7 +297,7 @@ let
 
         ''
         +
-          lib.optionalString (!stdenv.hostPlatform.isWindows)
+          lib.optionalString useBinaryWrapper
             # makeWrapper is broken for windows cross (https://github.com/NixOS/nixpkgs/issues/120726)
             ''
               # c_rehash is a legacy perl script with the same functionality
@@ -378,13 +385,14 @@ let
         license = lib.licenses.openssl;
         mainProgram = "openssl";
         maintainers = with lib.maintainers; [ thillux ];
-        teams = [ lib.teams.stridtech ];
+        teams = [ lib.teams.security-review ];
         pkgConfigModules = [
           "libcrypto"
           "libssl"
           "openssl"
         ];
         platforms = lib.platforms.all;
+        identifiers.cpeParts = lib.meta.cpeFullVersionWithVendor "openssl" finalAttrs.version;
       }
       // extraMeta;
     });
@@ -442,7 +450,47 @@ in
       (
         if stdenv.hostPlatform.isDarwin then ./use-etc-ssl-certs-darwin.patch else ./use-etc-ssl-certs.patch
       )
-    ];
+    ]
+    ++
+      # https://cygwin.com/cgit/cygwin-packages/openssl/plain/openssl-3.0.18-skip-dllmain-detach.patch?id=219272d762128451822755e80a61db5557428598
+      # and also https://github.com/openssl/openssl/pull/29321
+      lib.optional stdenv.hostPlatform.isCygwin ./openssl-3.0.18-skip-dllmain-detach.patch;
+
+    withDocs = true;
+
+    extraMeta = {
+      license = lib.licenses.asl20;
+    };
+  };
+
+  openssl_3_5 = common {
+    version = "3.5.5";
+    hash = "sha256-soyRUyqLZaH5g7TCi3SIF05KAQCOKc6Oab14nyi8Kok=";
+
+    patches = [
+      # Support for NIX_SSL_CERT_FILE, motivation:
+      # https://github.com/NixOS/nixpkgs/commit/942dbf89c6120cb5b52fb2ab456855d1fbf2994e
+      ./3.0/nix-ssl-cert-file.patch
+
+      # openssl will only compile in KTLS if the current kernel supports it.
+      # This patch disables build-time detection.
+      ./3.0/openssl-disable-kernel-detection.patch
+
+      # Look up SSL certificates in /etc rather than the immutable installation directory
+      (
+        if stdenv.hostPlatform.isDarwin then
+          ./3.5/use-etc-ssl-certs-darwin.patch
+        else
+          ./3.5/use-etc-ssl-certs.patch
+      )
+    ]
+    ++ lib.optionals stdenv.hostPlatform.isMinGW [
+      ./3.5/fix-mingw-linking.patch
+    ]
+    ++
+      # https://cygwin.com/cgit/cygwin-packages/openssl/plain/openssl-3.0.18-skip-dllmain-detach.patch?id=219272d762128451822755e80a61db5557428598
+      # and also https://github.com/openssl/openssl/pull/29321
+      lib.optional stdenv.hostPlatform.isCygwin ./openssl-3.0.18-skip-dllmain-detach.patch;
 
     withDocs = true;
 
@@ -467,14 +515,18 @@ in
       # Look up SSL certificates in /etc rather than the immutable installation directory
       (
         if stdenv.hostPlatform.isDarwin then
-          ./3.6/use-etc-ssl-certs-darwin.patch
+          ./3.5/use-etc-ssl-certs-darwin.patch
         else
-          ./3.6/use-etc-ssl-certs.patch
+          ./3.5/use-etc-ssl-certs.patch
       )
     ]
     ++ lib.optionals stdenv.hostPlatform.isMinGW [
-      ./3.6/mingw-define-netreset.patch
-    ];
+      ./3.5/fix-mingw-linking.patch
+    ]
+    ++
+      # https://cygwin.com/cgit/cygwin-packages/openssl/plain/openssl-3.0.18-skip-dllmain-detach.patch?id=219272d762128451822755e80a61db5557428598
+      # and also https://github.com/openssl/openssl/pull/29321
+      lib.optional stdenv.hostPlatform.isCygwin ./openssl-3.0.18-skip-dllmain-detach.patch;
 
     withDocs = true;
 

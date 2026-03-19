@@ -4,9 +4,9 @@
   fetchFromGitHub,
 }:
 
-buildGoModule rec {
+buildGoModule (finalAttrs: {
   pname = "gauge";
-  version = "1.6.21";
+  version = "1.6.25";
 
   patches = [
     # adds a check which adds an error message when trying to
@@ -17,11 +17,11 @@ buildGoModule rec {
   src = fetchFromGitHub {
     owner = "getgauge";
     repo = "gauge";
-    tag = "v${version}";
-    hash = "sha256-mUuoGLAVUShhNsSjURCL6yWcIW+K7P8KEBwBoBelgyw=";
+    tag = "v${finalAttrs.version}";
+    hash = "sha256-oL5lvS5/ipcFGltj2AhjZ7D1pyH5IdyVO6WewfWLpeU=";
   };
 
-  vendorHash = "sha256-WyQbvZNd61L4Bz5btZ2hkrCTb5iuJJU5yNDzuYR5Sdc=";
+  vendorHash = "sha256-DWsyOK+N0ZQnJFwyPwN9e3pOAv5Y+LFIctl6Rdo3wO8=";
 
   excludedPackages = [
     "build"
@@ -38,4 +38,4 @@ buildGoModule rec {
       marie
     ];
   };
-}
+})

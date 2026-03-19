@@ -7,7 +7,6 @@
   pandas,
   pyface,
   pytestCheckHook,
-  pythonOlder,
   setuptools,
   tables,
   traits,
@@ -18,8 +17,6 @@ buildPythonPackage rec {
   pname = "apptools";
   version = "5.3.1";
   pyproject = true;
-
-  disabled = pythonOlder "3.8";
 
   src = fetchFromGitHub {
     owner = "enthought";
@@ -46,7 +43,7 @@ buildPythonPackage rec {
     preferences = [ configobj ];
   };
 
-  nativeCheckInputs = [ pytestCheckHook ] ++ lib.flatten (lib.attrValues optional-dependencies);
+  nativeCheckInputs = [ pytestCheckHook ] ++ lib.concatAttrValues optional-dependencies;
 
   preCheck = ''
     export HOME=$TMP

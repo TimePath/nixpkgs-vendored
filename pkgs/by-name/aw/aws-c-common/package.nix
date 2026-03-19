@@ -6,7 +6,7 @@
   nix,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "aws-c-common";
   # nixpkgs-update: no auto update
   version = "0.12.4";
@@ -14,7 +14,7 @@ stdenv.mkDerivation rec {
   src = fetchFromGitHub {
     owner = "awslabs";
     repo = "aws-c-common";
-    rev = "v${version}";
+    rev = "v${finalAttrs.version}";
     hash = "sha256-hKCIPZlLPyH7D3Derk2onyqTzWGUtCx+f2+EKtAKlwA=";
   };
 
@@ -60,8 +60,7 @@ stdenv.mkDerivation rec {
     # https://github.com/awslabs/aws-c-common/issues/1175
     badPlatforms = lib.platforms.bigEndian;
     maintainers = with lib.maintainers; [
-      orivej
       r-burns
     ];
   };
-}
+})

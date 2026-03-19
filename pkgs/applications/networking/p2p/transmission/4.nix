@@ -28,7 +28,7 @@
   # Build options
   enableGTK3 ? false,
   gtkmm3,
-  xorg,
+  libpthread-stubs,
   wrapGAppsHook3,
   enableQt5 ? false,
   enableQt6 ? false,
@@ -159,7 +159,7 @@ stdenv.mkDerivation (finalAttrs: {
   )
   ++ optionals enableGTK3 [
     gtkmm3
-    xorg.libpthreadstubs
+    libpthread-stubs
   ]
   ++ optionals enableSystemd [ systemd ]
   ++ optionals stdenv.hostPlatform.isLinux [ inotify-tools ];

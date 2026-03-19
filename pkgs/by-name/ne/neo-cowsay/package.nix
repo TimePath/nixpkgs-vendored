@@ -4,14 +4,14 @@
   fetchFromGitHub,
 }:
 
-buildGoModule rec {
+buildGoModule (finalAttrs: {
   pname = "neo-cowsay";
   version = "2.0.4";
 
   src = fetchFromGitHub {
     owner = "Code-Hex";
     repo = "Neo-cowsay";
-    rev = "v${version}";
+    rev = "v${finalAttrs.version}";
     hash = "sha256-DmIjqBTIzwkQ8aJ6xCgIwjDtczlTH5AKbPKFUGx3qQ8=";
   };
 
@@ -33,7 +33,6 @@ buildGoModule rec {
       artistic1 # or
       gpl3
     ];
-    maintainers = with lib.maintainers; [ Br1ght0ne ];
     mainProgram = "cowsay";
   };
-}
+})

@@ -1,6 +1,6 @@
 {
   lib,
-  buildGoModule,
+  buildGo126Module,
   fetchFromGitHub,
   nix-update-script,
   nixosTests,
@@ -8,15 +8,15 @@
   withVlAgent ? false,
 }:
 
-buildGoModule (finalAttrs: {
+buildGo126Module (finalAttrs: {
   pname = "VictoriaLogs";
-  version = "1.38.0";
+  version = "1.48.0";
 
   src = fetchFromGitHub {
     owner = "VictoriaMetrics";
     repo = "VictoriaLogs";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-UosxxeTZzM/f2rqUdMqPxHgnu57/dUc/X7gFOySy+M4=";
+    hash = "sha256-10tLXgcKdjaHkoA4E7bNS2pBpebv+Exh2yMKlTOFlCw=";
   };
 
   vendorHash = null;
@@ -36,7 +36,7 @@ buildGoModule (finalAttrs: {
   postPatch = ''
     # Relax go version to major.minor
     sed -i -E 's/^(go[[:space:]]+[[:digit:]]+\.[[:digit:]]+)\.[[:digit:]]+$/\1/' go.mod
-    sed -i -E 's/^(go[[:space:]]+[[:digit:]]+\.[[:digit:]]+)\.[[:digit:]]+$/\1/' vendor/modules.txt
+    sed -i -E 's/^(## explicit; go[[:space:]]+[[:digit:]]+\.[[:digit:]]+)\.[[:digit:]]+$/\1/' vendor/modules.txt
   '';
 
   ldflags = [

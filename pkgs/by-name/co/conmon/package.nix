@@ -6,26 +6,38 @@
   glib,
   glibc,
   libseccomp,
-  systemd,
+  systemdMinimal,
   nixosTests,
+  versionCheckHook,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "conmon";
-  version = "2.1.13";
+  version = "2.2.1";
 
   src = fetchFromGitHub {
     owner = "containers";
     repo = "conmon";
-    rev = "v${version}";
-    hash = "sha256-XsVWcJsUc0Fkn7qGRJDG5xrQAsJr6KN7zMy3AtPuMTo=";
+    tag = "v${finalAttrs.version}";
+    hash = "sha256-YkPgpT+0cE7FCP/dcqnTy6oonPbXKiutFCGX5Lj1JB8=";
+    leaveDotGit = true;
+    postFetch = ''
+      cd $out
+      git rev-parse HEAD > COMMIT
+      rm -rf .git
+    '';
   };
+
+  preConfigure = ''
+    substituteInPlace Makefile \
+      --replace-fail "(GIT_COMMIT)" "(shell cat COMMIT)"
+  '';
 
   nativeBuildInputs = [ pkg-config ];
   buildInputs = [
     glib
     libseccomp
-    systemd
+    systemdMinimal
   ]
   ++ lib.optionals (!stdenv.hostPlatform.isMusl) [
     glibc
@@ -35,7 +47,6 @@ stdenv.mkDerivation rec {
   # manpage requires building the vendored go-md2man
   makeFlags = [
     "bin/conmon"
-    "VERSION=${version}"
   ];
 
   installPhase = ''
@@ -49,8 +60,12 @@ stdenv.mkDerivation rec {
 
   passthru.tests = { inherit (nixosTests) cri-o podman; };
 
+  doInstallCheck = true;
+  nativeInstallCheckInputs = [ versionCheckHook ];
+  versionCheckProgramArg = "--version";
+
   meta = {
-    changelog = "https://github.com/containers/conmon/releases/tag/${src.rev}";
+    changelog = "https://github.com/containers/conmon/releases/tag/${finalAttrs.src.tag}";
     homepage = "https://github.com/containers/conmon";
     description = "OCI container runtime monitor";
     license = lib.licenses.asl20;
@@ -58,4 +73,4 @@ stdenv.mkDerivation rec {
     platforms = lib.platforms.linux;
     mainProgram = "conmon";
   };
-}
+})

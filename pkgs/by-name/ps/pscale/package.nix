@@ -8,24 +8,24 @@
   testers,
 }:
 
-buildGoModule rec {
+buildGoModule (finalAttrs: {
   pname = "pscale";
-  version = "0.261.0";
+  version = "0.271.0";
 
   src = fetchFromGitHub {
     owner = "planetscale";
     repo = "cli";
-    rev = "v${version}";
-    sha256 = "sha256-R4H6+OmzT+++fHSTAFypeO+LvF6FdxZcUPUGfjoJq7w=";
+    rev = "v${finalAttrs.version}";
+    sha256 = "sha256-VSHeHruqGD2cgF5XYlyeGYhcSBlGIC+lgO6Qqrhtb0Q=";
   };
 
-  vendorHash = "sha256-J8idPGvFBK9E9DsOyehrSSCkHYTVy/rHp2RbsuzZ6zo=";
+  vendorHash = "sha256-DbxciJXGcjQJZUmCbK8mFAtmKzRkWcMCWgU0SBrKTH0=";
 
   ldflags = [
     "-s"
     "-w"
-    "-X main.version=v${version}"
-    "-X main.commit=v${version}"
+    "-X main.version=v${finalAttrs.version}"
+    "-X main.commit=v${finalAttrs.version}"
     "-X main.date=unknown"
   ];
 
@@ -47,11 +47,11 @@ buildGoModule rec {
   meta = {
     description = "CLI for PlanetScale Database";
     mainProgram = "pscale";
-    changelog = "https://github.com/planetscale/cli/releases/tag/v${version}";
+    changelog = "https://github.com/planetscale/cli/releases/tag/v${finalAttrs.version}";
     homepage = "https://www.planetscale.com/";
     license = lib.licenses.asl20;
     maintainers = with lib.maintainers; [
       kashw2
     ];
   };
-}
+})

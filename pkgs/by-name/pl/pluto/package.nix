@@ -4,23 +4,23 @@
   fetchFromGitHub,
 }:
 
-buildGoModule rec {
+buildGoModule (finalAttrs: {
   pname = "pluto";
-  version = "5.22.6";
+  version = "5.22.7";
 
   src = fetchFromGitHub {
     owner = "FairwindsOps";
     repo = "pluto";
-    rev = "v${version}";
-    hash = "sha256-6Xi+EWQvFYtdiVywhSB4Lmzsc6Z1nE8UWO8vBteVOnE=";
+    rev = "v${finalAttrs.version}";
+    hash = "sha256-lB8xMkKCnQYMtwvYXbCwSsh30nbpQ/2Pl8dHA1R3bQg=";
   };
 
-  vendorHash = "sha256-59mRVfQ2rduTvIJE1l/j3K+PY3OEMfNpjjYg3hqNUhs=";
+  vendorHash = "sha256-PVax9C1tSlB8AVhJbRx4l5kvOrPfWd4O8jQ2lXoamls=";
 
   ldflags = [
     "-w"
     "-s"
-    "-X main.version=v${version}"
+    "-X main.version=v${finalAttrs.version}"
   ];
 
   __darwinAllowLocalNetworking = true; # for tests
@@ -31,8 +31,7 @@ buildGoModule rec {
     mainProgram = "pluto";
     license = lib.licenses.asl20;
     maintainers = with lib.maintainers; [
-      peterromfeldhk
       kashw2
     ];
   };
-}
+})

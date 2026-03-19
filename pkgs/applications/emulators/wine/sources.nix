@@ -82,14 +82,24 @@ let
     })
   ];
 
+  # Fix build with GCC 15
+  # https://bugs.winehq.org/show_bug.cgi?id=58191
+  patches-add-truncf-to-the-import-library = [
+    (pkgs.fetchpatch {
+      name = "add-truncf-to-the-import-library.patch";
+      url = "https://gitlab.winehq.org/wine/wine/-/commit/ed66bd5c97ecc17c42a4942dafac7d406c1e5120.patch";
+      hash = "sha256-mn0fRZ840MYk1WZsBLcachUzyNmBUSlvf50t9jFGXp0=";
+    })
+  ];
+
   inherit (pkgs) writeShellScript;
 in
 rec {
 
   stable = fetchurl rec {
-    version = "10.0";
-    url = "https://dl.winehq.org/wine/source/10.0/wine-${version}.tar.xz";
-    hash = "sha256-xeCz9ffvr7MOnNTZxiS4XFgxcdM1SdkzzTQC80GsNgE=";
+    version = "11.0";
+    url = "https://dl.winehq.org/wine/source/11.0/wine-${version}.tar.xz";
+    hash = "sha256-wHpoV5M8H8YN/1RI1585ySSBwenbWqYo250DWERuBwE=";
 
     ## see http://wiki.winehq.org/Gecko
     gecko32 = fetchurl rec {
@@ -105,16 +115,15 @@ rec {
 
     ## see http://wiki.winehq.org/Mono
     mono = fetchurl rec {
-      version = "8.1.0";
+      version = "10.0.0";
       url = "https://dl.winehq.org/wine/wine-mono/${version}/wine-mono-${version}-x86.msi";
-      hash = "sha256-DtPsUzrvebLzEhVZMc97EIAAmsDFtMK8/rZ4rJSOCBA=";
+      hash = "sha256-26ynPl0J96OnwVetBCia+cpHw87XAS1GVEpgcEaQK4c=";
     };
 
     patches = [
       # Also look for root certificates at $NIX_SSL_CERT_FILE
       ./cert-path.patch
-    ]
-    ++ patches-binutils-2_44-fix-wine-older-than-10_2;
+    ];
 
     updateScript = writeShellScript "update-wine-stable" ''
       ${updateScriptPreamble}
@@ -131,31 +140,11 @@ rec {
     '';
   };
 
-  stable_11 = fetchurl rec {
-    version = "11.0";
-    url = "https://dl.winehq.org/wine/source/11.0/wine-${version}.tar.xz";
-    hash = "sha256-wHpoV5M8H8YN/1RI1585ySSBwenbWqYo250DWERuBwE=";
-
-    inherit (stable) gecko32 gecko64;
-
-    ## see http://wiki.winehq.org/Mono
-    mono = fetchurl rec {
-      version = "10.0.0";
-      url = "https://dl.winehq.org/wine/wine-mono/${version}/wine-mono-${version}-x86.msi";
-      hash = "sha256-26ynPl0J96OnwVetBCia+cpHw87XAS1GVEpgcEaQK4c=";
-    };
-
-    patches = [
-      # Also look for root certificates at $NIX_SSL_CERT_FILE
-      ./cert-path.patch
-    ];
-  };
-
   unstable = fetchurl rec {
     # NOTE: Don't forget to change the hash for staging as well.
-    version = "10.20";
-    url = "https://dl.winehq.org/wine/source/10.x/wine-${version}.tar.xz";
-    hash = "sha256-gbShU5WPYkf+UEHV32Xq3Lvuoba6jNok6349fOLR/jw=";
+    version = "11.1";
+    url = "https://dl.winehq.org/wine/source/11.x/wine-${version}.tar.xz";
+    hash = "sha256-v0x8j7XYwfZW8wor6pOHDIXxP/gxGrL2Hd75AOsoy48=";
 
     patches = [
       # Also look for root certificates at $NIX_SSL_CERT_FILE
@@ -165,7 +154,7 @@ rec {
     # see https://gitlab.winehq.org/wine/wine-staging
     staging = fetchFromGitLab {
       inherit version;
-      hash = "sha256-Ys0VNYj568qMHq56ZCprnsbpb/iqtiDlU3w0er8Ol5g=";
+      hash = "sha256-KBiESkLVEEWyUPzv1I7j8U9zjqfYdF+FL6wRCcIE290=";
       domain = "gitlab.winehq.org";
       owner = "wine";
       repo = "wine-staging";
@@ -214,32 +203,6 @@ rec {
     '';
   };
 
-  unstable_11 = fetchurl rec {
-    # NOTE: Don't forget to change the hash for staging as well.
-    version = "11.1";
-    url = "https://dl.winehq.org/wine/source/11.x/wine-${version}.tar.xz";
-    hash = "sha256-v0x8j7XYwfZW8wor6pOHDIXxP/gxGrL2Hd75AOsoy48=";
-
-    patches = [
-      # Also look for root certificates at $NIX_SSL_CERT_FILE
-      ./cert-path.patch
-    ];
-
-    # see https://gitlab.winehq.org/wine/wine-staging
-    staging = fetchFromGitLab {
-      inherit version;
-      hash = "sha256-KBiESkLVEEWyUPzv1I7j8U9zjqfYdF+FL6wRCcIE290=";
-      domain = "gitlab.winehq.org";
-      owner = "wine";
-      repo = "wine-staging";
-      rev = "v${version}";
-
-      disabledPatchsets = [ ];
-    };
-
-    inherit (unstable) gecko32 gecko64 mono;
-  };
-
   yabridge = fetchurl rec {
     # NOTE: This is a pinned version with staging patches; don't forget to update them as well
     version = "9.21";
@@ -250,7 +213,8 @@ rec {
       # Also look for root certificates at $NIX_SSL_CERT_FILE
       ./cert-path.patch
     ]
-    ++ patches-binutils-2_44-fix-wine-older-than-10_2;
+    ++ patches-binutils-2_44-fix-wine-older-than-10_2
+    ++ patches-add-truncf-to-the-import-library;
 
     # see https://gitlab.winehq.org/wine/wine-staging
     staging = fetchFromGitLab {
@@ -288,8 +252,8 @@ rec {
 
   winetricks = fetchFromGitHub rec {
     # https://github.com/Winetricks/winetricks/releases
-    version = "20250102";
-    hash = "sha256-Km2vVTYsLs091cjmNTW8Kqku3vdsEA0imTtZfqZWDQo=";
+    version = "20260125";
+    hash = "sha256-uIBVESebsH7rXnxWd/qlrZxcG7Y486PctHzcLz29HDk=";
     owner = "Winetricks";
     repo = "winetricks";
     rev = version;

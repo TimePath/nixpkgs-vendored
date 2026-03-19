@@ -43,14 +43,13 @@ rustPlatform.buildRustPackage rec {
 
   checkFlags = [ "--skip=impure" ];
 
-  PKG_CONFIG_PATH = "${openssl.dev}/lib/pkgconfig";
+  env.PKG_CONFIG_PATH = "${openssl.dev}/lib/pkgconfig";
 
   meta = {
     description = "Rust TUI client for steamcmd";
     homepage = "https://github.com/dmadisetti/steam-tui";
     license = lib.licenses.mit;
     maintainers = with lib.maintainers; [
-      lom
       dmadisetti
     ];
     # steam only supports that platform

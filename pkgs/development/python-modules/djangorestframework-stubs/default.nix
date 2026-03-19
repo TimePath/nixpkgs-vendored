@@ -8,7 +8,6 @@
   coreapi,
   pytest-mypy-plugins,
   pytestCheckHook,
-  pythonOlder,
   requests,
   types-pyyaml,
   setuptools,
@@ -19,16 +18,14 @@
 
 buildPythonPackage rec {
   pname = "djangorestframework-stubs";
-  version = "3.16.2";
+  version = "3.16.7";
   pyproject = true;
-
-  disabled = pythonOlder "3.10";
 
   src = fetchFromGitHub {
     owner = "typeddjango";
     repo = "djangorestframework-stubs";
     tag = version;
-    hash = "sha256-A6IyRJwuc0eqRtkCHtWN5C5yCMdgxfygqmpHV+/MJhE=";
+    hash = "sha256-reOx6b1isu6wtC8cM8KI1HEr5wfJUNIeQd2YaZjIRnQ=";
   };
 
   postPatch = ''
@@ -57,7 +54,7 @@ buildPythonPackage rec {
     pytest-mypy-plugins
     pytestCheckHook
   ]
-  ++ lib.flatten (builtins.attrValues optional-dependencies);
+  ++ lib.concatAttrValues optional-dependencies;
 
   # Upstream recommends mypy > 1.7 which we don't have yet, thus all tests are failing with 3.14.5 and below
   doCheck = false;

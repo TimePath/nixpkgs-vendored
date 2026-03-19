@@ -11,15 +11,15 @@
   wrapGAppsHook3,
 }:
 
-python3Packages.buildPythonApplication rec {
+python3Packages.buildPythonApplication (finalAttrs: {
   pname = "eduvpn-client";
   version = "4.6.0";
-  format = "pyproject";
+  pyproject = true;
 
   src = fetchFromCodeberg {
     owner = "eduVPN";
     repo = "linux-app";
-    rev = version;
+    rev = finalAttrs.version;
     hash = "sha256-oI/hc1XAddXGtwaLY6+zFoshs82lDTRESF4+xUmi+jc=";
   };
 
@@ -51,7 +51,7 @@ python3Packages.buildPythonApplication rec {
   ];
 
   meta = {
-    changelog = "https://codeberg.org/eduVPN/linux-app/raw/tag/${version}/CHANGES.md";
+    changelog = "https://codeberg.org/eduVPN/linux-app/raw/tag/${finalAttrs.version}/CHANGES.md";
     description = "Linux client for eduVPN";
     homepage = "https://codeberg.org/eduVPN/linux-app";
     license = lib.licenses.gpl3Plus;
@@ -62,4 +62,4 @@ python3Packages.buildPythonApplication rec {
     ];
     platforms = lib.platforms.linux;
   };
-}
+})

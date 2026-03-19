@@ -9,7 +9,7 @@
 let
   codeParserBindings = callPackage ./code-parser.nix { };
 in
-buildGoModule rec {
+buildGoModule (finalAttrs: {
   pname = "gitlab-elasticsearch-indexer";
   version = "5.13.3";
 
@@ -17,7 +17,7 @@ buildGoModule rec {
   src = fetchFromGitLab {
     owner = "gitlab-org";
     repo = "gitlab-elasticsearch-indexer";
-    rev = "v${version}";
+    rev = "v${finalAttrs.version}";
     hash = "sha256-0FLAqjbafYsmr21OwNJceikC5Qdr5BIAuHnl1x8oiXs=";
   };
 
@@ -54,7 +54,10 @@ buildGoModule rec {
     description = "Indexes Git repositories into Elasticsearch for GitLab";
     mainProgram = "gitlab-elasticsearch-indexer";
     license = lib.licenses.mit;
-    maintainers = with lib.maintainers; [ yayayayaka ];
-    teams = [ lib.teams.cyberus ];
+    maintainers = with lib.maintainers; [
+      e1mo
+      xanderio
+      yayayayaka
+    ];
   };
-}
+})

@@ -32,7 +32,6 @@
   setproctitle,
   setuptools,
   pythonOlder,
-  eval-type-backport,
   typing-extensions,
 
   # tests
@@ -101,7 +100,6 @@ let
     nativeInstallCheckInputs = [
       versionCheckHook
     ];
-    versionCheckProgramArg = "--version";
     doInstallCheck = true;
 
     meta = {
@@ -133,7 +131,6 @@ let
     nativeInstallCheckInputs = [
       versionCheckHook
     ];
-    versionCheckProgramArg = "--version";
     doInstallCheck = true;
 
     checkFlags =
@@ -154,7 +151,7 @@ let
   };
 in
 
-buildPythonPackage rec {
+buildPythonPackage (finalAttrs: {
   pname = "wandb";
   pyproject = true;
 
@@ -206,9 +203,6 @@ buildPythonPackage rec {
     setproctitle
     # setuptools is necessary since pkg_resources is required at runtime.
     setuptools
-  ]
-  ++ lib.optionals (pythonOlder "3.10") [
-    eval-type-backport
   ]
   ++ lib.optionals (pythonOlder "3.12") [
     typing-extensions
@@ -396,9 +390,9 @@ buildPythonPackage rec {
   meta = {
     description = "CLI and library for interacting with the Weights and Biases API";
     homepage = "https://github.com/wandb/wandb";
-    changelog = "https://github.com/wandb/wandb/raw/${version}/CHANGELOG.md";
+    changelog = "https://github.com/wandb/wandb/raw/${finalAttrs.version}/CHANGELOG.md";
     license = lib.licenses.mit;
     maintainers = with lib.maintainers; [ samuela ];
     broken = gpu-stats.meta.broken || wandb-core.meta.broken;
   };
-}
+})

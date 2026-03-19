@@ -107,7 +107,7 @@ in
 
   config = lib.mkIf cfg.enable {
     warnings = lib.mkIf (!useNewMediaRoot && !(cfg.extraConfig ? MEDIA_ROOT)) [
-      "`services.tandoor-recipes.extraConfig.MEDIA_ROOT` is unset. This is considered insecure for `system.stateVersion` < 26.05. See https://nixos.org/manual/nixos/stable/#module-services-tandoor-recipes-migrating-media for migration instructions."
+      "`services.tandoor-recipes.extraConfig.MEDIA_ROOT` is unset. This is considered insecure for `system.stateVersion` < 26.05. See https://nixos.org/manual/nixos/unstable/#module-services-tandoor-recipes-migrating-media for migration instructions."
     ];
 
     users.users = lib.mkIf (cfg.user == "tandoor_recipes") {

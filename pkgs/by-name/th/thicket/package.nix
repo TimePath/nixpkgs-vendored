@@ -26,7 +26,6 @@ crystal.buildCrystalPackage rec {
     description = "Better one-line git log";
     homepage = "https://github.com/taylorthurlow/thicket";
     license = lib.licenses.mit;
-    maintainers = with lib.maintainers; [ Br1ght0ne ];
     mainProgram = "thicket";
   };
 }

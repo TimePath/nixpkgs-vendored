@@ -1,7 +1,7 @@
 {
   fetchzip,
   revision,
-  suffix,
+  browserVersion,
   system,
   throwSystem,
   stdenv,
@@ -10,11 +10,12 @@
 
   alsa-lib,
   at-spi2-atk,
+  expat,
   glib,
-  libXcomposite,
-  libXdamage,
-  libXfixes,
-  libXrandr,
+  libxcomposite,
+  libxdamage,
+  libxfixes,
+  libxrandr,
   libgbm,
   libgcc,
   libxkbcommon,
@@ -23,15 +24,20 @@
   ...
 }:
 let
+  download =
+    (import ./browser-downloads.nix {
+      name = "chromium-headless-shell";
+      inherit revision browserVersion;
+    }).${system} or throwSystem;
+
   linux = stdenv.mkDerivation {
     name = "playwright-chromium-headless-shell";
     src = fetchzip {
-      url = "https://playwright.azureedge.net/builds/chromium/${revision}/chromium-headless-shell-${suffix}.zip";
-      stripRoot = false;
+      inherit (download) url stripRoot;
       hash =
         {
-          x86_64-linux = "sha256-khYVM0jocno97lV8mRH71WHzopIjnq3eX/PD1kQuZnE=";
-          aarch64-linux = "sha256-1G0UAIFmBcij0EXq1VVxvku5iQmGGWvQxdBT+zRW0ZM=";
+          x86_64-linux = "sha256-/xskLzTc9tTZmu1lwkMpjV3QV7XjP92D/7zRcFuVWT8=";
+          aarch64-linux = "sha256-jckH5+eGJ4BhH1NAa5LIgf3/salKLAHW9XUOo5gob4c=";
         }
         .${system} or throwSystem;
     };
@@ -44,11 +50,12 @@ let
     buildInputs = [
       alsa-lib
       at-spi2-atk
+      expat
       glib
-      libXcomposite
-      libXdamage
-      libXfixes
-      libXrandr
+      libxcomposite
+      libxdamage
+      libxfixes
+      libxrandr
       libgbm
       libgcc.lib
       libxkbcommon
@@ -62,12 +69,11 @@ let
   };
 
   darwin = fetchzip {
-    url = "https://playwright.azureedge.net/builds/chromium/${revision}/chromium-headless-shell-${suffix}.zip";
-    stripRoot = false;
+    inherit (download) url stripRoot;
     hash =
       {
-        x86_64-darwin = "sha256-R4XdK3wD3eoNREydU34MkrvCkI2VqSxIiM7Zhf5EvjM=";
-        aarch64-darwin = "sha256-8CyMLQdtWhMUxwd6UWQ7vGtyi69mCxEA6WwXk2S82qA=";
+        x86_64-darwin = "sha256-bgU7lZhp9XUFfGu58pFdZyhXho3Jiy4MjljR+yk0M1c=";
+        aarch64-darwin = "sha256-45DjMIu0t7IEYdXOmIqpV/1/MKdEfx/8T7DWagh6Zhc=";
       }
       .${system} or throwSystem;
   };

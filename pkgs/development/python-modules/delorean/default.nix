@@ -37,6 +37,6 @@ buildPythonPackage rec {
     description = "Delorean: Time Travel Made Easy";
     homepage = "https://github.com/myusuf3/delorean";
     license = lib.licenses.mit;
-    maintainers = with lib.maintainers; [ globin ];
+    maintainers = [ ];
   };
 }

@@ -9,15 +9,15 @@
   libiconv,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "ft2-clone";
-  version = "1.99";
+  version = "2.11";
 
   src = fetchFromGitHub {
     owner = "8bitbubsy";
     repo = "ft2-clone";
-    rev = "v${version}";
-    hash = "sha256-7FA6pd8rnobvOWHqHqJseJgUniAYhpzqmJnmqYyvpm0=";
+    rev = "v${finalAttrs.version}";
+    hash = "sha256-thOQcsnFkDJh0P2Yu/1rCmt/M3Ikr88ffFHUDrgFNyk=";
   };
 
   nativeBuildInputs = [ cmake ];
@@ -54,4 +54,4 @@ stdenv.mkDerivation rec {
     platforms = lib.platforms.littleEndian;
     mainProgram = "ft2-clone";
   };
-}
+})

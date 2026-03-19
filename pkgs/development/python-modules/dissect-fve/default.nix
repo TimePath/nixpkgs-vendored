@@ -7,7 +7,6 @@
   dissect-target,
   fetchFromGitHub,
   pycryptodome,
-  pythonOlder,
   rich,
   setuptools-scm,
   setuptools,
@@ -15,21 +14,15 @@
 
 buildPythonPackage rec {
   pname = "dissect-fve";
-  version = "4.2";
+  version = "4.6";
   pyproject = true;
-
-  disabled = pythonOlder "3.9";
 
   src = fetchFromGitHub {
     owner = "fox-it";
     repo = "dissect.fve";
     tag = version;
-    hash = "sha256-OgagTnt4y6Fzd7jbsCgbkTzcsdnozImfdKI9ew9JaqI=";
+    hash = "sha256-VNkMqnv0LFvqVIQzk086o4UDH3bcK3HgF0HdYmhpNgY=";
   };
-
-  pythonRelaxDeps = [
-    "pycryptodome"
-  ];
 
   build-system = [
     setuptools

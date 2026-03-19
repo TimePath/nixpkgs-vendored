@@ -5,25 +5,31 @@
   stdenv,
   pkgs,
   lib,
+  config,
   testers,
 }:
 
 let
+  # tests can be based on builtins.derivation and stage0 or bootstrapTools directly to minimize rebuilds
+  # see test 'make-symlinks-relative' in ./hooks.nix as an example.
+  initialBash = if stdenv ? stage0 then stdenv.stage0.bash else stdenv.bootstrapTools;
+  initialPath = if stdenv ? stage0 then stdenv.stage0.initialPath else [ stdenv.bootstrapTools ];
   # early enough not to rebuild gcc but late enough to have patchelf
-  earlyPkgs = stdenv.__bootPackages.stdenv.__bootPackages;
+  earlyPkgs = stdenv.__bootPackages.stdenv.__bootPackages or pkgs;
   earlierPkgs =
-    stdenv.__bootPackages.stdenv.__bootPackages.stdenv.__bootPackages.stdenv.__bootPackages.stdenv.__bootPackages;
+    stdenv.__bootPackages.stdenv.__bootPackages.stdenv.__bootPackages.stdenv.__bootPackages.stdenv.__bootPackages
+      or earlyPkgs;
   # use a early stdenv so when hacking on stdenv this test can be run quickly
-  bootStdenv =
-    stdenv.__bootPackages.stdenv.__bootPackages.stdenv.__bootPackages.stdenv.__bootPackages.stdenv;
+  bootStdenv = earlyPkgs.stdenv.__bootPackages.stdenv.__bootPackages.stdenv or earlyPkgs.stdenv;
   pkgsStructured = import pkgs.path {
-    config = {
+    config = config // {
       structuredAttrsByDefault = true;
     };
     inherit (stdenv.hostPlatform) system;
   };
   bootStdenvStructuredAttrsByDefault =
-    pkgsStructured.stdenv.__bootPackages.stdenv.__bootPackages.stdenv.__bootPackages.stdenv.__bootPackages.stdenv;
+    pkgsStructured.stdenv.__bootPackages.stdenv.__bootPackages.stdenv.__bootPackages.stdenv.__bootPackages.stdenv
+      or pkgsStructured.stdenv;
 
   runCommand = earlierPkgs.runCommand;
 
@@ -239,7 +245,7 @@ in
     import ./hooks.nix {
       stdenv = bootStdenv;
       pkgs = earlyPkgs;
-      inherit lib;
+      inherit initialPath initialBash lib;
     }
   );
 
@@ -448,14 +454,15 @@ in
     stdenv' = bootStdenv;
   };
 
+  tests-stdenv-gcc-stageCompare = pkgs.callPackage ./gcc-stageCompare.nix { };
+
   ensure-no-execve-in-setup-sh =
     derivation {
       name = "ensure-no-execve-in-setup-sh";
       inherit (stdenv.hostPlatform) system;
-      builder = "${stdenv.bootstrapTools}/bin/bash";
-      PATH = "${pkgs.strace}/bin:${stdenv.bootstrapTools}/bin";
-      initialPath = [
-        stdenv.bootstrapTools
+      builder = "${initialBash}/bin/bash";
+      PATH = "${pkgs.strace}/bin:${lib.strings.makeSearchPath "bin" initialPath}";
+      initialPath = initialPath ++ [
         pkgs.strace
       ];
       args = [
@@ -498,7 +505,7 @@ in
       import ./hooks.nix {
         stdenv = bootStdenvStructuredAttrsByDefault;
         pkgs = earlyPkgs;
-        inherit lib;
+        inherit initialBash initialPath lib;
       }
     );
 

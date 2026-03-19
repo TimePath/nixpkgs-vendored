@@ -7,7 +7,6 @@
   dbt-postgres,
   fetchFromGitHub,
   pytestCheckHook,
-  pythonOlder,
   redshift-connector,
   setuptools,
 }:
@@ -16,8 +15,6 @@ buildPythonPackage rec {
   pname = "dbt-redshift";
   version = "1.9.0";
   pyproject = true;
-
-  disabled = pythonOlder "3.10";
 
   src = fetchFromGitHub {
     owner = "dbt-labs";
@@ -52,6 +49,5 @@ buildPythonPackage rec {
     homepage = "https://github.com/dbt-labs/dbt-redshift";
     changelog = "https://github.com/dbt-labs/dbt-redshift/blob/${version}/CHANGELOG.md";
     license = lib.licenses.asl20;
-    maintainers = with lib.maintainers; [ tjni ];
   };
 }

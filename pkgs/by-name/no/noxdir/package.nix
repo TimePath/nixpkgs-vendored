@@ -6,16 +6,16 @@
 
 buildGoModule (finalAttrs: {
   pname = "noxdir";
-  version = "0.9.0";
+  version = "1.1.0";
 
   src = fetchFromGitHub {
     owner = "crumbyte";
     repo = "noxdir";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-sy94J+97fxg0t/GTSLzJQMDcQtOCQeo8TCTT8G4p6wY=";
+    hash = "sha256-Dq8u2h5l95ZQ7DEi60G8IAeF9kwYQY0KUxq3lq9e3Tk=";
   };
 
-  vendorHash = "sha256-uRJP21bJ8NlJ0qOG81Gax9LJ+HdPfxLKj1Jjzbweync=";
+  vendorHash = "sha256-Wg1v2oAbaj7gWgj2AgDPZHdsDebgDs8Xcyvo3QYZ1dU=";
 
   checkPhase = ''
     runHook preCheck

@@ -306,8 +306,7 @@ let
         nukeReferences
       ];
 
-      # Just a temporary hack for persistent errors on Hydra.
-      enableParallelBuilding = !(stdenv.system == "aarch64-darwin" && version == "17.7");
+      enableParallelBuilding = true;
 
       separateDebugInfo = true;
 
@@ -565,7 +564,7 @@ let
 
           psqlSchema = lib.versions.major version;
 
-          withJIT = this.withPackages (_: [ this.jit ]);
+          withJIT = if jitSupport then this.withPackages (_: [ this.jit ]) else null;
           withoutJIT = this;
 
           pkgs =
@@ -605,6 +604,7 @@ let
 
           tests = {
             postgresql = nixosTests.postgresql.postgresql.passthru.override finalAttrs.finalPackage;
+            postgresql-replication = nixosTests.postgresql.postgresql-replication.passthru.override finalAttrs.finalPackage;
             postgresql-tls-client-cert = nixosTests.postgresql.postgresql-tls-client-cert.passthru.override finalAttrs.finalPackage;
             postgresql-wal-receiver = nixosTests.postgresql.postgresql-wal-receiver.passthru.override finalAttrs.finalPackage;
             pkg-config = testers.testMetaPkgConfig finalAttrs.finalPackage;
@@ -656,7 +656,8 @@ let
     let
       installedExtensions = f postgresql.pkgs;
       finalPackage = buildEnv {
-        name = "${postgresql.pname}-and-plugins-${postgresql.version}";
+        pname = "${postgresql.pname}-and-plugins";
+        inherit (postgresql) version;
         paths = installedExtensions ++ [
           # consider keeping in-sync with `postBuild` below
           postgresql
@@ -686,7 +687,6 @@ let
           inherit (postgresql)
             pkgs
             psqlSchema
-            version
             ;
 
           pg_config = postgresql.pg_config.override {

@@ -31,6 +31,6 @@ stdenv.mkDerivation {
     description = "Message delivery receipts (XEP-0184) Pidgin plugin";
     license = lib.licenses.gpl3;
     platforms = lib.platforms.linux;
-    maintainers = with lib.maintainers; [ orivej ];
+    maintainers = [ ];
   };
 }

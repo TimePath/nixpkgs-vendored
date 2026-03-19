@@ -27,6 +27,5 @@ rustPlatform.buildRustPackage {
     description = "Expose your local web server to the internet with a public URL";
     homepage = "https://tunnelto.dev";
     license = lib.licenses.mit;
-    maintainers = with lib.maintainers; [ Br1ght0ne ];
   };
 }

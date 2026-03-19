@@ -24,6 +24,6 @@ buildPythonPackage rec {
     mainProgram = "bench_udatetime.py";
     homepage = "https://github.com/freach/udatetime";
     license = lib.licenses.asl20;
-    maintainers = with lib.maintainers; [ globin ];
+    maintainers = [ ];
   };
 }

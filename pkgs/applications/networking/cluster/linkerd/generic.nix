@@ -69,7 +69,6 @@ buildGoModule rec {
     homepage = "https://linkerd.io/";
     license = lib.licenses.asl20;
     maintainers = with lib.maintainers; [
-      bryanasdev000
       Gonzih
     ];
   };

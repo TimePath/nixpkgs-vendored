@@ -49,11 +49,11 @@
 assert googleSupport -> gnomeSupport;
 stdenv.mkDerivation (finalAttrs: {
   pname = "gvfs";
-  version = "1.58.2";
+  version = "1.58.4";
 
   src = fetchurl {
     url = "mirror://gnome/sources/gvfs/${lib.versions.majorMinor finalAttrs.version}/gvfs-${finalAttrs.version}.tar.xz";
-    hash = "sha256-rZ1b8LRcryMlIN8K3uUetlAgCwNwaA+Ao1Dq2dHWHd8=";
+    hash = "sha256-5xJL7HJOJlrQ7gC6on2NUVzx3dzxAmOL5nueJZybBA0=";
   };
 
   patches = [
@@ -158,9 +158,9 @@ stdenv.mkDerivation (finalAttrs: {
     };
   };
 
-  meta = with lib; {
+  meta = {
     description =
-      "Virtual Filesystem support library" + optionalString gnomeSupport " (full GNOME support)";
+      "Virtual Filesystem support library" + lib.optionalString gnomeSupport " (full GNOME support)";
     license = lib.licenses.lgpl2Plus;
     platforms = lib.platforms.unix;
     teams = [ lib.teams.gnome ];

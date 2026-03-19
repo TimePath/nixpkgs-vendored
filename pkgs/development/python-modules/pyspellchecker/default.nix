@@ -8,14 +8,14 @@
 
 buildPythonPackage rec {
   pname = "pyspellchecker";
-  version = "0.8.3";
-  format = "pyproject";
+  version = "0.9.0";
+  pyproject = true;
 
   src = fetchFromGitHub {
     owner = "barrust";
     repo = "pyspellchecker";
     tag = "v${version}";
-    hash = "sha256-cfYtUOXO4xzO2CYYhWMv3o40iw5/+nvA8MAzJn6LPlQ=";
+    hash = "sha256-Ui1IPqvVqf7scMg+B1KmI5jWrHSsuaW6sCoWeiF2oMI=";
   };
 
   nativeBuildInputs = [ setuptools ];

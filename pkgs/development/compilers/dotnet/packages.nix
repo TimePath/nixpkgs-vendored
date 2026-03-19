@@ -260,4 +260,8 @@ in
     aspnetcore
     ;
 
+  packages = lib.recurseIntoAttrs (
+    # recursion can't handle . in the attribute names
+    lib.genAttrs' packages (p: lib.nameValuePair (lib.replaceString "." "-" p.pname) p)
+  );
 }

@@ -187,9 +187,16 @@ in
 
   texlive = recurseIntoAttrs (callPackage ./texlive { });
 
+  # TODO: Temporarily disabled recursion so we can see the performance comparison in the PR,
+  # which only runs if there's exactly the same packages before and after, and this would add packages
+  #problems = recurseIntoAttrs (callPackage ./problems { });
+  problems = callPackage ./problems { };
+
   cuda = callPackage ./cuda { };
 
   trivial-builders = callPackage ../build-support/trivial-builders/test/default.nix { };
+
+  vmTools = callPackage ../build-support/vm/test.nix { };
 
   writers = callPackage ../build-support/writers/test.nix { };
 
@@ -219,11 +226,17 @@ in
     };
   };
 
-  pkgs-lib = recurseIntoAttrs (import ../pkgs-lib/tests { inherit pkgs; });
+  lib-tests = import ../../lib/tests/release.nix { inherit pkgs; };
+
+  pkgs-lib = recurseIntoAttrs (callPackage ../pkgs-lib/tests { });
 
   buildFHSEnv = recurseIntoAttrs (callPackages ./buildFHSEnv { });
 
+  auto-patchelf-structured-log = callPackage ./auto-patchelf-structured-log { };
+
   auto-patchelf-hook = callPackage ./auto-patchelf-hook { };
+
+  auto-patchelf-hook-preserve-origin = callPackage ./auto-patchelf-hook-preserve-origin { };
 
   # Accumulate all passthru.tests from arrayUtilities into a single attribute set.
   arrayUtilities = recurseIntoAttrs (
@@ -250,4 +263,6 @@ in
   prefer-remote-fetch = recurseIntoAttrs (
     callPackages ../build-support/prefer-remote-fetch/tests.nix { }
   );
+
+  home-assistant-component-tests = recurseIntoAttrs pkgs.home-assistant.tests.components;
 }

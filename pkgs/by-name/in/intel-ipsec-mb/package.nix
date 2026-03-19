@@ -5,18 +5,18 @@
   nasm,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "intel-ipsec-mb";
   version = "2.0.1";
 
   src = fetchFromGitHub {
     owner = "intel";
     repo = "intel-ipsec-mb";
-    rev = "v${version}";
+    tag = "v${finalAttrs.version}";
     hash = "sha256-k/NoPMKbiWZ25tdomsPpv2gfhQuBHxzX6KRT1UY88Ko=";
   };
 
-  sourceRoot = "source/lib";
+  sourceRoot = "${finalAttrs.src.name}/lib";
 
   nativeBuildInputs = [ nasm ];
 
@@ -38,4 +38,4 @@ stdenv.mkDerivation rec {
     platforms = [ "x86_64-linux" ];
     maintainers = [ ];
   };
-}
+})

@@ -9,8 +9,8 @@
   groff,
   netpbm,
   fltk,
-  libXinerama,
-  libXpm,
+  libxinerama,
+  libxpm,
   libjpeg,
 }:
 
@@ -39,8 +39,8 @@ stdenv.mkDerivation {
 
   buildInputs = [
     fltk
-    libXinerama
-    libXpm
+    libxinerama
+    libxpm
     libjpeg
   ];
 
@@ -66,7 +66,7 @@ stdenv.mkDerivation {
     homepage = "http://www.arkkra.com/";
     description = "Music typesetting program (ASCII to PostScript and MIDI)";
     license = lib.licenses.bsd3;
-    maintainers = with lib.maintainers; [ orivej ];
+    maintainers = [ ];
     platforms = lib.platforms.linux;
   };
 }

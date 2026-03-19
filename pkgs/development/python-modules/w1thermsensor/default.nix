@@ -5,19 +5,15 @@
   setuptools,
   aiofiles,
   click,
-  tomli,
   pytest-mock,
   pytest-asyncio,
   pytestCheckHook,
-  pythonOlder,
 }:
 
 buildPythonPackage rec {
   pname = "w1thermsensor";
   version = "2.3.0";
   pyproject = true;
-
-  disabled = pythonOlder "3.7";
 
   src = fetchPypi {
     inherit pname version;
@@ -44,8 +40,7 @@ buildPythonPackage rec {
     pytest-asyncio
     pytestCheckHook
   ]
-  ++ lib.optionals (pythonOlder "3.11") [ tomli ]
-  ++ lib.flatten (builtins.attrValues optional-dependencies);
+  ++ lib.concatAttrValues optional-dependencies;
 
   pythonImportsCheck = [ "w1thermsensor" ];
 

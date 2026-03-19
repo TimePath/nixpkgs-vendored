@@ -2,29 +2,25 @@
   lib,
   stdenv,
   fetchFromGitHub,
-  fetchpatch,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "ioping";
-  version = "1.2";
+  version = "1.3";
 
   src = fetchFromGitHub {
     owner = "koct9i";
     repo = "ioping";
-    rev = "v${version}";
-    sha256 = "10bv36bqga8sdifxzywzzpjil7vmy62psirz7jbvlsq1bw71aiid";
+    rev = "v${finalAttrs.version}";
+    hash = "sha256-9lJEjns8ttjgI52ZXeWgL77GMd7o7IvefBJ5UH9y9ks=";
   };
 
-  patches = [
-    # add netdata support: https://github.com/koct9i/ioping/pull/41
-    (fetchpatch {
-      url = "https://github.com/koct9i/ioping/commit/e7b818457ddb952cbcc13ae732ba0328f6eb73b3.patch";
-      sha256 = "122ivp4rqsnjszjfn33z8li6glcjhy7689bgipi8cgs5q55j99gf";
-    })
-  ];
-
   makeFlags = [ "PREFIX=$(out)" ];
+
+  outputs = [
+    "out"
+    "man"
+  ];
 
   meta = {
     description = "Disk I/O latency measuring tool";
@@ -34,4 +30,4 @@ stdenv.mkDerivation rec {
     homepage = "https://github.com/koct9i/ioping";
     mainProgram = "ioping";
   };
-}
+})

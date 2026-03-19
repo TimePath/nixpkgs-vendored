@@ -5,14 +5,14 @@
   cmake,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "xxHash";
   version = "0.8.3";
 
   src = fetchFromGitHub {
     owner = "Cyan4973";
     repo = "xxHash";
-    rev = "v${version}";
+    rev = "v${finalAttrs.version}";
     hash = "sha256-h6kohM+NxvQ89R9NEXZcYBG2wPOuB4mcyPfofKrx9wQ=";
   };
 
@@ -38,10 +38,10 @@ stdenv.mkDerivation rec {
       gpl2
     ];
     mainProgram = "xxhsum";
-    maintainers = with lib.maintainers; [ orivej ];
+    maintainers = [ ];
     platforms = lib.platforms.all;
     pkgConfigModules = [
       "libxxhash"
     ];
   };
-}
+})

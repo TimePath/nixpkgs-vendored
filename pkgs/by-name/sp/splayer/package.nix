@@ -2,9 +2,9 @@
   lib,
   stdenv,
   fetchFromGitHub,
+  pnpm_10_29_2,
   fetchPnpmDeps,
   pnpmConfigHook,
-  pnpm_10,
   nodejs,
   electron,
   rustPlatform,
@@ -31,15 +31,13 @@ stdenv.mkDerivation (finalAttrs: {
     hash = "sha256-E29TJlp7nMokJbbi/YLuYf9qWmwvo/r4qQckKrVyumI=";
   };
 
-  pnpm = pnpm_10;
-
   pnpmDeps = fetchPnpmDeps {
     inherit (finalAttrs)
       pname
       version
       src
-      pnpm
       ;
+    pnpm = pnpm_10_29_2;
     fetcherVersion = 2;
     hash = "sha256-PTfZopse+9RS7qh0miLu3duYlWDfifZS254tZKqgxKk=";
   };
@@ -55,7 +53,7 @@ stdenv.mkDerivation (finalAttrs: {
 
   nativeBuildInputs = [
     pnpmConfigHook
-    finalAttrs.pnpm
+    pnpm_10_29_2
     nodejs
     rustPlatform.cargoSetupHook
     cargo

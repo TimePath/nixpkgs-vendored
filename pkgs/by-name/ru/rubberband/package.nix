@@ -14,12 +14,12 @@
   ninja,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "rubberband";
   version = "4.0.0";
 
   src = fetchurl {
-    url = "https://breakfastquay.com/files/releases/rubberband-${version}.tar.bz2";
+    url = "https://breakfastquay.com/files/releases/rubberband-${finalAttrs.version}.tar.bz2";
     hash = "sha256-rwUDE+5jvBizWy4GTl3OBbJ2qvbRqiuKgs7R/i+AKOk=";
   };
 
@@ -49,7 +49,7 @@ stdenv.mkDerivation rec {
     homepage = "https://breakfastquay.com/rubberband/";
     # commercial license available as well, see homepage. You'll get some more optimized routines
     license = lib.licenses.gpl2Plus;
-    maintainers = [ lib.maintainers.marcweber ];
+    maintainers = [ ];
     platforms = lib.platforms.all;
   };
-}
+})

@@ -4,12 +4,12 @@
   fetchurl,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "lhasa";
   version = "0.5.0";
 
   src = fetchurl {
-    url = "https://soulsphere.org/projects/lhasa/lhasa-${version}.tar.gz";
+    url = "https://soulsphere.org/projects/lhasa/lhasa-${finalAttrs.version}.tar.gz";
     sha256 = "sha256-v4eFxwYJ0h62K32ueJTxOIiPiJ086Xho1QL24Tp5Kxw=";
   };
 
@@ -22,8 +22,7 @@ stdenv.mkDerivation rec {
     '';
     license = lib.licenses.isc;
     homepage = "http://fragglet.github.io/lhasa";
-    maintainers = [ lib.maintainers.sander ];
     mainProgram = "lha";
     platforms = lib.platforms.unix;
   };
-}
+})

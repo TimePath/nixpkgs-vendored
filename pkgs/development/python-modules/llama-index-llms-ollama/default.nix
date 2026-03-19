@@ -9,13 +9,13 @@
 
 buildPythonPackage rec {
   pname = "llama-index-llms-ollama";
-  version = "0.9.0";
+  version = "0.10.0";
   pyproject = true;
 
   src = fetchPypi {
     pname = "llama_index_llms_ollama";
     inherit version;
-    hash = "sha256-zfoWf36oB0+/1Qs+gBU9bQX6O05y5TCxjcVPd1GFA9E=";
+    hash = "sha256-dYJnOyDpAoiJg3LcqxfrT4E9WWSGW5DQdFs/CrOMbtQ=";
   };
 
   build-system = [ hatchling ];

@@ -8,16 +8,16 @@
 
 buildGoModule (finalAttrs: {
   pname = "tofu-ls";
-  version = "0.2.0";
+  version = "0.4.0";
 
   src = fetchFromGitHub {
     owner = "opentofu";
     repo = "tofu-ls";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-CfaF8HNG1O5clTDZcSMUwAda2hbJbOQJ34GzUSBYqoQ=";
+    hash = "sha256-gdejHJp4RAeOxH3h8iyMhRGNwFlFwVwTssypdE/X78s=";
   };
 
-  vendorHash = "sha256-CwfkDqmdG77OojyCM0nLPA8d8ma1+pzIyeQUeQMkXEY=";
+  vendorHash = "sha256-Uq/4rd3OvCBhp53MEMLiWL/V6hkygwdBLSN8Wzwqoew=";
 
   ldflags = [
     "-s"
@@ -42,7 +42,6 @@ buildGoModule (finalAttrs: {
 
   nativeInstallCheckInputs = [ versionCheckHook ];
   doInstallCheck = true;
-  versionCheckProgramArg = "--version";
 
   passthru.updateScript = nix-update-script { };
 

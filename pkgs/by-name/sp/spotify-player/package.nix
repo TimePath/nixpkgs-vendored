@@ -139,6 +139,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
       xyven1
       _71zenith
       caperren
+      mattkang
     ];
   };
 })

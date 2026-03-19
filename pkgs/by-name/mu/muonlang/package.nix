@@ -33,7 +33,6 @@ stdenv.mkDerivation {
     description = "Modern low-level programming language";
     homepage = "https://github.com/nickmqb/muon";
     license = lib.licenses.mit;
-    maintainers = with lib.maintainers; [ Br1ght0ne ];
     platforms = lib.platforms.all;
   };
 }

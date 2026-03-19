@@ -8,16 +8,16 @@
 
 buildGoModule (finalAttrs: {
   pname = "grafanactl";
-  version = "0.1.7";
+  version = "0.1.9";
 
   src = fetchFromGitHub {
     owner = "grafana";
     repo = "grafanactl";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-6fyjawZsqP2+F3ZhIVf9KVus37/Ezi4GcE9Ywi5yzhk=";
+    hash = "sha256-TJoTxVKfG2mfV05pkAxUJR7NKZbD9VIqRW4H8lyP2As=";
   };
 
-  vendorHash = "sha256-wIp05nwc4MICkNFoEAjOd4kjs1RE7RpINcdYzIdq4YY=";
+  vendorHash = "sha256-zEE4iaZJBneYgo6avCOTG7tWZ88NDskPTYiCMb8pRR4=";
 
   ldflags = [
     "-X main.version=v${finalAttrs.version}"
@@ -37,7 +37,6 @@ buildGoModule (finalAttrs: {
   nativeInstallCheckInputs = [
     versionCheckHook
   ];
-  versionCheckProgramArg = "--version";
 
   passthru.updateScript = nix-update-script { };
 

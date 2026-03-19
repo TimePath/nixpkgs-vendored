@@ -5,11 +5,9 @@
   shared ? !stdenv.hostPlatform.isStatic,
   static ? true,
   # If true, a separate .static output is created and the .a is moved there.
-  # In this case `pkg-config` auto detection does not currently work if the
-  # .static output is given as `buildInputs` to another package (#66461), because
-  # the `.pc` file lists only the main output's lib dir.
   # If false, and if `{ static = true; }`, the .a stays in the main output.
-  splitStaticOutput ? shared && static,
+  splitStaticOutput ?
+    shared && static && !(stdenv.hostPlatform.isWindows || stdenv.hostPlatform.isCygwin),
   testers,
   minizip,
 }:
@@ -27,7 +25,7 @@ assert splitStaticOutput -> static;
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "zlib";
-  version = "1.3.2";
+  version = "1.3.1";
 
   src =
     let
@@ -40,15 +38,20 @@ stdenv.mkDerivation (finalAttrs: {
         # Stable archive path, but captcha can be encountered, causing hash mismatch.
         "https://www.zlib.net/fossils/zlib-${version}.tar.gz"
       ];
-      hash = "sha256-uzKaCizQJ00FUZ1hxmfAYuBpkNcuEl7i36jeZPARnRY=";
+      hash = "sha256-mpOyt9/ax3zrpaVYpYDnRmfdb+3kWFuR7vtg8Dty3yM=";
     };
 
-  postPatch = lib.optionalString stdenv.hostPlatform.isDarwin ''
-    substituteInPlace configure \
-      --replace '/usr/bin/libtool' '${stdenv.cc.targetPrefix}ar' \
-      --replace 'AR="libtool"' 'AR="${stdenv.cc.targetPrefix}ar"' \
-      --replace 'ARFLAGS="-o"' 'ARFLAGS="-r"'
-  '';
+  postPatch =
+    lib.optionalString stdenv.hostPlatform.isDarwin ''
+      substituteInPlace configure \
+        --replace '/usr/bin/libtool' '${stdenv.cc.targetPrefix}ar' \
+        --replace 'AR="libtool"' 'AR="${stdenv.cc.targetPrefix}ar"' \
+        --replace 'ARFLAGS="-o"' 'ARFLAGS="-r"'
+    ''
+    + lib.optionalString stdenv.hostPlatform.isCygwin ''
+      substituteInPlace win32/zlib.def \
+        --replace-fail 'gzopen_w' ""
+    '';
 
   strictDeps = true;
   outputs = [
@@ -59,12 +62,17 @@ stdenv.mkDerivation (finalAttrs: {
   setOutputFlags = false;
   outputDoc = "dev"; # single tiny man3 page
 
-  dontConfigure = stdenv.hostPlatform.isMinGW;
+  dontConfigure = (stdenv.hostPlatform.isMinGW || stdenv.hostPlatform.isCygwin);
 
   preConfigure = lib.optionalString (stdenv.hostPlatform != stdenv.buildPlatform) ''
     export CHOST=${stdenv.hostPlatform.config}
   '';
 
+  configureFlags = [
+    "--includedir=${placeholder "dev"}/include"
+    "--sharedlibdir=${placeholder "out"}/lib"
+    "--libdir=${placeholder (if splitStaticOutput then "static" else "out")}/lib"
+  ]
   # For zlib's ./configure (as of version 1.2.11), the order
   # of --static/--shared flags matters!
   # `--shared --static` builds only static libs, while
@@ -77,7 +85,8 @@ stdenv.mkDerivation (finalAttrs: {
   # `--static --shared`, `--shared` and giving nothing.
   # Of these, we choose `--static --shared`, for clarity and simpler
   # conditions.
-  configureFlags = lib.optional static "--static" ++ lib.optional shared "--shared";
+  ++ lib.optional static "--static"
+  ++ lib.optional shared "--shared";
   # We do the right thing manually, above, so don't need these.
   dontDisableStatic = true;
   dontAddStaticConfigureFlags = true;
@@ -91,13 +100,10 @@ stdenv.mkDerivation (finalAttrs: {
   # but we don't do it simply to avoid mass rebuilds.
 
   postInstall =
-    lib.optionalString splitStaticOutput ''
-      moveToOutput lib/libz.a "$static"
-    ''
     # jww (2015-01-06): Sometimes this library install as a .so, even on
     # Darwin; others time it installs as a .dylib.  I haven't yet figured out
     # what causes this difference.
-    + lib.optionalString stdenv.hostPlatform.isDarwin ''
+    lib.optionalString stdenv.hostPlatform.isDarwin ''
       for file in $out/lib/*.so* $out/lib/*.dylib* ; do
         ${stdenv.cc.bintools.targetPrefix}install_name_tool -id "$file" $file
       done
@@ -112,7 +118,9 @@ stdenv.mkDerivation (finalAttrs: {
     lib.optionalAttrs (!stdenv.hostPlatform.isDarwin) {
       # As zlib takes part in the stdenv building, we don't want references
       # to the bootstrap-tools libgcc (as uses to happen on arm/mips)
-      NIX_CFLAGS_COMPILE = "-static-libgcc";
+      NIX_CFLAGS_COMPILE = toString (
+        [ "-static-libgcc" ] ++ lib.optional stdenv.hostPlatform.isCygwin "-DHAVE_UNISTD_H"
+      );
     }
     // lib.optionalAttrs (stdenv.hostPlatform.linker == "lld") {
       # lld 16 enables --no-undefined-version by default
@@ -126,7 +134,7 @@ stdenv.mkDerivation (finalAttrs: {
   dontStrip = stdenv.hostPlatform != stdenv.buildPlatform && static;
   configurePlatforms = [ ];
 
-  installFlags = lib.optionals stdenv.hostPlatform.isMinGW [
+  installFlags = lib.optionals (stdenv.hostPlatform.isMinGW || stdenv.hostPlatform.isCygwin) [
     "BINARY_PATH=$(out)/bin"
     "INCLUDE_PATH=$(dev)/include"
     "LIBRARY_PATH=$(out)/lib"
@@ -137,10 +145,15 @@ stdenv.mkDerivation (finalAttrs: {
 
   makeFlags = [
     "PREFIX=${stdenv.cc.targetPrefix}"
+    "pkgconfigdir=${placeholder "dev"}/share/pkgconfig"
   ]
-  ++ lib.optionals stdenv.hostPlatform.isMinGW [
+  ++ lib.optionals (stdenv.hostPlatform.isMinGW || stdenv.hostPlatform.isCygwin) [
     "-f"
     "win32/Makefile.gcc"
+  ]
+  ++ lib.optionals stdenv.hostPlatform.isCygwin [
+    "SHAREDLIB=cygz.dll"
+    "IMPLIB=libz.dll.a"
   ]
   ++ lib.optionals shared [
     # Note that as of writing (zlib 1.2.11), this flag only has an effect
@@ -160,5 +173,7 @@ stdenv.mkDerivation (finalAttrs: {
     license = lib.licenses.zlib;
     platforms = lib.platforms.all;
     pkgConfigModules = [ "zlib" ];
+    teams = [ lib.teams.security-review ];
+    identifiers.cpeParts = lib.meta.cpeFullVersionWithVendor "zlib" finalAttrs.version;
   };
 })

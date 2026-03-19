@@ -36,14 +36,14 @@ let
     hash = "sha256-imiXr4irXeKiQ6VMd6f3MJ46zvdvymnRdHGgnEvkT+o=";
   };
 in
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "wownero";
   version = "0.11.3.0";
 
   src = fetchFromCodeberg {
     owner = "wownero";
     repo = "wownero";
-    tag = "v${version}";
+    tag = "v${finalAttrs.version}";
     hash = "sha256-EioXFfUQ+CV6+Ipef1wbmc+taKI98I420J7eqzz15Ss=";
   };
 
@@ -109,4 +109,4 @@ stdenv.mkDerivation rec {
     maintainers = [ ];
     platforms = lib.platforms.unix;
   };
-}
+})

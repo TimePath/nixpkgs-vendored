@@ -30,11 +30,9 @@
   extraPackages ? _: [ ],
 }:
 
-buildPythonPackage rec {
+buildPythonPackage (finalAttrs: {
   pname = "ansible-core";
-  # IMPORTANT: When bumping the minor version (2.XX.0 - the XX), please update pinned package in pkgs/top-level/all-packages.nix
-  # There are pinned packages called ansible_2_XX, create a new one with the previous minor version and then update the version here
-  version = "2.19.4";
+  version = "2.20.3";
   pyproject = true;
 
   disabled = pythonOlder "3.12";
@@ -42,8 +40,8 @@ buildPythonPackage rec {
   src = fetchFromGitHub {
     owner = "ansible";
     repo = "ansible";
-    tag = "v${version}";
-    hash = "sha256-TjafUlPKuxpXrfREK65D88SoGThGBzpbfCHr0ZkviI0=";
+    tag = "v${finalAttrs.version}";
+    hash = "sha256-WLfLbQYYJOdMHApNnFZYiET4es3z2SeeLP0jbrFqxrU=";
   };
 
   # ansible_connection is already wrapped, so don't pass it through
@@ -104,7 +102,7 @@ buildPythonPackage rec {
   doCheck = false;
 
   meta = {
-    changelog = "https://github.com/ansible/ansible/blob/v${version}/changelogs/CHANGELOG-v${lib.versions.majorMinor version}.rst";
+    changelog = "https://github.com/ansible/ansible/blob/v${finalAttrs.version}/changelogs/CHANGELOG-v${lib.versions.majorMinor finalAttrs.version}.rst";
     description = "Radically simple IT automation";
     homepage = "https://www.ansible.com";
     license = lib.licenses.gpl3Plus;
@@ -113,4 +111,4 @@ buildPythonPackage rec {
       robsliwi
     ];
   };
-}
+})

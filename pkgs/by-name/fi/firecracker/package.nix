@@ -7,23 +7,24 @@
   libseccomp,
   rust-bindgen,
   rustPlatform,
+  versionCheckHook,
 }:
 
-rustPlatform.buildRustPackage rec {
+rustPlatform.buildRustPackage (finalAttrs: {
   pname = "firecracker";
-  version = "1.13.2";
+  version = "1.14.2";
 
   src = fetchFromGitHub {
     owner = "firecracker-microvm";
     repo = "firecracker";
-    rev = "v${version}";
-    hash = "sha256-rBv5BYbR4xrv1BnZdKtd7jroOhpq2SpL97C4FEn1UfU=";
+    rev = "v${finalAttrs.version}";
+    hash = "sha256-29ZI8RmHH3fz/nUb7EeD51qGUKEKj0UKURxbpmiwwzs=";
   };
 
-  cargoHash = "sha256-PDn3N92nBElJsQeNInFe29+4k3psPt1kEWiNXUtkOnQ=";
+  cargoHash = "sha256-GtHIZJMLdMZNCXzVw6w3KjhzlxCJhC9eaKRDeVWwklY=";
 
   # For aws-lc-sys@0.22.0: use external bindgen.
-  AWS_LC_SYS_EXTERNAL_BINDGEN = "true";
+  env.AWS_LC_SYS_EXTERNAL_BINDGEN = "true";
 
   # For aws-lc-sys@0.22.0: fix gcc error:
   # In function 'memcpy',
@@ -79,6 +80,11 @@ rustPlatform.buildRustPackage rec {
     "--skip=resource_limits::tests::test_set_resource_limits"
   ];
 
+  nativeInstallCheckInputs = [
+    versionCheckHook
+  ];
+  doInstallCheck = true;
+
   installPhase = ''
     runHook preInstall
 
@@ -94,7 +100,7 @@ rustPlatform.buildRustPackage rec {
   meta = {
     description = "Secure, fast, minimal micro-container virtualization";
     homepage = "http://firecracker-microvm.io";
-    changelog = "https://github.com/firecracker-microvm/firecracker/releases/tag/v${version}";
+    changelog = "https://github.com/firecracker-microvm/firecracker/releases/tag/v${finalAttrs.version}";
     mainProgram = "firecracker";
     license = lib.licenses.asl20;
     platforms = lib.platforms.linux;
@@ -105,4 +111,4 @@ rustPlatform.buildRustPackage rec {
       techknowlogick
     ];
   };
-}
+})

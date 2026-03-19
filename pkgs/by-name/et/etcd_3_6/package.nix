@@ -35,7 +35,10 @@ let
     downloadPage = "https://github.com/etcd-io/etcd";
     license = lib.licenses.asl20;
     homepage = "https://etcd.io/";
-    maintainers = with lib.maintainers; [ dtomvan ];
+    maintainers = with lib.maintainers; [
+      dtomvan
+      superherointj
+    ];
     platforms = lib.platforms.darwin ++ lib.platforms.linux;
   };
 
@@ -117,7 +120,7 @@ let
   };
 in
 symlinkJoin {
-  name = "etcd-${version}";
+  pname = "etcd";
 
   inherit meta version;
 

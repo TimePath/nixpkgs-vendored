@@ -28,27 +28,24 @@
   lance-namespace,
 }:
 
-buildPythonPackage rec {
+buildPythonPackage (finalAttrs: {
   pname = "lance-namespace";
-  version = "0.0.21";
+  version = "0.5.2";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "lancedb";
     repo = "lance-namespace";
-    tag = "v${version}";
-    hash = "sha256-KbQ1xXD/+8oOcbhc+dvk68ZF0daWm7In0y0NVsSfp9U=";
+    tag = "v${finalAttrs.version}";
+    hash = "sha256-6Vfy/A9ZrvHM4M/3ZCmq+xv/WxSh9eRaTlbk+ejvSUY=";
   };
 
-  sourceRoot = "${src.name}/python/lance_namespace";
+  sourceRoot = "${finalAttrs.src.name}/python/lance_namespace";
 
   build-system = [
     hatchling
   ];
 
-  pythonRemoveDeps = [
-    "pylance"
-  ];
   dependencies = [
     lance-namespace-urllib3-client
     typing-extensions
@@ -74,7 +71,7 @@ buildPythonPackage rec {
     pylance
     pytestCheckHook
   ]
-  ++ lib.flatten (lib.attrValues optional-dependencies);
+  ++ lib.concatAttrValues finalAttrs.optional-dependencies;
 
   # Tests require pylance, which is a circular dependency
   doCheck = false;
@@ -108,4 +105,4 @@ buildPythonPackage rec {
     license = lib.licenses.asl20;
     maintainers = with lib.maintainers; [ GaetanLepage ];
   };
-}
+})

@@ -15,19 +15,31 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "libphonenumber";
-  version = "9.0.19";
+  version = "9.0.26";
 
   src = fetchFromGitHub {
     owner = "google";
     repo = "libphonenumber";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-mAf4jgI8aum/XbO8OKOoLCMWxwUMee5erDocxV8/TMA=";
+    hash = "sha256-ETfYnb9E8uAJMz1m6hOFitEbmM/2UCtD6wgPZEkO6gQ=";
   };
 
   patches = [
     # An earlier version of this patch was submitted upstream but did not get
     # any interest there - https://github.com/google/libphonenumber/pull/2921
     ./build-reproducibility.patch
+    # Fix include directory in generated cmake files with split outputs
+    ./cmake-include-dir.patch
+    # Finding `boost_system` fails because the stub compiled library of
+    # Boost.System, which has been a header-only library since 1.69, was
+    # removed in 1.89.
+    # Upstream PR: https://github.com/google/libphonenumber/pull/3903
+    ./boost-1.89.patch
+  ];
+
+  outputs = [
+    "out"
+    "dev"
   ];
 
   nativeBuildInputs = [

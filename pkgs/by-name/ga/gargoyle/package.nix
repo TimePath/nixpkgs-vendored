@@ -18,14 +18,14 @@
   qt6,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "gargoyle";
   version = "2023.1";
 
   src = fetchFromGitHub {
     owner = "garglk";
     repo = "garglk";
-    tag = version;
+    tag = finalAttrs.version;
     hash = "sha256-XsN5FXWJb3DSOjipxr/HW9R7QS+7iEaITERTrbGEMwA=";
   };
 
@@ -89,6 +89,6 @@ stdenv.mkDerivation rec {
     description = "Interactive fiction interpreter GUI";
     mainProgram = "gargoyle";
     platforms = lib.platforms.unix;
-    maintainers = with lib.maintainers; [ orivej ];
+    maintainers = [ ];
   };
-}
+})

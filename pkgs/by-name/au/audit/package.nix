@@ -87,6 +87,7 @@ stdenv.mkDerivation (finalAttrs: {
     "--disable-legacy-actions"
     "--with-arm"
     "--with-aarch64"
+    "--with-riscv"
     "--with-io_uring"
     # allows putting audit files in /run/audit, which removes the requirement
     # to wait for tmpfiles to set up the /var/run -> /run symlink
@@ -169,10 +170,16 @@ stdenv.mkDerivation (finalAttrs: {
     changelog = "https://github.com/linux-audit/audit-userspace/releases/tag/v4.1.2";
     license = lib.licenses.gpl2Plus;
     maintainers = with lib.maintainers; [ grimmauld ];
+    teams = [ lib.teams.security-review ];
     pkgConfigModules = [
       "audit"
       "auparse"
     ];
     platforms = lib.platforms.linux;
+    identifiers.cpeParts =
+      lib.meta.cpeFullVersionWithVendor "linux_audit_project" finalAttrs.version
+      // {
+        product = "linux_audit";
+      };
   };
 })

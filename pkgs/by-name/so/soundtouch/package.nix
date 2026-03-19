@@ -7,14 +7,14 @@
   libtool,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "soundtouch";
   version = "2.4.0";
 
   src = fetchFromCodeberg {
     owner = "soundtouch";
     repo = "soundtouch";
-    rev = version;
+    rev = finalAttrs.version;
     hash = "sha256-7JUBAFURKtPCZrcKqL1rOLdsYMd7kGe7wY0JUl2XPvw=";
   };
 
@@ -32,8 +32,8 @@ stdenv.mkDerivation rec {
     description = "Program and library for changing the tempo, pitch and playback rate of audio";
     homepage = "https://www.surina.net/soundtouch/";
     license = lib.licenses.lgpl21Plus;
-    maintainers = with lib.maintainers; [ orivej ];
+    maintainers = [ ];
     mainProgram = "soundstretch";
     platforms = lib.platforms.all;
   };
-}
+})

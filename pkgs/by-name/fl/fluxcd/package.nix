@@ -5,13 +5,15 @@
   installShellFiles,
   lib,
   stdenv,
+  writableTmpDirAsHomeHook,
+  go_1_26,
 }:
 
 let
-  version = "2.7.5";
-  srcHash = "sha256-vTb1YE73xxCC4GlR6UW5Ibu+ck+N+KKYUg50csb7eUA=";
-  vendorHash = "sha256-AgWDvlXVZXXprWCeoNeAMDb6LeYfa9yG5afc7TNISQs=";
-  manifestsHash = "sha256-CmYuHhEiKxkSRtN+fri2/4ILxpwRy2xGwGqCqcfsQwU=";
+  version = "2.8.2";
+  srcHash = "sha256-2UBnOtTdYkzHioGUHtAd0vwqpCouk/uaNvYmjmwc4F0=";
+  vendorHash = "sha256-W6Vgvb4pPexHxx7t8IIfBWyC3c5jUr9KxaR8k5QUUpw=";
+  manifestsHash = "sha256-mYIn7tzsKmx9Wx2WCrztyD3IVLI3pF7robv25HPiCx4=";
 
   manifests = fetchzip {
     url = "https://github.com/fluxcd/flux2/releases/download/v${version}/manifests.tar.gz";
@@ -20,7 +22,7 @@ let
   };
 in
 
-buildGoModule rec {
+buildGoModule.override { go = go_1_26; } rec {
   pname = "fluxcd";
   inherit vendorHash version;
 
@@ -46,11 +48,11 @@ buildGoModule rec {
 
   subPackages = [ "cmd/flux" ];
 
+  nativeBuildInputs = [ installShellFiles ];
+
   # Required to workaround test error:
   #   panic: mkdir /homeless-shelter: permission denied
-  HOME = "$TMPDIR";
-
-  nativeBuildInputs = [ installShellFiles ];
+  nativeCheckInputs = [ writableTmpDirAsHomeHook ];
 
   doInstallCheck = true;
   installCheckPhase = ''
@@ -78,9 +80,10 @@ buildGoModule rec {
     homepage = "https://fluxcd.io";
     license = lib.licenses.asl20;
     maintainers = with lib.maintainers; [
-      bryanasdev000
       jlesquembre
       ryan4yin
+      SchahinRohani
+      superherointj
     ];
     mainProgram = "flux";
   };

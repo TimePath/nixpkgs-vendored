@@ -1,4 +1,28 @@
 {
+  "module-hardware-facter": [
+    "index.html#module-hardware-facter"
+  ],
+  "module-hardware-facter-debugging": [
+    "index.html#module-hardware-facter-debugging"
+  ],
+  "module-hardware-facter-debugging-nix-diff": [
+    "index.html#module-hardware-facter-debugging-nix-diff"
+  ],
+  "module-hardware-facter-debugging-nvd": [
+    "index.html#module-hardware-facter-debugging-nvd"
+  ],
+  "module-hardware-facter-features": [
+    "index.html#module-hardware-facter-features"
+  ],
+  "module-hardware-facter-generating": [
+    "index.html#module-hardware-facter-generating"
+  ],
+  "module-hardware-facter-options": [
+    "index.html#module-hardware-facter-options"
+  ],
+  "module-hardware-facter-usage": [
+    "index.html#module-hardware-facter-usage"
+  ],
   "module-security-tpm2": [
     "index.html#module-security-tpm2"
   ],
@@ -38,6 +62,9 @@
   "module-boot-plymouth-tpm2-totp-quick-start-enable": [
     "index.html#module-boot-plymouth-tpm2-totp-quick-start-enable"
   ],
+  "module-services-keycloak-unix-socket": [
+    "index.html#module-services-keycloak-unix-socket"
+  ],
   "module-services-tandoor-recipes-migrating-media-option-move": [
     "index.html#module-services-tandoor-recipes-migrating-media-option-move",
     "index.html#module-services-tandoor-recipes-migrating-media-option-1"
@@ -49,11 +76,29 @@
   "module-services-tandoor-recipes-migrating-media-option-disallow-access": [
     "index.html#module-services-tandoor-recipes-migrating-media-option-disallow-access"
   ],
-  "module-services-keycloak-unix-socket": [
-    "index.html#module-services-keycloak-unix-socket"
+  "module-virtualisation-xen": [
+    "index.html#module-virtualisation-xen"
+  ],
+  "module-virtualisation-xen-installation-dom0": [
+    "index.html#module-virtualisation-xen-installation-dom0"
+  ],
+  "module-virtualisation-xen-installation-domU": [
+    "index.html#module-virtualisation-xen-installation-domU"
+  ],
+  "module-virtualisation-xen-introduction": [
+    "index.html#module-virtualisation-xen-introduction"
   ],
   "sec-override-nixos-test": [
     "index.html#sec-override-nixos-test"
+  ],
+  "sec-wireless-declarative": [
+    "index.html#sec-wireless-declarative"
+  ],
+  "sec-wireless-enterprise": [
+    "index.html#sec-wireless-enterprise"
+  ],
+  "sec-wireless-imperative": [
+    "index.html#sec-wireless-imperative"
   ],
   "test-opt-rawTestDerivationArg": [
     "index.html#test-opt-rawTestDerivationArg"
@@ -84,6 +129,9 @@
   ],
   "modular-services": [
     "index.html#modular-services"
+  ],
+  "module-services-amule": [
+    "index.html#module-services-amule"
   ],
   "module-services-anubis": [
     "index.html#module-services-anubis"
@@ -670,12 +718,6 @@
   "module-services-suwayomi-server-extra-config": [
     "index.html#module-services-suwayomi-server-extra-config"
   ],
-  "module-services-immich": [
-    "index.html#module-services-immich"
-  ],
-  "module-services-immich-vectorchord-migration": [
-    "index.html#module-services-immich-vectorchord-migration"
-  ],
   "module-services-paisa": [
     "index.html#module-services-paisa"
   ],
@@ -687,15 +729,6 @@
   ],
   "module-services-plausible-basic-usage": [
     "index.html#module-services-plausible-basic-usage"
-  ],
-  "module-services-pingvin-share": [
-    "index.html#module-services-pingvin-share"
-  ],
-  "module-services-pingvin-share-basic-usage": [
-    "index.html#module-services-pingvin-share-basic-usage"
-  ],
-  "module-services-pingvin-share-reverse-proxy-configuration": [
-    "index.html#module-services-pingvin-share-reverse-proxy-configuration"
   ],
   "module-services-pict-rs": [
     "index.html#module-services-pict-rs"
@@ -1223,6 +1256,12 @@
   "module-services-gitlab-maintenance-rake": [
     "index.html#module-services-gitlab-maintenance-rake"
   ],
+  "module-services-gitlab-runner": [
+    "index.html#module-services-gitlab-runner"
+  ],
+  "ex-gitlab-runner-podman": [
+    "index.html#ex-gitlab-runner-podman"
+  ],
   "module-forgejo": [
     "index.html#module-forgejo"
   ],
@@ -1475,6 +1514,9 @@
   ],
   "module-services-postgres-upstream-deviation": [
     "index.html#module-services-postgres-upstream-deviation"
+  ],
+  "module-services-postgresql-target-vs-service": [
+    "index.html#module-services-postgresql-target-vs-service"
   ],
   "module-services-foundationdb": [
     "index.html#module-services-foundationdb"
@@ -2165,6 +2207,21 @@
   ],
   "ch-release-notes": [
     "release-notes.html#ch-release-notes"
+  ],
+  "sec-release-26.05": [
+    "release-notes.html#sec-release-26.05"
+  ],
+  "sec-release-26.05-highlights": [
+    "release-notes.html#sec-release-26.05-highlights"
+  ],
+  "sec-release-26.05-new-modules": [
+    "release-notes.html#sec-release-26.05-new-modules"
+  ],
+  "sec-release-26.05-incompatibilities": [
+    "release-notes.html#sec-release-26.05-incompatibilities"
+  ],
+  "sec-release-26.05-notable-changes": [
+    "release-notes.html#sec-release-26.05-notable-changes"
   ],
   "sec-release-25.11": [
     "release-notes.html#sec-release-25.11"

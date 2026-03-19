@@ -62,7 +62,6 @@ stdenv.mkDerivation rec {
     mainProgram = "lightdm-tiny-greeter";
     homepage = "https://github.com/off-world/lightdm-tiny-greeter";
     license = lib.licenses.bsd3;
-    maintainers = with lib.maintainers; [ edwtjo ];
     platforms = lib.platforms.linux;
   };
 }

@@ -12,19 +12,19 @@
 }:
 stdenv.mkDerivation (finalAttrs: {
   pname = "ni";
-  version = "27.0.1";
+  version = "28.3.0";
 
   src = fetchFromGitHub {
     owner = "antfu-collective";
     repo = "ni";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-rl0pzzhQCuX3Vvq7Iu88L4ph3nA8HRD8HU11YGXT1wQ=";
+    hash = "sha256-YLHtNJIGdprmqgBnKMREeHk6zZ43909JpmjJk/j0qyU=";
   };
 
   pnpmDeps = fetchPnpmDeps {
     inherit (finalAttrs) pname version src;
     fetcherVersion = 2;
-    hash = "sha256-M0SbUWoIHWftfpHPYmX/sUmvR8pGmONv4HUVos6x72I=";
+    hash = "sha256-cwVCGEhNmhMweJJJoPzqe8e2agHfIxIi6WmKiceCAns=";
   };
 
   nativeBuildInputs = [
@@ -48,7 +48,6 @@ stdenv.mkDerivation (finalAttrs: {
   nativeInstallCheckInputs = [
     versionCheckHook
   ];
-  versionCheckProgramArg = "--version";
   doInstallCheck = true;
 
   passthru.updateScript = nix-update-script { };

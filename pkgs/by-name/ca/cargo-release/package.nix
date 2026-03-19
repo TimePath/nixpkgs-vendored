@@ -8,20 +8,21 @@
   stdenv,
   curl,
   git,
+  nix-update-script,
 }:
 
-rustPlatform.buildRustPackage rec {
+rustPlatform.buildRustPackage (finalAttrs: {
   pname = "cargo-release";
-  version = "0.25.22";
+  version = "1.1.1";
 
   src = fetchFromGitHub {
     owner = "crate-ci";
     repo = "cargo-release";
-    tag = "v${version}";
-    hash = "sha256-NFI7UIHbo1xcH+pXim3ar8hvkn2EdIFpI2rpsivhVHg=";
+    tag = "v${finalAttrs.version}";
+    hash = "sha256-+whbVQs2zaPrckR8CZYS35DHqCOv/B/4bv+fffu+onw=";
   };
 
-  cargoHash = "sha256-RJfg11FyecDKFIsXx5c3R/qC5c81N3WYjd2pU4sw/ng=";
+  cargoHash = "sha256-jqs1b6edoR1OgileF0T9LNw1QtxALn3Nz+QUF3R8epg=";
 
   nativeBuildInputs = [
     pkg-config
@@ -42,17 +43,20 @@ rustPlatform.buildRustPackage rec {
   # disable vendored-libgit2 and vendored-openssl
   buildNoDefaultFeatures = true;
 
+  passthru.updateScript = nix-update-script { };
+
   meta = {
     description = ''Cargo subcommand "release": everything about releasing a rust crate'';
     mainProgram = "cargo-release";
     homepage = "https://github.com/crate-ci/cargo-release";
-    changelog = "https://github.com/crate-ci/cargo-release/blob/v${version}/CHANGELOG.md";
+    changelog = "https://github.com/crate-ci/cargo-release/blob/v${finalAttrs.version}/CHANGELOG.md";
     license = with lib.licenses; [
       asl20 # or
       mit
     ];
     maintainers = with lib.maintainers; [
       gerschtli
+      progrm_jarvis
     ];
   };
-}
+})

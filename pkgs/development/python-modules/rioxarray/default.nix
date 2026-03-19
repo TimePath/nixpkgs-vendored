@@ -22,14 +22,14 @@
 
 buildPythonPackage rec {
   pname = "rioxarray";
-  version = "0.20.0";
+  version = "0.22.0";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "corteva";
     repo = "rioxarray";
     tag = version;
-    hash = "sha256-yLWCDaAcwQT2C0Nt1GaIA3NWXe6k2CDkBAr3rsm8eQs=";
+    hash = "sha256-+0TJeEjAKIqi6cbLZiv14dPKW8Xza+4tn/Erzn88ZS0=";
   };
 
   build-system = [ setuptools ];
@@ -56,6 +56,8 @@ buildPythonPackage rec {
     # Fails with small numerical errors on GDAL 3.11
     "test_rasterio_vrt_gcps"
     "test_reproject__gcps"
+    # IndexError: range object index out of range (Python 3.13+)
+    "test_indexing"
   ]
   ++ lib.optionals stdenv.hostPlatform.isAarch64 [
     # numerical errors

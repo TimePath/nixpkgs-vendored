@@ -18,7 +18,7 @@
   coqPackages,
   version ?
     if lib.versionAtLeast ocaml.version "4.13" then
-      "3.4.2"
+      "3.6.1"
     else if lib.versionAtLeast ocaml.version "4.08" then
       "1.20.0"
     else
@@ -94,7 +94,7 @@ buildDunePackage {
   ]
   ++ (if lib.versionAtLeast version "1.15" || version == "dev" then [ menhirLib ] else [ camlp5 ])
   ++ (
-    if lib.versionAtLeast version "3.3.0" || version == "dev" then
+    if lib.versionAtLeast version "2.0.7" || version == "dev" then
       [
         ppx_deriving
       ]

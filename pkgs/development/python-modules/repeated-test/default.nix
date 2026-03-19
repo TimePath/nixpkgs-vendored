@@ -2,7 +2,6 @@
   lib,
   buildPythonPackage,
   fetchPypi,
-  pythonOlder,
   setuptools-scm,
   pytestCheckHook,
 }:
@@ -10,9 +9,7 @@
 buildPythonPackage rec {
   pname = "repeated-test";
   version = "2.3.3";
-  format = "pyproject";
-
-  disabled = pythonOlder "3.5";
+  pyproject = true;
 
   src = fetchPypi {
     pname = "repeated_test";
@@ -31,6 +28,5 @@ buildPythonPackage rec {
     homepage = "https://github.com/epsy/repeated_test";
     changelog = "https://github.com/epsy/repeated_test/releases/tag/v${version}";
     license = lib.licenses.mit;
-    maintainers = with lib.maintainers; [ tjni ];
   };
 }

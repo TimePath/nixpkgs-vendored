@@ -12,10 +12,8 @@
   aiofiles,
   etils,
   humanize,
-  importlib-resources,
   jax,
   msgpack,
-  nest-asyncio,
   numpy,
   protobuf,
   psutil,
@@ -23,47 +21,45 @@
   simplejson,
   tensorstore,
   typing-extensions,
+  uvloop,
 
   # tests
   chex,
+  fastapi,
   google-cloud-logging,
+  httpx,
   mock,
   optax,
   portpicker,
   pytest-xdist,
   pytestCheckHook,
   safetensors,
+  torch,
 }:
 
-buildPythonPackage rec {
+buildPythonPackage (finalAttrs: {
   pname = "orbax-checkpoint";
-  version = "0.11.28";
+  version = "0.11.33";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "google";
     repo = "orbax";
-    tag = "v${version}";
-    hash = "sha256-a7E60fZRmEXTA220mwr7EDMUc+zYbW7wG40vY7NeAOM=";
+    tag = "v${finalAttrs.version}";
+    hash = "sha256-ibHV+MwQvlh2USeDVAUWEJxCS1MGuPZRnZZTBWFO7UQ=";
   };
 
-  sourceRoot = "${src.name}/checkpoint";
+  sourceRoot = "${finalAttrs.src.name}/checkpoint";
 
   build-system = [ flit-core ];
-
-  pythonRelaxDeps = [
-    "jax"
-  ];
 
   dependencies = [
     absl-py
     aiofiles
     etils
     humanize
-    importlib-resources
     jax
     msgpack
-    nest-asyncio
     numpy
     protobuf
     psutil
@@ -71,19 +67,24 @@ buildPythonPackage rec {
     simplejson
     tensorstore
     typing-extensions
-  ];
+    uvloop
+  ]
+  ++ etils.optional-dependencies.epath
+  ++ etils.optional-dependencies.epy;
 
   nativeCheckInputs = [
     chex
+    fastapi
     google-cloud-logging
+    httpx
     mock
     optax
     portpicker
     pytest-xdist
     pytestCheckHook
     safetensors
+    torch
   ];
-
   pythonImportsCheck = [
     "orbax"
     "orbax.checkpoint"
@@ -115,6 +116,16 @@ buildPythonPackage rec {
   ];
 
   disabledTestPaths = [
+    # import file mismatch:
+    # imported module 'sharding_test' has this __file__ attribute:
+    #   /build/source/checkpoint/orbax/checkpoint/_src/arrays/sharding_test.py
+    # which is not the same as the test file we want to collect:
+    #   /build/source/checkpoint/orbax/checkpoint/_src/metadata/sharding_test.py
+    "orbax/checkpoint/_src/metadata/sharding_test.py"
+
+    # Circular dependency with clu (and we should not run benchmarks anyway)
+    "orbax/checkpoint/_src/testing/benchmarks/"
+
     # E   absl.flags._exceptions.DuplicateFlagError: The flag 'num_processes' is defined twice.
     # First from multiprocess_test, Second from orbax.checkpoint._src.testing.multiprocess_test.
     # Description from first occurrence: Number of processes to use.
@@ -148,13 +159,14 @@ buildPythonPackage rec {
     "orbax/checkpoint/checkpoint_manager_test.py"
     "orbax/checkpoint/single_host_test.py"
     "orbax/checkpoint/transform_utils_test.py"
+    "orbax/checkpoint/_src/handlers/pytree_checkpoint_handler_test.py"
   ];
 
   meta = {
     description = "Orbax provides common utility libraries for JAX users";
     homepage = "https://github.com/google/orbax/tree/main/checkpoint";
-    changelog = "https://github.com/google/orbax/blob/v${version}/checkpoint/CHANGELOG.md";
+    changelog = "https://github.com/google/orbax/blob/v${finalAttrs.version}/checkpoint/CHANGELOG.md";
     license = lib.licenses.asl20;
     maintainers = with lib.maintainers; [ fab ];
   };
-}
+})

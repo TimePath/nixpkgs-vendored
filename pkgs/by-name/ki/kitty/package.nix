@@ -11,13 +11,13 @@
   imagemagick,
   libstartup_notification,
   libGL,
-  libX11,
-  libXrandr,
-  libXinerama,
-  libXcursor,
+  libx11,
+  libxrandr,
+  libxinerama,
+  libxcursor,
   libxkbcommon,
-  libXi,
-  libXext,
+  libxi,
+  libxext,
   wayland-protocols,
   wayland,
   xxHash,
@@ -39,11 +39,11 @@
   zsh,
   fish,
   nixosTests,
-  go_1_24,
-  buildGo124Module,
+  go_1_26,
+  buildGo126Module,
   nix-update-script,
   makeBinaryWrapper,
-  autoSignDarwinBinariesHook,
+  darwin,
   cairo,
   fetchpatch,
 }:
@@ -51,21 +51,21 @@
 with python3Packages;
 buildPythonApplication rec {
   pname = "kitty";
-  version = "0.44.0";
-  format = "other";
+  version = "0.46.0";
+  pyproject = false;
 
   src = fetchFromGitHub {
     owner = "kovidgoyal";
     repo = "kitty";
     tag = "v${version}";
-    hash = "sha256-5MBYj1d/KhTFcijLMLXpmHPeuSAXuOjzjganUpWnVF4=";
+    hash = "sha256-YkJtiJQd7V/OhR45rE1qNgu1RmhAwFmgu3YVpCLrGa4=";
   };
 
   goModules =
-    (buildGo124Module {
+    (buildGo126Module {
       pname = "kitty-go-modules";
       inherit src version;
-      vendorHash = "sha256-Afk/I/+4KHcFJ4r3/RSs+G5V6aTa+muwERoMD0wi6Io=";
+      vendorHash = "sha256-DEaMBblHpfcrySuMqM6SGFPyEyVd8SiXYiftHQBnYdE=";
     }).goModules;
 
   buildInputs = [
@@ -87,13 +87,13 @@ buildPythonApplication rec {
     fontconfig
     libunistring
     libcanberra
-    libX11
-    libXrandr
-    libXinerama
-    libXcursor
+    libx11
+    libxrandr
+    libxinerama
+    libxcursor
     libxkbcommon
-    libXi
-    libXext
+    libxi
+    libxext
     wayland-protocols
     wayland
     dbus
@@ -110,14 +110,14 @@ buildPythonApplication rec {
     sphinx-copybutton
     sphinxext-opengraph
     sphinx-inline-tabs
-    go_1_24
+    go_1_26
     fontconfig
     makeBinaryWrapper
   ]
   ++ lib.optionals stdenv.hostPlatform.isDarwin [
     imagemagick
     libicns # For the png2icns tool.
-    autoSignDarwinBinariesHook
+    darwin.autoSignDarwinBinariesHook
   ]
   ++ lib.optionals stdenv.hostPlatform.isLinux [
     wayland-scanner
@@ -143,11 +143,6 @@ buildPythonApplication rec {
     # OSError: master_fd is in error condition
     ./disable-test_ssh_bootstrap_with_different_launchers.patch
 
-    # Fix timeout issue in Fish integration tests after recent Fish release
-    (fetchpatch {
-      url = "https://github.com/kovidgoyal/kitty/commit/456fa8691a94f99fae0cef7f19dd2c85c208445a.patch";
-      hash = "sha256-WLPodki5cA9Y3pcVwSV7EUmLEGGXkJDYX1MsHIzPk2s=";
-    })
   ];
 
   hardeningDisable = [
@@ -155,8 +150,10 @@ buildPythonApplication rec {
     "fortify3"
   ];
 
-  env.CGO_ENABLED = 0;
-  GOFLAGS = "-trimpath";
+  env = {
+    CGO_ENABLED = 0;
+    GOFLAGS = "-trimpath";
+  };
 
   configurePhase = ''
     export GOCACHE=$TMPDIR/go-cache

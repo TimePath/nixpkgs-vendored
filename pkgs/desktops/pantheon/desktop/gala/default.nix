@@ -26,15 +26,15 @@
   nix-update-script,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "gala";
-  version = "8.3.0";
+  version = "8.4.1";
 
   src = fetchFromGitHub {
     owner = "elementary";
     repo = "gala";
-    tag = version;
-    hash = "sha256-omsAOOZCQINLTZQg3Sew+p84jv8+R2cHSVtcHFIeUBI=";
+    tag = finalAttrs.version;
+    hash = "sha256-CBgrHd9euRuOxBR+hut5J1d0S2qZ5hVU3b8pjJuNG7s=";
   };
 
   depsBuildBuild = [ pkg-config ];
@@ -71,11 +71,6 @@ stdenv.mkDerivation rec {
       --replace-fail "conf.set('PLUGINDIR', plugins_dir)" "conf.set('PLUGINDIR','/run/current-system/sw/lib/gala/plugins')"
   '';
 
-  mesonFlags = [
-    # https://github.com/elementary/gala/commit/1e75d2a4b42e0d853fd474e90f1a52b0bcd0f690
-    "-Dold-icon-groups=true"
-  ];
-
   passthru = {
     updateScript = nix-update-script { };
   };
@@ -88,4 +83,4 @@ stdenv.mkDerivation rec {
     teams = [ lib.teams.pantheon ];
     mainProgram = "gala";
   };
-}
+})

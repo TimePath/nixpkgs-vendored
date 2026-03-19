@@ -2,7 +2,6 @@
   lib,
   buildPythonPackage,
   fetchFromGitHub,
-  pythonOlder,
   setuptools,
   six,
   timecop,
@@ -13,8 +12,6 @@ buildPythonPackage rec {
   pname = "onetimepass";
   version = "1.0.1";
   pyproject = true;
-
-  disabled = pythonOlder "3.7";
 
   src = fetchFromGitHub {
     owner = "tadeck";
@@ -39,6 +36,5 @@ buildPythonPackage rec {
     homepage = "https://github.com/tadeck/onetimepass";
     changelog = "https://github.com/tadeck/onetimepass/releases/tag/v${version}";
     license = lib.licenses.mit;
-    maintainers = with lib.maintainers; [ zakame ];
   };
 }

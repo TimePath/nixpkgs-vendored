@@ -8,14 +8,14 @@
   libsndfile,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "libinstpatch";
   version = "1.1.7";
 
   src = fetchFromGitHub {
     owner = "swami";
     repo = "libinstpatch";
-    rev = "v${version}";
+    rev = "v${finalAttrs.version}";
     sha256 = "sha256-y3rmCQk3homgnWT/i/qhKJ6gRO8opMFnaC0T8d5UN48=";
   };
 
@@ -37,7 +37,7 @@ stdenv.mkDerivation rec {
     homepage = "http://www.swamiproject.org/";
     description = "MIDI instrument patch files support library";
     license = lib.licenses.lgpl21;
-    maintainers = with lib.maintainers; [ orivej ];
+    maintainers = [ ];
     platforms = lib.platforms.unix;
   };
-}
+})

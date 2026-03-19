@@ -4,22 +4,19 @@
   django,
   fetchFromGitHub,
   python,
-  pythonOlder,
   setuptools,
 }:
 
 buildPythonPackage rec {
   pname = "django-appconf";
-  version = "1.1.0";
+  version = "1.2.0";
   pyproject = true;
-
-  disabled = pythonOlder "3.6";
 
   src = fetchFromGitHub {
     owner = "django-compressor";
     repo = "django-appconf";
     tag = "v${version}";
-    hash = "sha256-raK3Q+6cDSOiK5vrgZG65qDUiFOrRhDKxsPOQv/lz8w=";
+    hash = "sha256-kpytEpvibnumkQGfHBDKA0GzSB0R8o0g0f51Rv6KEhA=";
   };
 
   build-system = [ setuptools ];

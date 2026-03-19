@@ -20,7 +20,6 @@
   buildEnv,
   bundler,
   bundix,
-  cargo,
   rustPlatform,
   rustc,
   makeBinaryWrapper,
@@ -100,7 +99,6 @@ let
           # - In $out/lib/libruby.so and/or $out/lib/libruby.dylib
           removeReferencesTo,
           jitSupport ? yjitSupport,
-          cargo,
           rustPlatform,
           rustc,
           yjitSupport ? yjitSupported,
@@ -131,9 +129,6 @@ let
             inherit hash;
           };
 
-          # Have `configure' avoid `/usr/bin/nroff' in non-chroot builds.
-          NROFF = if docSupport then "${groff}/bin/nroff" else null;
-
           outputs = [ "out" ] ++ lib.optional docSupport "devdoc";
 
           strictDeps = true;
@@ -150,7 +145,6 @@ let
           ])
           ++ ops yjitSupport [
             rustPlatform.cargoSetupHook
-            cargo
             rustc
           ]
           ++ op useBaseRuby baseRuby;
@@ -177,12 +171,17 @@ let
           ];
           propagatedBuildInputs = op jemallocSupport jemalloc;
 
-          env = lib.optionalAttrs (stdenv.hostPlatform != stdenv.buildPlatform && yjitSupport) {
-            # The ruby build system will use a bare `rust` command by default for its rust.
-            # We can use the Nixpkgs rust wrapper to work around the fact that our Rust builds
-            # for cross-compilation output for the build target by default.
-            NIX_RUSTFLAGS = "--target ${stdenv.hostPlatform.rust.rustcTargetSpec}";
-          };
+          env =
+            lib.optionalAttrs (stdenv.hostPlatform != stdenv.buildPlatform && yjitSupport) {
+              # The ruby build system will use a bare `rust` command by default for its rust.
+              # We can use the Nixpkgs rust wrapper to work around the fact that our Rust builds
+              # for cross-compilation output for the build target by default.
+              NIX_RUSTFLAGS = "--target ${stdenv.hostPlatform.rust.rustcTargetSpec}";
+            }
+            // lib.optionalAttrs docSupport {
+              # Have `configure' avoid `/usr/bin/nroff' in non-chroot builds.
+              NROFF = "${groff}/bin/nroff";
+            };
 
           enableParallelBuilding = true;
           # /build/ruby-2.7.7/lib/fileutils.rb:882:in `chmod':
@@ -240,13 +239,9 @@ let
           ++ lib.optional stdenv.cc.isGNU "CFLAGS=-O3"
           ++ [
           ]
-          ++ ops stdenv.hostPlatform.isDarwin [
-            # on darwin, we have /usr/include/tk.h -- so the configure script detects
-            # that tk is installed
-            "--with-out-ext=tk"
-            # on yosemite, "generating encdb.h" will hang for a very long time without this flag
-            "--with-setjmp-type=setjmp"
-          ]
+          # on darwin, we have /usr/include/tk.h -- so the configure script detects
+          # that tk is installed
+          ++ lib.optional stdenv.hostPlatform.isDarwin "--with-out-ext=tk"
           ++ ops stdenv.hostPlatform.isFreeBSD [
             "rb_cv_gnu_qsort_r=no"
             "rb_cv_bsd_qsort_r=yes"
@@ -353,7 +348,6 @@ let
             description = "Object-oriented language for quick and easy programming";
             homepage = "https://www.ruby-lang.org/";
             license = lib.licenses.ruby;
-            maintainers = with lib.maintainers; [ manveru ];
             platforms = lib.platforms.all;
             mainProgram = "ruby";
             knownVulnerabilities = op (lib.versionOlder ver.majMin "3.0") "This Ruby release has reached its end of life. See https://www.ruby-lang.org/en/downloads/branches/.";

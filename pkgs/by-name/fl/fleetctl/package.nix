@@ -1,13 +1,13 @@
 {
   lib,
-  buildGo126Module,
+  buildGoModule,
   fleet,
   writableTmpDirAsHomeHook,
   versionCheckHook,
   stdenv,
 }:
 
-buildGo126Module (finalAttrs: {
+buildGoModule (finalAttrs: {
   pname = "fleetctl";
 
   inherit (fleet) version src vendorHash;

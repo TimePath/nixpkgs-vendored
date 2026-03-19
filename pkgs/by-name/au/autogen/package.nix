@@ -12,12 +12,12 @@
   libxml2,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "autogen";
   version = "5.18.16";
 
   src = fetchurl {
-    url = "mirror://gnu/autogen/rel${version}/autogen-${version}.tar.xz";
+    url = "mirror://gnu/autogen/rel${finalAttrs.version}/autogen-${finalAttrs.version}.tar.xz";
     sha256 = "16mlbdys8q4ckxlvxyhwkdnh1ay9f6g0cyp1kylkpalgnik398gq";
   };
 
@@ -148,9 +148,6 @@ stdenv.mkDerivation rec {
       local nrp="$(patchelf --print-rpath "$f" | sed -E 's@(:|^)'$NIX_BUILD_TOP'[^:]*:@\1@g')"
       patchelf --set-rpath "$nrp" "$f"
     done
-  ''
-  + lib.optionalString (stdenv.system == "aarch64-darwin") ''
-    # FIXME: remove/revert; just trigerring a rebuild because of bad binary in cache.nixos.org
   '';
 
   meta = {
@@ -163,4 +160,4 @@ stdenv.mkDerivation rec {
     platforms = lib.platforms.all;
     maintainers = [ ];
   };
-}
+})

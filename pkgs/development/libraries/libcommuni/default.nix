@@ -61,6 +61,5 @@ stdenv.mkDerivation rec {
     homepage = "https://communi.github.io";
     license = lib.licenses.bsd3;
     platforms = lib.platforms.all;
-    maintainers = with lib.maintainers; [ hrdinka ];
   };
 }

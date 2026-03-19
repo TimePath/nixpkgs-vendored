@@ -63,9 +63,20 @@ in
       "networking"
       "wicd"
     ] "The corresponding package was removed from nixpkgs.")
+    (mkRemovedOptionModule
+      [
+        "programs"
+        "adb"
+      ]
+      "This option is no longer needed as systemd 258 handles uaccess rules automatically. Please add `pkgs.android-tools` to your system packages to get the adb command."
+    )
     (mkRemovedOptionModule [
       "programs"
       "cardboard"
+    ] "The corresponding package was removed from nixpkgs.")
+    (mkRemovedOptionModule [
+      "programs"
+      "ecryptfs"
     ] "The corresponding package was removed from nixpkgs.")
     (mkRemovedOptionModule [
       "programs"
@@ -98,6 +109,11 @@ in
       consider using `programs.pay-respects` instead.
     '')
     (mkRemovedOptionModule [ "programs" "tilp2" ] "The corresponding package was removed from nixpkgs.")
+    (mkRemovedOptionModule [
+      "programs"
+      "unity3d"
+      "enable"
+    ] "The corresponding package was removed from nixpkgs in 2022.")
     (mkRemovedOptionModule [ "programs" "way-cooler" ] (
       "way-cooler is abandoned by its author: "
       + "https://way-cooler.org/blog/2020/01/09/way-cooler-post-mortem.html"
@@ -134,6 +150,10 @@ in
     ] "cgmanager was deprecated by lxc and therefore removed from nixpkgs.")
     (mkRemovedOptionModule [
       "services"
+      "charybdis"
+    ] "The charybdis module has been removed, the project was archived in 2021.")
+    (mkRemovedOptionModule [
+      "services"
       "chatgpt-retrieval-plugin"
     ] "The corresponding package was removed from nixpkgs.")
     (mkRemovedOptionModule [
@@ -151,6 +171,9 @@ in
       "services"
       "couchpotato"
     ] "The corresponding package was removed from nixpkgs.")
+    (mkRemovedOptionModule [ "services" "crabfit" ]
+      "The corresponding packages were removed from nixpkgs because they are unmaintained upstream and insecure."
+    )
     (mkRemovedOptionModule [ "services" "crowd" ]
       "Atlassian software has been removed, as support for the Atlassian Server products ended in February 2024 and there was insufficient interest in maintaining the Atlassian Data Center replacements"
     )
@@ -167,6 +190,9 @@ in
       moreover the NixOS module had to rely on an abandoned version of dnscrypt-proxy v1 for the rotation of keys.
 
       To wrap a resolver with DNSCrypt you can instead use dnsdist. See options `services.dnsdist.dnscrypt.*`
+    '')
+    (mkRemovedOptionModule [ "services" "ethercalc" ] ''
+      The ethercalc module has been removed from nixpkgs as the project was old, unmaintained, and could not be packaged well in nixpkgs.
     '')
     (mkRemovedOptionModule [
       "services"
@@ -209,6 +235,9 @@ in
       "Atlassian software has been removed, as support for the Atlassian Server products ended in February 2024 and there was insufficient interest in maintaining the Atlassian Data Center replacements"
     )
     (mkRemovedOptionModule [ "services" "kippo" ] "The corresponding package was removed from nixpkgs.")
+    (mkRemovedOptionModule [ "programs" "light" ]
+      "The corresponding package was removed from nixpkgs due to being unmaintained upstream. `brightnessctl` and `hardware.acpilight` offer replacements."
+    )
     (mkRemovedOptionModule [ "services" "lshd" ]
       "The corresponding package was removed from nixpkgs as it had no maintainer in Nixpkgs and hasn't seen an upstream release in over a decades."
     )
@@ -252,6 +281,9 @@ in
       The Javascript version of Parsoid configured through this module does not work with modern MediaWiki versions,
       and has been deprecated by upstream, so it has been removed. MediaWiki comes with a new PHP-based parser built-in, so there is no need for this module.
     '')
+    (mkRemovedOptionModule [ "services" "pingvin-share" ] ''
+      The `pingvin-share.backend` package was broken and the project was archived upstream, so it was removed from nixpkgs.
+    '')
     (mkRemovedOptionModule [ "services" "polipo" ] ''
       The polipo project is unmaintained and archived upstream.
     '')
@@ -287,6 +319,9 @@ in
       the program being unmaintained. The options `programs.msmtp.*` can be
       used instead.
     '')
+    (mkRemovedOptionModule [ "services" "statsd" ] ''
+      The statsd module was removed because the packages it uses have been removed from nixpkgs.
+    '')
     (mkRemovedOptionModule [ "services" "sourcehut" ] ''
       The sourcehut packages and the corresponding module have been removed due to being broken and unmaintained.
     '')
@@ -296,6 +331,10 @@ in
     (mkRemovedOptionModule [ "services" "unifi-video" ]
       "The unifi-video package and the corresponding module have been removed as the software has been unsupported since 2021 and requires a MongoDB version that has reached end of life."
     )
+    (mkRemovedOptionModule [
+      "services"
+      "uptime"
+    ] "The package for services.uptime has been removed from nixpkgs.")
     (mkRemovedOptionModule [ "services" "venus" ] "The corresponding package was removed from nixpkgs.")
     (mkRemovedOptionModule [
       "services"
@@ -418,10 +457,6 @@ in
       Consider migrating or switching to Incus, or remove from your configuration.
       https://linuxcontainers.org/incus/docs/main/howto/server_migrate_lxd/
     '')
-    (mkRemovedOptionModule [ "services" "invoiceplane" ] ''
-      services.invoiceplane has been removed since the service only supported PHP 8.1 which is EOL
-      and removed from nixpkgs.
-    '')
     (mkRemovedOptionModule [ "services" "filesender" ] ''
       services.filesender has been removed since it depends on simplesamlphp which was severely unmaintained.
     '')
@@ -432,6 +467,9 @@ in
     (mkRemovedOptionModule [ "services" "simplesamlphp" ] ''
       services.simplesamlphp has been vulnerable and unmaintained in nixpkgs.
     '')
+    (mkRemovedOptionModule [ "security" "pam" "enableEcryptfs" ] ''
+      security.pam.enableFscrypt was removed since it was unmaintained in nixpkgs.
+    '')
     (mkRemovedOptionModule [ "security" "rngd" ] ''
       rngd is not necessary for any device that the kernel recognises
       as an hardware RNG, as it will automatically run the krngd task
@@ -440,6 +478,9 @@ in
     '')
     (mkRemovedOptionModule [ "virtualisation" "multipass" ] ''
       virtualisation.multipass has been removed since it was unmaintained in nixpkgs
+    '')
+    (mkRemovedOptionModule [ "programs" "spacefm" ] ''
+      spacefm has been removed since it was unmaintained upstream.
     '')
     # Do NOT add any option renames here, see top of the file
   ];

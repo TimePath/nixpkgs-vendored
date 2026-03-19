@@ -11,14 +11,14 @@
   testers,
 }:
 
-rustPlatform.buildRustPackage rec {
+rustPlatform.buildRustPackage (finalAttrs: {
   pname = "ntpd-rs";
   version = "1.7.1";
 
   src = fetchFromGitHub {
     owner = "pendulum-project";
     repo = "ntpd-rs";
-    tag = "v${version}";
+    tag = "v${finalAttrs.version}";
     hash = "sha256-gOt2X/tqtFrmxkTO/8UFwmyX0vPKHsTu+qe5AfqDtMk=";
   };
 
@@ -53,7 +53,7 @@ rustPlatform.buildRustPackage rec {
       nixos = lib.optionalAttrs stdenv.hostPlatform.isLinux nixosTests.ntpd-rs;
       version = testers.testVersion {
         package = ntpd-rs;
-        inherit version;
+        inherit (finalAttrs) version;
       };
     };
 
@@ -63,7 +63,7 @@ rustPlatform.buildRustPackage rec {
   meta = {
     description = "Full-featured implementation of the Network Time Protocol";
     homepage = "https://tweedegolf.nl/en/pendulum";
-    changelog = "https://github.com/pendulum-project/ntpd-rs/blob/v${version}/CHANGELOG.md";
+    changelog = "https://github.com/pendulum-project/ntpd-rs/blob/v${finalAttrs.version}/CHANGELOG.md";
     license = with lib.licenses; [
       mit # or
       asl20
@@ -76,4 +76,4 @@ rustPlatform.buildRustPackage rec {
     # note: Undefined symbols for architecture x86_64: "_ntp_adjtime"
     broken = stdenv.hostPlatform.isDarwin && stdenv.hostPlatform.isx86_64;
   };
-}
+})

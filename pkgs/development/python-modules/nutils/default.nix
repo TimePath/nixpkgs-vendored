@@ -12,7 +12,6 @@
   stringly,
   treelog,
   pytestCheckHook,
-  pythonOlder,
   pkgs,
 }:
 
@@ -20,8 +19,6 @@ buildPythonPackage rec {
   pname = "nutils";
   version = "9.1";
   pyproject = true;
-
-  disabled = pythonOlder "3.8";
 
   src = fetchFromGitHub {
     owner = "evalf";
@@ -53,7 +50,7 @@ buildPythonPackage rec {
     pkgs.graphviz
     pytestCheckHook
   ]
-  ++ lib.flatten (lib.attrValues optional-dependencies);
+  ++ lib.concatAttrValues optional-dependencies;
 
   disabledTests = [
     # Error: invalid value 'x' for farg: loading 'x' as float

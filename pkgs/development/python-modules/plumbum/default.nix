@@ -10,15 +10,12 @@
   pytest-mock,
   pytest-timeout,
   pytestCheckHook,
-  pythonOlder,
 }:
 
 buildPythonPackage rec {
   pname = "plumbum";
   version = "1.10.0";
   pyproject = true;
-
-  disabled = pythonOlder "3.10";
 
   src = fetchFromGitHub {
     owner = "tomerfiliba";
@@ -43,7 +40,7 @@ buildPythonPackage rec {
     pytest-timeout
     pytestCheckHook
   ]
-  ++ lib.flatten (builtins.attrValues optional-dependencies);
+  ++ lib.concatAttrValues optional-dependencies;
 
   preCheck = ''
     export HOME=$TMP

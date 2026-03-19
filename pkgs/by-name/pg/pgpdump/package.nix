@@ -5,18 +5,23 @@
   supportCompressedPackets ? true,
   zlib,
   bzip2,
+  autoreconfHook,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "pgpdump";
-  version = "0.36";
+  version = "0.37";
 
   src = fetchFromGitHub {
     owner = "kazu-yamamoto";
     repo = "pgpdump";
-    rev = "v${version}";
-    sha256 = "sha256-JKedgHCTDnvLyLR3nGl4XFAaxXDU1TgHrxPMlRFwtBo=";
+    rev = "v${finalAttrs.version}";
+    sha256 = "sha256-nB7f6VTxRidymi9RV7W1x9JbWi9Eoa/CYzYmekYDVOo=";
   };
+
+  nativeBuildInputs = [
+    autoreconfHook
+  ];
 
   buildInputs = lib.optionals supportCompressedPackets [
     zlib
@@ -35,4 +40,4 @@ stdenv.mkDerivation rec {
     platforms = lib.platforms.unix;
     maintainers = [ ];
   };
-}
+})

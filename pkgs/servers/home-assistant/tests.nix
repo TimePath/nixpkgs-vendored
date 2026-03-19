@@ -13,6 +13,7 @@ let
     air_quality = getComponentDeps "camera" ++ getComponentDeps "conversation";
     alexa = getComponentDeps "cloud" ++ getComponentDeps "frontend" ++ getComponentDeps "stream";
     android_ip_webcam = getComponentDeps "camera";
+    anthropic = getComponentDeps "ai_task" ++ getComponentDeps "openai_conversation";
     assist_pipeline = getComponentDeps "frontend";
     automation = getComponentDeps "frontend" ++ getComponentDeps "mobile_app";
     axis = getComponentDeps "camera" ++ getComponentDeps "deconz";
@@ -40,11 +41,15 @@ let
     environment_canada = getComponentDeps "camera";
     esphome = getComponentDeps "camera";
     fan = getComponentDeps "conversation";
+    fish_audio = getComponentDeps "tts";
     foscam = getComponentDeps "camera";
     freebox = getComponentDeps "camera";
     fully_kiosk = getComponentDeps "camera";
     gardena_bluetooth = getComponentDeps "husqvarna_automower_ble";
     geofency = getComponentDeps "assist_pipeline" ++ getComponentDeps "camera";
+    go2rtc = [
+      tqdm
+    ];
     google_assistant = getComponentDeps "conversation";
     google_assistant_sdk = getComponentDeps "conversation" ++ getComponentDeps "frontend";
     google_cloud = getComponentDeps "tts";
@@ -57,6 +62,7 @@ let
     gpslogger = getComponentDeps "assist_pipeline" ++ getComponentDeps "camera";
     group = getComponentDeps "camera" ++ getComponentDeps "conversation";
     hassio = getComponentDeps "frontend" ++ getComponentDeps "homeassistant_yellow";
+    hikvision = getComponentDeps "camera";
     homeassistant = getComponentDeps "camera" ++ getComponentDeps "conversation";
     homeassistant_connect_zbt2 = getComponentDeps "zha";
     homeassistant_hardware = getComponentDeps "otbr" ++ getComponentDeps "zha";
@@ -74,7 +80,7 @@ let
     local_file = getComponentDeps "camera";
     locative = getComponentDeps "assist_pipeline" ++ getComponentDeps "camera";
     logbook = getComponentDeps "alexa";
-    lovelace = [
+    lovelace = getComponentDeps "frontend" ++ [
       pychromecast
     ];
     lutron_caseta = getComponentDeps "frontend";
@@ -84,8 +90,10 @@ let
     microsoft = getComponentDeps "tts";
     microsoft_face_detect = getComponentDeps "conversation";
     microsoft_face_identify = getComponentDeps "conversation";
+    miele = getComponentDeps "cloud";
     mjpeg = getComponentDeps "camera";
     mobile_app = getComponentDeps "frontend";
+    mopeka = getComponentDeps "switchbot";
     motioneye = getComponentDeps "camera";
     mqtt = getComponentDeps "camera";
     nest = getComponentDeps "camera" ++ [
@@ -141,6 +149,7 @@ let
     unifiprotect = getComponentDeps "camera";
     universal = getComponentDeps "camera" ++ getComponentDeps "conversation";
     uvc = getComponentDeps "camera";
+    vivotek = getComponentDeps "camera";
     voicerss = getComponentDeps "tts";
     weather = getComponentDeps "conversation";
     websocket_api = getComponentDeps "camera" ++ getComponentDeps "conversation";
@@ -148,6 +157,7 @@ let
       arrow
     ];
     yandextts = getComponentDeps "tts";
+    yolink = getComponentDeps "cloud";
     zeroconf = getComponentDeps "shelly";
     zha = getComponentDeps "deconz" ++ getComponentDeps "frontend";
     zwave_js = getComponentDeps "frontend";
@@ -178,14 +188,13 @@ let
       "tests/components/nzbget/test_config_flow.py::test_user_form_cannot_connect"
       "tests/components/nzbget/test_init.py::test_async_setup_raises_entry_not_ready"
     ];
-    openai_conversation = [
-      # Pydantic validation error
-      "tests/components/openai_conversation/test_conversation.py"
-      "tests/components/openai_conversation/test_ai_task.py"
-    ];
     overseerr = [
       # imports broken future module
       "tests/components/overseerr/test_event.py"
+    ];
+    systemmonitor = [
+      # sandbox doesn't grant access to /sys/class/power_supply
+      "tests/components/systemmonitor/test_config_flow.py::test_add_and_remove_processes"
     ];
     youtube = [
       # outdated snapshot
@@ -197,6 +206,13 @@ let
     conversation = [
       # intent fixture mismatch
       "test_error_no_device_on_floor"
+    ];
+    homewizard = [
+      # Messages don't match expected due to a change in Homewizard's outputs
+      "test_identify_button"
+      "test_number_entities"
+      "test_select_request_error"
+      "test_switch_entities"
     ];
     sensor = [
       # Failed: Translation not found for sensor
@@ -225,8 +241,7 @@ lib.listToAttrs (
     lib.nameValuePair component (
       home-assistant.overridePythonAttrs (old: {
         pname = "homeassistant-test-${component}";
-        pyproject = null;
-        format = "other";
+        pyproject = false;
 
         dontBuild = true;
         dontInstall = true;

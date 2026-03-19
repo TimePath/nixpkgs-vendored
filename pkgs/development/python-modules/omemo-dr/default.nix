@@ -5,7 +5,6 @@
   fetchFromGitLab,
   protobuf,
   pytestCheckHook,
-  pythonOlder,
   setuptools,
 }:
 
@@ -13,8 +12,6 @@ buildPythonPackage rec {
   pname = "omemo-dr";
   version = "1.2.0";
   pyproject = true;
-
-  disabled = pythonOlder "3.10";
 
   src = fetchFromGitLab {
     domain = "dev.gajim.org";

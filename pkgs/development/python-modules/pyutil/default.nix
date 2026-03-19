@@ -6,7 +6,6 @@
   mock,
   pytestCheckHook,
   pythonAtLeast,
-  pythonOlder,
   setuptools,
   simplejson,
   twisted,
@@ -17,8 +16,6 @@ buildPythonPackage rec {
   pname = "pyutil";
   version = "3.3.6";
   pyproject = true;
-
-  disabled = pythonOlder "3.8";
 
   src = fetchPypi {
     inherit pname version;
@@ -47,7 +44,7 @@ buildPythonPackage rec {
     twisted
     pytestCheckHook
   ]
-  ++ lib.flatten (builtins.attrValues optional-dependencies);
+  ++ lib.concatAttrValues optional-dependencies;
 
   pythonImportsCheck = [ "pyutil" ];
 

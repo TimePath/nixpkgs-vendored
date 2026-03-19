@@ -13,7 +13,6 @@
   pocketsphinx,
   pyaudio,
   pytestCheckHook,
-  pythonOlder,
   requests,
   respx,
   setuptools,
@@ -26,8 +25,6 @@ buildPythonPackage rec {
   pname = "speechrecognition";
   version = "3.14.3";
   pyproject = true;
-
-  disabled = pythonOlder "3.9";
 
   src = fetchFromGitHub {
     owner = "Uberi";
@@ -78,7 +75,7 @@ buildPythonPackage rec {
     pocketsphinx
     respx
   ]
-  ++ lib.flatten (lib.attrValues optional-dependencies);
+  ++ lib.concatAttrValues optional-dependencies;
 
   pythonImportsCheck = [ "speech_recognition" ];
 

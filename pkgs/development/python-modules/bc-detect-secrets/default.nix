@@ -7,7 +7,6 @@
   pkgs,
   pyahocorasick,
   pytestCheckHook,
-  pythonOlder,
   pyyaml,
   requests,
   responses,
@@ -20,8 +19,6 @@ buildPythonPackage rec {
   pname = "bc-detect-secrets";
   version = "1.5.45";
   pyproject = true;
-
-  disabled = pythonOlder "3.8";
 
   src = fetchFromGitHub {
     owner = "bridgecrewio";
@@ -50,7 +47,7 @@ buildPythonPackage rec {
     responses
     writableTmpDirAsHomeHook
   ]
-  ++ lib.flatten (builtins.attrValues optional-dependencies);
+  ++ lib.concatAttrValues optional-dependencies;
 
   disabledTests = [
     # Tests are failing for various reasons (missing git repo, missing test data, etc.)

@@ -11,12 +11,12 @@
   zlib,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "libspectrum";
   version = "1.5.0";
 
   src = fetchurl {
-    url = "mirror://sourceforge/fuse-emulator/${pname}-${version}.tar.gz";
+    url = "mirror://sourceforge/fuse-emulator/libspectrum-${finalAttrs.version}.tar.gz";
     sha256 = "sha256-o1PLRumxooEGHYFjU+oBDQpv545qF6oLe3QnHKXkrPw=";
   };
 
@@ -41,6 +41,6 @@ stdenv.mkDerivation rec {
     description = "ZX Spectrum input and output support library";
     license = lib.licenses.gpl2Plus;
     platforms = lib.platforms.unix;
-    maintainers = with lib.maintainers; [ orivej ];
+    maintainers = [ ];
   };
-}
+})

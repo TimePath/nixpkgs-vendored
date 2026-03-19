@@ -504,6 +504,12 @@ lib.makeOverridable (
         export HOME=${installkernel}
       '';
 
+    preFixup = ''
+      if [ -z "''${dontStrip-}" -a -e $out/vmlinux ]; then
+        strip -v -S -p $out/vmlinux
+      fi
+    '';
+
     requiredSystemFeatures = [ "big-parallel" ];
 
     passthru = rec {
@@ -569,7 +575,10 @@ lib.makeOverridable (
       license = lib.licenses.gpl2Only;
       homepage = "https://www.kernel.org/";
       maintainers = [ maintainers.thoughtpolice ];
-      teams = [ teams.linux-kernel ];
+      teams = [
+        teams.linux-kernel
+        teams.security-review
+      ];
       platforms = platforms.linux;
       badPlatforms =
         lib.optionals (lib.versionOlder version "4.15") [

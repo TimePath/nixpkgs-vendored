@@ -7,6 +7,7 @@
   yarnBuildHook,
   yarnInstallHook,
   nodejs,
+  nix-update-script,
 }:
 
 stdenv.mkDerivation (finalAttrs: {
@@ -35,6 +36,8 @@ stdenv.mkDerivation (finalAttrs: {
     # Needed for executing package.json scripts
     nodejs
   ];
+
+  passthru.updateScript = nix-update-script { };
 
   meta = {
     changelog = "https://codeberg.org/keyoxide/keyoxide-cli/releases/tag/${finalAttrs.version}";

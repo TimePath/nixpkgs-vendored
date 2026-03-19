@@ -69,7 +69,7 @@ let
     '';
   };
 in
-python3Packages.buildPythonApplication rec {
+python3Packages.buildPythonApplication (finalAttrs: {
   inherit pname version src;
   pyproject = true;
 
@@ -196,14 +196,14 @@ python3Packages.buildPythonApplication rec {
     ++ pyjwt.optional-dependencies.crypto
     ++ starsessions.optional-dependencies.redis;
 
-  optional-dependencies = with python3Packages; rec {
+  optional-dependencies = with python3Packages; {
     postgres = [
       pgvector
       psycopg2-binary
     ];
 
     mariadb = [
-      python3Packages.mariadb
+      mariadb
     ];
 
     all = [
@@ -221,8 +221,8 @@ python3Packages.buildPythonApplication rec {
       qdrant-client
       weaviate-client
     ]
-    ++ mariadb
-    ++ postgres
+    ++ finalAttrs.passthru.optional-dependencies.mariadb
+    ++ finalAttrs.passthru.optional-dependencies.postgres
     ++ moto.optional-dependencies.s3;
   };
 
@@ -265,4 +265,4 @@ python3Packages.buildPythonApplication rec {
       codgician
     ];
   };
-}
+})

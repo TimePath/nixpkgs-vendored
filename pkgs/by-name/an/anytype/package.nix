@@ -3,10 +3,13 @@
   stdenv,
   fetchFromGitHub,
   buildNpmPackage,
+  nodejs_22,
   pkg-config,
   anytype-heart,
   libsecret,
-  electron_37,
+  electron,
+  go,
+  lsof,
   makeDesktopItem,
   copyDesktopItems,
   commandLineArgs ? "",
@@ -14,23 +17,26 @@
 
 buildNpmPackage (finalAttrs: {
   pname = "anytype";
-  version = "0.53.1";
+  version = "0.54.5";
 
   src = fetchFromGitHub {
     owner = "anyproto";
     repo = "anytype-ts";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-GDx40UA+Grc/xvlfwqtN1WNonm9c0dci1rereWpfhjs=";
+    hash = "sha256-TLmmItt5ASlfQA/e1RtcGF/Gf9AU97pf4tpv3B7J9kE=";
   };
 
   locales = fetchFromGitHub {
     owner = "anyproto";
     repo = "l10n-anytype-ts";
-    rev = "f9dc9286757c2544fe801a1e31067cbe708cc6f1";
-    hash = "sha256-/rZCpeKGtPttYbuJbhbOV4P1sXSvIYve0WO/SL20isw=";
+    rev = "d744bf573b72c6e8d11e093c8f6702acec263009";
+    hash = "sha256-UnqHXqtBTRmDR/qvS7bktMzDzk9gq+onvvLJgdzqJ7A=";
   };
 
-  npmDepsHash = "sha256-hJJK/RJnSm8QpjGcnxUsemrAsRNYCHSGSH8iUZZYXJI=";
+  npmDepsHash = "sha256-vvnUzzryW5nbAv9OEU+6xwP7lf8+K/mS0mcDswNRTxU=";
+
+  # npm dependency install fails with nodejs_24: https://github.com/NixOS/nixpkgs/issues/474535
+  nodejs = nodejs_22;
 
   env = {
     ELECTRON_SKIP_BINARY_DOWNLOAD = "1";
@@ -38,13 +44,14 @@ buildNpmPackage (finalAttrs: {
 
   nativeBuildInputs = [
     pkg-config
+    go
     copyDesktopItems
   ];
   buildInputs = [ libsecret ];
 
   npmFlags = [
     # keytar needs to be built against electron's ABI
-    "--nodedir=${electron_37.headers}"
+    "--nodedir=${electron.headers}"
   ];
 
   patches = [
@@ -63,6 +70,7 @@ buildNpmPackage (finalAttrs: {
     done
 
     npm run build
+    npm run build:nmh
 
     runHook postBuild
   '';
@@ -87,11 +95,14 @@ buildNpmPackage (finalAttrs: {
 
     cp LICENSE.md $out/share
 
-    makeWrapper '${lib.getExe electron_37}' $out/bin/anytype \
+    makeWrapper '${lib.getExe electron}' $out/bin/anytype \
       --set-default ELECTRON_IS_DEV 0 \
       --add-flags "\''${NIXOS_OZONE_WL:+\''${WAYLAND_DISPLAY:+--ozone-platform-hint=auto --enable-features=WaylandWindowDecorations --enable-wayland-ime=true}}" \
       --add-flags $out/lib/anytype/ \
       --add-flags ${lib.escapeShellArg commandLineArgs}
+
+    wrapProgram $out/lib/anytype/dist/nativeMessagingHost \
+       --prefix PATH : ${lib.makeBinPath [ lsof ]}
 
     runHook postInstall
   '';

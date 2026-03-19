@@ -8,7 +8,7 @@
 buildPythonPackage {
   pname = "ninja";
   inherit (ninja) version;
-  format = "pyproject";
+  pyproject = true;
 
   src = ./stub;
 
@@ -45,7 +45,6 @@ buildPythonPackage {
     license = lib.licenses.asl20;
     maintainers = with lib.maintainers; [
       _999eagle
-      tjni
     ];
   };
 }

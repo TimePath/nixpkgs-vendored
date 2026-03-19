@@ -4,7 +4,7 @@
   callPackage,
   fetchFromCodeberg,
   libGL,
-  libX11,
+  libx11,
   libevdev,
   libinput,
   libxkbcommon,
@@ -42,7 +42,7 @@ stdenv.mkDerivation (finalAttrs: {
     pkg-config
     wayland-scanner
     xwayland
-    zig_0_15.hook
+    zig_0_15
   ]
   ++ lib.optional withManpages scdoc;
 
@@ -57,9 +57,7 @@ stdenv.mkDerivation (finalAttrs: {
     wayland-protocols
     wlroots_0_19
   ]
-  ++ lib.optional xwaylandSupport libX11;
-
-  dontConfigure = true;
+  ++ lib.optional xwaylandSupport libx11;
 
   zigBuildFlags = [
     "--system"
@@ -70,6 +68,7 @@ stdenv.mkDerivation (finalAttrs: {
 
   postInstall = ''
     install contrib/river.desktop -Dt $out/share/wayland-sessions
+    install -Dm755 example/init -t $out/example/
   '';
 
   doInstallCheck = true;

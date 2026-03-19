@@ -93,6 +93,10 @@ stdenv.mkDerivation (finalAttrs: {
       scripts/extract-release-date-from-doap-file.py
   '';
 
+  preFixup = ''
+    moveToOutput "lib/gstreamer-1.0/pkgconfig" "$dev"
+  '';
+
   passthru = {
     tests = {
       lgplOnly = gst-plugins-ugly.override {
@@ -114,6 +118,6 @@ stdenv.mkDerivation (finalAttrs: {
     '';
     license = if enableGplPlugins then lib.licenses.gpl2Plus else lib.licenses.lgpl2Plus;
     platforms = lib.platforms.unix;
-    maintainers = with lib.maintainers; [ matthewbauer ];
+    maintainers = [ ];
   };
 })

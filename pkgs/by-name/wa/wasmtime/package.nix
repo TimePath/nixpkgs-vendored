@@ -13,20 +13,20 @@
 }:
 rustPlatform.buildRustPackage (finalAttrs: {
   pname = "wasmtime";
-  version = "38.0.4";
+  version = "42.0.1";
 
   src = fetchFromGitHub {
     owner = "bytecodealliance";
     repo = "wasmtime";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-6w4r74s3wtDisCVMu81FALnlmVnfONGM5xVkYYWrLFk=";
+    hash = "sha256-vKKPeYRqRWVx+ZErnXf8k7GUASaNeASR9YkPciWcLJU=";
     fetchSubmodules = true;
   };
 
   # Disable cargo-auditable until https://github.com/rust-secure-code/cargo-auditable/issues/124 is solved.
   auditable = false;
 
-  cargoHash = "sha256-0YN8O8tSAIuw61IIbTHUZpFjP6HjrwMcd7DN2WCQM0s=";
+  cargoHash = "sha256-9OvBmbld4DK5c+E3m5EEQwUhhLZIK5l0cc3zCipSQ20=";
   cargoBuildFlags = [
     "--package"
     "wasmtime-cli"
@@ -91,11 +91,15 @@ rustPlatform.buildRustPackage (finalAttrs: {
   nativeInstallCheckInputs = [
     versionCheckHook
   ];
-  versionCheckProgramArg = "--version";
   doInstallCheck = true;
 
   passthru = {
-    updateScript = nix-update-script { };
+    updateScript = nix-update-script {
+      extraArgs = [
+        "--version-regex"
+        "^v(\\d+\\.\\d+\\.\\d+)$"
+      ];
+    };
   };
 
   meta = {
@@ -108,7 +112,6 @@ rustPlatform.buildRustPackage (finalAttrs: {
     mainProgram = "wasmtime";
     maintainers = with lib.maintainers; [
       ereslibre
-      matthewbauer
       nekowinston
     ];
     platforms = lib.platforms.unix;

@@ -29,7 +29,6 @@ buildGoModule {
     homepage = "https://github.com/parse-nl/SystemdJournal2Gelf";
     license = lib.licenses.bsd2;
     maintainers = with lib.maintainers; [
-      fadenb
       fpletz
     ];
     mainProgram = "SystemdJournal2Gelf";

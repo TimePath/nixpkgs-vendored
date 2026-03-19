@@ -2,25 +2,25 @@
   lib,
   buildPythonPackage,
   fetchFromGitHub,
-  pythonOlder,
   setuptools,
+  typing-extensions,
 }:
 
 buildPythonPackage rec {
   pname = "pygobject-stubs";
-  version = "2.13.0";
+  version = "2.16.0";
   pyproject = true;
-
-  disabled = pythonOlder "3.7";
 
   src = fetchFromGitHub {
     owner = "pygobject";
     repo = "pygobject-stubs";
     tag = "v${version}";
-    hash = "sha256-d7caFIjRRFEZYyCDUcilJ7iquUdltZ0ZQupxQ6ITUEc=";
+    hash = "sha256-3gWz/mWAMoXAHMfCFv3ri680iuMm0WLtGyMODujq31M=";
   };
 
   build-system = [ setuptools ];
+
+  dependencies = [ typing-extensions ];
 
   # This package does not include any tests.
   doCheck = false;

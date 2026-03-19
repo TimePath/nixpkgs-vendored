@@ -28,8 +28,6 @@ buildPythonPackage rec {
     description = "Factory and registry pattern for Python classes";
     homepage = "https://class-registry.readthedocs.io/en/latest/";
     license = lib.licenses.mit;
-    maintainers = with lib.maintainers; [
-      hrdinka
-    ];
+    maintainers = [ ];
   };
 }

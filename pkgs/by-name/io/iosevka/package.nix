@@ -58,16 +58,16 @@ assert (extraParameters != null) -> set != null;
 
 buildNpmPackage rec {
   pname = "Iosevka${toString set}";
-  version = "33.3.4";
+  version = "34.2.1";
 
   src = fetchFromGitHub {
     owner = "be5invis";
     repo = "iosevka";
     rev = "v${version}";
-    hash = "sha256-CH9OGj9dfxY3vfLX4ipbML4rIOlXBKIOgwz3K54o1No=";
+    hash = "sha256-yj46lNYOzaopu5Mo68jwh+xf/q/bjMmQdprh6e56eeY=";
   };
 
-  npmDepsHash = "sha256-xNd/DGIYbjR0v+iUgj12T1jsUpIuOG0avNGnEYVdK3Q=";
+  npmDepsHash = "sha256-it0YwPcoYCIMddktgywBuYvvx3Psghoii3pu0K3RDlI=";
 
   nativeBuildInputs = [
     remarshal
@@ -121,7 +121,7 @@ buildNpmPackage rec {
     runHook preBuild
 
     # pipe to cat to disable progress bar
-    npm run build --no-update-notifier --targets ttf::$pname -- --jCmd=$NIX_BUILD_CORES --verbosity=9 | cat
+    npm run build --no-update-notifier --targets ttf::"$pname" -- --jCmd=$NIX_BUILD_CORES --verbosity=9 | cat
 
     runHook postBuild
   '';

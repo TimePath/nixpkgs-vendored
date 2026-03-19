@@ -6,13 +6,13 @@
   xar,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "pbzx";
   version = "1.0.2";
   src = fetchFromGitHub {
     owner = "NiklasRosenstein";
     repo = "pbzx";
-    rev = "v${version}";
+    rev = "v${finalAttrs.version}";
     sha256 = "0bwd7wmnhpz1n5p39mh6asfyccj4cm06hwigslcwbb3pdwmvxc90";
   };
   patches = [ ./stdin.patch ];
@@ -31,7 +31,7 @@ stdenv.mkDerivation rec {
     description = "Stream parser of Apple's pbzx compression format";
     platforms = lib.platforms.unix;
     license = lib.licenses.gpl3;
-    maintainers = [ lib.maintainers.matthewbauer ];
+    maintainers = [ ];
     mainProgram = "pbzx";
   };
-}
+})

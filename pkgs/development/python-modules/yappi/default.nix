@@ -4,22 +4,19 @@
   fetchFromGitHub,
   gevent,
   python,
-  pythonOlder,
   setuptools,
 }:
 
 buildPythonPackage rec {
   pname = "yappi";
-  version = "1.6.10";
+  version = "1.7.3";
   pyproject = true;
-
-  disabled = pythonOlder "3.7";
 
   src = fetchFromGitHub {
     owner = "sumerc";
     repo = "yappi";
     tag = version;
-    hash = "sha256-RVa8IzyRuIQMfI0DhKdybJBBwqmyc2KI8XjD0PKQ8M8=";
+    hash = "sha256-YbWPx5Wf1s1UCCiDCInw66VnZ005LfON81MN3phT+fU=";
   };
 
   patches = [ ./tests.patch ];
@@ -41,6 +38,6 @@ buildPythonPackage rec {
     mainProgram = "yappi";
     homepage = "https://github.com/sumerc/yappi";
     license = lib.licenses.mit;
-    maintainers = with lib.maintainers; [ orivej ];
+    maintainers = [ ];
   };
 }

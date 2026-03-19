@@ -40,7 +40,7 @@ stdenv.mkDerivation rec {
     description = "Provides integration for GTK applications into the Mac desktop";
     license = lib.licenses.lgpl21;
     homepage = "https://gitlab.gnome.org/GNOME/gtk-mac-integration";
-    maintainers = with lib.maintainers; [ matthewbauer ];
+    maintainers = [ ];
     platforms = lib.platforms.darwin;
   };
 }

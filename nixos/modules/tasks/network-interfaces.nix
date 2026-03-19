@@ -65,9 +65,6 @@ let
     }
   );
 
-  # We must escape interfaces due to the systemd interpretation
-  subsystemDevice = interface: "sys-subsystem-net-devices-${escapeSystemdPath interface}.device";
-
   addrOpts =
     v:
     assert v == 4 || v == 6;
@@ -348,9 +345,10 @@ let
 
         virtualOwner = mkOption {
           default = "root";
-          type = types.str;
+          type = types.nullOr types.str;
           description = ''
             In case of a virtual device, the user who owns it.
+            `null` will not set owner, allowing access to any user.
           '';
         };
 
@@ -1068,6 +1066,54 @@ in
         });
     };
 
+    networking.ipvlans = mkOption {
+      default = { };
+      example = literalExpression ''
+        {
+          wan = {
+            interface = "enp2s0";
+            mode = "l2";
+            flags = "vepa";
+          };
+        }
+      '';
+      description = ''
+        This option allows you to define ipvlan interfaces which should
+        be automatically created.
+      '';
+      type =
+        with types;
+        attrsOf (submodule {
+          options = {
+
+            interface = mkOption {
+              example = "enp4s0";
+              type = types.str;
+              description = "The interface the ipvlan will transmit packets through.";
+            };
+
+            mode = mkOption {
+              default = "l2";
+              type = types.enum [
+                "l2"
+                "l3"
+                "l3s"
+              ];
+              description = "The mode of the interface.";
+            };
+
+            flags = mkOption {
+              default = null;
+              type = types.nullOr types.str;
+              example = "vepa";
+              description = "The flags of the ipvlan device.";
+            };
+
+          };
+
+        });
+    };
+
     networking.fooOverUDP = mkOption {
       default = { };
       example = {
@@ -1769,13 +1815,9 @@ in
 
     environment.corePackages = [
       pkgs.host
-      pkgs.hostname-debian
+      pkgs.hostname
       pkgs.iproute2
-      pkgs.iputils
-    ]
-    ++ optionals config.networking.wireless.enable [
-      pkgs.wirelesstools # FIXME: obsolete?
-      pkgs.iw
+      pkgs.iputils # ping
     ]
     ++ bridgeStp;
 

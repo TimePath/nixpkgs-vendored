@@ -11,7 +11,6 @@
   pillow,
   pydantic,
   pytestCheckHook,
-  pythonOlder,
   redis,
   requests,
   sentence-transformers,
@@ -30,8 +29,6 @@ buildPythonPackage rec {
   pname = "manifest-ml";
   version = "0.1.9";
   pyproject = true;
-
-  disabled = pythonOlder "3.8";
 
   src = fetchFromGitHub {
     owner = "HazyResearch";
@@ -85,7 +82,7 @@ buildPythonPackage rec {
   nativeCheckInputs = [
     pytestCheckHook
   ]
-  ++ lib.flatten (lib.attrValues optional-dependencies);
+  ++ lib.concatAttrValues optional-dependencies;
 
   preCheck = ''
     export HOME=$TMPDIR

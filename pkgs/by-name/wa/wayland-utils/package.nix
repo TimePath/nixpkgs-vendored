@@ -9,15 +9,16 @@
   libdrm,
   wayland,
   wayland-protocols,
+  gitUpdater,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "wayland-utils";
-  version = "1.2.0";
+  version = "1.3.0";
 
   src = fetchurl {
-    url = "https://gitlab.freedesktop.org/wayland/wayland-utils/-/releases/${version}/downloads/wayland-utils-${version}.tar.xz";
-    sha256 = "sha256-2SeMIlVFhogYAlQHUbzEJWkmK/gM2aybD9Ev9L0JqeQ=";
+    url = "https://gitlab.freedesktop.org/wayland/wayland-utils/-/releases/${finalAttrs.version}/downloads/wayland-utils-${finalAttrs.version}.tar.xz";
+    hash = "sha256-o50OZWF8auGG12jCI/VwYKOkNfb58C0DB0+UUxO/zw0=";
   };
 
   strictDeps = true;
@@ -34,6 +35,10 @@ stdenv.mkDerivation rec {
     wayland-protocols
   ];
 
+  passthru.updateScript = gitUpdater {
+    url = "https://gitlab.freedesktop.org/wayland/wayland-utils.git";
+  };
+
   meta = {
     description = "Wayland utilities (wayland-info)";
     longDescription = ''
@@ -47,4 +52,4 @@ stdenv.mkDerivation rec {
     maintainers = with lib.maintainers; [ wineee ];
     mainProgram = "wayland-info";
   };
-}
+})

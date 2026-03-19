@@ -66,13 +66,13 @@ stdenv.mkDerivation (
   finalAttrs:
   {
     pname = "netdata";
-    version = "2.8.4";
+    version = "2.8.5";
 
     src = fetchFromGitHub {
       owner = "netdata";
       repo = "netdata";
       rev = "v${finalAttrs.version}";
-      hash = "sha256-rrwoyTejfOwSWMZ0juTE4CzgeRVBrC7AISFUoFBMaIs=";
+      hash = "sha256-NO6KE2Gf09Y9Ff6uJQj5XAZ+05WMdvRV2iSBdWTs2CE=";
       fetchSubmodules = true;
     };
 
@@ -333,11 +333,11 @@ stdenv.mkDerivation (
       tests.netdata = nixosTests.netdata;
     };
 
-    meta = with lib; {
+    meta = {
       broken = stdenv.buildPlatform != stdenv.hostPlatform || withEbpf;
       description = "Real-time performance monitoring tool";
       homepage = "https://www.netdata.cloud/";
-      changelog = "https://github.com/netdata/netdata/releases/tag/v${version}";
+      changelog = "https://github.com/netdata/netdata/releases/tag/v${finalAttrs.version}";
       license = [ lib.licenses.gpl3Plus ] ++ lib.optionals withCloudUi [ lib.licenses.ncul1 ];
       mainProgram = "netdata";
       platforms = lib.platforms.unix;

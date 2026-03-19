@@ -399,6 +399,10 @@ stdenv.mkDerivation (finalAttrs: {
 
   doCheck = false; # fails 20 out of 58 tests, expensive
 
+  preFixup = ''
+    moveToOutput "lib/gstreamer-1.0/pkgconfig" "$dev"
+  '';
+
   passthru = {
     tests = {
       full = gst-plugins-bad.override {
@@ -427,6 +431,6 @@ stdenv.mkDerivation (finalAttrs: {
     '';
     license = if enableGplPlugins then lib.licenses.gpl2Plus else lib.licenses.lgpl2Plus;
     platforms = lib.platforms.linux ++ lib.platforms.darwin;
-    maintainers = with lib.maintainers; [ matthewbauer ];
+    maintainers = [ ];
   };
 })

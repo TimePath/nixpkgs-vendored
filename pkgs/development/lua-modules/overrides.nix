@@ -17,7 +17,7 @@
   fetchurl,
   fzf,
   glib,
-  glibc,
+  glibcLocalesUtf8,
   gmp,
   gnulib,
   gnum4,
@@ -25,6 +25,7 @@
   imagemagick,
   installShellFiles,
   lib,
+  libc,
   libevent,
   libiconv,
   libmpack,
@@ -50,6 +51,7 @@
   tree-sitter,
   unbound,
   unzip,
+  util-linux,
   versionCheckHook,
   vimPlugins,
   yajl,
@@ -74,24 +76,16 @@ in
   # keep-sorted start block=yes case=no newline_separated=yes
   argparse = prev.argparse.overrideAttrs {
     doCheck = true;
-    nativeCheckInputs = [ final.busted ];
+    nativeCheckInputs = [ final.bustedCheckHook ];
 
-    checkPhase = ''
-      runHook preCheck
-      export LUA_PATH="src/?.lua;$LUA_PATH"
-      busted spec/
-      runHook postCheck
-    '';
+    preCheck = ''LUA_PATH="src/?.lua;$LUA_PATH"'';
+    bustedFlags = [ "spec/" ];
   };
 
-  busted = prev.busted.overrideAttrs (oa: {
-    nativeBuildInputs = oa.nativeBuildInputs ++ [
+  busted = prev.busted.overrideAttrs (old: {
+    nativeBuildInputs = old.nativeBuildInputs ++ [
       installShellFiles
     ];
-    postConfigure = ''
-      substituteInPlace ''${rockspecFilename} \
-        --replace-fail "'lua_cliargs = 3.0'," "'lua_cliargs >= 3.0-1',"
-    '';
     postInstall = ''
       installShellCompletion --cmd busted \
         --zsh completions/zsh/_busted \
@@ -101,7 +95,7 @@ in
 
   cjson = prev.lua-cjson;
 
-  cqueues = prev.cqueues.overrideAttrs (oa: {
+  cqueues = prev.cqueues.overrideAttrs (old: {
     # Parse out a version number without the Lua version inserted
     version =
       let
@@ -115,7 +109,7 @@ in
 
     meta.broken = luaOlder "5.1" || luaAtLeast "5.5";
 
-    nativeBuildInputs = oa.nativeBuildInputs ++ [
+    nativeBuildInputs = old.nativeBuildInputs ++ [
       gnum4
     ];
 
@@ -129,6 +123,10 @@ in
         dep = openssl;
       }
     ];
+
+    env = old.env // {
+      NIX_CFLAGS_COMPILE = "-std=gnu17"; # for gcc15
+    };
 
     # Upstream rockspec is pointlessly broken into separate rockspecs, per Lua
     # version, which doesn't work well for us, so modify it
@@ -194,12 +192,8 @@ in
 
   fzy = prev.fzy.overrideAttrs {
     doCheck = true;
-    nativeCheckInputs = [ final.busted ];
-    # Until https://github.com/swarn/fzy-lua/pull/8 is merged,
-    # we have to invoke busted manually
-    checkPhase = ''
-      busted
-    '';
+    nativeCheckInputs = [ final.bustedCheckHook ];
+    # bustedFlags = [ "." ];
   };
 
   grug-far-nvim = prev.grug-far-nvim.overrideAttrs {
@@ -240,18 +234,13 @@ in
     doCheck = lua.luaversion == "5.1";
     nativeCheckInputs = [
       final.nlua
-      final.busted
+      final.bustedCheckHook
       writableTmpDirAsHomeHook
     ];
-    checkPhase = ''
-      runHook preCheck
-      busted --lua=nlua
-      runHook postCheck
-    '';
   };
 
-  ldbus = prev.ldbus.overrideAttrs (oa: {
-    luarocksConfig = oa.luarocksConfig // {
+  ldbus = prev.ldbus.overrideAttrs (old: {
+    luarocksConfig = old.luarocksConfig // {
       variables = {
         DBUS_DIR = "${dbus.lib}";
         DBUS_ARCH_INCDIR = "${dbus.lib}/lib/dbus-1.0/include";
@@ -263,8 +252,8 @@ in
     ];
   });
 
-  lgi = prev.lgi.overrideAttrs (oa: {
-    nativeBuildInputs = oa.nativeBuildInputs ++ [
+  lgi = prev.lgi.overrideAttrs (old: {
+    nativeBuildInputs = old.nativeBuildInputs ++ [
       pkg-config
     ];
     buildInputs = [
@@ -303,7 +292,7 @@ in
     meta.broken = luaOlder "5.1" || luaAtLeast "5.4";
   });
 
-  ljsyscall = prev.ljsyscall.overrideAttrs (oa: rec {
+  ljsyscall = prev.ljsyscall.overrideAttrs (old: rec {
     version = "unstable-20180515";
     # package hasn't seen any release for a long time
     src = fetchFromGitHub {
@@ -319,11 +308,11 @@ in
     '';
     meta.broken = luaOlder "5.1" || luaAtLeast "5.3";
 
-    propagatedBuildInputs = oa.propagatedBuildInputs ++ lib.optional (!isLuaJIT) final.luaffi;
+    propagatedBuildInputs = old.propagatedBuildInputs ++ lib.optional (!isLuaJIT) final.luaffi;
   });
 
-  llscheck = prev.llscheck.overrideAttrs (oa: {
-    propagatedBuildInputs = oa.propagatedBuildInputs ++ [ lua-language-server ];
+  llscheck = prev.llscheck.overrideAttrs (old: {
+    propagatedBuildInputs = old.propagatedBuildInputs ++ [ lua-language-server ];
   });
 
   lmathx = prev.luaLib.overrideLuarocks prev.lmathx (
@@ -381,10 +370,12 @@ in
     '';
   };
 
-  lrexlib-gnu = prev.lrexlib-gnu.overrideAttrs (oa: {
-    buildInputs = oa.buildInputs ++ [
+  lrexlib-gnu = prev.lrexlib-gnu.overrideAttrs (old: {
+    strictDeps = false;
+    buildInputs = old.buildInputs ++ [
       gnulib
     ];
+    meta.broken = isLuaJIT;
   });
 
   lrexlib-oniguruma = prev.lrexlib-oniguruma.overrideAttrs {
@@ -405,20 +396,25 @@ in
     ];
   };
 
-  lrexlib-posix = prev.lrexlib-posix.overrideAttrs (oa: {
-    buildInputs = oa.buildInputs ++ [
-      glibc.dev
+  lrexlib-posix = prev.lrexlib-posix.overrideAttrs (old: {
+    buildInputs = old.buildInputs ++ [
+      (lib.getDev libc)
     ];
   });
 
-  lua-curl = prev.lua-curl.overrideAttrs (oa: {
-    buildInputs = oa.buildInputs ++ [
+  lua-cmsgpack = prev.lua-cmsgpack.overrideAttrs {
+    strictDeps = false;
+    meta.broken = isLuaJIT;
+  };
+
+  lua-curl = prev.lua-curl.overrideAttrs (old: {
+    buildInputs = old.buildInputs ++ [
       curl.dev
     ];
   });
 
-  lua-iconv = prev.lua-iconv.overrideAttrs (oa: {
-    buildInputs = oa.buildInputs ++ [
+  lua-iconv = prev.lua-iconv.overrideAttrs (old: {
+    buildInputs = old.buildInputs ++ [
       libiconv
     ];
   });
@@ -435,70 +431,85 @@ in
     src = fetchFromGitHub {
       owner = "cdbattags";
       repo = "lua-resty-jwt";
-      rev = "v0.2.3";
-      hash = "sha256-5lnr0ka6ijfujiRjqwCPb6jzItXx45FIN8CvhR/KiB8=";
+      rev = "v0.3.2";
+      hash = "sha256-VCi5ge2jAldJQgecFeMZJkq5PqRQdUs+K8NsXWmK7IQ=";
       fetchSubmodules = true;
     };
   };
 
-  lua-rtoml = prev.lua-rtoml.overrideAttrs (oa: {
+  lua-rtoml = prev.lua-rtoml.overrideAttrs (old: {
+    strictDeps = false;
 
     cargoDeps = rustPlatform.fetchCargoVendor {
-      inherit (oa) src;
+      inherit (old) src;
       hash = "sha256-7mFn4dLgaxfAxtPFCc3VzcBx2HuywcZTYqCGTbaGS0k=";
     };
 
-    propagatedBuildInputs = oa.propagatedBuildInputs ++ [
+    propagatedBuildInputs = old.propagatedBuildInputs ++ [
       cargo
       rustPlatform.cargoSetupHook
     ];
 
     # ld: symbol(s) not found for architecture arm64
     # clang-16: error: linker command failed with exit code 1 (use -v to see invocation)
-    meta.broken = stdenv.hostPlatform.isDarwin;
+    meta.broken = stdenv.hostPlatform.isDarwin || luaAtLeast "5.5";
   });
 
   lua-subprocess = prev.lua-subprocess.overrideAttrs {
     meta.broken = luaOlder "5.1" || luaAtLeast "5.4";
   };
 
-  lua-yajl = prev.lua-yajl.overrideAttrs (oa: {
-    buildInputs = oa.buildInputs ++ [
+  lua-yajl = prev.lua-yajl.overrideAttrs (old: {
+    buildInputs = old.buildInputs ++ [
       yajl
     ];
+    luarocksConfig = old.luarocksConfig // {
+      variables = {
+        # Since yajl's outputs are split, we need to help luarocks find the
+        # include directory.
+        YAJL_INCDIR = "${lib.getDev yajl}/include";
+      };
+    };
   });
 
-  lua-zlib = prev.lua-zlib.overrideAttrs (oa: {
-    buildInputs = oa.buildInputs ++ [
+  lua-zlib = prev.lua-zlib.overrideAttrs (old: {
+    buildInputs = old.buildInputs ++ [
       zlib.dev
     ];
-    meta = oa.meta // {
+    meta = old.meta // {
       broken = luaOlder "5.1" || luaAtLeast "5.4";
     };
   });
 
-  luacheck = prev.luacheck.overrideAttrs (oa: {
-    meta = oa.meta // {
+  luacheck = prev.luacheck.overrideAttrs (old: {
+    meta = old.meta // {
       mainProgram = "luacheck";
     };
   });
 
-  luadbi-mysql = prev.luadbi-mysql.overrideAttrs (oa: {
+  luacov = prev.luacov.overrideAttrs (old: {
+    postInstall = ''
+      mkdir -p $out/share/lua/${lua.luaversion}/luacov/reporter/src/luacov/reporter/html
+      mv src/luacov/reporter/html/static $out/share/lua/${lua.luaversion}/luacov/reporter/src/luacov/reporter/html/static
+    '';
+  });
 
-    luarocksConfig = lib.recursiveUpdate oa.luarocksConfig {
+  luadbi-mysql = prev.luadbi-mysql.overrideAttrs (old: {
+
+    luarocksConfig = lib.recursiveUpdate old.luarocksConfig {
       variables = {
         MYSQL_INCDIR = "${lib.getDev libmysqlclient}/include/";
         MYSQL_LIBDIR = "${lib.getLib libmysqlclient}/lib//mysql/";
       };
     };
-    buildInputs = oa.buildInputs ++ [
+    buildInputs = old.buildInputs ++ [
       mariadb.client
       libmysqlclient
     ];
   });
 
-  luadbi-postgresql = prev.luadbi-postgresql.overrideAttrs (oa: {
-    buildInputs = oa.buildInputs ++ [
+  luadbi-postgresql = prev.luadbi-postgresql.overrideAttrs (old: {
+    buildInputs = old.buildInputs ++ [
       (lib.getDev libpq)
     ];
   });
@@ -512,8 +523,8 @@ in
     ];
   };
 
-  luaevent = prev.luaevent.overrideAttrs (oa: {
-    propagatedBuildInputs = oa.propagatedBuildInputs ++ [
+  luaevent = prev.luaevent.overrideAttrs (old: {
+    propagatedBuildInputs = old.propagatedBuildInputs ++ [
       final.luasocket
     ];
     externalDeps = [
@@ -561,20 +572,23 @@ in
   lualine-nvim = prev.lualine-nvim.overrideAttrs (_: {
     doCheck = lua.luaversion == "5.1";
     nativeCheckInputs = [
-      final.nlua
-      final.busted
       final.nvim-web-devicons
+      final.bustedCheckHook
+      final.nlua
       gitMinimal
       writableTmpDirAsHomeHook
     ];
-    checkPhase = ''
-      runHook preCheck
-      busted --lua=nlua --lpath='lua/?.lua' --lpath='lua/?/init.lua' tests/
-      runHook postCheck
+
+    bustedFlags = [
+      "tests/"
+    ];
+
+    preCheck = ''
+      LUA_PATH="lua/?.lua;lua/?/init.lua;$LUA_PATH"
     '';
   });
 
-  luaossl = prev.luaossl.overrideAttrs (_: {
+  luaossl = prev.luaossl.overrideAttrs (old: {
     externalDeps = [
       {
         name = "CRYPTO";
@@ -585,18 +599,26 @@ in
         dep = openssl;
       }
     ];
+
+    env = old.env // {
+      NIX_CFLAGS_COMPILE = "-Wno-error=incompatible-pointer-types"; # for gcc15
+    };
   });
 
-  luaposix = prev.luaposix.overrideAttrs (_: {
+  luaposix = prev.luaposix.overrideAttrs (old: {
     externalDeps = [
       {
         name = "CRYPT";
         dep = libxcrypt;
       }
     ];
+    propagatedBuildInputs = (old.propagatedBuildInputs or [ ]) ++ [
+      final.bit32
+      final.std-normalize
+    ];
   });
 
-  luaprompt = prev.luaprompt.overrideAttrs (oa: {
+  luaprompt = prev.luaprompt.overrideAttrs (old: {
     externalDeps = [
       {
         name = "READLINE";
@@ -608,17 +630,17 @@ in
       }
     ];
 
-    nativeBuildInputs = oa.nativeBuildInputs ++ [ installShellFiles ];
+    nativeBuildInputs = old.nativeBuildInputs ++ [ installShellFiles ];
 
     postInstall = ''
       installManPage luap.1
     '';
   });
 
-  luarocks = prev.luarocks.overrideAttrs (oa: {
+  luarocks = prev.luarocks.overrideAttrs (old: {
     # As a nix user, use this derivation instead of "luarocks_bootstrap"
 
-    nativeBuildInputs = oa.nativeBuildInputs ++ [
+    nativeBuildInputs = old.nativeBuildInputs ++ [
       installShellFiles
       lua
       unzip
@@ -628,7 +650,6 @@ in
     dontUseCmakeConfigure = true;
 
     doInstallCheck = true;
-    versionCheckProgramArg = "--version";
 
     propagatedBuildInputs = [
       zip
@@ -648,7 +669,7 @@ in
         --zsh <($out/bin/luarocks-admin completion zsh)
     '';
 
-    meta = oa.meta // {
+    meta = old.meta // {
       mainProgram = "luarocks";
     };
 
@@ -673,9 +694,8 @@ in
   };
 
   luasystem = prev.luasystem.overrideAttrs (
-    _oa:
     lib.optionalAttrs stdenv.hostPlatform.isLinux {
-      buildInputs = [ glibc.out ];
+      buildInputs = [ libc.out ];
     }
   );
 
@@ -688,8 +708,8 @@ in
     ];
   };
 
-  luazip = prev.luazip.overrideAttrs (oa: {
-    buildInputs = oa.buildInputs ++ [
+  luazip = prev.luazip.overrideAttrs (old: {
+    buildInputs = old.buildInputs ++ [
       zziplib
     ];
   });
@@ -702,7 +722,7 @@ in
     '';
   };
 
-  luuid = prev.luuid.overrideAttrs (oa: {
+  luuid = prev.luuid.overrideAttrs (old: {
     externalDeps = [
       {
         name = "LIBUUID";
@@ -721,7 +741,7 @@ in
     postConfigure = ''
       sed -Ei ''${rockspecFilename} -e 's|lua >= 5.2|lua >= 5.1,|'
     '';
-    meta = oa.meta // {
+    meta = old.meta // {
       broken = luaOlder "5.1" || (luaAtLeast "5.4");
       platforms = lib.platforms.linux;
     };
@@ -739,48 +759,31 @@ in
     doCheck = lua.luaversion == "5.1";
     nativeCheckInputs = [
       final.nlua
-      final.busted
+      final.bustedCheckHook
       writableTmpDirAsHomeHook
     ];
-    checkPhase = ''
-      runHook preCheck
-      busted --lua=nlua
-      runHook postCheck
-    '';
   };
 
   lze = prev.lze.overrideAttrs {
     doCheck = lua.luaversion == "5.1";
     nativeCheckInputs = [
       final.nlua
-      final.busted
+      final.bustedCheckHook
       writableTmpDirAsHomeHook
     ];
-    checkPhase = ''
-      runHook preCheck
-      busted --lua=nlua
-      runHook postCheck
-    '';
   };
 
   lzextras = prev.lzextras.overrideAttrs {
     doCheck = lua.luaversion == "5.1";
-    checkInputs = [
-      final.lze
-    ];
     nativeCheckInputs = [
       final.nlua
-      final.busted
+      lua.pkgs.bustedCheckHook
+      final.lze
     ];
-    checkPhase = ''
-      runHook preCheck
-      busted --lua=nlua
-      runHook postCheck
-    '';
   };
 
-  magick = prev.magick.overrideAttrs (oa: {
-    buildInputs = oa.buildInputs ++ [
+  magick = prev.magick.overrideAttrs (old: {
+    buildInputs = old.buildInputs ++ [
       imagemagick
     ];
 
@@ -813,13 +816,14 @@ in
       substituteInPlace ''${rockspecFilename} \
         --replace-fail "'nvim-nio ~> 1.7'," "'nvim-nio >= 1.7'," \
         --replace-fail "'plenary.nvim == 0.1.4'," "'plenary.nvim'," \
-        --replace-fail "'nui.nvim == 0.3.0'," "'nui.nvim',"
+        --replace-fail "'nui.nvim == 0.3.0'," "'nui.nvim'," \
+        --replace-fail ", 'nvim-treesitter-legacy-api == 0.9.2'" ""
     '';
   };
 
-  neotest = prev.neotest.overrideAttrs (oa: {
+  neotest = prev.neotest.overrideAttrs (old: {
     doCheck = stdenv.hostPlatform.isLinux;
-    nativeCheckInputs = oa.nativeCheckInputs ++ [
+    nativeCheckInputs = old.nativeCheckInputs ++ [
       final.nlua
       final.busted
       neovim-unwrapped
@@ -855,19 +859,28 @@ in
     doCheck = lua.luaversion == "5.1";
     nativeCheckInputs = [
       final.nlua
-      final.busted
+      # upstream uses PlenaryBusted which is a pain, run busted directly instead
+      final.bustedCheckHook
       writableTmpDirAsHomeHook
     ];
 
-    # upstream uses PlenaryBusted which is a pain to setup
-    checkPhase = ''
-      runHook preCheck
-      busted --lua=nlua --lpath='lua/?.lua' --lpath='lua/?/init.lua' tests/
-      runHook postCheck
+    preCheck = ''
+      LUA_PATH="lua/?.lua;lua/?/init.lua;$LUA_PATH"
     '';
+    bustedFlags = [
+      "tests/"
+    ];
   };
 
   orgmode = prev.orgmode.overrideAttrs {
+    doCheck = stdenv.hostPlatform.isLinux;
+    nativeCheckInputs = [
+      neovim-unwrapped
+      glibcLocalesUtf8 # the tests run "vim.cmd.language('en_US.utf-8')"
+      writableTmpDirAsHomeHook
+      util-linux # for uuidgen
+    ];
+
     # Patch in tree-sitter-orgmode dependency
     postPatch = ''
       substituteInPlace lua/orgmode/config/init.lua \
@@ -877,6 +890,32 @@ in
         --replace-fail \
         "require('orgmode.utils.treesitter.install').reinstall()" \
         "pcall(function() vim.treesitter.language.add('org', { path = '${final.tree-sitter-orgmode}/lib/lua/${final.tree-sitter-orgmode.lua.luaversion}/parser/org.so'}) end)"
+    '';
+
+    preCheck = ''LUA_PATH="lua/?.lua;lua/?/init.lua;$LUA_PATH"'';
+
+    checkPhase = ''
+      runHook preCheck
+
+      # bypass the download of plenary
+      substituteInPlace  tests/minimal_init.lua --replace-fail \
+        "plenary = 'https://github.com/nvim-lua/plenary.nvim.git'," \
+        ""
+
+      # remove failing tests
+      rm tests/plenary/colors/colors_spec.lua # colors depend on neovim version usually
+      rm tests/plenary/capture/capture_spec.lua # because clipboard not available
+
+      # not sure why yet
+      rm tests/plenary/ui/mappings/date_spec.lua \
+        tests/plenary/capture/templates_spec.lua
+
+      # bypass upstream launcher that interacts with network
+      nvim --headless -i NONE \
+        -u test/minimal_init.vim --cmd "set rtp+=${vimPlugins.plenary-nvim}" \
+        -c "PlenaryBustedDirectory tests { sequential = true, minimal_init = './tests/minimal_init.lua' }"
+
+      runHook postCheck
     '';
   };
 
@@ -922,51 +961,63 @@ in
     '';
   };
 
+  rest-nvim = prev.rest-nvim.overrideAttrs {
+    strictDeps = false;
+    meta.broken = luaAtLeast "5.5";
+  };
+
   rocks-dev-nvim = prev.rocks-dev-nvim.overrideAttrs {
 
     # E5113: Error while calling lua chunk [...] pl.path requires LuaFileSystem
-    doCheck = luaOlder "5.2";
+    # TODO: figure out darwin failure
+    doCheck = luaOlder "5.2" && stdenv.hostPlatform.isLinux;
     nativeCheckInputs = [
       final.nlua
-      final.busted
+      final.bustedCheckHook
     ];
-    checkPhase = ''
-      runHook preCheck
-      busted spec
-      runHook postCheck
-    '';
+    bustedFlags = [ "spec" ];
   };
 
-  rtp-nvim = prev.rtp-nvim.overrideAttrs {
-    doCheck = lua.luaversion == "5.1";
+  rocks-nvim = prev.rocks-nvim.overrideAttrs (oa: {
+
     nativeCheckInputs = [
       final.nlua
       final.busted
       writableTmpDirAsHomeHook
     ];
-    checkPhase = ''
-      runHook preCheck
-      busted --lua=nlua
-      runHook postCheck
-    '';
+
+    # TODO: figure out darwin failure
+    doCheck = lua.luaversion == "5.1" && stdenv.hostPlatform.isLinux;
+
+    nvimSkipModules = [
+      "bootstrap" # tries to install luarocks from network
+    ];
+
+    bustedFlags = [
+      "--run=offline"
+    ];
+  });
+
+  rtp-nvim = prev.rtp-nvim.overrideAttrs {
+    doCheck = lua.luaversion == "5.1";
+    nativeCheckInputs = [
+      final.nlua
+      final.bustedCheckHook
+      writableTmpDirAsHomeHook
+    ];
   };
 
   rustaceanvim = prev.rustaceanvim.overrideAttrs {
     doCheck = lua.luaversion == "5.1";
     nativeCheckInputs = [
       final.nlua
-      final.busted
+      final.bustedCheckHook
       writableTmpDirAsHomeHook
     ];
-    checkPhase = ''
-      runHook preCheck
-      busted --lua=nlua
-      runHook postCheck
-    '';
   };
 
-  sofa = prev.sofa.overrideAttrs (oa: {
-    nativeBuildInputs = oa.nativeBuildInputs ++ [
+  sofa = prev.sofa.overrideAttrs (old: {
+    nativeBuildInputs = old.nativeBuildInputs ++ [
       installShellFiles
     ];
     postInstall = lib.optionalString (stdenv.buildPlatform.canExecute stdenv.hostPlatform) ''
@@ -985,18 +1036,20 @@ in
       writableTmpDirAsHomeHook
     ];
 
-    # the plugin loads the library from either the LIBSQLITE env
+    # the plugin loldds the library from either the LIBSQLITE env
     # or the vim.g.sqlite_clib_path variable.
     postPatch = ''
       substituteInPlace lua/sqlite/defs.lua \
         --replace-fail "path = vim.g.sqlite_clib_path" 'path = vim.g.sqlite_clib_path or  "${sqlite.out}/lib/libsqlite3${stdenv.hostPlatform.extensions.sharedLibrary}"'
     '';
 
-    # we override 'luarocks test' because otherwise neovim doesn't find/load the plenary plugin
+    # we override 'luarocks test' because otherwise neovim doesn't find/loldd the plenary plugin
     checkPhase = ''
+      runHook preCheck
       nvim --headless -i NONE \
         -u test/minimal_init.vim --cmd "set rtp+=${vimPlugins.plenary-nvim}" \
         -c "PlenaryBustedDirectory test/auto/ { sequential = true, minimal_init = './test/minimal_init.vim' }"
+      runHook postCheck
     '';
   };
 
@@ -1014,91 +1067,66 @@ in
     '';
   };
 
-  tiktoken_core = prev.tiktoken_core.overrideAttrs (oa: {
+  tiktoken_core = prev.tiktoken_core.overrideAttrs (old: {
     cargoDeps = rustPlatform.fetchCargoVendor {
-      inherit (oa) src;
+      inherit (old) src;
       hash = "sha256-egmb4BTbORpTpVO50IcqbZU1Y0hioXLMkxxUAo05TIA=";
     };
-    nativeBuildInputs = oa.nativeBuildInputs ++ [
+    nativeBuildInputs = old.nativeBuildInputs ++ [
       cargo
       rustPlatform.cargoSetupHook
     ];
+
+    meta = old.meta // {
+      broken = luaAtLeast "5.5";
+    };
   });
 
-  tl = prev.tl.overrideAttrs (oa: {
+  tl = prev.tl.overrideAttrs (old: {
     preConfigure = ''
       rm luarocks.lock
     '';
-    meta = oa.meta // {
+    meta = old.meta // {
       mainProgram = "tl";
     };
   });
 
-  toml-edit = prev.toml-edit.overrideAttrs (oa: {
-
+  toml-edit = prev.toml-edit.overrideAttrs (old: {
     cargoDeps = rustPlatform.fetchCargoVendor {
-      inherit (oa) src;
-      hash = "sha256-ow0zefFFrU91Q2PJww2jtd6nqUjwXUtfQzjkzl/AXuo=";
+      inherit (old) src;
+      hash = "sha256-8lYvdraKEd1nf8dkZuSDQRVJvX56gHCcTZVtyoy/0IM=";
     };
 
     NIX_LDFLAGS = lib.optionalString stdenv.hostPlatform.isDarwin (
       if lua.pkgs.isLuaJIT then "-lluajit-${lua.luaversion}" else "-llua"
     );
 
-    nativeBuildInputs = oa.nativeBuildInputs ++ [
+    nativeBuildInputs = old.nativeBuildInputs ++ [
       cargo
       rustPlatform.cargoSetupHook
       lua.pkgs.luarocks-build-rust-mlua
     ];
-
   });
 
-  tree-sitter-http = prev.tree-sitter-http.overrideAttrs (oa: {
-    propagatedBuildInputs =
-      let
-        # HACK: luarocks-nix puts rockspec build dependencies in the nativeBuildInputs,
-        # but that doesn't seem to work
-        lua = lib.head oa.propagatedBuildInputs;
-      in
-      oa.propagatedBuildInputs
-      ++ [
-        lua.pkgs.luarocks-build-treesitter-parser
-        tree-sitter
-      ];
-
-    nativeBuildInputs = oa.nativeBuildInputs or [ ] ++ [
+  tree-sitter-http = prev.tree-sitter-http.overrideAttrs (old: {
+    nativeBuildInputs = old.nativeBuildInputs or [ ] ++ [
+      tree-sitter
       writableTmpDirAsHomeHook
     ];
   });
 
-  tree-sitter-norg = prev.tree-sitter-norg.overrideAttrs (oa: {
-    propagatedBuildInputs =
-      let
-        # HACK: luarocks-nix puts rockspec build dependencies in the nativeBuildInputs,
-        # but that doesn't seem to work
-        lua = lib.head oa.propagatedBuildInputs;
-      in
-      oa.propagatedBuildInputs
-      ++ [
-        lua.pkgs.luarocks-build-treesitter-parser-cpp
-      ];
+  tree-sitter-norg = prev.tree-sitter-norg.overrideAttrs (old: {
+    meta.broken = lua.luaversion != "5.1";
   });
 
-  tree-sitter-orgmode = prev.tree-sitter-orgmode.overrideAttrs (oa: {
-    propagatedBuildInputs =
-      let
-        # HACK: luarocks-nix puts rockspec build dependencies in the nativeBuildInputs,
-        # but that doesn't seem to work
-        lua = lib.head oa.propagatedBuildInputs;
-      in
-      oa.propagatedBuildInputs
-      ++ [
-        lua.pkgs.luarocks-build-treesitter-parser
-        tree-sitter
-      ];
-    nativeBuildInputs = oa.nativeBuildInputs or [ ] ++ [
+  tree-sitter-orgmode = prev.tree-sitter-orgmode.overrideAttrs (old: {
+    nativeBuildInputs = old.nativeBuildInputs or [ ] ++ [
       writableTmpDirAsHomeHook
+      tree-sitter
     ];
+
+    # should be fixed upstream
+    meta.broken = lua.luaversion != "5.1";
   });
 
   vstruct = prev.vstruct.overrideAttrs (_: {
@@ -1111,6 +1139,10 @@ in
       chmod -x $out/bin/vusted_entry.vim
     '';
   });
+
+  xml2lua = prev.xml2lua.overrideAttrs {
+    meta.broken = luaAtLeast "5.5";
+  };
 
   # keep-sorted end
 }

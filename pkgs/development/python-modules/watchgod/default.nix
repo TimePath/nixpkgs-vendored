@@ -27,6 +27,6 @@ buildPythonPackage rec {
     mainProgram = "watchgod";
     homepage = "https://github.com/samuelcolvin/watchgod";
     license = lib.licenses.mit;
-    maintainers = with lib.maintainers; [ globin ];
+    maintainers = [ ];
   };
 }

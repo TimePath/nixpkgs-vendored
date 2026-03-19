@@ -48,6 +48,7 @@ rec {
   inherit (callPackage ../development/interpreters/lua-5/hooks { })
     luarocksMoveDataFolder
     luarocksCheckHook
+    bustedCheckHook
     ;
 
   inherit lua;
@@ -65,9 +66,7 @@ rec {
     ;
 
   # wraps programs in $out/bin with valid LUA_PATH/LUA_CPATH
-  wrapLua = callPackage ../development/interpreters/lua-5/wrap-lua.nix {
-    inherit (pkgs.buildPackages) makeSetupHook makeWrapper;
-  };
+  wrapLua = callPackage ../development/interpreters/lua-5/wrap-lua.nix { };
 
   luarocks_bootstrap = toLuaModule (callPackage ../development/tools/misc/luarocks/default.nix { });
 
@@ -162,13 +161,13 @@ rec {
     { fetchFromGitHub }:
     buildLuaPackage rec {
       pname = "lua-resty-core";
-      version = "0.1.31";
+      version = "0.1.32";
 
       src = fetchFromGitHub {
         owner = "openresty";
         repo = "lua-resty-core";
         rev = "v${version}";
-        sha256 = "sha256-WUiBFJ8L8NzSGoEwTAw/iHAzPqJqaOUSFyqGeEf+f94==";
+        sha256 = "sha256-ba/ahIl8BDfyXIbaN6zVCh3UwY6JbAqqZEpXktOfeYo=";
       };
 
       propagatedBuildInputs = [ lua-resty-lrucache ];

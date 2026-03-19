@@ -203,7 +203,7 @@ pkgs.lib.recurseIntoAttrs rec {
     ${nvim_with_plug}/bin/nvim -V3log.txt -i NONE -c 'color base16-tomorrow-night'  +quit! -e
   '';
 
-  nvim_with_autoconfigure = pkgs.neovim.overrideAttrs (oa: {
+  nvim_with_autoconfigure = pkgs.neovim.overrideAttrs {
     plugins = [
       vimPlugins.unicode-vim
       vimPlugins.fzf-hoogle-vim
@@ -211,7 +211,7 @@ pkgs.lib.recurseIntoAttrs rec {
     autoconfigure = true;
     # legacy wrapper sets it to false
     wrapRc = true;
-  });
+  };
 
   nvim_with_runtimeDeps = pkgs.neovim.overrideAttrs {
     plugins = [
@@ -348,12 +348,12 @@ pkgs.lib.recurseIntoAttrs rec {
     configure.packages.foo.start = with vimPlugins; [ deoplete-nvim ];
   };
 
-  nvimWithLuaPackages = wrapNeovim2 "-with-lua-packages" (makeNeovimConfig {
+  nvimWithLuaPackages = wrapNeovim2 "-with-lua-packages" {
     extraLuaPackages = ps: [ ps.mpack ];
-    customRC = ''
-      lua require("mpack")
+    luaRcContent = ''
+      require("mpack")
     '';
-  });
+  };
 
   nvim_with_lua_packages = runTest nvimWithLuaPackages ''
     ${nvimWithLuaPackages}/bin/nvim -V3log.txt -i NONE --noplugin +quitall! -e

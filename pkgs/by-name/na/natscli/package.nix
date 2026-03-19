@@ -36,7 +36,6 @@ buildGoModule (finalAttrs: {
   '';
 
   doInstallCheck = true;
-  versionCheckProgramArg = "--version";
 
   meta = {
     description = "NATS Command Line Interface";

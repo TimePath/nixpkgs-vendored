@@ -19,16 +19,16 @@
 }:
 rustPlatform.buildRustPackage {
   pname = "steel";
-  version = "0-unstable-2025-11-15";
+  version = "0-unstable-2026-02-12";
 
   src = fetchFromGitHub {
     owner = "mattwparas";
     repo = "steel";
-    rev = "90aa39eb0df033a6eeb579d553debc0fc48ef7ee";
-    hash = "sha256-7N3LBnDm7qIDR8zBDS0FY6UVp88L/mh8umT/YTTh7HA=";
+    rev = "e9cb24fe9c6584f4a352c3cb43e7f0bd934e3277";
+    hash = "sha256-9ZyAPqZNcAP1ObxVxjK+q87ZyKMPzaDno1v7JweU6z4=";
   };
 
-  cargoHash = "sha256-bXAgp83U48GsTAuki3tsoOK7X+UepKJIlS0bL5qMc8I=";
+  cargoHash = "sha256-ss3S4eRoczvF0DlTpUS9mZ09pfMKgyLNAmjm3WWi8KQ=";
 
   nativeBuildInputs = [
     curl
@@ -91,6 +91,9 @@ rustPlatform.buildRustPackage {
 
   postFixup = ''
     wrapProgram $out/bin/steel --set-default STEEL_HOME "$out/lib/steel"
+    wrapProgram $out/bin/steel-language-server --set-default STEEL_HOME "$out/lib/steel"
+    wrapProgram $out/bin/forge --set-default STEEL_HOME "$out/lib/steel"
+    wrapProgram $out/bin/cargo-steel-lib --set-default STEEL_HOME "$out/lib/steel"
   '';
 
   env = {

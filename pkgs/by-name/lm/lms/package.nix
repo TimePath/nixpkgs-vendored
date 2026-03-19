@@ -13,23 +13,23 @@
   graphicsmagick,
   ffmpeg,
   zlib,
-  libSM,
-  libICE,
+  libsm,
+  libice,
   stb,
   openssl,
   xxHash,
   pugixml,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "lms";
-  version = "3.72.1";
+  version = "3.74.0";
 
   src = fetchFromGitHub {
     owner = "epoupon";
     repo = "lms";
-    rev = "v${version}";
-    hash = "sha256-c6eCfQz/Tc8pg1vVjgidkPj7I85sJ5AcyX7Gf/MTXZI=";
+    rev = "v${finalAttrs.version}";
+    hash = "sha256-D1Sg6XzZ8t/dFKrVh7k+KGLg2r6LeLGJk4FweVb4L1A=";
   };
 
   strictDeps = true;
@@ -47,8 +47,8 @@ stdenv.mkDerivation rec {
     graphicsmagick
     ffmpeg
     zlib
-    libSM
-    libICE
+    libsm
+    libice
     stb
     openssl
     xxHash
@@ -70,11 +70,11 @@ stdenv.mkDerivation rec {
 
   meta = {
     homepage = "https://github.com/epoupon/lms";
-    changelog = "https://github.com/epoupon/lms/releases/tag/${src.rev}";
+    changelog = "https://github.com/epoupon/lms/releases/tag/${finalAttrs.src.rev}";
     description = "Lightweight Music Server - Access your self-hosted music using a web interface";
     license = lib.licenses.gpl3Plus;
     platforms = lib.platforms.linux;
     mainProgram = "lms";
     maintainers = with lib.maintainers; [ mksafavi ];
   };
-}
+})

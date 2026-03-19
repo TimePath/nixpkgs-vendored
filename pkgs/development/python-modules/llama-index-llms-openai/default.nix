@@ -5,20 +5,17 @@
   llama-index-core,
   openai,
   hatchling,
-  pythonOlder,
 }:
 
-buildPythonPackage rec {
+buildPythonPackage (finalAttrs: {
   pname = "llama-index-llms-openai";
-  version = "0.6.9";
+  version = "0.6.26";
   pyproject = true;
-
-  disabled = pythonOlder "3.8";
 
   src = fetchPypi {
     pname = "llama_index_llms_openai";
-    inherit version;
-    hash = "sha256-TIyRpeWw5ZtE7Nj+QxVuk8ar8cnKjh5K0+SDTIT1EZk=";
+    inherit (finalAttrs) version;
+    hash = "sha256-NHRgLsvDDIiotYXP1XN4kdRdp4JRpeBnxNvC08w9CNs=";
   };
 
   pythonRemoveDeps = [
@@ -44,4 +41,4 @@ buildPythonPackage rec {
     license = lib.licenses.mit;
     maintainers = with lib.maintainers; [ fab ];
   };
-}
+})

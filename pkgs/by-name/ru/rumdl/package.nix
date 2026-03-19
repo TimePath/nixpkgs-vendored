@@ -11,16 +11,16 @@
 
 rustPlatform.buildRustPackage (finalAttrs: {
   pname = "rumdl";
-  version = "0.1.39";
+  version = "0.1.42";
 
   src = fetchFromGitHub {
     owner = "rvben";
     repo = "rumdl";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-yhwBmzAuBVbZP8cYJvnqgFyicggxLwSPYw/e9q03akA=";
+    hash = "sha256-zOLNfZ8TrBIUVkoQT+GxSc4z48+IEx8RnURRgWooqt8=";
   };
 
-  cargoHash = "sha256-rkb5QMnELa3XQXvt8BxrseyDVg+qoETZtTbbfGkPyME=";
+  cargoHash = "sha256-YhjDn5UIydP6jwxUiQy+jcTGWRD0HfcVxHtacka94Wg=";
 
   cargoBuildFlags = [
     "--bin=rumdl"
@@ -45,7 +45,8 @@ rustPlatform.buildRustPackage (finalAttrs: {
     "cli_*"
 
     # Prefer the "smoke" profile over "ci" to exclude flaky tests: https://github.com/rvben/rumdl/pull/341
-    "--profile smoke"
+    "--profile"
+    "smoke"
   ];
 
   postInstall = lib.optionalString (stdenv.buildPlatform.canExecute stdenv.hostPlatform) ''
@@ -59,7 +60,6 @@ rustPlatform.buildRustPackage (finalAttrs: {
   nativeInstallCheckInputs = [
     versionCheckHook
   ];
-  versionCheckProgramArg = "--version";
 
   passthru = {
     updateScript = nix-update-script { };

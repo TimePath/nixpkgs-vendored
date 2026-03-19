@@ -48,7 +48,12 @@ stdenv.mkDerivation (finalAttrs: {
   };
 
   patches = [
+    # Search $PATH for the shutdown binary instead of hard-coding /sbin/shutdown,
+    # which isn't valid on NixOS (and a compatibility link on most other modern
+    # distros anyway).
     ./rtcwake-search-PATH-for-shutdown.patch
+    # bits: only build when cpu_set_t is available
+    # Otherwise, the build fails on macOS
     (fetchurl {
       name = "bits-only-build-when-cpu_set_t-is-available.patch";
       url = "https://lore.kernel.org/util-linux/20250501075806.88759-1-hi@alyssa.is/raw";
@@ -240,6 +245,7 @@ stdenv.mkDerivation (finalAttrs: {
       publicDomain
     ];
     maintainers = with lib.maintainers; [ numinit ];
+    teams = [ lib.teams.security-review ];
     platforms = lib.platforms.unix;
     pkgConfigModules = [
       "blkid"
@@ -249,5 +255,7 @@ stdenv.mkDerivation (finalAttrs: {
       "uuid"
     ];
     priority = 6; # lower priority than coreutils ("kill") and shadow ("login" etc.) packages
+
+    identifiers.cpeParts = lib.meta.cpeFullVersionWithVendor "kernel" finalAttrs.version;
   };
 })

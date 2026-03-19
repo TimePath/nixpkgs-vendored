@@ -8,17 +8,22 @@
 buildHomeAssistantComponent rec {
   owner = "weltenwort";
   domain = "rct_power";
-  version = "v0.14.1";
+  version = "0.14.2";
 
   src = fetchFromGitHub {
     owner = "weltenwort";
     repo = "home-assistant-rct-power-integration";
-    tag = version;
-    hash = "sha256-wM66MyRhBsMfUr+KlqV4jSuXcnKfW0fkbDAyuU2crsc=";
+    tag = "v${version}";
+    hash = "sha256-AsDMHPKCpbne2ZcRelcIgxm1i/RZcFU8fLOvkwEodOE=";
   };
 
   dependencies = [
     rctclient
+  ];
+
+  ignoreVersionRequirement = [
+    # rctclient 0.0.4 was never published on PyPI
+    "rctclient"
   ];
 
   doCheck = false; # no tests

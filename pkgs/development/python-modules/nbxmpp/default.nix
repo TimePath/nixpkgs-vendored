@@ -11,7 +11,6 @@
   pygobject3,
   pyopenssl,
   pytestCheckHook,
-  pythonOlder,
   setuptools,
 }:
 
@@ -20,13 +19,11 @@ buildPythonPackage rec {
   version = "7.1.0";
   pyproject = true;
 
-  disabled = pythonOlder "3.10";
-
   src = fetchFromGitLab {
     domain = "dev.gajim.org";
     owner = "gajim";
     repo = "python-nbxmpp";
-    rev = "refs/tags/${version}";
+    tag = version;
     hash = "sha256-eQYGOLV9P7zrqXB8dW8/CatBUT3xpl5h1TChKbY369g=";
   };
 

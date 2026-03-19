@@ -84,7 +84,6 @@ stdenv.mkDerivation rec {
   # compatibility with OpenPGP.
   #
   freepgPatches = fetchFromGitLab {
-    domain = "gitlab.com";
     owner = "freepg";
     repo = "gnupg";
     tag = "source-2.4.9-freepg";
@@ -218,7 +217,9 @@ stdenv.mkDerivation rec {
       fpletz
       sgo
     ];
+    teams = [ lib.teams.security-review ];
     platforms = lib.platforms.all;
     mainProgram = "gpg";
+    identifiers.cpeParts = lib.meta.cpeFullVersionWithVendor "gnupg" version;
   };
 }

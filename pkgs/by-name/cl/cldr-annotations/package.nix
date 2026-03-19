@@ -6,12 +6,12 @@
 
 stdenvNoCC.mkDerivation rec {
   pname = "cldr-annotations";
-  version = "46.1";
+  version = "48.1";
 
   src = fetchzip {
     url = "https://unicode.org/Public/cldr/${version}/cldr-common-${version}.zip";
     stripRoot = false;
-    hash = "sha256-HNQVVbUIjsGOnkzUlH2m8I0IDgEfy2omCTekZlSyXQI=";
+    hash = "sha256-QGbP3VHn77hKmTr8JY+plEs69Wo57DkBtfuZ0lzh2jo=";
   };
 
   installPhase = ''

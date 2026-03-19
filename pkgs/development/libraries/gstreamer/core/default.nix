@@ -134,6 +134,7 @@ stdenv.mkDerivation (finalAttrs: {
   '';
 
   preFixup = ''
+    moveToOutput "lib/gstreamer-1.0/pkgconfig" "$dev"
     moveToOutput "share/bash-completion" "$bin"
   '';
 
@@ -156,7 +157,6 @@ stdenv.mkDerivation (finalAttrs: {
     platforms = lib.platforms.unix;
     maintainers = with lib.maintainers; [
       ttuegel
-      matthewbauer
     ];
   };
 })

@@ -22,6 +22,8 @@ stdenv.mkDerivation (finalAttrs: {
   outputs = [
     "out"
     "apparmor"
+    "info"
+    "man"
   ];
 
   patches = [
@@ -113,7 +115,7 @@ stdenv.mkDerivation (finalAttrs: {
     homepage = "https://www.gnu.org/software/inetutils/";
     license = lib.licenses.gpl3Plus;
 
-    maintainers = with lib.maintainers; [ matthewbauer ];
+    maintainers = [ ];
     platforms = lib.platforms.unix;
 
     /**

@@ -25,16 +25,16 @@
   zict,
 }:
 
-buildPythonPackage rec {
+buildPythonPackage (finalAttrs: {
   pname = "distributed";
-  version = "2025.11.0";
+  version = "2026.1.2";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "dask";
     repo = "distributed";
-    tag = version;
-    hash = "sha256-b6kVrRPGbPyss0Wl56qQFjZOznLH9Y3HQlEHo9d6X9I=";
+    tag = finalAttrs.version;
+    hash = "sha256-VkZ9rd+eVyfwfRMSAqriR8UjdlqsqHYCkCHZJnk0VOU=";
   };
 
   build-system = [
@@ -70,8 +70,8 @@ buildPythonPackage rec {
   meta = {
     description = "Distributed computation in Python";
     homepage = "https://distributed.readthedocs.io/";
-    changelog = "https://github.com/dask/distributed/releases/tag/${src.tag}";
+    changelog = "https://github.com/dask/distributed/releases/tag/${finalAttrs.src.tag}";
     license = lib.licenses.bsd3;
     maintainers = with lib.maintainers; [ teh ];
   };
-}
+})

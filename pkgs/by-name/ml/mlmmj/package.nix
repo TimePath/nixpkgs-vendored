@@ -7,14 +7,14 @@
   pkg-config,
   kyua,
 }:
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "mlmmj";
   version = "1.5.0";
 
   src = fetchFromCodeberg {
     owner = "mlmmj";
     repo = "mlmmj";
-    rev = "refs/tags/RELEASE_" + lib.replaceStrings [ "." ] [ "_" ] version;
+    tag = "RELEASE_" + lib.replaceStrings [ "." ] [ "_" ] finalAttrs.version;
     hash = "sha256-kAo04onxVve3kCaM4h1APsjs3C4iePabkBFJeqvnPxo=";
   };
 
@@ -40,8 +40,7 @@ stdenv.mkDerivation rec {
   meta = {
     homepage = "http://mlmmj.org";
     description = "Mailing List Management Made Joyful";
-    maintainers = [ lib.maintainers.edwtjo ];
     platforms = lib.platforms.linux;
     license = lib.licenses.mit;
   };
-}
+})

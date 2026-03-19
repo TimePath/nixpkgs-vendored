@@ -4,15 +4,15 @@
   fetchFromGitHub,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "trimal";
-  version = "1.5.0";
+  version = "1.5.1";
 
   src = fetchFromGitHub {
     repo = "trimal";
     owner = "scapella";
-    rev = "v${version}";
-    sha256 = "sha256-6GXirih7nY0eD2XS8aplLcYf53EeLuae+ewdUgBiKQQ=";
+    rev = "v${finalAttrs.version}";
+    sha256 = "sha256-ONSkYceCgYGSpABj0iOx6yj2hMyFHqCHflYRW+Q6RVc=";
   };
 
   postUnpack = ''
@@ -32,4 +32,4 @@ stdenv.mkDerivation rec {
     homepage = "http://trimal.cgenomics.org";
     maintainers = [ lib.maintainers.bzizou ];
   };
-}
+})

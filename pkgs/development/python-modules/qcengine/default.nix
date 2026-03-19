@@ -2,6 +2,7 @@
   lib,
   buildPythonPackage,
   fetchPypi,
+  pythonAtLeast,
   ipykernel,
   msgpack,
   networkx,
@@ -19,12 +20,12 @@
 
 buildPythonPackage rec {
   pname = "qcengine";
-  version = "0.33.0";
+  version = "0.34.0";
   pyproject = true;
 
   src = fetchPypi {
     inherit pname version;
-    hash = "sha256-Ute8puO2qc679ttZgzQRnVO8OuBmYnqLT3y7faHpRgA=";
+    hash = "sha256-VKULy45bYn5TmxU7TbOVK98r0pRMWAwissmgx0Ee/8w=";
   };
 
   build-system = [ setuptools ];
@@ -50,7 +51,7 @@ buildPythonPackage rec {
     ];
   };
 
-  nativeCheckInputs = [ pytestCheckHook ] ++ lib.flatten (builtins.attrValues optional-dependencies);
+  nativeCheckInputs = [ pytestCheckHook ] ++ lib.concatAttrValues optional-dependencies;
 
   pythonImportsCheck = [ "qcengine" ];
 
@@ -60,5 +61,6 @@ buildPythonPackage rec {
     license = lib.licenses.bsd3;
     maintainers = with lib.maintainers; [ sheepforce ];
     mainProgram = "qcengine";
+    broken = pythonAtLeast "3.14"; # https://github.com/MolSSI/QCEngine/issues/481
   };
 }

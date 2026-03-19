@@ -23,7 +23,13 @@
     hmclJdk
     jdk17
   ],
-  xorg,
+  libxxf86vm,
+  libxtst,
+  libxrandr,
+  libxext,
+  libxcursor,
+  libx11,
+  xrandr,
   glib,
   libGL,
   glfw3,
@@ -142,12 +148,12 @@ stdenv.mkDerivation (finalAttrs: {
     vulkan-loader
   ]
   ++ lib.optionals stdenv.hostPlatform.isLinux [
-    xorg.libX11
-    xorg.libXxf86vm
-    xorg.libXext
-    xorg.libXcursor
-    xorg.libXrandr
-    xorg.libXtst
+    libx11
+    libxxf86vm
+    libxext
+    libxcursor
+    libxrandr
+    libxtst
     libpulseaudio
     wayland
     alsa-lib
@@ -183,7 +189,7 @@ stdenv.mkDerivation (finalAttrs: {
       --add-flags "-Djdk.gtk.version=3" \
       --set LD_LIBRARY_PATH ${lib.makeLibraryPath finalAttrs.runtimeDeps} \
       --prefix PATH : "${
-        lib.makeBinPath (minecraftJdks ++ lib.optional stdenv.hostPlatform.isLinux xorg.xrandr)
+        lib.makeBinPath (minecraftJdks ++ lib.optional stdenv.hostPlatform.isLinux xrandr)
       }" \
       --run 'cd $HOME' \
       ${lib.optionalString stdenv.hostPlatform.isLinux ''--prefix JAVA_TOOL_OPTIONS " " "-Dorg.lwjgl.glfw.libname=${lib.getLib glfw3'}/lib/libglfw.so"''} \

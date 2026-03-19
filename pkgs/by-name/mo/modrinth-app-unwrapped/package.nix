@@ -76,8 +76,8 @@ rustPlatform.buildRustPackage (finalAttrs: {
   pnpmDeps = fetchPnpmDeps {
     inherit (finalAttrs) pname version src;
     pnpm = pnpm_9;
-    fetcherVersion = 1;
-    hash = "sha256-+/PGCoHAC9Hsl2YEdjvUBzDJi9iBf+ZxT/6yjDE3yBo=";
+    fetcherVersion = 3;
+    hash = "sha256-1ZBIMqG6YPZ8++jG6qzhHEgFx1Y6JR8BBLB3JfuNyNU=";
   };
 
   nativeBuildInputs = [
@@ -166,7 +166,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
       encode42
     ];
     mainProgram = "ModrinthApp";
-    platforms = with lib; platforms.linux ++ platforms.darwin;
+    platforms = with lib.platforms; linux ++ darwin;
     # This builds on architectures like aarch64, but the launcher itself does not support them yet.
     # Darwin is the only exception
     # See https://github.com/modrinth/code/issues/776#issuecomment-1742495678

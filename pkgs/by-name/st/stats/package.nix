@@ -8,11 +8,11 @@
 
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "stats";
-  version = "2.11.58";
+  version = "2.12.1";
 
   src = fetchurl {
     url = "https://github.com/exelban/stats/releases/download/v${finalAttrs.version}/Stats.dmg";
-    hash = "sha256-2q9gPXrJ8elek+NuQq7RkdRnfnUc5Rw3Jopp6Q3R+UI=";
+    hash = "sha256-li4pCrwt37Wmmk3VAJT9XTcqPQ4HywQObUVSSgzARsE=";
   };
 
   sourceRoot = ".";
@@ -31,6 +31,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
   passthru.updateScript = nix-update-script { };
 
   meta = {
+    changelog = "https://github.com/exelban/stats/releases/tag/v${finalAttrs.version}";
     description = "macOS system monitor in your menu bar";
     homepage = "https://github.com/exelban/stats";
     license = lib.licenses.mit;

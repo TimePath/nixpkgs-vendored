@@ -44,7 +44,6 @@ stdenv.mkDerivation (finalAttrs: {
     changelog = "https://github.com/ebiggers/libdeflate/blob/v${finalAttrs.version}/NEWS.md";
     platforms = lib.platforms.unix ++ lib.platforms.windows;
     maintainers = with lib.maintainers; [
-      orivej
       kaction
     ];
     pkgConfigModules = [ "libdeflate" ];

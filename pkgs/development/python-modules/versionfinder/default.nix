@@ -6,7 +6,6 @@
   gitpython,
   pip,
   pytestCheckHook,
-  pythonOlder,
   requests,
   setuptools,
 }:
@@ -15,8 +14,6 @@ buildPythonPackage rec {
   pname = "versionfinder";
   version = "1.1.1";
   pyproject = true;
-
-  disabled = pythonOlder "3.7";
 
   src = fetchFromGitHub {
     owner = "jantman";
@@ -55,6 +52,5 @@ buildPythonPackage rec {
     homepage = "https://github.com/jantman/versionfinder";
     changelog = "https://github.com/jantman/versionfinder/blob/${version}/CHANGES.rst";
     license = lib.licenses.agpl3Plus;
-    maintainers = with lib.maintainers; [ zakame ];
   };
 }

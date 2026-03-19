@@ -1,6 +1,7 @@
 {
   lib,
   buildNpmPackage,
+  nodejs_22,
   fetchFromGitHub,
   nixosTests,
   python3,
@@ -11,6 +12,9 @@
 buildNpmPackage rec {
   pname = "vaultwarden-webvault";
   version = "2026.1.1+0";
+
+  # doesn't build with newer versions
+  nodejs = nodejs_22;
 
   src = fetchFromGitHub {
     owner = "vaultwarden";

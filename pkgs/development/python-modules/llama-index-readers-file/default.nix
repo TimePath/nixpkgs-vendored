@@ -8,21 +8,18 @@
   llama-index-core,
   pymupdf,
   pypdf,
-  pythonOlder,
   striprtf,
 }:
 
 buildPythonPackage rec {
   pname = "llama-index-readers-file";
-  version = "0.5.4";
+  version = "0.5.6";
   pyproject = true;
-
-  disabled = pythonOlder "3.8";
 
   src = fetchPypi {
     pname = "llama_index_readers_file";
     inherit version;
-    hash = "sha256-XnZvMll2IuZlKUZBAZFFSK1oN3CgpdK9ye6E6zoRAzI=";
+    hash = "sha256-HAixT6zC3+kzYiqqJtx9KnpgI8QtPbiWoslIeJ7a8eo=";
   };
 
   pythonRelaxDeps = [

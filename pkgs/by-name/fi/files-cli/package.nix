@@ -6,23 +6,23 @@
   files-cli,
 }:
 
-buildGoModule rec {
+buildGoModule (finalAttrs: {
   pname = "files-cli";
-  version = "2.15.152";
+  version = "2.15.211";
 
   src = fetchFromGitHub {
     repo = "files-cli";
     owner = "files-com";
-    rev = "v${version}";
-    hash = "sha256-0rXDVLr1V54+nXiqzhRsQJhF1JSreyQC9GcW3Sj2IcM=";
+    rev = "v${finalAttrs.version}";
+    hash = "sha256-iN56+OV0xjPtj5SajVF7HkUAWv4dPxlPDhnwSo+Nb80=";
   };
 
-  vendorHash = "sha256-BijznllCTXFgjADT/OZrgNYRM4aRXhxsIQu+jZngcFM=";
+  vendorHash = "sha256-FOH+S6T5luTrrKZRC1EzUvwBlWpMuW7QCYdtHlx+7EU=";
 
   ldflags = [
     "-s"
     "-w"
-    "-X main.version=${version}"
+    "-X main.version=${finalAttrs.version}"
   ];
 
   doInstallCheck = true;
@@ -39,7 +39,7 @@ buildGoModule rec {
     version = testers.testVersion {
       package = files-cli;
       command = "files-cli -v";
-      version = "files-cli version ${version}";
+      version = "files-cli version ${finalAttrs.version}";
     };
   };
 
@@ -51,4 +51,4 @@ buildGoModule rec {
     mainProgram = "files-cli";
   };
 
-}
+})

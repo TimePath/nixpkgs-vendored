@@ -72,10 +72,12 @@ optionals noSysDirs (
       "14" = [
         ./13/no-sys-dirs-riscv.patch
         ./13/mangle-NIX_STORE-in-__FILE__.patch
+        ./13/libsanitizer-fix-with-glibc-2.42.patch
       ];
       "13" = [
         ./13/no-sys-dirs-riscv.patch
         ./13/mangle-NIX_STORE-in-__FILE__.patch
+        ./13/libsanitizer-fix-with-glibc-2.42.patch
       ];
     }
     ."${majorVersion}" or [ ]
@@ -97,6 +99,12 @@ optionals noSysDirs (
 # See https://github.com/NixOS/nixpkgs/pull/354107/commits/2de1b4b14e17f42ba8b4bf43a29347c91511e008
 ++ optional (!atLeast14) ./cfi_startproc-reorder-label-09-1.diff
 ++ optional (atLeast14 && !canApplyIainsDarwinPatches) ./cfi_startproc-reorder-label-14-1.diff
+# c++tools: Don't check --enable-default-pie.
+# --enable-default-pie breaks bootstrap gcc otherwise, because libiberty.a is not found
+++ optional (is14 || is15) ./c++tools-dont-check-enable-default-pie.patch
+# http://gcc.gnu.org/PR120718 backport (will be inclkuded in 15.3.0) to
+# fix `highway-1.3.0` ICE on aarch64-linux.
+++ optional is15 ./15/aarch64-sve-rtx.patch
 
 ## 2. Patches relevant on specific platforms ####################################
 
@@ -237,5 +245,10 @@ optionals noSysDirs (
     name = "cygwin-fix-compilation-with-inhibit_libc.patch";
     url = "https://inbox.sourceware.org/gcc-patches/20250926170154.2222977-1-corngood@gmail.com/raw";
     hash = "sha256-mgzMRvgPdhj+Q2VRsFhpE2WQzg0CvWsc5/FRAsSU1Es=";
+  })
+  (fetchpatch {
+    name = "cygwin-use-builtin_define_std-for-unix.patch";
+    url = "https://inbox.sourceware.org/gcc-patches/20250922182808.2599390-3-corngood@gmail.com/raw";
+    hash = "sha256-8I2G4430gkYoWgUued4unqhk8ZCajHf1dcivAeuLZ0E=";
   })
 ]

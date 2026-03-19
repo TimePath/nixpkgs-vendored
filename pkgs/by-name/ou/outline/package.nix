@@ -76,9 +76,10 @@ stdenv.mkDerivation (finalAttrs: {
     license = lib.licenses.bsl11;
     maintainers = with lib.maintainers; [
       cab404
+      e1mo
+      xanderio
       yrd
     ];
-    teams = [ lib.teams.cyberus ];
     platforms = lib.platforms.linux;
   };
 })
