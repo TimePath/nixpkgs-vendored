@@ -42,7 +42,7 @@ rustPlatform.buildRustPackage rec {
   cargoHash = "sha256-wDj4g5Cjm6zedjCmpc/A40peHO951lLuEQGsn+i3eT0=";
 
   # Needed to get openssl-sys to use pkg-config
-  OPENSSL_NO_VENDOR = 1;
+  env.OPENSSL_NO_VENDOR = 1;
 
   nativeBuildInputs = [
     pkg-config

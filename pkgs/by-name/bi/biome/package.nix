@@ -7,19 +7,20 @@
   rust-jemalloc-sys,
   zlib,
   gitMinimal,
+  nix-update-script,
 }:
 rustPlatform.buildRustPackage (finalAttrs: {
   pname = "biome";
-  version = "2.3.6";
+  version = "2.4.15";
 
   src = fetchFromGitHub {
     owner = "biomejs";
     repo = "biome";
     rev = "@biomejs/biome@${finalAttrs.version}";
-    hash = "sha256-wi0dkD9AlMYyGS/y96FMCOJKjRuo0b4pHpva+R1W3Yg=";
+    hash = "sha256-Q7yx5ZKIrZdnsG3OS9CZ3jyuv71V7l9crCwYRZDuFpU=";
   };
 
-  cargoHash = "sha256-GCwJdO43Q5cRw3w1omuIpSxvINN51dJez7Jq4/FQF+A=";
+  cargoHash = "sha256-UzTE+Grg6RaTWAYIsaKgluVsSZXbDwIK5HY9rY2oIVo=";
 
   nativeBuildInputs = [ pkg-config ];
 
@@ -33,14 +34,23 @@ rustPlatform.buildRustPackage (finalAttrs: {
 
   cargoBuildFlags = [ "-p=biome_cli" ];
   cargoTestFlags = finalAttrs.cargoBuildFlags ++ [
+    "--"
     # fails due to cargo insta
-    "-- --skip=commands::check::print_json"
+    "--skip=commands::check::print_json"
     "--skip=commands::check::print_json_pretty"
     "--skip=commands::explain::explain_logs"
     "--skip=commands::format::print_json"
     "--skip=commands::format::print_json_pretty"
     "--skip=commands::format::should_format_files_in_folders_ignored_by_linter"
     "--skip=cases::migrate_v2::should_successfully_migrate_sentry"
+    "--skip=cases::help::check_help"
+    "--skip=cases::help::ci_help"
+    "--skip=cases::help::format_help"
+    "--skip=cases::help::lint_help"
+    "--skip=cases::help::lsp_proxy_help"
+    "--skip=cases::help::migrate_help"
+    "--skip=cases::help::rage_help"
+    "--skip=cases::help::start_help"
   ];
 
   env = {
@@ -62,6 +72,8 @@ rustPlatform.buildRustPackage (finalAttrs: {
     unset BIOME_VERSION
   '';
 
+  passthru.updateScript = nix-update-script { };
+
   meta = {
     description = "Toolchain of the web";
     homepage = "https://biomejs.dev/";
@@ -71,6 +83,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
       isabelroses
       wrbbz
       eveeifyeve # Schema
+      SchahinRohani
     ];
     mainProgram = "biome";
   };

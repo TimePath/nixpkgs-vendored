@@ -3,9 +3,8 @@
   stdenv,
   fetchFromGitHub,
   fetchPypi,
-  fetchpatch,
   node-gyp,
-  nodejs_20,
+  nodejs,
   nixosTests,
   gettext,
   python3,
@@ -17,7 +16,6 @@
   pngquant,
   qpdf,
   tesseract5,
-  unpaper,
   fetchPnpmDeps,
   pnpmConfigHook,
   pnpm_10,
@@ -28,22 +26,24 @@
   pkg-config,
   symlinkJoin,
   nltk-data,
-  xorg,
+  lndir,
 }:
 let
-  version = "2.19.6";
+  pnpm = pnpm_10;
+
+  version = "2.20.15";
 
   src = fetchFromGitHub {
     owner = "paperless-ngx";
     repo = "paperless-ngx";
     tag = "v${version}";
-    hash = "sha256-nHLsA5hmAFkOAEQU/xD+hllwtc2SyBtns5auCNm9KNg=";
+    hash = "sha256-Czh4Knel0IIHsTc3kEnp1153Kv+3721GRCbTYTkeCDg=";
   };
 
   python = python3.override {
     self = python;
     packageOverrides = final: prev: {
-      django = prev.django_5_2;
+      django = prev.django_5;
 
       fido2 = prev.fido2.overridePythonAttrs {
         version = "1.2.0";
@@ -58,11 +58,9 @@ let
       };
 
       # tesseract5 may be overwritten in the paperless module and we need to propagate that to make the closure reduction effective
-      ocrmypdf = prev.ocrmypdf.override { tesseract = tesseract5; };
+      ocrmypdf = prev.ocrmypdf_16.override { tesseract = tesseract5; };
     };
   };
-
-  pnpm' = pnpm_10.override { nodejs = nodejs_20; };
 
   path = lib.makeBinPath [
     ghostscript_headless
@@ -72,7 +70,6 @@ let
     pngquant
     qpdf
     tesseract5
-    unpaper
     poppler-utils
   ];
 
@@ -83,18 +80,18 @@ let
     src = src + "/src-ui";
 
     pnpmDeps = fetchPnpmDeps {
+      inherit pnpm;
       inherit (finalAttrs) pname version src;
-      pnpm = pnpm';
-      fetcherVersion = 2;
-      hash = "sha256-lxZOwt+/ReU7m7he0iJSt5HqaPkRksveCgvDG7uodjA=";
+      fetcherVersion = 3;
+      hash = "sha256-HO+IDNB3NXWgvV0cvZ5zx46JuXv6Tgroz+YfVump5MA=";
     };
 
     nativeBuildInputs = [
       node-gyp
-      nodejs_20
+      nodejs
       pkg-config
       pnpmConfigHook
-      pnpm'
+      pnpm
       python3
     ]
     ++ lib.optionals stdenv.hostPlatform.isDarwin [
@@ -158,24 +155,6 @@ python.pkgs.buildPythonApplication rec {
 
   inherit version src;
 
-  patches = [
-    (fetchpatch {
-      name = "GHSA-24x5-wp64-9fcc.patch";
-      url = "https://github.com/paperless-ngx/paperless-ngx/commit/9bdbfd362f4a15f8de109ca959f04e3a7d8a39d0.patch";
-      hash = "sha256-1iiOeWKvBoHFLa1QySkXYTbX5CVF3VQDWno6A/SinCs=";
-    })
-    (fetchpatch {
-      name = "GHSA-7cq3-mhxq-w946.patch";
-      url = "https://github.com/paperless-ngx/paperless-ngx/commit/bf38ae98f1ac3bae2c6006888a8705e42fbb804f.patch";
-      hash = "sha256-ATjtB7dmrXk/R+zjc0y2jJkmvVN7Gmqf0aWMRG9EN7I=";
-    })
-    (fetchpatch {
-      name = "GHSA-28cf-xvcf-hw6m.patch";
-      url = "https://github.com/paperless-ngx/paperless-ngx/commit/7c457466b76d7a4abeca521043de69d3c1f4eb11.patch";
-      hash = "sha256-t2/3lnhj1eywGiX1zmo7aJ+aOEdTWr0xe7yaFj8NeMs=";
-    })
-  ];
-
   postPatch = ''
     # pytest-xdist with to many threads makes the tests flaky
     if (( $NIX_BUILD_CORES > 3)); then
@@ -186,18 +165,27 @@ python.pkgs.buildPythonApplication rec {
       --replace-fail '--maxprocesses=16' "--numprocesses=$NIX_BUILD_CORES"
   '';
 
+  build-system = [ python.pkgs.setuptools ];
+
   nativeBuildInputs = [
     gettext
-    xorg.lndir
+    lndir
   ];
 
   pythonRelaxDeps = [
+    "celery"
     "django-allauth"
-    "django-cors-headers"
+    "django-auditlog"
+    "django-cachalot"
     "drf-spectacular-sidecar"
-    "filelock"
-    "ocrmypdf"
+    "python-dotenv"
+    "gotenberg-client"
     "redis"
+    "scikit-learn"
+    "tika-client"
+    # requested by maintainer
+    "imap-tools"
+    "ocrmypdf"
   ];
 
   dependencies =
@@ -210,18 +198,7 @@ python.pkgs.buildPythonApplication rec {
       concurrent-log-handler
       dateparser
       django
-      # django-allauth version 65.9.X not yet supported
-      # See https://github.com/paperless-ngx/paperless-ngx/issues/10336
-      (django-allauth.overrideAttrs (
-        new: prev: rec {
-          version = "65.7.0";
-          src = prev.src.override {
-            tag = version;
-            hash = "sha256-1HmEJ5E4Vp/CoyzUegqQXpzKUuz3dLx2EEv7dk8fq8w=";
-          };
-          patches = [ ];
-        }
-      ))
+      django-allauth
       django-auditlog
       django-cachalot
       django-celery-results
@@ -262,7 +239,6 @@ python.pkgs.buildPythonApplication rec {
       pyzbar
       rapidfuzz
       redis
-      regex
       scikit-learn
       setproctitle
       tika-client
@@ -335,11 +311,11 @@ python.pkgs.buildPythonApplication rec {
     "src"
   ];
 
-  # The tests require:
-  # - PATH with runtime binaries
-  # - A temporary HOME directory for gnupg
-  # - XDG_DATA_DIRS with test-specific fonts
   preCheck = ''
+    # The tests require:
+    # - PATH with runtime binaries
+    # - A temporary HOME directory for gnupg
+    # - XDG_DATA_DIRS with test-specific fonts
     export PATH="${path}:$PATH"
     export HOME=$(mktemp -d)
     export XDG_DATA_DIRS="${liberation_ttf}/share:$XDG_DATA_DIRS"
@@ -348,27 +324,28 @@ python.pkgs.buildPythonApplication rec {
     # ocrmypdf has an internal limit of 256 jobs and will fail with more:
     # https://github.com/ocrmypdf/OCRmyPDF/blob/66308c281306302fac3470f587814c3b212d0c40/src/ocrmypdf/cli.py#L234
     export PAPERLESS_THREADS_PER_WORKER=$(( NIX_BUILD_CORES > 256 ? 256 : NIX_BUILD_CORES ))
+
+    # the generated pyc files conflict when running the tests
+    rm -r build/lib
   '';
 
   disabledTests = [
     # FileNotFoundError(2, 'No such file or directory'): /build/tmp...
     "test_script_with_output"
     "test_script_exit_non_zero"
-    "testDocumentPageCountMigrated"
-    # AssertionError: 10 != 4 (timezone/time issue)
-    # Due to getting local time from modification date in test_consumer.py
-    "testNormalOperation"
     # Something broken with new Tesseract and inline RTL/LTR overrides?
     "test_rtl_language_detection"
-    # django.core.exceptions.FieldDoesNotExist: Document has no field named 'transaction_id'
-    "test_convert"
     # Favicon tests fail due to static file handling in the test environment
+    # https://github.com/NixOS/nixpkgs/issues/421393
     "test_favicon_view"
     "test_favicon_view_missing_file"
     # Requires DNS
     "test_send_webhook_data_or_json"
-    "test_workflow_webhook_send_webhook_retry"
-    "test_workflow_webhook_send_webhook_task"
+    # execnet.gateway_base.DumpError: can't serialize <class 'pathlib._local.PosixPath'>
+    # https://github.com/pytest-dev/pytest-xdist/issues/384
+    "test_subdirectory_upload"
+    # AssertionError: 4 != 3
+    "testNormalOperation"
   ];
 
   doCheck = !stdenv.hostPlatform.isDarwin;

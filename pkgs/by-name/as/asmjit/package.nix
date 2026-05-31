@@ -4,17 +4,18 @@
   cmake,
   ninja,
   lib,
+  nix-update-script,
 }:
 
 stdenv.mkDerivation {
   pname = "asmjit";
-  version = "0-unstable-2025-02-12";
+  version = "0-unstable-2026-03-26";
 
   src = fetchFromGitHub {
     owner = "asmjit";
     repo = "asmjit";
-    rev = "029075b84bf0161a761beb63e6eda519a29020db";
-    hash = "sha256-/9F1rFNPwJUrVOVeK9sIA+Q7UrqQpQy8T6g4ywcoJc8=";
+    rev = "0bd5787b54b575ed94bf32ac452153b34385c514";
+    hash = "sha256-mBnpoTG2c6RrTjOYSIeIANQKE6Uvd3/dnBGDnw3AfSA=";
   };
 
   nativeBuildInputs = [
@@ -23,6 +24,8 @@ stdenv.mkDerivation {
   ];
 
   strictDeps = true;
+
+  passthru.updateScript = nix-update-script { extraArgs = [ "--version=branch" ]; };
 
   meta = {
     description = "Machine code generation for C++";

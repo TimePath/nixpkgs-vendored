@@ -9,16 +9,16 @@
   makeWrapper,
 }:
 
-buildPythonPackage rec {
+buildPythonPackage (finalAttrs: {
   pname = "hyprshade";
-  version = "4.0.0";
-  format = "pyproject";
+  version = "4.0.1";
+  pyproject = true;
 
   src = fetchFromGitHub {
     owner = "loqusion";
     repo = "hyprshade";
-    tag = version;
-    hash = "sha256-NnKhIgDAOKOdEqgHzgLq1MSHG3FDT2AVXJZ53Ozzioc=";
+    tag = finalAttrs.version;
+    hash = "sha256-zK8i2TePJ4cEtGXe/dssHWg+ioCTo1NyqzInQhMaB8w=";
   };
 
   nativeBuildInputs = [
@@ -45,4 +45,4 @@ buildPythonPackage rec {
     maintainers = with lib.maintainers; [ willswats ];
     platforms = lib.platforms.linux;
   };
-}
+})

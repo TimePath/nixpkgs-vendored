@@ -6,22 +6,22 @@
   stdenv,
 }:
 
-buildGoModule rec {
+buildGoModule (finalAttrs: {
   pname = "go-passbolt-cli";
-  version = "0.3.2";
+  version = "0.4.2";
 
   src = fetchFromGitHub {
     owner = "passbolt";
     repo = "go-passbolt-cli";
-    rev = "v${version}";
-    hash = "sha256-BtMPOmp9dbi/HoNigEeGWIYXRh1/gorV8ycrtWw9I8s=";
+    rev = "v${finalAttrs.version}";
+    hash = "sha256-cvcRVeVwwfVX96Ud6YmimtGJ1uJYcIhryWB1Yebr1Vc=";
   };
 
-  vendorHash = "sha256-wGSrhW7OsSjHlSKLkOf2AYIxU1m2lM1WGUsy16qxBwA=";
+  vendorHash = "sha256-M8jix6bJ+venQvwm1FTJ7+fXQxSIrdCdXmmp2aVkZo8=";
 
   ldflags = [
-    "-X=main.version=${version}"
-    "-X=main.commit=${src.rev}"
+    "-X=main.version=${finalAttrs.version}"
+    "-X=main.commit=${finalAttrs.src.rev}"
     "-X=main.date=1970-01-01T00:00:00Z"
   ];
 
@@ -55,4 +55,4 @@ buildGoModule rec {
     mainProgram = "passbolt";
     platforms = lib.platforms.linux ++ lib.platforms.darwin;
   };
-}
+})

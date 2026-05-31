@@ -20,7 +20,7 @@
   libspectre,
   libgxps,
   webkitgtk_4_1,
-  nodePackages,
+  mathjax,
   ninja,
   djvulibre,
   backends ? [
@@ -35,15 +35,15 @@
   ],
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "xreader";
-  version = "4.6.0";
+  version = "4.6.5";
 
   src = fetchFromGitHub {
     owner = "linuxmint";
     repo = "xreader";
-    rev = version;
-    hash = "sha256-cp/pZ42AS98AD78BVMeY3SHQHkYA2h4o0kddr/H+kUA=";
+    rev = finalAttrs.version;
+    hash = "sha256-wycQmScxuSlo6Ln6piSBF7kmzvi6FnTm/ES/Ds+/h8I=";
   };
 
   nativeBuildInputs = [
@@ -57,7 +57,8 @@ stdenv.mkDerivation rec {
   ];
 
   mesonFlags = [
-    "-Dmathjax-directory=${nodePackages.mathjax}"
+    # FIXME: `MathJax.js` is only available in MathJax 2.7.x.
+    "-Dmathjax-directory=${mathjax}"
     "-Dintrospection=true"
   ]
   ++ (map (x: "-D${x}=true") backends);
@@ -74,7 +75,7 @@ stdenv.mkDerivation rec {
     libspectre
     libgxps
     webkitgtk_4_1
-    nodePackages.mathjax
+    mathjax
     djvulibre
   ];
 
@@ -92,4 +93,4 @@ document formats like PDF and Postscript";
     platforms = lib.platforms.linux;
     teams = [ lib.teams.cinnamon ];
   };
-}
+})

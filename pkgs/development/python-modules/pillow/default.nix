@@ -2,7 +2,6 @@
   lib,
   stdenv,
   buildPythonPackage,
-  pythonOlder,
   fetchFromGitHub,
 
   # build-system
@@ -26,7 +25,6 @@
   # optional dependencies
   defusedxml,
   olefile,
-  typing-extensions,
 
   # tests
   numpy,
@@ -44,14 +42,14 @@
 
 buildPythonPackage rec {
   pname = "pillow";
-  version = "12.1.1";
+  version = "12.2.0";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "python-pillow";
     repo = "pillow";
     tag = version;
-    hash = "sha256-NlmNabyoHiakwvomjivTA7N304ovNCMDSaBLSmcmZ7w=";
+    hash = "sha256-7w6FbZLTAoUMvLtSPvafk3wSRv8TrkAAfgZ/dfu3HpA=";
   };
 
   build-system = [
@@ -100,7 +98,6 @@ buildPythonPackage rec {
   optional-dependencies = {
     fpx = [ olefile ];
     mic = [ olefile ];
-    typing = lib.optionals (pythonOlder "3.10") [ typing-extensions ];
     xmp = [ defusedxml ];
   };
 
@@ -109,7 +106,7 @@ buildPythonPackage rec {
     pytestCheckHook
     numpy
   ]
-  ++ lib.flatten (lib.attrValues optional-dependencies);
+  ++ lib.concatAttrValues optional-dependencies;
 
   disabledTests = [
     # Code quality mismathch 9 vs 10

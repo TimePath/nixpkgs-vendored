@@ -22,7 +22,6 @@ buildFishPlugin rec {
     maintainers = with lib.maintainers; [
       figsoda
       kidonng
-      pyrox0
     ];
   };
 }

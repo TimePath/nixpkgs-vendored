@@ -7,14 +7,14 @@
   wrapperDir ? "/run/wrappers/bin", # Default for NixOS, other systems might need customization.
 }:
 
-buildGoModule rec {
+buildGoModule (finalAttrs: {
   pname = "img";
   version = "0.5.11";
 
   src = fetchFromGitHub {
     owner = "genuinetools";
     repo = "img";
-    rev = "v${version}";
+    rev = "v${finalAttrs.version}";
     sha256 = "0r5hihzp2679ki9hr3p0f085rafy2hc8kpkdhnd4m5k4iibqib08";
   };
 
@@ -36,7 +36,7 @@ buildGoModule rec {
   ];
 
   ldflags = [
-    "-X github.com/genuinetools/img/version.VERSION=v${version}"
+    "-X github.com/genuinetools/img/version.VERSION=v${finalAttrs.version}"
     "-s -w"
   ];
 
@@ -52,6 +52,6 @@ buildGoModule rec {
     mainProgram = "img";
     license = lib.licenses.mit;
     homepage = "https://github.com/genuinetools/img";
-    maintainers = with lib.maintainers; [ bryanasdev000 ];
+    maintainers = [ ];
   };
-}
+})

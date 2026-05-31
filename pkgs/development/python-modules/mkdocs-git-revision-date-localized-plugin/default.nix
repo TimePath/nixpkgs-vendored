@@ -2,7 +2,6 @@
   lib,
   buildPythonPackage,
   fetchFromGitHub,
-  pythonOlder,
   setuptools,
   setuptools-scm,
   babel,
@@ -14,16 +13,14 @@
 
 buildPythonPackage rec {
   pname = "mkdocs-git-revision-date-localized-plugin";
-  version = "1.4.7";
+  version = "1.5.2";
   pyproject = true;
-
-  disabled = pythonOlder "3.7";
 
   src = fetchFromGitHub {
     owner = "timvink";
     repo = "mkdocs-git-revision-date-localized-plugin";
     tag = "v${version}";
-    hash = "sha256-xSm+Qvk1DU5CEZpR+69oIAKnIrg/J7iECNHEZQlf/7o=";
+    hash = "sha256-h27LzLgOsobRuvieQsVwZSQkagJR3Vy5kUw/HqJ9BHE=";
   };
 
   build-system = [

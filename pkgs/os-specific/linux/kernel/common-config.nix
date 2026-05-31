@@ -113,7 +113,9 @@ let
 
       # Enable crashkernel support
       PROC_VMCORE = yes;
-      HIGHMEM4G = lib.mkIf (stdenv.hostPlatform.isx86 && stdenv.hostPlatform.is32bit) yes;
+      HIGHMEM4G = lib.mkIf (stdenv.hostPlatform.isx86 && stdenv.hostPlatform.is32bit) (
+        whenAtLeast "6.15" yes
+      );
 
       # Track memory leaks and performance issues related to allocations.
       MEM_ALLOC_PROFILING = whenAtLeast "6.10" yes;
@@ -183,6 +185,7 @@ let
       X86_INTEL_LPSS = yes;
       X86_INTEL_PSTATE = yes;
       X86_AMD_PSTATE = whenAtLeast "5.17" yes;
+      X86_AMD_PSTATE_DYNAMIC_EPP = whenAtLeast "7.1" yes;
       # Intel DPTF (Dynamic Platform and Thermal Framework) Support
       ACPI_DPTF = yes;
 
@@ -316,7 +319,6 @@ let
       IPV6_MROUTE = yes;
       IPV6_MROUTE_MULTIPLE_TABLES = yes;
       IPV6_PIMSM_V2 = yes;
-      IPV6_FOU_TUNNEL = module;
       IPV6_SEG6_LWTUNNEL = yes;
       IPV6_SEG6_HMAC = yes;
       IPV6_SEG6_BPF = yes;
@@ -401,8 +403,8 @@ let
       MAC80211_DEBUGFS = yes;
 
       # HAM radio
-      HAMRADIO = yes;
-      AX25 = module;
+      HAMRADIO = whenOlder "7.1" yes;
+      AX25 = whenOlder "7.1" module;
     }
     // lib.optionalAttrs (stdenv.hostPlatform.system == "aarch64-linux") {
       # Not enabled by default, hides modules behind it
@@ -564,9 +566,8 @@ let
         DRM_DP_CEC = whenOlder "6.10" yes;
         DRM_DISPLAY_DP_AUX_CEC = whenAtLeast "6.10" yes;
 
-        # Do not enable Nova drivers, which are still WIP. This is the Kconfig default.
-        NOVA_CORE = whenAtLeast "6.15" no;
-        DRM_NOVA = whenAtLeast "6.16" no;
+        # Enable RAS reporting via netlink
+        DRM_RAS = whenAtLeast "7.1" yes;
       }
       //
         lib.optionalAttrs
@@ -604,6 +605,10 @@ let
       DRM_PANIC_SCREEN = whenAtLeast "6.12" (freeform "kmsg");
 
       DRM_PANIC_SCREEN_QR_CODE = whenAtLeast "6.12" yes;
+
+      # Do not enable Nova drivers, which are still WIP. This is the Kconfig default.
+      NOVA_CORE = whenAtLeast "6.15" no;
+      DRM_NOVA = whenAtLeast "6.16" no;
     };
 
     sound = {
@@ -683,9 +688,14 @@ let
       FANOTIFY = yes;
       FANOTIFY_ACCESS_PERMISSIONS = yes;
 
+      # DAX requires 64BIT via ZONE_DEVICE and MEMORY_HOTPLUG.
+      FS_DAX = lib.mkIf stdenv.hostPlatform.is64bit yes;
+
       TMPFS = yes;
       TMPFS_POSIX_ACL = yes;
       FS_ENCRYPTION = yes;
+      FS_VERITY = yes;
+      FS_VERITY_BUILTIN_SIGNATURES = yes;
 
       EXT2_FS_XATTR = yes;
       EXT2_FS_POSIX_ACL = yes;
@@ -698,12 +708,13 @@ let
       EXT4_FS_SECURITY = yes;
 
       NTFS_FS = whenBetween "5.15" "6.9" no;
+      NTFS_FS_POSIX_ACL = whenAtLeast "7.1" yes;
       NTFS3_LZX_XPRESS = whenAtLeast "5.15" yes;
       NTFS3_FS_POSIX_ACL = whenAtLeast "5.15" yes;
 
-      REISERFS_FS_XATTR = option yes;
-      REISERFS_FS_POSIX_ACL = option yes;
-      REISERFS_FS_SECURITY = option yes;
+      REISERFS_FS_XATTR = whenOlder "6.13" (option yes);
+      REISERFS_FS_POSIX_ACL = whenOlder "6.13" (option yes);
+      REISERFS_FS_SECURITY = whenOlder "6.13" (option yes);
 
       JFS_POSIX_ACL = option yes;
       JFS_SECURITY = option yes;
@@ -800,6 +811,12 @@ let
       # This does not have any effect if a program does not support it
       SECURITY_LANDLOCK = whenAtLeast "5.13" yes;
 
+      # IPE (Integrity Policy Enforcement) - LSM that can enforce file integrity based on
+      # fs-verity measurements or dm-verity. Useful for verified boot and immutable /nix/store.
+      SECURITY_IPE = whenAtLeast "6.12" yes;
+      IPE_PROP_FS_VERITY = whenAtLeast "6.12" yes;
+      IPE_PROP_FS_VERITY_BUILTIN_SIG = whenAtLeast "6.12" yes;
+
       DEVKMEM = lib.mkIf (!stdenv.hostPlatform.isAarch64) (whenOlder "5.13" no); # Disable /dev/kmem
 
       USER_NS = yes; # Support for user namespaces
@@ -813,11 +830,15 @@ let
         whenOlder "6.2" yes
       ); # allow RDRAND to seed the RNG
       RANDOM_TRUST_BOOTLOADER = whenOlder "6.2" yes; # allow the bootloader to seed the RNG
+      # only when compiled as yes, TPM 2.0 will automatically seed the kernel RNG
+      HW_RANDOM = yes;
 
       MODULE_SIG = no; # r13y, generates a random key during build and bakes it in
       # Depends on MODULE_SIG and only really helps when you sign your modules
       # and enforce signatures which we don't do by default.
       SECURITY_LOCKDOWN_LSM = no;
+
+      IMA = yes;
 
       # provides a register of persistent per-UID keyrings, useful for encrypting storage pools in stratis
       PERSISTENT_KEYRINGS = yes;
@@ -842,6 +863,14 @@ let
       SHUFFLE_PAGE_ALLOCATOR = yes;
 
       INIT_ON_ALLOC_DEFAULT_ON = yes;
+
+      # Randomize kernel stack offset on syscall entry to make stack address dependent
+      # attacks harder, supported since 5.13.
+      # Only default enabled on AArch64 from 7.1 due to perf issues prior to that release
+      # that were resolved in "randomize_kstack: Maintain kstack_offset per task"
+      RANDOMIZE_KSTACK_OFFSET_DEFAULT = whenAtLeast (
+        if stdenv.hostPlatform.isAarch64 then "7.1" else "5.13"
+      ) yes;
 
       # Enable stack smashing protections in schedule()
       # See: https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?h=v4.8&id=0d9e26329b0c9263d4d9e0422d80a0e73268c52f
@@ -938,6 +967,7 @@ let
       BPF_EVENTS = yes;
       FUNCTION_PROFILER = yes;
       RING_BUFFER_BENCHMARK = no;
+      FUNCTION_GRAPH_RETVAL = whenAtLeast "6.5" yes;
     };
 
     perf = {
@@ -959,7 +989,7 @@ let
       KSM = yes;
       VIRT_DRIVERS = yes;
       # We need 64 GB (PAE) support for Xen guest support
-      HIGHMEM64G = {
+      HIGHMEM64G = whenOlder "6.15" {
         optional = true;
         tristate = lib.mkIf (!stdenv.hostPlatform.is64bit) "y";
       };
@@ -985,6 +1015,9 @@ let
       XEN_PVHVM = option yes;
       XEN_SAVE_RESTORE = option yes;
 
+      # Disabled by default on POWER
+      VIRTIO_MENU = yes;
+
       # Enable device detection on virtio-mmio hypervisors
       VIRTIO_MMIO_CMDLINE_DEVICES = yes;
 
@@ -992,6 +1025,10 @@ let
       # passthrough.
       VFIO_DEVICE_CDEV = whenAtLeast "6.6" yes;
       VFIO_NOIOMMU = whenAtLeast "6.6" yes;
+
+      # Loongson Binary Translation extension, required for running
+      # x86 and x86_64 binaries via LATX or similar emulators
+      CPU_HAS_LBT = lib.mkIf stdenv.hostPlatform.isLoongArch64 (option yes);
     };
 
     media = {
@@ -1206,6 +1243,8 @@ let
         EFI = lib.mkIf stdenv.hostPlatform.isEfi yes;
         EFI_STUB = yes; # EFI bootloader in the bzImage itself
         EFI_GENERIC_STUB_INITRD_CMDLINE_LOADER = whenOlder "6.2" yes; # initrd kernel parameter for EFI
+        PSTORE = yes;
+        EFI_VARS_PSTORE = lib.mkIf (!stdenv.hostPlatform.isLoongArch64) yes;
 
         # Generic compression support for EFI payloads
         # Add new platforms only after they have been verified to build and boot.
@@ -1231,6 +1270,8 @@ let
 
         KEXEC_FILE = option yes;
         KEXEC_JUMP = option yes;
+        KEXEC_HANDOVER = whenAtLeast "6.16" (option yes);
+        LIVEUPDATE = whenAtLeast "6.19" (option yes);
 
         PARTITION_ADVANCED = yes; # Needed for LDM_PARTITION
         # Windows Logical Disk Manager (Dynamic Disk) support
@@ -1330,6 +1371,18 @@ let
         HOTPLUG_PCI_ACPI = yes; # PCI hotplug using ACPI
         HOTPLUG_PCI_PCIE = yes; # PCI-Expresscard hotplug support
 
+        # Allos PCIe devices report errors with Advanced Error Reporting (AER).
+        PCIEAER = yes;
+        ACPI_APEI_PCIEAER = yes;
+
+        # Enable all available thermal governors
+        THERMAL_GOV_BANG_BANG = yes;
+        THERMAL_GOV_FAIR_SHARE = yes;
+        THERMAL_GOV_POWER_ALLOCATOR = yes;
+        THERMAL_GOV_STEP_WISE = yes;
+        THERMAL_GOV_USER_SPACE = yes;
+        DEVFREQ_THERMAL = yes;
+
         # Enable AMD's ROCm GPU compute stack
         HSA_AMD = lib.mkIf stdenv.hostPlatform.is64bit yes;
         ZONE_DEVICE = lib.mkIf (
@@ -1343,7 +1396,7 @@ let
         ) yes;
 
         # required for P2P DMABUF
-        DMABUF_MOVE_NOTIFY = lib.mkIf stdenv.hostPlatform.is64bit (whenAtLeast "6.6" yes);
+        DMABUF_MOVE_NOTIFY = lib.mkIf stdenv.hostPlatform.is64bit (whenBetween "6.6" "7.1" yes);
         # required for P2P transfers between accelerators
         HSA_AMD_P2P = lib.mkIf stdenv.hostPlatform.is64bit (whenAtLeast "6.6" yes);
 
@@ -1362,6 +1415,8 @@ let
         X86_AMD_PLATFORM_DEVICE = lib.mkIf stdenv.hostPlatform.isx86 yes;
         X86_PLATFORM_DRIVERS_DELL = lib.mkIf stdenv.hostPlatform.isx86 (whenAtLeast "5.12" yes);
         X86_PLATFORM_DRIVERS_HP = lib.mkIf stdenv.hostPlatform.isx86 (whenAtLeast "6.1" yes);
+
+        ARM64_PMEM = lib.mkIf stdenv.hostPlatform.isAarch64 yes;
 
         LIRC = yes;
 
@@ -1419,6 +1474,14 @@ let
         # Enable generic kernel watch queues
         # See https://docs.kernel.org/core-api/watch_queue.html
         WATCH_QUEUE = yes;
+
+        # Enable coreboot firmware drivers.
+        # While these are called CONFIG_GOOGLE_*, they apply to coreboot systems in general.
+        GOOGLE_FIRMWARE = yes;
+
+        # Disabled by default on POWER
+        ATA_BMDMA = yes;
+        ATA_SFF = yes;
       }
       //
         lib.optionalAttrs
@@ -1534,6 +1597,20 @@ let
 
         # Enable Intel Turbo Boost Max 3.0
         INTEL_TURBO_MAX_3 = yes;
+      }
+      // lib.optionalAttrs (stdenv.hostPlatform.isPower64) {
+        # avoid driver/FS trouble arising from unusual page size
+        PPC_64K_PAGES = no;
+        PPC_4K_PAGES = yes;
+
+        # Does not get auto-loaded on relevant systems, makes fans stuck at max speed.
+        # https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=713943 (2014 :<)
+        # > This module ought to be auto-loaded where it's needed, but somehow that
+        # > has broken.  I asked Benjamin Herrenschmidt (upstream powerpc maintainer
+        # > and the last person to touch it) and he was aware of this but hadn't got
+        # > round to working out why.  The workaround is to build it in[…].
+        # > (It won't do any harm on non-Mac systems.)
+        I2C_POWERMAC = yes;
       };
 
     accel = {

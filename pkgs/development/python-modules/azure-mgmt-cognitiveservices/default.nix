@@ -5,27 +5,26 @@
   buildPythonPackage,
   fetchPypi,
   isodate,
-  pythonOlder,
   setuptools,
   typing-extensions,
+  msrest,
 }:
 
 buildPythonPackage rec {
   pname = "azure-mgmt-cognitiveservices";
-  version = "13.7.0";
+  version = "15.0.0b1";
   pyproject = true;
-
-  disabled = pythonOlder "3.8";
 
   src = fetchPypi {
     pname = "azure_mgmt_cognitiveservices";
     inherit version;
-    hash = "sha256-SKWkTBXGdoutI4ARqqyDqAbOuKzhtRuAQ+NbOakWehk=";
+    hash = "sha256-3ydbAI1IkiIuwnQbd6829kZv9IgFkqTFwG155l58JFQ=";
   };
 
   build-system = [ setuptools ];
 
   dependencies = [
+    msrest
     azure-common
     azure-mgmt-core
     isodate

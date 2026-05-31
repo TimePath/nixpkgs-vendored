@@ -9,7 +9,7 @@
 }:
 
 buildPythonPackage rec {
-  version = "0.9.8";
+  version = "0.9.9";
   pname = "eyed3";
   pyproject = true;
 
@@ -19,7 +19,7 @@ buildPythonPackage rec {
     owner = "nicfit";
     repo = "eyeD3";
     tag = "v${version}";
-    hash = "sha256-erjTgHjtrUMBj09/s3sZzct6Tg979a16a4fVGnwT0qk=";
+    hash = "sha256-Brtxi0B52kvSU12va5X+KNtNV9cyK2TUefyZYZI87JQ=";
   };
 
   build-system = [ setuptools ];
@@ -39,7 +39,7 @@ buildPythonPackage rec {
     downloadPage = "https://github.com/nicfit/eyeD3";
     homepage = "https://eyed3.nicfit.net/";
     license = lib.licenses.gpl2;
-    maintainers = with lib.maintainers; [ lovek323 ];
+    maintainers = [ ];
     platforms = lib.platforms.unix;
     longDescription = ''
       eyeD3 is a Python module and command line program for processing ID3

@@ -4,18 +4,18 @@
   fetchFromGitHub,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "hashcat-utils";
   version = "1.10";
 
   src = fetchFromGitHub {
     owner = "hashcat";
     repo = "hashcat-utils";
-    rev = "v${version}";
+    rev = "v${finalAttrs.version}";
     sha256 = "sha256-S2aRNTJMQO/YXdCHexKQ+gZnZp2vGvsvhD5O7t3tfhw=";
   };
 
-  sourceRoot = "${src.name}/src";
+  sourceRoot = "${finalAttrs.src.name}/src";
 
   installPhase = ''
     runHook preInstall
@@ -29,6 +29,5 @@ stdenv.mkDerivation rec {
     homepage = "https://github.com/hashcat/hashcat-utils";
     license = lib.licenses.mit;
     platforms = lib.platforms.unix;
-    maintainers = with lib.maintainers; [ fadenb ];
   };
-}
+})

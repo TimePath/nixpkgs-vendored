@@ -6,6 +6,7 @@
   fetchFromGitLab,
   applyPatches,
   autoAddDriverRunpath,
+  android-tools,
   avahi,
   boost,
   cli11,
@@ -28,8 +29,8 @@
   libpulseaudio,
   librsvg,
   libva,
-  libX11,
-  libXrandr,
+  libx11,
+  libxrandr,
   makeDesktopItem,
   nix-update-script,
   nlohmann_json,
@@ -40,6 +41,7 @@
   pkg-config,
   python3,
   qt6,
+  sdl2-compat,
   shaderc,
   systemd,
   udev,
@@ -107,13 +109,14 @@ stdenv.mkDerivation (finalAttrs: {
   ];
 
   buildInputs = [
+    android-tools
     eigen
     freetype
     glm
     harfbuzz
     libGL
-    libX11
-    libXrandr
+    libx11
+    libxrandr
     openxr-loader
     shaderc
     systemd
@@ -178,8 +181,16 @@ stdenv.mkDerivation (finalAttrs: {
   dontWrapQtApps = true;
 
   preFixup = lib.optional (!clientLibOnly) ''
+    wrapProgram "$out/bin/wivrn-server" \
+      --prefix LD_LIBRARY_PATH : ${
+        lib.makeLibraryPath [
+          sdl2-compat
+          udev
+        ]
+      }
     wrapQtApp "$out/bin/wivrn-dashboard" \
-      --prefix LD_LIBRARY_PATH : ${lib.makeLibraryPath [ vulkan-loader ]}
+      --prefix LD_LIBRARY_PATH : ${lib.makeLibraryPath [ vulkan-loader ]} \
+      --prefix PATH : ${lib.makeBinPath [ android-tools ]}
   '';
 
   desktopItems = lib.optionals (!clientLibOnly) [

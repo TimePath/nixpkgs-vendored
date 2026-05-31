@@ -11,24 +11,25 @@
   protobuf,
   pytest-asyncio,
   pytestCheckHook,
-  pythonOlder,
   setuptools,
 }:
 
 buildPythonPackage rec {
   pname = "google-cloud-datastore";
-  version = "2.21.0";
+  version = "2.24.0";
   pyproject = true;
-
-  disabled = pythonOlder "3.7";
 
   src = fetchPypi {
     pname = "google_cloud_datastore";
     inherit version;
-    hash = "sha256-7uRU3UpV9bMn+fNEko/xoJpvd8I9Xj2QitMaE8wvQHM=";
+    hash = "sha256-8IfAKmqkrGi78X8MBIrj7jVYVr8JxRQ5v7oZN0E4d5I=";
   };
 
   build-system = [ setuptools ];
+
+  pythonRelaxDeps = [
+    "protobuf"
+  ];
 
   dependencies = [
     google-api-core

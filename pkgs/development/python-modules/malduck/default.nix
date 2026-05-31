@@ -9,7 +9,7 @@
   pefile,
   pycryptodomex,
   pyelftools,
-  pythonOlder,
+  pythonAtLeast,
   setuptools,
   pytestCheckHook,
   typing-extensions,
@@ -21,14 +21,17 @@ buildPythonPackage rec {
   version = "4.4.1";
   pyproject = true;
 
-  disabled = pythonOlder "3.8";
-
   src = fetchFromGitHub {
     owner = "CERT-Polska";
     repo = "malduck";
     tag = "v${version}";
     hash = "sha256-Btx0HxiZWrb0TDpBokQGtBE2EDK0htONe/DwqlPgAd4=";
   };
+
+  patches = lib.optionals (pythonAtLeast "3.14") [
+    # python 3.14 ctypes rejects `_pack_` without `_layout_ = "ms"`.
+    ./python-3.14-ctypes-layout.patch
+  ];
 
   build-system = [ setuptools ];
 

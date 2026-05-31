@@ -9,15 +9,11 @@
 
 buildPythonPackage rec {
   pname = "pyobjc-framework-Cocoa";
-  version = "11.1";
   pyproject = true;
 
-  src = fetchFromGitHub {
-    owner = "ronaldoussoren";
-    repo = "pyobjc";
-    tag = "v${version}";
-    hash = "sha256-2qPGJ/1hXf3k8AqVLr02fVIM9ziVG9NMrm3hN1de1Us=";
-  };
+  inherit (pyobjc-core) version src;
+
+  patches = pyobjc-core.patches or [ ];
 
   sourceRoot = "${src.name}/pyobjc-framework-Cocoa";
 
@@ -58,7 +54,7 @@ buildPythonPackage rec {
 
   meta = {
     description = "PyObjC wrappers for the Cocoa frameworks on macOS";
-    homepage = "https://github.com/ronaldoussoren/pyobjc";
+    homepage = "https://github.com/ronaldoussoren/pyobjc/tree/main/pyobjc-framework-Cocoa";
     license = lib.licenses.mit;
     platforms = lib.platforms.darwin;
     maintainers = with lib.maintainers; [ samuela ];

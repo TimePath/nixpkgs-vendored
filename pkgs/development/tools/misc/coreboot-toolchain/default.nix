@@ -26,20 +26,21 @@ let
 
       stdenvNoCC.mkDerivation (finalAttrs: {
         pname = "coreboot-toolchain-${arch}";
-        version = "25.03";
+        version = "26.03";
 
         src = fetchgit {
           url = "https://review.coreboot.org/coreboot";
           rev = finalAttrs.version;
-          hash = "sha256-zyfBQKVton+2vjYd6fqrUqkHY9bci411pujRGabvTjQ=";
+          hash = "sha256-9ollzu6vtU+uHibvV/B5N70ZVl701kuI/orWlFZLjIU=";
           fetchSubmodules = false;
           leaveDotGit = true;
           postFetch = ''
             PATH=${lib.makeBinPath [ getopt ]}:$PATH ${stdenv.shell} $out/util/crossgcc/buildgcc -W > $out/.crossgcc_version
             rm -rf $out/.git
           '';
-          allowedRequisites = [ ];
         };
+
+        archives = ./stable.nix;
 
         nativeBuildInputs = [
           bison
@@ -63,7 +64,7 @@ let
           mkdir -p util/crossgcc/tarballs
 
           ${lib.concatMapStringsSep "\n" (file: "ln -s ${file.archive} util/crossgcc/tarballs/${file.name}") (
-            callPackage ./stable.nix { }
+            callPackage finalAttrs.archives { }
           )}
 
           patchShebangs util/genbuild_h/genbuild_h.sh

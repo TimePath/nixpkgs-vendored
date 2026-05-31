@@ -3,7 +3,6 @@
   stdenvNoCC,
   fetchurl,
   nixosTests,
-  nextcloud31Packages,
   nextcloud32Packages,
   nextcloud33Packages,
 }:
@@ -53,22 +52,15 @@ let
     };
 in
 {
-  nextcloud31 = generic {
-    version = "31.0.14";
-    hash = "sha256-0JZessv2gQV0PLvm7vQEyJCSz5LEDa7iycuc9u32NhM=";
-    packages = nextcloud31Packages;
-    eol = true;
-  };
-
   nextcloud32 = generic {
-    version = "32.0.6";
-    hash = "sha256-RLwz/A4xplC7UguxI8CqplGbf3uThhM9Vhred+U/cTA=";
+    version = "32.0.9";
+    hash = "sha256-/W1ZGXXv3hyvDoQnqCuqVaSot65kPaKe2D4pnCCMHu4=";
     packages = nextcloud32Packages;
   };
 
   nextcloud33 = generic {
-    version = "33.0.0";
-    hash = "sha256-b3cwkCJpyHn58q1KoKInyxa1QI7kbwk/aL0yYz90Gr8=";
+    version = "33.0.3";
+    hash = "sha256-XBBS+GCzWqVrJLwmE6a+oMIjE7n70CuwJHwfC52/d9I=";
     packages = nextcloud33Packages;
   };
 

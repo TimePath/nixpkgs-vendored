@@ -1,38 +1,32 @@
 {
   lib,
   fetchFromGitHub,
-  fetchpatch,
   python3Packages,
   nix-update-script,
 }:
 
-python3Packages.buildPythonApplication rec {
+python3Packages.buildPythonApplication (finalAttrs: {
   pname = "pyprland";
-  version = "2.4.7";
-  format = "pyproject";
-
-  disabled = python3Packages.pythonOlder "3.10";
+  version = "3.4.0";
+  pyproject = true;
 
   src = fetchFromGitHub {
     owner = "hyprland-community";
     repo = "pyprland";
-    tag = version;
-    hash = "sha256-rtAw6tdZY0BKb6Qjk/LHYYMB9nCPzkmw95wdjhJ191s=";
+    tag = finalAttrs.version;
+    hash = "sha256-e2BTHGmZrxRXC+Eu2TpNcEJB1txZDOi0gs/CsjZu9eY=";
   };
 
-  patches = [
-    # Remove this patch from versions higher than 2.4.7-17.
-    # Fixes integration with pyprland 0.52.0+.
-    (fetchpatch {
-      url = "https://github.com/hyprland-community/pyprland/commit/21c0479a52df41f15bb798e28f67daab8b1ad0e3.patch";
-      hash = "sha256-QwEGdraSZmz9goCBTKQLArqQse1TP8b188uiIISshWc=";
-      includes = [ "pyprland/plugins/pyprland.py" ];
-    })
-  ];
+  build-system = [ python3Packages.hatchling ];
 
   nativeBuildInputs = with python3Packages; [ poetry-core ];
 
-  propagatedBuildInputs = with python3Packages; [ aiofiles ];
+  propagatedBuildInputs = with python3Packages; [
+    aiofiles
+    aiohttp
+    pillow
+    questionary
+  ];
   pythonRelaxDeps = [
     "aiofiles"
   ];
@@ -43,7 +37,7 @@ python3Packages.buildPythonApplication rec {
   '';
 
   # NOTE: this is required for the imports check below to work properly
-  HYPRLAND_INSTANCE_SIGNATURE = "dummy";
+  env.HYPRLAND_INSTANCE_SIGNATURE = "dummy";
 
   pythonImportsCheck = [
     "pyprland"
@@ -61,7 +55,6 @@ python3Packages.buildPythonApplication rec {
     "pyprland.plugins.lost_windows"
     "pyprland.plugins.magnify"
     "pyprland.plugins.monitors"
-    "pyprland.plugins.monitors_v0"
     "pyprland.plugins.pyprland"
     "pyprland.plugins.scratchpads"
     "pyprland.plugins.shift_monitors"
@@ -85,4 +78,4 @@ python3Packages.buildPythonApplication rec {
     ];
     platforms = lib.platforms.linux;
   };
-}
+})

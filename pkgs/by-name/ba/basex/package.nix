@@ -9,15 +9,15 @@
   copyDesktopItems,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "basex";
-  version = "12.0";
+  version = "12.3";
 
   src = fetchurl {
-    url = "http://files.basex.org/releases/${version}/BaseX${
-      builtins.replaceStrings [ "." ] [ "" ] version
+    url = "http://files.basex.org/releases/${finalAttrs.version}/BaseX${
+      builtins.replaceStrings [ "." ] [ "" ] finalAttrs.version
     }.zip";
-    hash = "sha256-/9TeaAp2jckG77F8+J3aSpkoXWyTFXvXxnxXgpn58Zc=";
+    hash = "sha256-5BLKv6lNk7keHO/5mcI1+DdCbgJa5/GtnvYEz7LtQFA=";
   };
 
   nativeBuildInputs = [
@@ -83,4 +83,4 @@ stdenv.mkDerivation rec {
     platforms = lib.platforms.unix;
     maintainers = [ lib.maintainers.bjornfor ];
   };
-}
+})

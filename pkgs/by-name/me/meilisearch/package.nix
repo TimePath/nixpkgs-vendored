@@ -8,18 +8,18 @@
 
 rustPlatform.buildRustPackage (finalAttrs: {
   pname = "meilisearch";
-  version = "1.22.1";
+  version = "1.43.1";
 
   src = fetchFromGitHub {
     owner = "meilisearch";
-    repo = "meiliSearch";
+    repo = "meilisearch";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-RWHu77/GoSMzRU7KyKmu23DFwWn6RD3MUWUc5ICY1d8=";
+    hash = "sha256-f8iz8qSIj5dJMPstUm0CbYOkPpZ2IIpIYbkVm+4F8V8=";
   };
 
   cargoBuildFlags = [ "--package=meilisearch" ];
 
-  cargoHash = "sha256-xKBYumdb1vJS+UQF3yD/p+7FvWRfBKbLjOFiT7DVJ+o=";
+  cargoHash = "sha256-NB25eziZQCzVgtD+uCqJM3wTVrPGnhm58R0S2zfqqAE=";
 
   # Default features include mini dashboard which downloads something from the internet.
   buildNoDefaultFeatures = true;
@@ -27,7 +27,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
   nativeBuildInputs = [ rustPlatform.bindgenHook ];
 
   passthru = {
-    updateScript = nix-update-script { };
+    updateScript = nix-update-script { extraArgs = [ "--use-github-releases" ]; };
     tests = {
       meilisearch = nixosTests.meilisearch;
     };

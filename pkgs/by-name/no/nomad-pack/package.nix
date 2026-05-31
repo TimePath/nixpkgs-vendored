@@ -4,18 +4,18 @@
   buildGoModule,
 }:
 
-buildGoModule rec {
+buildGoModule (finalAttrs: {
   pname = "nomad-pack";
-  version = "0.4.0";
+  version = "0.4.2";
 
   src = fetchFromGitHub {
     owner = "hashicorp";
     repo = "nomad-pack";
-    rev = "v${version}";
-    sha256 = "sha256-9lkRDRXY27KzVAClDfqtD95OMsMPgTqvDesr6qHsNkM=";
+    rev = "v${finalAttrs.version}";
+    sha256 = "sha256-hXMhUg9as2ZwlRtCahI5Og9WOdgkNZ5nS6vtuSTeLdw=";
   };
 
-  vendorHash = "sha256-laCCm+WluxfsYtpTu5RvKy40UBZkkvLgVbWbdRjfAhU=";
+  vendorHash = "sha256-jCgH9uHjUkLDDrOWgVofzriwx5eXh9+YNx0toGGu9T0=";
 
   # skip running go tests as they require network access
   doCheck = false;
@@ -35,4 +35,4 @@ buildGoModule rec {
     maintainers = with lib.maintainers; [ techknowlogick ];
   };
 
-}
+})

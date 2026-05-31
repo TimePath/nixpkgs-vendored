@@ -9,15 +9,15 @@
   nix-update-script,
 }:
 
-buildGoModule rec {
+buildGoModule (finalAttrs: {
   pname = "rosa";
-  version = "1.2.57";
+  version = "1.2.63";
 
   src = fetchFromGitHub {
     owner = "openshift";
     repo = "rosa";
-    rev = "v${version}";
-    hash = "sha256-oRW5CUQzepQialxi7lHoskNm6ZXLiPWGatKo61GEVLQ=";
+    rev = "v${finalAttrs.version}";
+    hash = "sha256-8+4Ip9PGSIIfZ1zfkihrahh/65fBBAYWhVqdpeP0eB0=";
   };
   vendorHash = null;
 
@@ -64,4 +64,4 @@ buildGoModule rec {
     homepage = "https://github.com/openshift/rosa";
     maintainers = with lib.maintainers; [ jfchevrette ];
   };
-}
+})

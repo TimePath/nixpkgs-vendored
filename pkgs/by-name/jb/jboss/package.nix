@@ -23,7 +23,6 @@ stdenv.mkDerivation rec {
     description = "Open Source J2EE application server";
     sourceProvenance = with lib.sourceTypes; [ binaryBytecode ];
     license = lib.licenses.lgpl21;
-    maintainers = [ lib.maintainers.sander ];
     platforms = lib.platforms.unix;
     knownVulnerabilities = [
       "CVE-2015-7501: remote code execution in apache-commons-collections: InvokerTransformer during deserialisation"

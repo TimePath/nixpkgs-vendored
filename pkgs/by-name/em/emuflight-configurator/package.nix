@@ -63,7 +63,6 @@ stdenv.mkDerivation rec {
     homepage = "https://github.com/emuflight/EmuConfigurator";
     sourceProvenance = with lib.sourceTypes; [ binaryNativeCode ];
     license = lib.licenses.gpl3Only;
-    maintainers = with lib.maintainers; [ beezow ];
     platforms = lib.platforms.linux;
   };
 }

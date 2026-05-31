@@ -10,12 +10,12 @@ stdenv.mkDerivation (finalAttrs: {
   pname = "duktape";
   version = "2.7.0";
   src = fetchurl {
-    url = "http://duktape.org/duktape-${finalAttrs.version}.tar.xz";
+    url = "https://duktape.org/duktape-${finalAttrs.version}.tar.xz";
     sha256 = "sha256-kPjS+otVZ8aJmDDd7ywD88J5YLEayiIvoXqnrGE8KJA=";
   };
 
   # https://github.com/svaarala/duktape/issues/2464
-  LDFLAGS = [ "-lm" ];
+  env.LDFLAGS = "-lm";
 
   nativeBuildInputs = [
     validatePkgConfig

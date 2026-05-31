@@ -12,24 +12,25 @@
   protobuf,
   pytest-asyncio,
   pytestCheckHook,
-  pythonOlder,
   setuptools,
 }:
 
 buildPythonPackage rec {
   pname = "google-cloud-automl";
-  version = "2.16.4";
+  version = "2.19.0";
   pyproject = true;
-
-  disabled = pythonOlder "3.7";
 
   src = fetchPypi {
     pname = "google_cloud_automl";
     inherit version;
-    hash = "sha256-XVK9SF3RiPCejokDA8thyrJ910f8aQfSYdX9Wl3AgqM=";
+    hash = "sha256-xyZ7Wafv97FSB/5oaJ67P7kian4nL/E78nUL9ocUWM4=";
   };
 
   build-system = [ setuptools ];
+
+  pythonRelaxDeps = [
+    "protobuf"
+  ];
 
   dependencies = [
     google-api-core

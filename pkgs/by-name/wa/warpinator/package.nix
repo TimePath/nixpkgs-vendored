@@ -30,7 +30,6 @@ let
       python-xapp
       zeroconf
       grpcio
-      setuptools
       cryptography
       pynacl
       netifaces
@@ -41,15 +40,15 @@ let
     ++ qrcode.optional-dependencies.pil
   );
 in
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "warpinator";
-  version = "2.0.0";
+  version = "2.0.4";
 
   src = fetchFromGitHub {
     owner = "linuxmint";
     repo = "warpinator";
-    rev = version;
-    hash = "sha256-R6ccyZLXwxvhvRCDguxufzXfVq5tzrPEtBbXgdO6AoI=";
+    rev = finalAttrs.version;
+    hash = "sha256-JMUa2EFmdEu0n+iha4N+0HRYoOvf6M9ImH/j7eOAi7Y=";
   };
 
   nativeBuildInputs = [
@@ -107,4 +106,4 @@ stdenv.mkDerivation rec {
     platforms = lib.platforms.linux;
     teams = [ lib.teams.cinnamon ];
   };
-}
+})

@@ -17,7 +17,6 @@ bundlerApp {
     license = lib.licenses.mit;
     platforms = lib.platforms.darwin;
     maintainers = with lib.maintainers; [
-      peterromfeldhk
       nicknovitski
     ];
   };

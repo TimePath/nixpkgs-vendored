@@ -7,23 +7,23 @@
   nodejs,
 }:
 
-buildGoModule rec {
+buildGoModule (finalAttrs: {
   pname = "dgraph";
-  version = "25.0.0";
+  version = "25.3.3";
 
   src = fetchFromGitHub {
     owner = "dgraph-io";
     repo = "dgraph";
-    rev = "v${version}";
-    sha256 = "sha256-8Lh/urzHGIepXQCXawNvJVe8IOzYs4huDOgw2m/oYiM=";
+    tag = "v${finalAttrs.version}";
+    hash = "sha256-Zkx9dWEWRhUj/hwcgDyH3ikbcvjVHJnALNERunXytag=";
   };
 
-  vendorHash = "sha256-eArYiLfb8rsFGnPFAoRPQzONifNjds3lahIDRwqz/h0=";
+  vendorHash = "sha256-I+eLpWdS4Dc3XPbeJ8jlSc/ZIw6yveovcIXnfihke3s=";
 
   doCheck = false;
 
   ldflags = [
-    "-X github.com/dgraph-io/dgraph/x.dgraphVersion=${version}-oss"
+    "-X github.com/dgraph-io/dgraph/x.dgraphVersion=${finalAttrs.version}-oss"
   ];
 
   tags = [
@@ -59,4 +59,4 @@ buildGoModule rec {
     license = lib.licenses.asl20;
     mainProgram = "dgraph";
   };
-}
+})

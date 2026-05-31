@@ -28,6 +28,5 @@ stdenvNoCC.mkDerivation rec {
     homepage = "https://github.com/sainnhe/capitaine-cursors";
     license = lib.licenses.lgpl3Only;
     platforms = lib.platforms.unix;
-    maintainers = [ lib.maintainers.math-42 ];
   };
 }

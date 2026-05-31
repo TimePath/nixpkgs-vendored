@@ -9,7 +9,12 @@
   libz,
   cef-binary,
   luajit,
-  xorg,
+  libxxf86vm,
+  libxi,
+  libxext,
+  libx11,
+  libsm,
+  libxcb,
   libgbm,
   glib,
   jdk17,
@@ -37,14 +42,14 @@ in
 let
   bolt = stdenv.mkDerivation (finalAttrs: {
     pname = "bolt-launcher";
-    version = "0.21.0";
+    version = "0.21.1";
 
     src = fetchFromCodeberg {
       owner = "AdamCake";
       repo = "Bolt";
       tag = finalAttrs.version;
       fetchSubmodules = true;
-      hash = "sha256-QQJKUCxeff56ghwP00uF4GI35vSAPWM+JphTEUfWOUo=";
+      hash = "sha256-yrfTKrzwglCkPveKEiT1WRBLAVxiFsHaj6984QY2ZJ8=";
     };
 
     nativeBuildInputs = [
@@ -58,8 +63,8 @@ let
 
     buildInputs = [
       libgbm
-      xorg.libX11
-      xorg.libxcb
+      libx11
+      libxcb
       libarchive
       libz
       cef
@@ -98,6 +103,7 @@ let
         exec = "bolt-launcher";
         icon = "bolt-launcher";
         categories = [ "Game" ];
+        startupWMClass = "BoltLauncher";
       })
     ];
   });
@@ -109,11 +115,11 @@ buildFHSEnv {
     pkgs:
     [ bolt ]
     ++ (with pkgs; [
-      xorg.libSM
-      xorg.libXxf86vm
-      xorg.libX11
-      xorg.libXi
-      xorg.libXext
+      libsm
+      libxxf86vm
+      libx11
+      libxi
+      libxext
       glib
       pango
       cairo
@@ -159,6 +165,6 @@ buildFHSEnv {
       iedame
     ];
     platforms = lib.platforms.linux;
-    mainProgram = "${bolt.name}";
+    mainProgram = "bolt-launcher";
   };
 }

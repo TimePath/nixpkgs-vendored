@@ -26,13 +26,13 @@
   wrapGAppsHook3,
 }:
 
-python3Packages.buildPythonApplication rec {
+python3Packages.buildPythonApplication (finalAttrs: {
   pname = "solfege";
   version = "3.23.4";
-  format = "other";
+  pyproject = false;
 
   src = fetchurl {
-    url = "https://alpha.gnu.org/gnu/solfege/solfege-${version}.tar.gz";
+    url = "https://alpha.gnu.org/gnu/solfege/solfege-${finalAttrs.version}.tar.gz";
     hash = "sha256-t6JJxgGk5hpN76o9snxtM07tkYnwpQ808M/8Ttw+gWk=";
   };
 
@@ -109,9 +109,8 @@ python3Packages.buildPythonApplication rec {
     platforms = lib.platforms.linux;
     maintainers = with lib.maintainers; [
       bjornfor
-      orivej
       anthonyroussel
     ];
     mainProgram = "solfege";
   };
-}
+})

@@ -5,7 +5,6 @@
   makeWrapper,
   pytestCheckHook,
   python,
-  pythonOlder,
   setuptools,
 }:
 
@@ -13,8 +12,6 @@ buildPythonPackage rec {
   pname = "hjson";
   version = "3.0.2";
   pyproject = true;
-
-  disabled = pythonOlder "3.5";
 
   src = fetchFromGitHub {
     owner = "hjson";
@@ -48,7 +45,6 @@ buildPythonPackage rec {
     homepage = "https://github.com/hjson/hjson-py";
     changelog = "https://github.com/hjson/hjson-py/releases/tag/v${version}";
     license = lib.licenses.mit;
-    maintainers = with lib.maintainers; [ bhipple ];
     mainProgram = "hjson";
   };
 }

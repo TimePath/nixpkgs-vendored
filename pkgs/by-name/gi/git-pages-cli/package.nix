@@ -8,16 +8,18 @@
 
 buildGoModule (finalAttrs: {
   pname = "git-pages-cli";
-  version = "1.3.1";
+  version = "1.8.2";
+
+  __structuredAttrs = true;
 
   src = fetchFromCodeberg {
     owner = "git-pages";
     repo = "git-pages-cli";
     rev = "v${finalAttrs.version}";
-    hash = "sha256-BApqy0eTTl7OyJGnnNiVXiPKNN4tPoq88ucA/Ipe16Q=";
+    hash = "sha256-wNHwkVvC4NlQw1cx+rM6zdmYm4zTz/e5suIcapTtssY=";
   };
 
-  vendorHash = "sha256-5vjUhN3lCr41q91lOD7v0F9c6a8GJj7wBGnnzgFBhJU=";
+  vendorHash = "sha256-lGnl1onxJ9x0UIf2uPZcZgx2qbj/43VG+UcQvqwd1uw=";
 
   ldflags = [
     "-X"
@@ -28,7 +30,12 @@ buildGoModule (finalAttrs: {
   nativeInstallCheckInputs = [ versionCheckHook ];
   versionCheckProgramArg = "--version";
 
-  passthru.updateScript = nix-update-script { };
+  passthru.updateScript = nix-update-script {
+    extraArgs = [
+      "--version-regex"
+      "v(.*)"
+    ];
+  };
 
   meta = {
     description = "Command-line application for uploading a site to a git-pages server";

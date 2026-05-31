@@ -17,7 +17,6 @@
   lvm2,
   systemd,
   coreutils,
-  tcp_wrappers,
   python3,
   buildPackages,
   nixosTests,
@@ -39,13 +38,13 @@ let
   ];
 in
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "nfs-utils";
-  version = "2.8.6";
+  version = "2.9.1";
 
   src = fetchurl {
-    url = "mirror://kernel/linux/utils/nfs-utils/${version}/nfs-utils-${version}.tar.xz";
-    hash = "sha256-K9ezToCafv8vS8X8X9luvNZqVFi0caJwy9LcFpsBFVA=";
+    url = "mirror://kernel/linux/utils/nfs-utils/${finalAttrs.version}/nfs-utils-${finalAttrs.version}.tar.xz";
+    hash = "sha256-MChGNDv1Cfj4hMI729D+hTt/fLtlcgYKkIInnROyGiw=";
   };
 
   # libnfsidmap is built together with nfs-utils from the same source,
@@ -74,7 +73,6 @@ stdenv.mkDerivation rec {
     libuuid
     keyutils
     libkrb5
-    tcp_wrappers
     libxml2
     readline
   ]
@@ -183,6 +181,8 @@ stdenv.mkDerivation rec {
     nfs4-kerberos = nixosTests.nfs4.kerberos;
   };
 
+  passthru.updateScript = ./update.sh;
+
   meta = {
     description = "Linux user-space NFS utilities";
 
@@ -192,9 +192,10 @@ stdenv.mkDerivation rec {
       daemons.
     '';
 
+    changelog = "https://www.kernel.org/pub/linux/utils/nfs-utils/${finalAttrs.version}/${finalAttrs.version}-Changelog";
     homepage = "https://linux-nfs.org/";
     license = lib.licenses.gpl2Plus;
     platforms = lib.platforms.linux;
-    maintainers = [ ];
+    maintainers = [ lib.maintainers.dotlambda ];
   };
-}
+})

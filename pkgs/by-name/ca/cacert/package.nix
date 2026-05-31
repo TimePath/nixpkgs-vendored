@@ -20,7 +20,7 @@ let
     lib.concatStringsSep "\n\n" extraCertificateStrings
   );
 
-  version = "3.121";
+  version = "3.123";
   meta = {
     homepage = "https://firefox-source-docs.mozilla.org/security/nss/runbooks/rootstore.html#root-store-consumers";
     description = "Bundle of X.509 certificates of public Certificate Authorities (CA)";
@@ -29,7 +29,11 @@ let
       fpletz
       lukegb
     ];
+    teams = [ lib.teams.security-review ];
     license = lib.licenses.mpl20;
+    identifiers.cpeParts = lib.meta.cpeFullVersionWithVendor "mozilla" version // {
+      product = "nss";
+    };
   };
 in
 stdenv.mkDerivation {
@@ -48,7 +52,7 @@ stdenv.mkDerivation {
         "https://hg-edge.mozilla.org/projects/nss/raw-file/${tag}/${file}"
         "https://raw.githubusercontent.com/nss-dev/nss/refs/tags/${tag}/${file}"
       ];
-    hash = "sha256-O5jU4/9XoybZWHwzYzA5yMOpzwtV98pYHXWY/zKesfM=";
+    hash = "sha256-dxMO+RITdyhEVh+9OqMdQTslwqx/V2/qO8O7/375NIk=";
   };
 
   unpackPhase = ''

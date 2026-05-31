@@ -27,7 +27,7 @@ stdenv.mkDerivation rec {
     rm -rf libpng zlib zopfli
   '';
 
-  NIX_CFLAGS_LINK = "-lzopfli";
+  env.NIX_CFLAGS_LINK = "-lzopfli";
 
   installPhase = ''
     install -Dt $out/bin apngasm
@@ -40,7 +40,7 @@ stdenv.mkDerivation rec {
     mainProgram = "apngasm";
     homepage = "https://apngasm.sourceforge.net/";
     license = lib.licenses.zlib;
-    maintainers = with lib.maintainers; [ orivej ];
+    maintainers = [ ];
     platforms = lib.platforms.linux;
   };
 

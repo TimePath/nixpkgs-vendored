@@ -2,7 +2,6 @@
   lib,
   buildPythonPackage,
   fetchFromGitHub,
-  pythonOlder,
 
   # build-system
   setuptools,
@@ -13,17 +12,15 @@
 
 buildPythonPackage rec {
   pname = "hiredis";
-  version = "3.2.1";
+  version = "3.3.1";
   pyproject = true;
-
-  disabled = pythonOlder "3.6";
 
   src = fetchFromGitHub {
     owner = "redis";
     repo = "hiredis-py";
     tag = "v${version}";
     fetchSubmodules = true;
-    hash = "sha256-WaHjqp/18FquYU2H9ftPQSyunLMG29FVpu3maB3/0bs=";
+    hash = "sha256-HqQICYjHpUX7/OsaWXJRFeeZDxKKuGJ1x5JiJ9eLmdw=";
   };
 
   build-system = [ setuptools ];
@@ -41,6 +38,6 @@ buildPythonPackage rec {
     homepage = "https://github.com/redis/hiredis-py";
     changelog = "https://github.com/redis/hiredis-py/blob/${src.tag}/CHANGELOG.md";
     license = lib.licenses.bsd3;
-    maintainers = with lib.maintainers; [ mmai ];
+    maintainers = [ ];
   };
 }

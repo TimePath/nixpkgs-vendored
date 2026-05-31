@@ -9,7 +9,6 @@
 { config, lib, ... }:
 let
   inherit (lib)
-    mkDefault
     mkIf
     mkOption
     stringAfter
@@ -71,7 +70,7 @@ in
       defaultChannel = mkOption {
         internal = true;
         type = types.str;
-        default = "https://channels.nixos.org/nixos-25.11";
+        default = "https://channels.nixos.org/nixos-26.05";
         description = "Default NixOS channel to which the root user is subscribed.";
       };
     };

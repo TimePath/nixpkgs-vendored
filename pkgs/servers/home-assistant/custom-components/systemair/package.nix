@@ -10,18 +10,18 @@
 buildHomeAssistantComponent rec {
   owner = "AN3Orik";
   domain = "systemair";
-  version = "1.0.17";
+  version = "1.0.25";
 
   src = fetchFromGitHub {
     inherit owner;
     repo = "systemair";
     tag = "v${version}";
-    hash = "sha256-R5Q6BbvcAqFNldOqfG1TDoM1gbsYrS3OClHlAdfQG6o=";
+    hash = "sha256-K8Boix6muKsaNOpIw2WothjREbawHeKprHnW8RerxRg=";
   };
 
   postPatch = ''
     substituteInPlace custom_components/systemair/manifest.json \
-      --replace-fail "pymodbus==" "pymodbus>=" \
+      --replace-fail "pymodbus==" "pymodbus>="
   '';
 
   dependencies = [

@@ -1,14 +1,53 @@
 {
   lib,
+  stdenv,
+  stdenvNoCC,
+  autoPatchelfHook,
+  alsa-lib,
+  testers,
   vscode-utils,
 }:
 
-vscode-utils.buildVscodeMarketplaceExtension {
-  mktplcRef = {
-    name = "claude-code";
-    publisher = "anthropic";
-    version = "2.1.25";
-    hash = "sha256-9x9wDngiHfjUHTsUEraF7pUjbHlmcT7VotiPV9bPwIo=";
+vscode-utils.buildVscodeMarketplaceExtension (finalAttrs: {
+  nativeBuildInputs = lib.optionals stdenv.hostPlatform.isLinux [ autoPatchelfHook ];
+
+  buildInputs = lib.optionals stdenv.hostPlatform.isLinux [
+    (lib.getLib stdenv.cc.cc)
+    alsa-lib
+  ];
+
+  mktplcRef =
+    let
+      sources = {
+        "x86_64-linux" = {
+          arch = "linux-x64";
+          hash = "sha256-wFerIcpbXDL0p7DGh19jXuOZyUvbwq2EzlmnLf1fv5M=";
+        };
+        "aarch64-linux" = {
+          arch = "linux-arm64";
+          hash = "sha256-ubMVyijSI5WWPSsq6wJCk9BABpli9Kgbgn5T+XP8aMA=";
+        };
+        "x86_64-darwin" = {
+          arch = "darwin-x64";
+          hash = "sha256-tEQTTcI7pFgJ6S4Lb2XTe5MXxHudyldzTsYpz5OWr5E=";
+        };
+        "aarch64-darwin" = {
+          arch = "darwin-arm64";
+          hash = "sha256-WskmpZBwQt2mSQpvchI5Ca9ZOyN9srVPGHeMULIGRs8=";
+        };
+      };
+    in
+    {
+      name = "claude-code";
+      publisher = "anthropic";
+      version = "2.1.148";
+    }
+    // sources.${stdenvNoCC.hostPlatform.system}
+      or (throw "Unsupported system ${stdenvNoCC.hostPlatform.system}");
+
+  passthru.tests.bundled-claude-runs = testers.testVersion {
+    package = finalAttrs.finalPackage;
+    command = "${finalAttrs.finalPackage}/share/vscode/extensions/anthropic.claude-code/resources/native-binary/claude --version";
   };
 
   meta = {
@@ -18,5 +57,11 @@ vscode-utils.buildVscodeMarketplaceExtension {
     license = lib.licenses.unfree;
     sourceProvenance = with lib.sourceTypes; [ binaryBytecode ];
     maintainers = with lib.maintainers; [ xiaoxiangmoe ];
+    platforms = [
+      "x86_64-linux"
+      "aarch64-linux"
+      "x86_64-darwin"
+      "aarch64-darwin"
+    ];
   };
-}
+})

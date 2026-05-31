@@ -9,14 +9,20 @@
 
 buildDotnetModule rec {
   pname = "ersatztv";
-  version = "25.8.0";
+  version = "26.5.1";
 
   src = fetchFromGitHub {
     owner = "ErsatzTV";
-    repo = "ErsatzTV";
+    repo = "legacy";
     rev = "v${version}";
-    sha256 = "sha256-FuuX/SxhzzUn7ELJDXJuILkl3ubR3V+5hQwILvZZrFg=";
+    sha256 = "sha256-2w+4xppj3E8H6WXea/iuNfloUmBsFQKDBpTnUn3RWvE=";
   };
+  postPatch = ''
+    # Remove config of development tools that don't end up in
+    # nuget-deps.json but would be looked up at build time
+    # leading to a missing package error.
+    rm -r .config
+  '';
 
   buildInputs = [ ffmpeg ];
 
@@ -26,8 +32,10 @@ buildDotnetModule rec {
     "ErsatzTV.Scanner"
   ];
   nugetDeps = ./nuget-deps.json;
-  dotnet-sdk = dotnetCorePackages.sdk_9_0;
-  dotnet-runtime = dotnetCorePackages.aspnetcore_9_0;
+
+  dotnetFlags = [ "-p:TreatWarningsAsErrors=false" ];
+  dotnet-sdk = dotnetCorePackages.sdk_10_0;
+  dotnet-runtime = dotnetCorePackages.aspnetcore_10_0;
 
   # ETV uses `which` to find `ffmpeg` and `ffprobe`
   makeWrapperArgs = [

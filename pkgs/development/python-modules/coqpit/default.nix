@@ -8,27 +8,23 @@
   typing-extensions,
 }:
 
-buildPythonPackage rec {
+buildPythonPackage (finalAttrs: {
   pname = "coqpit-config";
-  version = "0.2.1";
-  format = "pyproject";
+  version = "0.2.5";
+  pyproject = true;
 
   src = fetchFromGitHub {
     owner = "idiap";
     repo = "coqui-ai-coqpit";
-    tag = "v${version}";
-    hash = "sha256-puTqaYK1j1SGqGQQsrEH9lbpcF0FzcQ8v2siUQVyHsE=";
+    tag = "v${finalAttrs.version}";
+    hash = "sha256-9tIx36wWC9JfbnSF8/TZtHRyiXn77ItNXLq9vDopdS4=";
   };
 
+  build-system = [ hatchling ];
+
+  dependencies = [ typing-extensions ];
+
   nativeCheckInputs = [ pytestCheckHook ];
-
-  nativeBuildInputs = [
-    hatchling
-  ];
-
-  propagatedBuildInputs = [
-    typing-extensions
-  ];
 
   pythonImportsCheck = [
     "coqpit"
@@ -49,4 +45,4 @@ buildPythonPackage rec {
     license = lib.licenses.mit;
     teams = [ lib.teams.tts ];
   };
-}
+})

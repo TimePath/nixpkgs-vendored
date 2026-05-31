@@ -111,6 +111,13 @@ stdenv.mkDerivation (finalAttrs: {
     ''
   );
 
+  # replace invalid symlinks when executable suffix is .exe
+  postInstall = lib.optionalString stdenv.hostPlatform.isCygwin ''
+    for link in unzstd zstdcat zstdmt; do
+      ln -sf zstd.exe $bin/bin/$link
+    done
+  '';
+
   outputs = [
     "bin"
     "dev"
@@ -153,7 +160,7 @@ stdenv.mkDerivation (finalAttrs: {
     license = with lib.licenses; [ bsd3 ]; # Or, at your opinion, GPL-2.0-only.
     mainProgram = "zstd";
     platforms = lib.platforms.all;
-    maintainers = with lib.maintainers; [ orivej ];
+    maintainers = [ ];
     pkgConfigModules = [ "libzstd" ];
   };
 })

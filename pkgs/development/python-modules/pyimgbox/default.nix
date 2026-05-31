@@ -11,7 +11,7 @@
   setuptools,
 }:
 
-buildPythonPackage rec {
+buildPythonPackage (finalAttrs: {
   pname = "pyimgbox";
   version = "1.0.7";
   pyproject = true;
@@ -19,7 +19,7 @@ buildPythonPackage rec {
   src = fetchFromCodeberg {
     owner = "plotski";
     repo = "pyimgbox";
-    tag = "v${version}";
+    tag = "v${finalAttrs.version}";
     hash = "sha256-HYKi5nYXJ+5ytQEFVMMm1HxEsD1zMU7cE2mOdwuZxvk=";
   };
 
@@ -47,4 +47,4 @@ buildPythonPackage rec {
     license = lib.licenses.gpl3Plus;
     maintainers = with lib.maintainers; [ ambroisie ];
   };
-}
+})

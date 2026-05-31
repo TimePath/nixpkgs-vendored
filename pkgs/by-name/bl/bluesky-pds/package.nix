@@ -8,7 +8,7 @@
   fetchPnpmDeps,
   pnpmConfigHook,
   fetchFromGitHub,
-  nodejs,
+  nodejs_22,
   vips,
   pkg-config,
   nixosTests,
@@ -18,19 +18,22 @@
 }:
 
 let
+  # build failure against better-sqlite3, so we use nodejs_22; upstream
+  # bluesky-pds uses 20
+  nodejs = nodejs_22;
   nodeSources = srcOnly nodejs;
   pythonEnv = python3.withPackages (p: [ p.setuptools ]);
 in
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "pds";
-  version = "0.4.208";
+  version = "0.4.219";
 
   src = fetchFromGitHub {
     owner = "bluesky-social";
     repo = "pds";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-/porufe1XVtjEFMOv40+1G1n5WgaAJIvOv/KWkKgxuQ=";
+    hash = "sha256-zXNg1rtXN9qdTBvRlSiPlRu6k1Pv3T8nhROsEarev5U=";
   };
 
   sourceRoot = "${finalAttrs.src.name}/service";
@@ -48,7 +51,7 @@ stdenv.mkDerivation (finalAttrs: {
     cctools.libtool
   ];
 
-  # Required for `sharp` NPM dependency
+  # Required for `sharp` npm dependency
   buildInputs = [ vips ];
 
   pnpmDeps = fetchPnpmDeps {
@@ -60,7 +63,7 @@ stdenv.mkDerivation (finalAttrs: {
       ;
     pnpm = pnpm_9;
     fetcherVersion = 3;
-    hash = "sha256-TZ+lUdICkLZfHPvU1qEUeB3wasBKJpGo2lMk4eeyjas=";
+    hash = "sha256-rZpimxX4oDXIaUdAkkNPEff6qYJ9C8KptsPWJKwPiFo=";
   };
 
   buildPhase = ''

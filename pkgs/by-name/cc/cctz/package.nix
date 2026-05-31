@@ -4,14 +4,14 @@
   fetchFromGitHub,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "cctz";
   version = "2.5";
 
   src = fetchFromGitHub {
     owner = "google";
     repo = "cctz";
-    rev = "v${version}";
+    rev = "v${finalAttrs.version}";
     sha256 = "sha256-YCE0DXuOT5tCOfLlemMH7I2F8c7HEK1NEUJvtfqnCg8=";
   };
 
@@ -35,7 +35,7 @@ stdenv.mkDerivation rec {
     homepage = "https://github.com/google/cctz";
     description = "C++ library for translating between absolute and civil times";
     license = lib.licenses.asl20;
-    maintainers = with lib.maintainers; [ orivej ];
+    maintainers = [ ];
     platforms = lib.platforms.all;
   };
-}
+})

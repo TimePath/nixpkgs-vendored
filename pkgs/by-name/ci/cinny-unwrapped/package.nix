@@ -2,26 +2,22 @@
   lib,
   buildNpmPackage,
   fetchFromGitHub,
-  nodejs_22,
-  stdenv,
 }:
 
-buildNpmPackage rec {
+buildNpmPackage (finalAttrs: {
   pname = "cinny-unwrapped";
   # Remember to update cinny-desktop when bumping this version.
-  version = "4.10.5";
+  version = "4.12.1";
 
   # nixpkgs-update: no auto update
   src = fetchFromGitHub {
     owner = "cinnyapp";
     repo = "cinny";
-    tag = "v${version}";
-    hash = "sha256-Napy3AcsLRDZPcBh3oq1U30FNtvoNtob0+AZtZSvcbM=";
+    tag = "v${finalAttrs.version}";
+    hash = "sha256-s9nu6hYe0OvRcp8n2cOJnhEzIV+nyjnfwTrY477XDT8=";
   };
 
-  nodejs = nodejs_22;
-
-  npmDepsHash = "sha256-2Lrd0jAwAH6HkwLHyivqwaEhcpFAIALuno+MchSIfxo=";
+  npmDepsHash = "sha256-e37tSrqrEXGH2uInFAiikHNwJ13gXlG50SeYF/HO0z4=";
 
   # Skip rebuilding native modules since they're not needed for the web app
   npmRebuildFlags = [
@@ -42,8 +38,9 @@ buildNpmPackage rec {
     maintainers = with lib.maintainers; [
       abbe
       rebmit
+      ryand56
     ];
     license = lib.licenses.agpl3Only;
     platforms = lib.platforms.all;
   };
-}
+})

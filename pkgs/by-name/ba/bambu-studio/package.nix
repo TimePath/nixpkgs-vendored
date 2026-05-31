@@ -25,24 +25,24 @@
   gtest,
   gtk3,
   hicolor-icon-theme,
-  ilmbase,
   libpng,
   mpfr,
   nlopt,
   opencascade-occt_7_6,
   openvdb,
+  openexr,
   opencv,
   pcre,
   systemd,
   onetbb,
   webkitgtk_4_1,
-  wxGTK31,
-  xorg,
+  wxwidgets_3_1,
+  libx11,
   withSystemd ? stdenv.hostPlatform.isLinux,
 }:
 let
   wxGTK' =
-    (wxGTK31.override {
+    (wxwidgets_3_1.override {
       withCurl = true;
       withPrivateFonts = true;
       withWebKit = true;
@@ -94,17 +94,17 @@ stdenv.mkDerivation (finalAttrs: {
     gst_all_1.gst-plugins-good
     gtk3
     hicolor-icon-theme
-    ilmbase
     libpng
     mpfr
     nlopt
     opencascade-occt_7_6
+    openexr
     openvdb
     pcre
     onetbb
     webkitgtk_4_1
     wxGTK'
-    xorg.libX11
+    libx11
     opencv
   ]
   ++ lib.optionals withSystemd [ systemd ]
@@ -128,23 +128,25 @@ stdenv.mkDerivation (finalAttrs: {
 
   separateDebugInfo = true;
 
-  # The build system uses custom logic - defined in
-  # cmake/modules/FindNLopt.cmake in the package source - for finding the nlopt
-  # library, which doesn't pick up the package in the nix store.  We
-  # additionally need to set the path via the NLOPT environment variable.
-  NLOPT = nlopt;
+  env = {
+    # The build system uses custom logic - defined in
+    # cmake/modules/FindNLopt.cmake in the package source - for finding the nlopt
+    # library, which doesn't pick up the package in the nix store.  We
+    # additionally need to set the path via the NLOPT environment variable.
+    NLOPT = nlopt;
 
-  NIX_CFLAGS_COMPILE = toString [
-    "-DBOOST_TIMER_ENABLE_DEPRECATED"
-    # Disable compiler warnings that clutter the build log.
-    # It seems to be a known issue for Eigen:
-    # http://eigen.tuxfamily.org/bz/show_bug.cgi?id=1221
-    "-Wno-ignored-attributes"
-    "-I${opencv}/include/opencv4"
-  ];
+    NIX_CFLAGS_COMPILE = toString [
+      "-DBOOST_TIMER_ENABLE_DEPRECATED"
+      # Disable compiler warnings that clutter the build log.
+      # It seems to be a known issue for Eigen:
+      # http://eigen.tuxfamily.org/bz/show_bug.cgi?id=1221
+      "-Wno-ignored-attributes"
+      "-I${opencv}/include/opencv4"
+    ];
 
-  # prusa-slicer uses dlopen on `libudev.so` at runtime
-  NIX_LDFLAGS = lib.optionalString withSystemd "-ludev" + " -L${opencv}/lib -lopencv_imgcodecs";
+    # prusa-slicer uses dlopen on `libudev.so` at runtime
+    NIX_LDFLAGS = lib.optionalString withSystemd "-ludev" + " -L${opencv}/lib -lopencv_imgcodecs";
+  };
 
   # TODO: macOS
   prePatch = ''
@@ -190,10 +192,19 @@ stdenv.mkDerivation (finalAttrs: {
     description = "PC Software for BambuLab's 3D printers";
     homepage = "https://github.com/bambulab/BambuStudio";
     changelog = "https://github.com/bambulab/BambuStudio/releases/tag/v${finalAttrs.version}";
-    license = lib.licenses.agpl3Plus;
+    license = with lib.licenses; [
+      agpl3Plus
+      # Bambu Studio downloads and dlopens a proprietary networking library
+      # at first launch whose corresponding source is not provided. SFC ruled
+      # this an ongoing AGPLv3 violation; see:
+      # https://github.com/NixOS/nixpkgs/issues/415821
+      # https://sfconservancy.org/news/2026/may/18/bambu-studio-3d-printer-agpl-violation-response/
+      unfree
+    ];
     maintainers = with lib.maintainers; [
       zhaofengli
       dsluijk
+      miniharinn
     ];
     mainProgram = "bambu-studio";
     platforms = lib.platforms.linux;

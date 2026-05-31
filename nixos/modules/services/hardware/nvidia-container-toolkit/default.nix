@@ -120,6 +120,26 @@
 
         package = lib.mkPackageOption pkgs "nvidia-container-toolkit" { };
 
+        disable-hooks = lib.mkOption {
+          type = lib.types.listOf lib.types.nonEmptyStr;
+          default = [ "create-symlinks" ];
+          description = ''
+            List of hooks to disable when generating the CDI specification.
+            Each hook name will be passed as `--disable-hook <hook-name>` to nvidia-ctk.
+            Set to an empty list to disable no hooks.
+          '';
+        };
+
+        enable-hooks = lib.mkOption {
+          type = lib.types.listOf lib.types.nonEmptyStr;
+          default = [ ];
+          description = ''
+            List of hooks to enable when generating the CDI specification.
+            Each hook name will be passed as `--enable-hook <hook-name>` to nvidia-ctk.
+            Set to an empty list to enable no hooks.
+          '';
+        };
+
         extraArgs = lib.mkOption {
           type = lib.types.listOf lib.types.str;
           default = [ ];
@@ -300,7 +320,6 @@
 
       systemd.services.nvidia-container-toolkit-cdi-generator = {
         description = "Container Device Interface (CDI) for Nvidia generator";
-        after = [ "systemd-udev-settle.service" ];
         requiredBy = lib.mkMerge [
           (lib.mkIf config.virtualisation.docker.enable [ "docker.service" ])
           (lib.mkIf config.virtualisation.podman.enable [ "podman.service" ])
@@ -309,6 +328,11 @@
         serviceConfig = {
           RuntimeDirectory = "cdi";
           RemainAfterExit = true;
+          # We wait for the udev events queue to empty in the *hope* that the
+          # devices needed here become available. This is terribly broken and
+          # essentially no better than a random sleep(). See PR #452645 for
+          # an attempt to fix this issue.
+          ExecStartPre = "-${lib.getExe' pkgs.systemd "udevadm"} settle --timeout=180";
           ExecStart =
             let
               script = pkgs.callPackage ./cdi-generate.nix {
@@ -317,6 +341,8 @@
                   device-name-strategy
                   discovery-mode
                   mounts
+                  disable-hooks
+                  enable-hooks
                   extraArgs
                   ;
                 nvidia-container-toolkit = config.hardware.nvidia-container-toolkit.package;

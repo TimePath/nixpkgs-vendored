@@ -47,6 +47,7 @@ stdenvNoLibc.mkDerivation (finalAttrs: {
       "SYSROOT_LIB:=$SYSROOT_LIB"
       "SYSROOT_INC:=$SYSROOT_INC"
       "SYSROOT_SHARE:=$SYSROOT_SHARE"
+      "TARGET_TRIPLE:=${stdenvNoLibc.system}"
       ${lib.strings.optionalString enablePosixThreads "THREAD_MODEL:=posix"}
     )
   '';
@@ -58,6 +59,10 @@ stdenvNoLibc.mkDerivation (finalAttrs: {
 
   preFixup = ''
     ln -s $share/share/undefined-symbols.txt $out/lib/wasi.imports
+    ln -s $out/lib $out/lib/${stdenvNoLibc.system}
+  ''
+  + lib.optionalString (stdenvNoLibc.system != stdenvNoLibc.targetPlatform.rust.rustcTargetSpec) ''
+    ln -s $out/lib $out/lib/${stdenvNoLibc.targetPlatform.rust.rustcTargetSpec}
   '';
 
   passthru.tests = {
@@ -70,7 +75,6 @@ stdenvNoLibc.mkDerivation (finalAttrs: {
     homepage = "https://wasi.dev";
     platforms = lib.platforms.wasi;
     maintainers = with lib.maintainers; [
-      matthewbauer
       rvolosatovs
       wucke13
     ];

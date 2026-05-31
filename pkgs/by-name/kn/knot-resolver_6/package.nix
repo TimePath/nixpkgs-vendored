@@ -36,11 +36,11 @@ let
   # TODO: we could cut the `let` short here, but it would de-indent everything.
   unwrapped = stdenv.mkDerivation (finalAttrs: {
     pname = "knot-resolver_6";
-    version = "6.2.0";
+    version = "6.3.0";
 
     src = fetchurl {
       url = "https://secure.nic.cz/files/knot-resolver/knot-resolver-${finalAttrs.version}.tar.xz";
-      hash = "sha256-tEYzvIQxgMC8fHfPexX+VxJDrpkrTdt0r97kz6gDcBs=";
+      hash = "sha256-uHMGGX90NrSQecYzNkvF33GjkyNvsl6fzn0ESAvHUY4=";
     };
 
     outputs = [
@@ -143,15 +143,16 @@ let
       inherit (finalAttrs) finalPackage;
     };
 
-    meta = with lib; {
+    meta = {
       description = "Caching validating DNS resolver, from .cz domain registry";
       homepage = "https://knot-resolver.cz";
-      license = licenses.gpl3Plus;
-      platforms = platforms.unix;
+      license = lib.licenses.gpl3Plus;
+      platforms = lib.platforms.unix;
       maintainers = [
-        maintainers.vcunat # upstream developer
+        lib.maintainers.vcunat # upstream developer
+        lib.maintainers.leona
+        lib.maintainers.osnyx
       ];
-      teams = [ teams.flyingcircus ];
       mainProgram = "kresd";
     };
   });

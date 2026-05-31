@@ -8,17 +8,17 @@
   fakeroot,
 }:
 
-python3Packages.buildPythonApplication rec {
+python3Packages.buildPythonApplication (finalAttrs: {
   pname = "apkg";
-  version = "0.7.1";
-  format = "pyproject";
+  version = "1.0.0";
+  pyproject = true;
 
   src = fetchFromGitLab {
     domain = "gitlab.nic.cz";
     owner = "packaging";
     repo = "apkg";
-    tag = "v${version}";
-    hash = "sha256-YiuJVwwLnka2KUh0xNPkcBuMSQHMyMzgoipiDzZvDI4=";
+    tag = "v${finalAttrs.version}";
+    hash = "sha256-UQHiG6clAt+pmc0MTCkO4NIzr8TZmJ6Yd/T0YTkBxv0=";
   };
 
   propagatedBuildInputs = with python3Packages; [
@@ -71,4 +71,4 @@ python3Packages.buildPythonApplication rec {
     ];
     mainProgram = "apkg";
   };
-}
+})

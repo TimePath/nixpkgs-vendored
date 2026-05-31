@@ -5,8 +5,6 @@
   pyjwt,
   pytestCheckHook,
   python-dateutil,
-  pythonAtLeast,
-  pythonOlder,
   requests,
   responses,
   setuptools,
@@ -14,16 +12,14 @@
 
 buildPythonPackage rec {
   pname = "ibm-cloud-sdk-core";
-  version = "3.24.2";
+  version = "3.24.4";
   pyproject = true;
-
-  disabled = pythonOlder "3.9";
 
   src = fetchFromGitHub {
     owner = "IBM";
     repo = "python-sdk-core";
     tag = "v${version}";
-    hash = "sha256-xw7jEDr/5Qmd4+riAqFzTTFfmX/gQdlbzNZ8pua0hIs=";
+    hash = "sha256-j16E4IDGuabxhHqI/b1yLLv5EdkWYsIJQ2CQzUodFsU=";
   };
 
   pythonRelaxDeps = [ "requests" ];
@@ -68,6 +64,6 @@ buildPythonPackage rec {
     homepage = "https://github.com/IBM/python-sdk-core";
     changelog = "https://github.com/IBM/python-sdk-core/blob/${src.tag}/CHANGELOG.md";
     license = lib.licenses.asl20;
-    maintainers = with lib.maintainers; [ globin ];
+    maintainers = [ ];
   };
 }

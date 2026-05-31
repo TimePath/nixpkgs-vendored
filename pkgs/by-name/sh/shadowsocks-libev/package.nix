@@ -2,9 +2,10 @@
   lib,
   stdenv,
   fetchFromGitHub,
+  fetchpatch,
   cmake,
   libsodium,
-  mbedtls_2,
+  mbedtls,
   libev,
   c-ares,
   pcre,
@@ -15,7 +16,7 @@
   libxslt,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "shadowsocks-libev";
   version = "3.3.5";
 
@@ -23,14 +24,21 @@ stdenv.mkDerivation rec {
   src = fetchFromGitHub {
     owner = "shadowsocks";
     repo = "shadowsocks-libev";
-    tag = "v${version}";
-    sha256 = "1iqpmhxk354db1x08axg6wrdy9p9a4mz0h9351i3mf3pqd1v6fdw";
+    tag = "v${finalAttrs.version}";
+    hash = "sha256-vDmzQ8N3uDpiKCNB8CtR6SbfMjevKwR6WI2UMTusF8c=";
     fetchSubmodules = true;
   };
 
+  patches = [
+    (fetchpatch {
+      url = "https://github.com/shadowsocks/shadowsocks-libev/commit/9afa3cacf947f910be46b69fc5a7a1fdd02fd5e6.patch";
+      hash = "sha256-rpWXe8f95UU1DjQpbKMVMwA6r5yGVaDHwH/iWxW7wcw=";
+    })
+  ];
+
   buildInputs = [
     libsodium
-    mbedtls_2
+    mbedtls
     libev
     c-ares
     pcre
@@ -90,4 +98,4 @@ stdenv.mkDerivation rec {
     maintainers = [ ];
     platforms = lib.platforms.all;
   };
-}
+})

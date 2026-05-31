@@ -13,12 +13,12 @@
   fetchpatch,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "serf";
   version = "1.3.10";
 
   src = fetchurl {
-    url = "mirror://apache/serf/${pname}-${version}.tar.bz2";
+    url = "mirror://apache/serf/serf-${finalAttrs.version}.tar.bz2";
     hash = "sha256-voHvCLqiUW7Np2p3rffe97wyJ+61eLmjO0X3tB3AZOY=";
   };
 
@@ -64,9 +64,8 @@ stdenv.mkDerivation rec {
     homepage = "https://serf.apache.org/";
     license = lib.licenses.asl20;
     maintainers = with lib.maintainers; [
-      orivej
       raskin
     ];
     platforms = lib.platforms.linux ++ lib.platforms.darwin;
   };
-}
+})

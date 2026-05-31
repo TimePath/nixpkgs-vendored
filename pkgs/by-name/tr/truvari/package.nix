@@ -87,7 +87,6 @@ python3Packages.buildPythonApplication rec {
     license = lib.licenses.mit;
     maintainers = with lib.maintainers; [
       natsukium
-      scalavision
     ];
     longDescription = ''
       Truvari is a benchmarking tool for comparison sets of SVs.

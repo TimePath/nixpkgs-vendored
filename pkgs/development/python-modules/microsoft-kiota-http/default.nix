@@ -10,23 +10,20 @@
   pytest-asyncio,
   pytest-mock,
   pytestCheckHook,
-  pythonOlder,
   urllib3,
   gitUpdater,
 }:
 
 buildPythonPackage rec {
   pname = "microsoft-kiota-http";
-  version = "1.9.7";
+  version = "1.10.1";
   pyproject = true;
-
-  disabled = pythonOlder "3.9";
 
   src = fetchFromGitHub {
     owner = "microsoft";
     repo = "kiota-python";
     tag = "microsoft-kiota-http-v${version}";
-    hash = "sha256-ovmGka0YxhjPQYodHAMpcrqLMpXEqSTeky3n/rC7Ohs=";
+    hash = "sha256-KBCjVNZDPMh0wxWm8UVLsrfl2AYp3rKMjAT5c8F7+64=";
   };
 
   sourceRoot = "${src.name}/packages/http/httpx/";

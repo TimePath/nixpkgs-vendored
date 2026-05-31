@@ -39,16 +39,16 @@
   # passthru
   nix-update-script,
 }:
-buildPythonPackage rec {
+buildPythonPackage (finalAttrs: {
   pname = "langgraph";
-  version = "1.0.10";
+  version = "1.1.10";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "langchain-ai";
     repo = "langgraph";
-    tag = version;
-    hash = "sha256-NJSmpVshj/x6ws+jFYXGarNKNztbk5OIIMA1neFOyIY=";
+    tag = finalAttrs.version;
+    hash = "sha256-J899GIBdXHjZVMwZlnn5GH52/TNjzLukc4Xp/qc8NOM=";
   };
 
   postgresqlTestSetupPost = ''
@@ -58,7 +58,7 @@ buildPythonPackage rec {
       --replace-fail "DEFAULT_POSTGRES_URI = \"postgres://postgres:postgres@localhost:5442/\"" "DEFAULT_POSTGRES_URI = \"postgres:///$PGDATABASE\""
   '';
 
-  sourceRoot = "${src.name}/libs/langgraph";
+  sourceRoot = "${finalAttrs.src.name}/libs/langgraph";
 
   build-system = [ hatchling ];
 
@@ -135,6 +135,8 @@ buildPythonPackage rec {
     "tests/test_pregel_async.py"
     "tests/test_subgraph_persistence.py"
     "tests/test_subgraph_persistence_async.py"
+    "tests/test_time_travel.py"
+    "tests/test_time_travel_async.py"
   ];
 
   # Since `langgraph` is the only unprefixed package, we have to use an explicit match
@@ -152,8 +154,8 @@ buildPythonPackage rec {
   meta = {
     description = "Build resilient language agents as graphs";
     homepage = "https://github.com/langchain-ai/langgraph";
-    changelog = "https://github.com/langchain-ai/langgraph/releases/tag/${src.tag}";
+    changelog = "https://github.com/langchain-ai/langgraph/releases/tag/${finalAttrs.src.tag}";
     license = lib.licenses.mit;
     maintainers = with lib.maintainers; [ sarahec ];
   };
-}
+})

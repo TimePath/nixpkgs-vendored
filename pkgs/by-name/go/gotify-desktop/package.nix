@@ -7,14 +7,14 @@
   stdenv,
 }:
 
-rustPlatform.buildRustPackage rec {
+rustPlatform.buildRustPackage (finalAttrs: {
   pname = "gotify-desktop";
   version = "1.4.2";
 
   src = fetchFromGitHub {
     owner = "desbma";
     repo = "gotify-desktop";
-    rev = version;
+    rev = finalAttrs.version;
     sha256 = "sha256-BD8BqG+YheAGvHWrI1/PqCs6T3O3OwXodZq3gvgh1LU=";
   };
 
@@ -29,10 +29,9 @@ rustPlatform.buildRustPackage rec {
     homepage = "https://github.com/desbma/gotify-desktop";
     license = lib.licenses.gpl3Plus;
     maintainers = with lib.maintainers; [
-      bryanasdev000
       genofire
     ];
     broken = stdenv.hostPlatform.isDarwin;
     mainProgram = "gotify-desktop";
   };
-}
+})

@@ -25,19 +25,19 @@
   gitUpdater,
 }:
 
-buildPythonPackage rec {
+buildPythonPackage (finalAttrs: {
   pname = "langgraph-checkpoint";
-  version = "4.0.1";
+  version = "4.0.3";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "langchain-ai";
     repo = "langgraph";
-    tag = "checkpoint==${version}";
-    hash = "sha256-NJSmpVshj/x6ws+jFYXGarNKNztbk5OIIMA1neFOyIY=";
+    tag = "checkpoint==${finalAttrs.version}";
+    hash = "sha256-zdl/WpzNLr3QmQqi2rvFl4dDzy0BRqMRv7I0GUp9Feg=";
   };
 
-  sourceRoot = "${src.name}/libs/checkpoint";
+  sourceRoot = "${finalAttrs.src.name}/libs/checkpoint";
 
   build-system = [ hatchling ];
 
@@ -70,7 +70,7 @@ buildPythonPackage rec {
   };
 
   meta = {
-    changelog = "https://github.com/langchain-ai/langgraph/releases/tag/${src.tag}";
+    changelog = "https://github.com/langchain-ai/langgraph/releases/tag/${finalAttrs.src.tag}";
     description = "Library with base interfaces for LangGraph checkpoint savers";
     homepage = "https://github.com/langchain-ai/langgraph/tree/main/libs/checkpoint";
     license = lib.licenses.mit;
@@ -78,4 +78,4 @@ buildPythonPackage rec {
       sarahec
     ];
   };
-}
+})

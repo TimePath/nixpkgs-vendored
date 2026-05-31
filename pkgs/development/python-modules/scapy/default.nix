@@ -22,7 +22,7 @@
 
 buildPythonPackage rec {
   pname = "scapy";
-  version = "2.6.1";
+  version = "2.7.0";
   format = "setuptools";
 
   disabled = isPyPy;
@@ -31,14 +31,15 @@ buildPythonPackage rec {
     owner = "secdev";
     repo = "scapy";
     tag = "v${version}";
-    hash = "sha256-m2L30aEpPp9cfW652yd+0wFkNlMij6FF1RzWZbwJ79A=";
+    hash = "sha256-Pp7pPfaWyzJGf+soENfOPynN8logc5FM848hyVCcdKk=";
   };
 
-  patches = [ ./find-library.patch ];
+  patches = lib.optional (!stdenv.hostPlatform.isStatic) ./find-library.patch;
 
   postPatch = ''
     printf "${version}" > scapy/VERSION
-
+  ''
+  + lib.optionalString (!stdenv.hostPlatform.isStatic) ''
     libpcap_file="${lib.getLib libpcap}/lib/libpcap${stdenv.hostPlatform.extensions.sharedLibrary}"
     if ! [ -e "$libpcap_file" ]; then
         echo "error: $libpcap_file not found" >&2

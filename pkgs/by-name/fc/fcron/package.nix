@@ -6,16 +6,20 @@
   stdenv,
   fetchurl,
   perl,
+  buildPackages,
   busybox,
   vim,
+  sendmailProgram ?
+    if lib.meta.availableOn stdenv.hostPlatform busybox then "${busybox}/sbin/sendmail" else null,
+  editorProgram ? if lib.meta.availableOn stdenv.hostPlatform vim then "${vim}/bin/vi" else null,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "fcron";
   version = "3.4.0";
 
   src = fetchurl {
-    url = "http://fcron.free.fr/archives/${pname}-${version}.src.tar.gz";
+    url = "http://fcron.free.fr/archives/fcron-${finalAttrs.version}.src.tar.gz";
     sha256 = "sha256-9Of8VTzdcP9LO2rJE4s7fP+rkZi4wmbZevCodQbg4bU=";
   };
 
@@ -24,14 +28,17 @@ stdenv.mkDerivation rec {
   patches = [ ./relative-fcronsighup.patch ];
 
   configureFlags = [
-    "--with-sendmail=${busybox}/sbin/sendmail"
-    "--with-editor=${vim}/bin/vi" # TODO customizable
+    "--with-sendmail=${if sendmailProgram == null then "no" else sendmailProgram}"
+    "--with-editor=${if editorProgram == null then "no" else editorProgram}"
     "--with-bootinstall=no"
     "--localstatedir=/var"
     "--sysconfdir=/etc"
     "--with-rootname=root"
     "--with-rootgroup=root"
     "--disable-checks"
+  ]
+  ++ lib.optionals (!(stdenv.buildPlatform.canExecute stdenv.hostPlatform)) [
+    "ac_cv_func_memcmp_working=yes"
   ];
 
   installTargets = [ "install-staged" ]; # install does also try to change permissions of /etc/* files
@@ -48,7 +55,7 @@ stdenv.mkDerivation rec {
   ];
 
   preConfigure = ''
-    sed -i 's@/usr/bin/env perl@${perl}/bin/perl@g' configure script/*
+    sed -i 's@/usr/bin/env perl@${lib.getExe buildPackages.perl}@g' configure script/*
     # Don't let fcron create the group fcron, nix(os) should do this
     sed -i '2s@.*@exit 0@' script/user-group
 
@@ -65,4 +72,4 @@ stdenv.mkDerivation rec {
     license = lib.licenses.gpl2Plus;
     platforms = lib.platforms.all;
   };
-}
+})

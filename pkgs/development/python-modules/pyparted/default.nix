@@ -50,6 +50,5 @@ buildPythonPackage rec {
     description = "Python interface for libparted";
     license = lib.licenses.gpl2Plus;
     platforms = lib.platforms.linux;
-    maintainers = with lib.maintainers; [ lsix ];
   };
 }

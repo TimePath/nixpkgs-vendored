@@ -27,19 +27,19 @@
 }:
 rustPlatform.buildRustPackage (finalAttrs: {
   pname = "deadlock-mod-manager";
-  version = "0.10.1";
+  version = "0.18.0";
 
   src = fetchFromGitHub {
     owner = "deadlock-mod-manager";
     repo = "deadlock-mod-manager";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-/84P9ONG25Ia1BnRcbzQuJKt8HwstCzf0bkx1Xc9VgU=";
+    hash = "sha256-+64Y6BFwgQIQhmFzZXOeJ/IGFn+OXV58I/ZdARVFt4w=";
   };
 
   cargoRoot = "apps/desktop";
   buildAndTestSubdir = finalAttrs.cargoRoot;
 
-  cargoHash = "sha256-wVsr6GwCGuuveTDT6oS1keejx+y+oSuE6dGAjvNRrdE=";
+  cargoHash = "sha256-6ljyPdobcoBaYyarc7Iin5N24y1YXPafrYAk2xvBtvY=";
 
   nativeBuildInputs = [
     rustPlatform.cargoSetupHook
@@ -77,17 +77,16 @@ rustPlatform.buildRustPackage (finalAttrs: {
       src
       ;
     pnpm = pnpm_9;
-    fetcherVersion = 2;
+    fetcherVersion = 3;
     sourceRoot = "source";
-    hash = "sha256-7HhMW28hl2hHi8epcKMTbfuVjKYj+U1N/d2tMcu4aQg=";
+    hash = "sha256-6lMTvlkIeM9kkbFhHzS9jJsHk2bVZWZs6GPgn+X3Rss=";
   };
 
   patches = [
     ./no-updater-artifacts.patch
-    ./disable-update-notice.patch
   ];
 
-  VITE_API_URL = "https://api.deadlockmods.app";
+  env.VITE_API_URL = "https://api.deadlockmods.app";
 
   # Skip tests that require network access
   checkFlags = [
@@ -98,10 +97,9 @@ rustPlatform.buildRustPackage (finalAttrs: {
     gappsWrapperArgs+=(
       --set FONTCONFIG_FILE "${fontconfig.out}/etc/fonts/fonts.conf"
       --set TAURI_DIST_DIR "$out/share/deadlock-modmanager/dist"
-      --set WEBKIT_DISABLE_COMPOSITING_MODE 1
-      --set WEBKIT_DISABLE_DMABUF_RENDERER 1
       --set DISABLE_UPDATE_DESKTOP_DATABASE 1
       --prefix PATH : ${lib.makeBinPath [ desktop-file-utils ]}
+      --add-flags "--disable-auto-update"
     )
   '';
 

@@ -14,19 +14,19 @@
   talloc,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "libosmocore";
-  version = "1.11.2";
+  version = "1.13.1";
 
   src = fetchFromGitHub {
     owner = "osmocom";
     repo = "libosmocore";
-    rev = version;
-    hash = "sha256-cEMPz5xmvaBnm+U7G1PttfhR6TXsT2PN2hk2FXHbXpg=";
+    rev = finalAttrs.version;
+    hash = "sha256-lHPpV3wmsJFzanMUF6dhhmKTVCIz5MOfqr8U23sm6eI=";
   };
 
   postPatch = ''
-    echo "${version}" > .tarball-version
+    echo "${finalAttrs.version}" > .tarball-version
   '';
 
   propagatedBuildInputs = [
@@ -59,4 +59,4 @@ stdenv.mkDerivation rec {
       mog
     ];
   };
-}
+})

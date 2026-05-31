@@ -11,17 +11,18 @@
   gnugrep,
   gnused,
   makeWrapper,
+  perl,
 }:
 
 stdenvNoCC.mkDerivation (finalAttrs: {
   pname = "zsh-forgit";
-  version = "25.10.0";
+  version = "26.05.0";
 
   src = fetchFromGitHub {
     owner = "wfxr";
     repo = "forgit";
     tag = finalAttrs.version;
-    hash = "sha256-MG60GzRG0NFQsGXBXBedSweucxo88S/NACXTme7ixRM=";
+    hash = "sha256-EFbzrVgLfVO+dEEQ1vZUcZkIszZFCktYjQjwkBVrHQI=";
   };
 
   strictDeps = true;
@@ -52,6 +53,7 @@ stdenvNoCC.mkDerivation (finalAttrs: {
           git
           gnugrep
           gnused
+          perl
         ]
       }
 

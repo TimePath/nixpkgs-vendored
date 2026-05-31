@@ -4,7 +4,7 @@
   fetchFromGitHub,
 }:
 
-python3Packages.buildPythonApplication rec {
+python3Packages.buildPythonApplication (finalAttrs: {
   pname = "gogdl";
   version = "1.2.1";
   pyproject = true;
@@ -12,7 +12,7 @@ python3Packages.buildPythonApplication rec {
   src = fetchFromGitHub {
     owner = "Heroic-Games-Launcher";
     repo = "heroic-gogdl";
-    tag = "v${version}";
+    tag = "v${finalAttrs.version}";
     fetchSubmodules = true;
     hash = "sha256-qYarDcwrVrTpLHQYdWQvXL5+V1wMyL06+n5t6LXKBHI=";
   };
@@ -34,4 +34,4 @@ python3Packages.buildPythonApplication rec {
     license = with lib.licenses; [ gpl3 ];
     maintainers = [ ];
   };
-}
+})

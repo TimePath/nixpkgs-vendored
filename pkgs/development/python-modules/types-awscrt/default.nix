@@ -5,15 +5,15 @@
   setuptools,
 }:
 
-buildPythonPackage rec {
+buildPythonPackage (finalAttrs: {
   pname = "types-awscrt";
-  version = "0.29.0";
+  version = "0.31.3";
   pyproject = true;
 
   src = fetchPypi {
     pname = "types_awscrt";
-    inherit version;
-    hash = "sha256-f4EECEYJXLr2Tmt5BAQ0dQ1PL0h1RNd0i3eMNJ05NRA=";
+    inherit (finalAttrs) version;
+    hash = "sha256-CdPq8AIx4PR+EBvZhn5DCHO8VwQAUOKjvYMFy0/DCGU=";
   };
 
   build-system = [ setuptools ];
@@ -26,8 +26,8 @@ buildPythonPackage rec {
   meta = {
     description = "Type annotations and code completion for awscrt";
     homepage = "https://github.com/youtype/types-awscrt";
-    changelog = "https://github.com/youtype/types-awscrt/releases/tag/${version}";
+    changelog = "https://github.com/youtype/types-awscrt/releases/tag/${finalAttrs.version}";
     license = lib.licenses.mit;
     maintainers = with lib.maintainers; [ fab ];
   };
-}
+})

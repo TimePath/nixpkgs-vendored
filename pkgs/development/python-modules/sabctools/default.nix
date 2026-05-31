@@ -5,17 +5,18 @@
   setuptools,
   sabnzbd,
 }:
+
 buildPythonPackage rec {
   pname = "sabctools";
-  version = "8.2.6";
+  version = "9.4.0";
   pyproject = true;
 
   src = fetchPypi {
     inherit pname version;
-    hash = "sha256-olZSIjfP2E1tkCG8WzEZfrBJuDEp3PZyFFE5LJODEZE=";
+    hash = "sha256-JkRRtZnzp83dMKXiuqOXaTm8UOpkkhmjH2ysS8TY0DI=";
   };
 
-  nativeBuildInputs = [ setuptools ];
+  build-system = [ setuptools ];
 
   pythonImportsCheck = [ "sabctools" ];
 
@@ -26,6 +27,7 @@ buildPythonPackage rec {
   meta = {
     description = "C implementations of functions for use within SABnzbd";
     homepage = "https://github.com/sabnzbd/sabctools";
+    changelog = "https://github.com/sabnzbd/sabctools/releases/tag/v${version}";
     license = lib.licenses.gpl2Only;
     maintainers = with lib.maintainers; [ adamcstephens ];
   };

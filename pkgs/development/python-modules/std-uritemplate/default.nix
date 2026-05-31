@@ -3,20 +3,17 @@
   buildPythonPackage,
   fetchPypi,
   poetry-core,
-  pythonOlder,
 }:
 
 buildPythonPackage rec {
   pname = "std-uritemplate";
-  version = "2.0.8";
+  version = "2.0.10";
   pyproject = true;
-
-  disabled = pythonOlder "3.8";
 
   src = fetchPypi {
     pname = "std_uritemplate";
     inherit version;
-    hash = "sha256-E4zv8sW/7ximUDcqXoyC/n94DIcjVRPebDQvtffhg0c=";
+    hash = "sha256-NQSKMiIXrtl2b9/+WmnwYy9zGVd6SiZSaHYc1P+jIF4=";
   };
 
   build-system = [ poetry-core ];

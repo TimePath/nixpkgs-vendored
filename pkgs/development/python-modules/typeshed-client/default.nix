@@ -4,23 +4,20 @@
   fetchFromGitHub,
   importlib-resources,
   pytestCheckHook,
-  pythonOlder,
   setuptools,
   typing-extensions,
 }:
 
 buildPythonPackage rec {
   pname = "typeshed-client";
-  version = "2.8.2";
+  version = "2.11.0";
   pyproject = true;
-
-  disabled = pythonOlder "3.8";
 
   src = fetchFromGitHub {
     owner = "JelleZijlstra";
     repo = "typeshed_client";
     tag = "v${version}";
-    hash = "sha256-+muWm2/Psp8V1n7mEloc+ltuwHG/uRvDUgSFRNzz5EQ=";
+    hash = "sha256-hSyhGn+xEUjZVrYUYaxZ/3CwNXy4EJ2TG73S9o3o0gw=";
   };
 
   build-system = [ setuptools ];

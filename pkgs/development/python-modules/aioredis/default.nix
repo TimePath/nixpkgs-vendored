@@ -7,15 +7,12 @@
   typing-extensions,
   hiredis,
   isPyPy,
-  pythonOlder,
 }:
 
 buildPythonPackage rec {
   pname = "aioredis";
   version = "2.0.1";
   format = "setuptools";
-
-  disabled = pythonOlder "3.6";
 
   src = fetchPypi {
     inherit pname version;
@@ -45,6 +42,6 @@ buildPythonPackage rec {
     description = "Asyncio (PEP 3156) Redis client library";
     homepage = "https://github.com/aio-libs-abandoned/aioredis-py";
     license = lib.licenses.mit;
-    maintainers = with lib.maintainers; [ mmai ];
+    maintainers = [ ];
   };
 }

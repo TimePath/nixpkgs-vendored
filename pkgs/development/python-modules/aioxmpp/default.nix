@@ -13,7 +13,6 @@
   pyopenssl,
   pytestCheckHook,
   pythonAtLeast,
-  pythonOlder,
   pytz,
   setuptools,
   sortedcollections,
@@ -24,8 +23,6 @@ buildPythonPackage rec {
   pname = "aioxmpp";
   version = "0.13.3";
   pyproject = true;
-
-  disabled = pythonOlder "3.7";
 
   src = fetchFromCodeberg {
     owner = "jssfr";
@@ -94,7 +91,7 @@ buildPythonPackage rec {
   meta = {
     description = "Pure-python XMPP library for asyncio";
     homepage = "https://codeberg.org/jssfr/aioxmpp";
-    changelog = "https://codeberg.org/jssfr/aioxmpp/blob/${src.rev}/docs/api/changelog.rst";
+    changelog = "https://codeberg.org/jssfr/aioxmpp/src/tag/${src.tag}/docs/api/changelog.rst";
     license = lib.licenses.lgpl3Plus;
     maintainers = with lib.maintainers; [ dotlambda ];
   };

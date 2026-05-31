@@ -10,11 +10,11 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "sbt";
-  version = "1.11.7";
+  version = "1.12.11";
 
   src = fetchurl {
     url = "https://github.com/sbt/sbt/releases/download/v${finalAttrs.version}/sbt-${finalAttrs.version}.tgz";
-    hash = "sha256-EjKBj5HDljmpO74RCOEtlMcESmRqeEfxo5d7nkZxbNY=";
+    hash = "sha256-X5cqedKlv48pFBp0w15oa7CGCmtuxneviS+Uz5sSRkU=";
   };
 
   postPatch = ''
@@ -60,7 +60,6 @@ stdenv.mkDerivation (finalAttrs: {
     ];
     description = "Build tool for Scala, Java and more";
     maintainers = with lib.maintainers; [
-      nequissimus
       kashw2
     ];
     platforms = lib.platforms.unix;

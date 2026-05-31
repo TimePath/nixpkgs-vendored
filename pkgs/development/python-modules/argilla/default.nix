@@ -41,7 +41,6 @@
   pytestCheckHook,
   python-jose,
   python-multipart,
-  pythonOlder,
   pyyaml,
   rich,
   schedule,
@@ -70,8 +69,6 @@ buildPythonPackage rec {
   pname = "argilla";
   version = "2.8.0";
   pyproject = true;
-
-  disabled = pythonOlder "3.9";
 
   src = fetchFromGitHub {
     owner = "argilla-io";
@@ -181,7 +178,7 @@ buildPythonPackage rec {
     pytest-asyncio
     factory-boy
   ]
-  ++ lib.flatten (builtins.attrValues optional-dependencies);
+  ++ lib.concatAttrValues optional-dependencies;
 
   disabledTestPaths = [ "tests/server/datasets/test_dao.py" ];
 

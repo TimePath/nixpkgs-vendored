@@ -30,7 +30,7 @@ let
 
   defaultFavoriteAppsOverride = ''
     [org.gnome.shell]
-    favorite-apps=[ 'org.gnome.Epiphany.desktop', 'org.gnome.Geary.desktop', 'org.gnome.Calendar.desktop', 'org.gnome.Music.desktop', 'org.gnome.Nautilus.desktop' ]
+    favorite-apps=[ 'org.gnome.Epiphany.desktop', 'org.gnome.Calendar.desktop', 'org.gnome.Music.desktop', 'org.gnome.TextEditor.desktop', 'org.gnome.Nautilus.desktop' ]
   '';
 
   nixos-background-light = pkgs.nixos-artwork.wallpapers.simple-blue;
@@ -82,7 +82,7 @@ in
 {
   meta = {
     doc = ./gnome.md;
-    maintainers = lib.teams.gnome.members;
+    teams = [ lib.teams.gnome ];
   };
 
   imports = [
@@ -332,7 +332,7 @@ in
       services.power-profiles-daemon.enable = mkDefault true;
       services.gnome.at-spi2-core.enable = true;
       services.gnome.evolution-data-server.enable = true;
-      services.gnome.gnome-keyring.enable = true;
+      services.gnome.gnome-keyring.enable = mkDefault true;
       services.gnome.gcr-ssh-agent.enable = mkDefault true;
       services.gnome.gnome-online-accounts.enable = mkDefault true;
       services.gnome.localsearch.enable = mkDefault true;
@@ -469,6 +469,7 @@ in
         pkgs.gnome-maps
         pkgs.gnome-music
         pkgs.gnome-system-monitor
+        pkgs.gnome-tecla
         pkgs.gnome-weather
         pkgs.loupe
         pkgs.nautilus
@@ -484,7 +485,6 @@ in
       # Since some of these have a corresponding package, we only
       # enable that program module if the package hasn't been excluded
       # through `environment.gnome.excludePackages`
-      programs.geary.enable = notExcluded pkgs.geary;
       programs.gnome-disks.enable = notExcluded pkgs.gnome-disk-utility;
       programs.seahorse.enable = notExcluded pkgs.seahorse;
       services.gnome.sushi.enable = notExcluded pkgs.sushi;

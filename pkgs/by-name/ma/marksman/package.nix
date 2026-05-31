@@ -3,23 +3,27 @@
   fetchFromGitHub,
   buildDotnetModule,
   dotnetCorePackages,
-  marksman,
-  testers,
+  nix-update-script,
+  versionCheckHook,
 }:
 
-buildDotnetModule rec {
+let
   pname = "marksman";
-  version = "2024-12-18";
+  dotnet-sdk = dotnetCorePackages.sdk_9_0_1xx-bin;
+in
+buildDotnetModule (finalAttrs: {
+  inherit pname dotnet-sdk;
+  version = "2026-02-08";
 
   src = fetchFromGitHub {
     owner = "artempyanykh";
     repo = "marksman";
-    rev = version;
-    sha256 = "sha256-2OisUZHmf7k8vLkBGJG1HXNxaXmRF64x//bDK57S9to=";
+    tag = finalAttrs.version;
+    hash = "sha256-xebt55WKHOKwA6QIkW5mnvqUGHeGRzINCWfViA4cfJ0=";
   };
 
   projectFile = "Marksman/Marksman.fsproj";
-  dotnetBuildFlags = [ "-p:VersionString=${version}" ];
+  dotnetBuildFlags = [ "-p:VersionString=${finalAttrs.version}" ];
 
   __darwinAllowLocalNetworking = true;
 
@@ -28,20 +32,18 @@ buildDotnetModule rec {
 
   nugetDeps = ./deps.json;
 
-  dotnet-sdk = dotnetCorePackages.sdk_8_0_4xx-bin;
-  dotnet-runtime = dotnetCorePackages.runtime_8_0;
+  dotnet-runtime = dotnetCorePackages.runtime_9_0;
 
   postInstall = ''
     install -m 644 -D -t "$out/share/doc/${pname}" LICENSE
   '';
 
   passthru = {
-    updateScript = ./update.sh;
-    tests.version = testers.testVersion {
-      package = marksman;
-      command = "marksman --version";
-    };
+    updateScript = nix-update-script { };
   };
+
+  nativeInstallCheckInputs = [ versionCheckHook ];
+  doInstallCheck = true;
 
   meta = {
     description = "Language Server for Markdown";
@@ -62,4 +64,4 @@ buildDotnetModule rec {
     platforms = dotnet-sdk.meta.platforms;
     mainProgram = "marksman";
   };
-}
+})

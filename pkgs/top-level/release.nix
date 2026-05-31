@@ -40,12 +40,13 @@
       allowAliases = false;
       allowUnfree = false;
       inHydra = true;
+      recursionMode = "hydra";
       # Exceptional unsafe packages that we still build and distribute,
       # so users choosing to allow don't have to rebuild them every time.
       permittedInsecurePackages = [
         "olm-3.2.16" # see PR #347899
-        "kanidm_1_7-1.7.4"
-        "kanidmWithSecretProvisioning_1_7-1.7.4"
+        "kanidm_1_8-1.8.6"
+        "kanidmWithSecretProvisioning_1_8-1.8.6"
       ];
     };
 
@@ -85,7 +86,6 @@ let
     id
     isDerivation
     optionals
-    recursiveUpdate
     ;
 
   inherit (release-lib.lib.attrsets) unionOfDisjoint;
@@ -95,11 +95,10 @@ let
     "aarch64"
   ] (arch: elem "${arch}-darwin" supportedSystems);
 
-  nonPackageJobs = rec {
+  nonPackageJobs = {
     tarball = import ./make-tarball.nix {
       inherit
         pkgs
-        lib-tests
         nixpkgs
         officialRelease
         ;
@@ -111,8 +110,6 @@ let
 
     manual = pkgs.nixpkgs-manual.override { inherit nixpkgs; };
     metrics = import ./metrics.nix { inherit pkgs nixpkgs; };
-    lib-tests = import ../../lib/tests/release.nix { inherit pkgs; };
-    pkgs-lib-tests = import ../pkgs-lib/tests { inherit pkgs; };
 
     darwin-tested =
       if supportDarwin.x86_64 || supportDarwin.aarch64 then
@@ -219,8 +216,8 @@ let
         jobs.release-checks
         jobs.metrics
         jobs.manual
-        jobs.lib-tests
-        jobs.pkgs-lib-tests
+        jobs.tests.lib-tests.x86_64-linux
+        jobs.tests.pkgs-lib.formats-tests.x86_64-linux
         jobs.stdenv.x86_64-linux
         jobs.cargo.x86_64-linux
         jobs.go.x86_64-linux

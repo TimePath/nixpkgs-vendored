@@ -193,6 +193,10 @@ stdenv.mkDerivation (
           stripLen = 1;
           hash = "sha256-fqw5gTSEOGs3kAguR4tINFG7Xja1RAje+q67HJt2nGg=";
         })
+        # Fix build with gcc15
+        # https://github.com/llvm/llvm-project/commit/8f39502b85d34998752193e85f36c408d3c99248
+        # https://github.com/llvm/llvm-project/commit/7abf44069aec61eee147ca67a6333fc34583b524
+        ./llvm-add-include-cstdint.patch
       ]
       ++ lib.optionals (lib.versionOlder release_version "19") [
         # Fixes test-suite on glibc 2.40 (https://github.com/llvm/llvm-project/pull/100804)
@@ -347,10 +351,13 @@ stdenv.mkDerivation (
         rm test/tools/llvm-objcopy/MachO/universal-object.test
       ''
       +
-        # Seems to require certain floating point hardware (NEON?)
-        optionalString (stdenv.hostPlatform.system == "armv6l-linux") ''
-          rm test/ExecutionEngine/frem.ll
-        ''
+        # Seems to require certain floating point hardware (NEON?). Tests were
+        # reorganized in LLVM 20.
+        optionalString
+          (stdenv.hostPlatform.system == "armv6l-linux" && lib.versionOlder release_version "20")
+          ''
+            rm test/ExecutionEngine/frem.ll
+          ''
       +
         # 1. TODO: Why does this test fail on FreeBSD?
         # It seems to reference /usr/local/lib/libfile.a, which is clearly a problem.
@@ -415,10 +422,23 @@ stdenv.mkDerivation (
         check_version patch ${patch}
       '';
 
-    # E.g. Mesa uses the build-id as a cache key (see #93946):
-    LDFLAGS = optionalString (
-      enableSharedLibraries && !stdenv.hostPlatform.isDarwin
-    ) "-Wl,--build-id=sha1";
+    env =
+      # E.g. Mesa uses the build-id as a cache key (see #93946):
+      lib.optionalAttrs (enableSharedLibraries && !stdenv.hostPlatform.isDarwin) {
+        LDFLAGS = "-Wl,--build-id=sha1";
+      }
+      // lib.optionalAttrs stdenv.hostPlatform.isDarwin {
+        # This test was introduced by https://github.com/llvm/llvm-project/pull/158719 to check
+        # for a Windows-specific quirk.
+        # It is also unconditionally run on other platforms because running binaries
+        # without any environment variables should work, but as the test binaries link against
+        # our libLLVM.dylib that has not been installed at this point, and the `DYLD_LIBRARY_PATH`
+        # we set for tests to work around this issue is cleared away by the test itself,
+        # it will fail.
+        # Unfortunately "fixing" the test to pass just `DYLD_LIBRARY_PATH` would void the purpose
+        # of the test itself, so we skip it instead.
+        GTEST_FILTER = "-ProgramEnvTest.TestExecuteEmptyEnvironment";
+      };
 
     cmakeBuildType = "Release";
 
@@ -583,6 +603,10 @@ stdenv.mkDerivation (
         widely used in academic research. Code in the LLVM project is licensed
         under the "Apache 2.0 License with LLVM exceptions".
       '';
+      identifiers.cpeParts = llvm_meta.identifiers.cpeParts // {
+        inherit version;
+        update = "*";
+      };
     };
   }
   // lib.optionalAttrs enableManpages {

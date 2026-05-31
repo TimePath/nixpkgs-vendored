@@ -1,7 +1,7 @@
 {
   lib,
   buildGoModule,
-  buildGo124Module,
+  buildGo125Module,
   fetchFromGitHub,
   nixosTests,
   installShellFiles,
@@ -39,12 +39,6 @@ let
           rev = "v${version}";
           inherit hash;
         };
-
-        # Nomad requires Go 1.24.6, but nixpkgs doesn't have it in unstable yet.
-        postPatch = ''
-          substituteInPlace go.mod \
-            --replace-warn "go 1.24.6" "go 1.24.5"
-        '';
 
         nativeBuildInputs = [ installShellFiles ];
 
@@ -86,10 +80,22 @@ rec {
   # Upstream partially documents used Go versions here
   # https://github.com/hashicorp/nomad/blob/master/contributing/golang.md
 
-  nomad = nomad_1_10;
+  nomad = nomad_1_11;
+
+  nomad_1_11 = generic {
+    buildGoModule = buildGo125Module;
+    version = "1.11.3";
+    hash = "sha256-J+w53HlMlrXX5yKjDYhf3rSGt1pmOyNcPlOqyUrkLWE=";
+    vendorHash = "sha256-67etQUjcPXz4VVpNXLVusQlEybxEqKfYQcNTNL4X8bA=";
+    license = lib.licenses.bsl11;
+    passthru.tests.nomad = nixosTests.nomad;
+    preCheck = ''
+      export PATH="$PATH:$NIX_BUILD_TOP/go/bin"
+    '';
+  };
 
   nomad_1_10 = generic {
-    buildGoModule = buildGo124Module;
+    buildGoModule = buildGo125Module;
     version = "1.10.5";
     hash = "sha256-NFH++oYWb6vQN6cOPByscI/ZBWDNy4YbcLiBMO3/jVU=";
     vendorHash = "sha256-QcTw9kKwoHIvXZoxfDohFG+sBs8OLvYPeygygDClsn8=";
@@ -101,7 +107,7 @@ rec {
   };
 
   nomad_1_9 = generic {
-    buildGoModule = buildGo124Module;
+    buildGoModule = buildGo125Module;
     version = "1.9.7";
     hash = "sha256-U02H6DPr1friQ9EwqD/wQnE2Fm20OE5xNccPDJfnsqI=";
     vendorHash = "sha256-9GnwqkexJAxrhW9yJFaDTdSaZ+p+/dcMuhlusp4cmyw=";

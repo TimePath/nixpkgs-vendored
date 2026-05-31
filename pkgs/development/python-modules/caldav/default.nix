@@ -1,17 +1,23 @@
 {
   lib,
   buildPythonPackage,
+  dnspython,
   fetchFromGitHub,
   icalendar,
+  icalendar-searcher,
   lxml,
+  manuel,
   pytestCheckHook,
   python,
+  radicale,
   recurring-ical-events,
-  requests,
+  niquests,
   hatchling,
   hatch-vcs,
   proxy-py,
   pyfakefs,
+  python-dateutil,
+  pyyaml,
   toPythonModule,
   tzlocal,
   vobject,
@@ -21,14 +27,14 @@
 
 buildPythonPackage rec {
   pname = "caldav";
-  version = "2.0.1";
+  version = "2.2.6";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "python-caldav";
     repo = "caldav";
     tag = "v${version}";
-    hash = "sha256-n7ZKTBXg66firbS34J41NrTM/PL/OrKMnS4iguRz4Ho=";
+    hash = "sha256-xtxWDlYESIwkow/YdjaUAkJ/x2jdUyhqfSRycJVLncY=";
   };
 
   build-system = [
@@ -37,26 +43,34 @@ buildPythonPackage rec {
   ];
 
   dependencies = [
-    vobject
+    dnspython
     lxml
-    requests
+    niquests
     icalendar
+    icalendar-searcher
     recurring-ical-events
+    python-dateutil
+    pyyaml
   ];
 
   nativeCheckInputs = [
+    manuel
     proxy-py
     pyfakefs
     pytestCheckHook
+    (toPythonModule (radicale.override { python3 = python; }))
     tzlocal
-    (toPythonModule (xandikos.override { python3Packages = python.pkgs; }))
+    vobject
     writableTmpDirAsHomeHook
+    (toPythonModule (xandikos.override { python3Packages = python.pkgs; }))
   ];
 
-  disabledTestPaths = [
-    "tests/test_docs.py"
-    "tests/test_examples.py"
+  disabledTests = [
+    # test contacts CalDAV servers on the internet
+    "test_rfc8764_test_conf"
   ];
+
+  __darwinAllowLocalNetworking = true;
 
   pythonImportsCheck = [ "caldav" ];
 

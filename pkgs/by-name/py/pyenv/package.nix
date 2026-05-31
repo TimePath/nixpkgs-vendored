@@ -5,15 +5,15 @@
   installShellFiles,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "pyenv";
-  version = "2.6.13";
+  version = "2.6.31";
 
   src = fetchFromGitHub {
     owner = "pyenv";
     repo = "pyenv";
-    tag = "v${version}";
-    hash = "sha256-VsVVdIjM7sknimEUeeBO8rU8khS9tk3xoAfiwXK+qQo=";
+    tag = "v${finalAttrs.version}";
+    hash = "sha256-WFQDjfSyu1DfFiLwqxH6wu6bYsxD5H66qWLCo+Xfmvo=";
   };
 
   nativeBuildInputs = [
@@ -46,10 +46,9 @@ stdenv.mkDerivation rec {
   meta = {
     description = "Simple Python version management";
     homepage = "https://github.com/pyenv/pyenv";
-    changelog = "https://github.com/pyenv/pyenv/blob/${src.rev}/CHANGELOG.md";
+    changelog = "https://github.com/pyenv/pyenv/blob/${finalAttrs.src.rev}/CHANGELOG.md";
     license = lib.licenses.mit;
-    maintainers = with lib.maintainers; [ tjni ];
     platforms = lib.platforms.all;
     mainProgram = "pyenv";
   };
-}
+})

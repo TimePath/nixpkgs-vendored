@@ -3,33 +3,28 @@
   stdenv,
   fetchFromGitHub,
   buildNpmPackage,
-  python3,
   nodejs,
   nixosTests,
 }:
 
-buildNpmPackage rec {
+buildNpmPackage (finalAttrs: {
   pname = "uptime-kuma";
-  version = "1.23.17";
+  version = "2.3.2";
 
   src = fetchFromGitHub {
     owner = "louislam";
     repo = "uptime-kuma";
-    rev = version;
-    hash = "sha256-isEo2Ns5bQni17UvJfzxg5c9LllaLoRIy/mI0+whGU0=";
+    tag = finalAttrs.version;
+    hash = "sha256-TJCpmUT/E7Il9h7UM1rs2s8l2Vey+X3PZToFLTgxFdA=";
   };
 
-  npmDepsHash = "sha256-WcmVttiubza9uq5jjzt/xnztDnM42DZXnu5BgWbpDbM=";
+  npmDepsHash = "sha256-FnUjHi0l/WDBX0T65bomElcEG+mRc81n/s22npeHnlM=";
 
   patches = [
     # Fixes the permissions of the database being not set correctly
     # See https://github.com/louislam/uptime-kuma/pull/2119
     ./fix-database-permissions.patch
   ];
-
-  nativeBuildInputs = [ python3 ];
-
-  CYPRESS_INSTALL_BINARY = 0; # Stops Cypress from trying to download binaries
 
   postInstall = ''
     cp -r dist $out/lib/node_modules/uptime-kuma/
@@ -50,7 +45,7 @@ buildNpmPackage rec {
     description = "Fancy self-hosted monitoring tool";
     mainProgram = "uptime-kuma-server";
     homepage = "https://github.com/louislam/uptime-kuma";
-    changelog = "https://github.com/louislam/uptime-kuma/releases/tag/${version}";
+    changelog = "https://github.com/louislam/uptime-kuma/releases/tag/${finalAttrs.version}";
     license = lib.licenses.mit;
     maintainers = with lib.maintainers; [
       julienmalka
@@ -59,4 +54,4 @@ buildNpmPackage rec {
     # FileNotFoundError: [Errno 2] No such file or directory: 'xcrun'
     broken = stdenv.hostPlatform.isDarwin;
   };
-}
+})

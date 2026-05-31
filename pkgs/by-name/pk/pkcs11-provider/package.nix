@@ -22,14 +22,14 @@
 let
   pkcs11ProviderPython3 = python3.withPackages (pythonPkgs: with pythonPkgs; [ six ]);
 in
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "pkcs11-provider";
   version = "1.2.0";
 
   src = fetchFromGitHub {
     owner = "openssl-projects";
     repo = "pkcs11-provider";
-    tag = "v${version}";
+    tag = "v${finalAttrs.version}";
     fetchSubmodules = true;
     hash = "sha256-rymH/0otZ553lKqfdTRR5ttNsom9A3ObNNxptqB/eno=";
   };
@@ -112,4 +112,4 @@ stdenv.mkDerivation rec {
     license = lib.licenses.asl20;
     platforms = lib.platforms.unix;
   };
-}
+})

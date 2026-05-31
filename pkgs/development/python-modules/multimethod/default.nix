@@ -4,21 +4,18 @@
   fetchFromGitHub,
   setuptools,
   pytestCheckHook,
-  pythonOlder,
 }:
 
 buildPythonPackage rec {
   pname = "multimethod";
-  version = "2.0";
-  format = "pyproject";
-
-  disabled = pythonOlder "3.7";
+  version = "2.0.2";
+  pyproject = true;
 
   src = fetchFromGitHub {
     owner = "coady";
     repo = "multimethod";
     tag = "v${version}";
-    hash = "sha256-/91re2K+nVKULJOjDoimpOukQlLlsMS9blkVQWit2eI=";
+    hash = "sha256-0En3NdLLmS/4bw0I3z9xxKa85tECi1rjmpZyxYuZk3w=";
   };
 
   nativeBuildInputs = [ setuptools ];
@@ -30,7 +27,7 @@ buildPythonPackage rec {
   meta = {
     description = "Multiple argument dispatching";
     homepage = "https://coady.github.io/multimethod/";
-    changelog = "https://github.com/coady/multimethod/tree/${src.tag}#changes";
+    changelog = "https://github.com/coady/multimethod/blob/${src.tag}/CHANGELOG.md";
     license = lib.licenses.asl20;
     maintainers = [ ];
   };

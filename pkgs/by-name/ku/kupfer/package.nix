@@ -18,15 +18,15 @@
 
 with python3Packages;
 
-buildPythonApplication rec {
+buildPythonApplication (finalAttrs: {
   pname = "kupfer";
-  version = "328";
+  version = "329";
 
-  format = "other";
+  pyproject = false;
 
   src = fetchurl {
-    url = "https://github.com/kupferlauncher/kupfer/releases/download/v${version}/kupfer-v${version}.tar.xz";
-    sha256 = "sha256-1oPvcho54uXCvov4eTZTjObL0EecimfxVOxl+bOU6do=";
+    url = "https://github.com/kupferlauncher/kupfer/releases/download/v${finalAttrs.version}/kupfer-v${finalAttrs.version}.tar.xz";
+    sha256 = "sha256-9kX30EYYkb7s/T5VfpyqZQ5F1wpvtWfTT790LZmVqq0=";
   };
 
   nativeBuildInputs = [
@@ -56,7 +56,7 @@ buildPythonApplication rec {
 
   postInstall = ''
     gappsWrapperArgs+=(
-      "--prefix" "PYTHONPATH" : "${makePythonPath propagatedBuildInputs}"
+      "--prefix" "PYTHONPATH" : "${makePythonPath finalAttrs.propagatedBuildInputs}"
       "--set" "PYTHONNOUSERSITE" "1"
     )
   '';
@@ -70,4 +70,4 @@ buildPythonApplication rec {
     maintainers = with lib.maintainers; [ cobbal ];
     platforms = lib.platforms.linux;
   };
-}
+})

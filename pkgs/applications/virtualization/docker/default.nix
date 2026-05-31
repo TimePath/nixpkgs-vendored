@@ -67,11 +67,10 @@ let
       docker-meta = {
         license = lib.licenses.asl20;
         maintainers = with lib.maintainers; [
-          offline
           vdemeester
-          periklis
           teutat3s
         ];
+        identifiers.cpeParts = lib.meta.cpeFullVersionWithVendor "docker" version;
       };
 
       docker-runc = runc.overrideAttrs {
@@ -249,6 +248,7 @@ let
           meta = docker-meta // {
             homepage = "https://mobyproject.org/";
             description = "Collaborative project for the container ecosystem to assemble container-based systems";
+            identifiers.cpeParts = lib.meta.cpeFullVersionWithVendor "mobyproject" version;
           };
         }
       );
@@ -259,10 +259,9 @@ let
         ++ lib.optionals sbomSupport [ docker-sbom ]
         ++ lib.optionals initSupport [ docker-init ];
 
-      pluginsRef = symlinkJoin {
-        name = "docker-plugins";
-        paths = plugins;
-      };
+      dockerCliPluginsDirs = lib.strings.concatStringsSep ":" (
+        map (p: "${p}/libexec/docker/cli-plugins") plugins
+      );
     in
     buildGoModule (
       {
@@ -277,6 +276,15 @@ let
           rev = cliRev;
           hash = cliHash;
         };
+
+        patches = [
+          (
+            if lib.versionOlder version "26.0.0" then
+              ./cli-system-plugin-dir-from-env-25.patch
+            else
+              ./cli-system-plugin-dir-from-env.patch
+          )
+        ];
 
         vendorHash = null;
 
@@ -299,10 +307,6 @@ let
         postPatch = ''
           patchShebangs man scripts/build/
           substituteInPlace ./scripts/build/.variables --replace-fail "set -eu" ""
-        ''
-        + lib.optionalString (plugins != [ ]) ''
-          substituteInPlace ./cli-plugins/manager/manager_unix.go --replace-fail /usr/libexec/docker/cli-plugins \
-              "${pluginsRef}/libexec/docker/cli-plugins"
         '';
 
         # Keep eyes on BUILDTIME format - https://github.com/docker/cli/blob/${version}/scripts/build/.variables
@@ -331,7 +335,8 @@ let
           install -Dm755 ./build/docker $out/libexec/docker/docker
 
           makeWrapper $out/libexec/docker/docker $out/bin/docker \
-            --prefix PATH : "$out/libexec/docker:$extraPath"
+            --prefix PATH : "$out/libexec/docker:$extraPath" \
+            --prefix DOCKER_CLI_PLUGIN_DIRS : "${dockerCliPluginsDirs}"
         ''
         + lib.optionalString (!clientOnly) ''
           # symlink docker daemon to docker cli derivation
@@ -357,7 +362,6 @@ let
 
         doInstallCheck = true;
         nativeInstallCheckInputs = [ versionCheckHook ];
-        versionCheckProgramArg = "--version";
 
         passthru = {
           # Exposed for tarsum build on non-linux systems (build-support/docker/default.nix)
@@ -396,7 +400,7 @@ in
   # https://github.com/moby/moby/tree/${mobyRev}/Dockerfile
   docker_25 =
     let
-      version = "25.0.13";
+      version = "25.0.16";
     in
     callPackage dockerGen {
       inherit version;
@@ -405,7 +409,7 @@ in
       cliRev = "43987fca488a535d810c429f75743d8c7b63bf4f";
       cliHash = "sha256-OwufdfuUPbPtgqfPeiKrQVkOOacU2g4ommHb770gV40=";
       mobyRev = "v${version}";
-      mobyHash = "sha256-X+1QG/toJt+VNLktR5vun8sG3PRoTVBAcekFXxocJdU=";
+      mobyHash = "sha256-St5yLoxo8QUTu7PjNcblS/EzZm98T189RPl1y+pAyHA=";
       runcRev = "v1.2.5";
       runcHash = "sha256-J/QmOZxYnMPpzm87HhPTkYdt+fN+yeSUu2sv6aUeTY4=";
       containerdRev = "v1.7.27";
@@ -414,38 +418,20 @@ in
       tiniHash = "sha256-jCBNfoJAjmcTJBx08kHs+FmbaU82CbQcf0IVjd56Nuw=";
     };
 
-  docker_28 =
-    let
-      version = "28.5.2";
-    in
-    callPackage dockerGen {
-      inherit version;
-      cliRev = "v${version}";
-      cliHash = "sha256-11wbqvenTJooAzqOEp0UivPxhvWwSl1thCAzDMx0i/o=";
-      mobyRev = "v${version}";
-      mobyHash = "sha256-T5zz1lSLVdMR646CfhWAiVU4/VPAY1CRU+jIdjEWycs=";
-      runcRev = "v1.3.3";
-      runcHash = "sha256-Ci/2otySB7FaFoutmzWeVaTU+tO/lnluQfneFSQM1RE=";
-      containerdRev = "v1.7.28";
-      containerdHash = "sha256-vz7RFJkFkMk2gp7bIMx1kbkDFUMS9s0iH0VoyD9A21s=";
-      tiniRev = "369448a167e8b3da4ca5bca0b3307500c3371828";
-      tiniHash = "sha256-jCBNfoJAjmcTJBx08kHs+FmbaU82CbQcf0IVjd56Nuw=";
-    };
-
   docker_29 =
     let
-      version = "29.3.0";
+      version = "29.5.1";
     in
     callPackage dockerGen {
       inherit version;
       cliRev = "v${version}";
-      cliHash = "sha256-h4GyKwAbeF5y971iH4zRmfnvx/PxbttPBWc12u5IYvQ=";
+      cliHash = "sha256-oobGr0UaeJL800hHx3K0tQs50HZbOn559WcLnSRiRhU=";
       mobyRev = "docker-v${version}";
-      mobyHash = "sha256-CYkZ9geZPQdWMqFc3MOT9aA0GVBtsoRVzxZU801DKlA=";
-      runcRev = "v1.3.4";
-      runcHash = "sha256-1IfY08sBoDpbLrwz1AKBRSTuCZyOgQzYPHTDUI6fOZ8=";
-      containerdRev = "v2.2.1";
-      containerdHash = "sha256-fDOfN0XESrBTDW7Nxj9niqU93BQ5/JaGLwAR3u6Xaik=";
+      mobyHash = "sha256-ghYEOWr5RUDm0YLyupaDSpLd+8gFqxp3VjCt+3lztcA=";
+      runcRev = "v1.3.5";
+      runcHash = "sha256-Swphxbu/OLkUrfRjLMZIVGwYb7AN0xHdyxm0ysAVam0=";
+      containerdRev = "v2.2.3";
+      containerdHash = "sha256-jaOLZf246kmvBHHrwgvqrhxuh+n1HE6NDqckZK4tvnM=";
       tiniRev = "369448a167e8b3da4ca5bca0b3307500c3371828";
       tiniHash = "sha256-jCBNfoJAjmcTJBx08kHs+FmbaU82CbQcf0IVjd56Nuw=";
     };

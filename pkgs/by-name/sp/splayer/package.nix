@@ -2,11 +2,11 @@
   lib,
   stdenv,
   fetchFromGitHub,
+  pnpm_10_29_2,
   fetchPnpmDeps,
   pnpmConfigHook,
-  pnpm_10,
   nodejs,
-  electron,
+  electron_39,
   rustPlatform,
   cargo,
   rustc,
@@ -19,6 +19,10 @@
   nix-update-script,
   removeReferencesTo,
 }:
+let
+  electron = electron_39;
+  pnpm = pnpm_10_29_2;
+in
 stdenv.mkDerivation (finalAttrs: {
   pname = "splayer";
   version = "3.0.0";
@@ -31,17 +35,15 @@ stdenv.mkDerivation (finalAttrs: {
     hash = "sha256-E29TJlp7nMokJbbi/YLuYf9qWmwvo/r4qQckKrVyumI=";
   };
 
-  pnpm = pnpm_10;
-
   pnpmDeps = fetchPnpmDeps {
     inherit (finalAttrs)
       pname
       version
       src
-      pnpm
       ;
-    fetcherVersion = 2;
-    hash = "sha256-PTfZopse+9RS7qh0miLu3duYlWDfifZS254tZKqgxKk=";
+    inherit pnpm;
+    fetcherVersion = 3;
+    hash = "sha256-NaKI2369TlF8DDMy6Q3RUqb2B2/T756Zd6gu4ATz/yc=";
   };
 
   cargoDeps = rustPlatform.fetchCargoVendor {
@@ -55,7 +57,7 @@ stdenv.mkDerivation (finalAttrs: {
 
   nativeBuildInputs = [
     pnpmConfigHook
-    finalAttrs.pnpm
+    pnpm
     nodejs
     rustPlatform.cargoSetupHook
     cargo
@@ -89,7 +91,6 @@ stdenv.mkDerivation (finalAttrs: {
     # of better-sqlite3. It has a native part that it wants to build using a
     # script which is disallowed.
     # What's more, we need to use headers from electron to avoid ABI mismatches.
-    # Adapted from mkYarnModules.
     for f in $(find . -path '*/node_modules/better-sqlite3' -type d); do
       (cd "$f" && (
       npm run build-release --offline --nodedir="${electron.headers}"

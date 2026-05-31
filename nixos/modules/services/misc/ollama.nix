@@ -32,6 +32,11 @@ in
       ]
       "The `models` directory is now always writable. To make other directories writable, use `systemd.services.ollama.serviceConfig.ReadWritePaths`."
     )
+    (lib.mkRemovedOptionModule [
+      "services"
+      "ollama"
+      "acceleration"
+    ] "Set `services.ollama.package` to one of `pkgs.ollama[,-vulkan,-rocm,-cuda,-cpu]` instead.")
   ];
 
   options = {
@@ -39,16 +44,6 @@ in
       enable = lib.mkEnableOption "ollama server for local large language models";
       package = lib.mkPackageOption pkgs "ollama" {
         example = "pkgs.ollama-rocm";
-        default = [
-          (
-            if !(config ? services) || cfg.acceleration == null then
-              "ollama"
-            else if cfg.acceleration == false then
-              "ollama-cpu"
-            else
-              "ollama-${cfg.acceleration}"
-          )
-        ];
         extraDescription = ''
           Different packages use different hardware acceleration.
 
@@ -123,33 +118,6 @@ in
         '';
       };
 
-      acceleration = lib.mkOption {
-        type = types.nullOr (
-          types.enum [
-            false
-            "rocm"
-            "cuda"
-            "vulkan"
-          ]
-        );
-        default = null;
-        example = "rocm";
-        description = ''
-          What interface to use for hardware acceleration.
-          It is now preferred to set `services.ollama.package` instead.
-
-          - `null`: default behavior; usually equivalent to `false`
-            - if `nixpkgs.config.rocmSupport` is enabled, is equivalent to `"rocm"`
-            - if `nixpkgs.config.cudaSupport` is enabled, is equivalent to `"cuda"`
-            - otherwise defaults to `false`
-          - `false`: disable GPU; only use CPU
-          - `"rocm"`: supported by most modern AMD GPUs
-            - may require overriding gpu type with `services.ollama.rocmOverrideGfx`
-              if rocm doesn't detect your AMD gpu
-          - `"cuda"`: supported by most modern NVIDIA GPUs
-          - `"vulkan"`: supported by most GPUs
-        '';
-      };
       rocmOverrideGfx = lib.mkOption {
         type = types.nullOr types.str;
         default = null;
@@ -386,7 +354,6 @@ in
   };
 
   meta.maintainers = with lib.maintainers; [
-    abysssol
     onny
   ];
 }

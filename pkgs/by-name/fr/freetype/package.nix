@@ -39,15 +39,15 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "freetype";
-  version = "2.13.3";
+  version = "2.14.2";
 
   src =
     let
       inherit (finalAttrs) pname version;
     in
     fetchurl {
-      url = "mirror://savannah/${pname}/${pname}-${version}.tar.xz";
-      sha256 = "sha256-BVA1BmbUJ8dNrrhdWse7NTrLpfdpVjlZlTEanG8GMok=";
+      url = "mirror://savannah/freetype/freetype-${version}.tar.xz";
+      sha256 = "sha256-S2Lcq0ySChqGA2mTMiGBQ2LmmeJvVXklFtZx5v9VteE=";
     };
 
   propagatedBuildInputs = [
@@ -82,13 +82,19 @@ stdenv.mkDerivation (finalAttrs: {
     "--enable-freetype-config"
   ];
 
-  # native compiler to generate building tool
-  CC_BUILD = "${buildPackages.stdenv.cc}/bin/cc";
+  env = {
+    # native compiler to generate building tool
+    CC_BUILD = "${buildPackages.stdenv.cc}/bin/cc";
 
-  # The asm for armel is written with the 'asm' keyword.
-  CFLAGS =
-    lib.optionalString stdenv.hostPlatform.isAarch32 "-std=gnu99"
-    + lib.optionalString stdenv.hostPlatform.is32bit " -D_FILE_OFFSET_BITS=64";
+    # The asm for armel is written with the 'asm' keyword.
+    CFLAGS =
+      lib.optionalString stdenv.hostPlatform.isAarch32 "-std=gnu99"
+      + lib.optionalString stdenv.hostPlatform.is32bit " -D_FILE_OFFSET_BITS=64";
+  }
+  // lib.optionalAttrs (!stdenv.hostPlatform.isWindows && stdenv.cc.bintools.isLLVM) {
+    # Needs to be unset when using LLVM or else it tries to include Windows headers on Linux
+    RC = "";
+  };
 
   enableParallelBuilding = true;
 

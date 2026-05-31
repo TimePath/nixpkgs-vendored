@@ -7,18 +7,18 @@
   libiconv,
 }:
 
-rustPlatform.buildRustPackage rec {
+rustPlatform.buildRustPackage (finalAttrs: {
   pname = "fselect";
-  version = "0.9.1";
+  version = "0.10.0";
 
   src = fetchFromGitHub {
     owner = "jhspetersson";
     repo = "fselect";
-    rev = version;
-    sha256 = "sha256-6TKCasE+Cks/f716mtEnPOvjcbQ7weipbGfFwnBYXJk=";
+    rev = finalAttrs.version;
+    sha256 = "sha256-2YLWFUDwmurQAkoYB0KNjCEhwDNAUIAkgw6+lpU7DDA=";
   };
 
-  cargoHash = "sha256-2DmfbQWyU+1vNKxZvDw92Rh5rxFifeKEglZSV2YNfdA=";
+  cargoHash = "sha256-7dyMzlrlhU4yuEd9sNce2QoIB8dWjpcNr0mnIZxjC3U=";
 
   nativeBuildInputs = [ installShellFiles ];
   buildInputs = lib.optional stdenv.hostPlatform.isDarwin libiconv;
@@ -35,9 +35,8 @@ rustPlatform.buildRustPackage rec {
       mit
     ];
     maintainers = with lib.maintainers; [
-      Br1ght0ne
       matthiasbeyer
     ];
     mainProgram = "fselect";
   };
-}
+})

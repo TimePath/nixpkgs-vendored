@@ -6,33 +6,29 @@
 
   # runtime dependencies
   nix-prefetch-git,
+  nix-prefetch-docker,
   git, # for git ls-remote
 }:
 
 let
   runtimePath = lib.makeBinPath [
     nix-prefetch-git
+    nix-prefetch-docker
     git
   ];
 in
-rustPlatform.buildRustPackage rec {
+rustPlatform.buildRustPackage (finalAttrs: {
   pname = "npins";
-  version = "0.3.1";
+  version = "0.4.1";
 
   src = fetchFromGitHub {
     owner = "andir";
     repo = "npins";
-    tag = version;
-    sha256 = "sha256-PPk9Ve1pM3X7NfGeGb8Jiq4YDEwAjErP4xzGwLaakTU=";
+    tag = finalAttrs.version;
+    sha256 = "sha256-XzJaDf5tlrYGTMJ+eS9hH9l79S4JA8h2KfbvKHF14xY=";
   };
 
-  cargoHash = "sha256-YRW2TqbctuGC2M6euR4bb0m9a19m8WQVvWucRMpzkQE=";
-  buildNoDefaultFeatures = true;
-  buildFeatures = [
-    "clap"
-    "crossterm"
-    "env_logger"
-  ];
+  cargoHash = "sha256-Fiku3UULsm6HL1skjJA/UiW9VRFRWbnXULQFBiVDCJ0=";
 
   nativeBuildInputs = [ makeWrapper ];
 
@@ -48,6 +44,9 @@ rustPlatform.buildRustPackage rec {
     mainProgram = "npins";
     homepage = "https://github.com/andir/npins";
     license = lib.licenses.eupl12;
-    maintainers = with lib.maintainers; [ piegames ];
+    maintainers = with lib.maintainers; [
+      piegames
+      coca
+    ];
   };
-}
+})

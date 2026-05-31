@@ -10,27 +10,25 @@
   molecule,
   packaging,
   pluggy,
-  pythonOlder,
   rich,
   setuptools,
   setuptools-scm,
   testers,
   wcmatch,
   withPlugins ? true,
+  writableTmpDirAsHomeHook,
   molecule-plugins,
   yamllint,
 }:
 
 buildPythonPackage rec {
   pname = "molecule";
-  version = "25.11.1";
+  version = "26.4.0";
   pyproject = true;
-
-  disabled = pythonOlder "3.10";
 
   src = fetchPypi {
     inherit pname version;
-    hash = "sha256-xliI4yg8JncEj5RdGXKWBk/87orqW7fo//ObHBmc47o=";
+    hash = "sha256-EuTJBQefZ2KK52VQbGl9K4p0SmXy1Mv1o7IssJ0Nr8Q=";
   };
 
   nativeBuildInputs = [
@@ -64,7 +62,7 @@ buildPythonPackage rec {
     }).overrideAttrs
       (old: {
         # workaround the error: Permission denied: '/homeless-shelter'
-        HOME = "$(mktemp -d)";
+        nativeBuildInputs = old.nativeBuildInputs ++ [ writableTmpDirAsHomeHook ];
       });
 
   meta = {
@@ -72,7 +70,7 @@ buildPythonPackage rec {
     homepage = "https://github.com/ansible-community/molecule";
     changelog = "https://github.com/ansible/molecule/releases/tag/v${version}";
     license = lib.licenses.mit;
-    maintainers = with lib.maintainers; [ dawidd6 ];
+    maintainers = [ ];
     mainProgram = "molecule";
   };
 }

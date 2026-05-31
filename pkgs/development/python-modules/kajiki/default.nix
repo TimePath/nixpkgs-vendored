@@ -5,22 +5,19 @@
   fetchFromGitHub,
   linetable,
   pytestCheckHook,
-  pythonOlder,
   hatchling,
 }:
 
 buildPythonPackage rec {
   pname = "kajiki";
-  version = "1.0.1";
+  version = "1.0.2";
   pyproject = true;
-
-  disabled = pythonOlder "3.7";
 
   src = fetchFromGitHub {
     owner = "jackrosenthal";
     repo = "kajiki";
     tag = "v${version}";
-    hash = "sha256-5qsRxKeWCndi2r1HaIX/bm92oOWU4J4eM9aud6ai8ZQ=";
+    hash = "sha256-bAgUMA9PlwsO7FRjwiKCsFffLWNU+Go1DToblmyWprk=";
   };
 
   propagatedBuildInputs = [ linetable ];

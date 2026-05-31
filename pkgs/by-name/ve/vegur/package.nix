@@ -2,6 +2,7 @@
   lib,
   stdenvNoCC,
   fetchzip,
+  installFonts,
 }:
 
 stdenvNoCC.mkDerivation (finalAttrs: {
@@ -16,16 +17,10 @@ stdenvNoCC.mkDerivation (finalAttrs: {
     stripRoot = false;
   };
 
-  installPhase = ''
-    runHook preInstall
-
-    install -D -m444 -t $out/share/fonts/opentype $src/*.otf
-
-    runHook postInstall
-  '';
+  nativeBuildInputs = [ installFonts ];
 
   meta = {
-    homepage = "http://dotcolon.net/fonts/vegur/";
+    homepage = "https://dotcolon.net/fonts/vegur/";
     description = "Humanist sans serif font";
     platforms = lib.platforms.all;
     maintainers = with lib.maintainers; [

@@ -2,29 +2,40 @@
   lib,
   stdenv,
   fetchFromGitHub,
+  fetchpatch,
   makeWrapper,
   libaio,
   pkg-config,
+  cunit,
   python3,
   zlib,
   withGnuplot ? false,
   gnuplot,
-  withLibnbd ? true,
+  withLibnbd ? stdenv.hostPlatform.isLinux,
   libnbd,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "fio";
   version = "3.41";
 
   src = fetchFromGitHub {
     owner = "axboe";
     repo = "fio";
-    rev = "fio-${version}";
-    sha256 = "sha256-m4JskjSc/KHjID+6j/hbhnGzehPxMxA3m2Iyn49bJDU=";
+    tag = "fio-${finalAttrs.version}";
+    hash = "sha256-m4JskjSc/KHjID+6j/hbhnGzehPxMxA3m2Iyn49bJDU=";
   };
 
+  patches = [
+    # https://github.com/axboe/fio/pull/2029
+    (fetchpatch {
+      url = "https://github.com/axboe/fio/commit/ccce76d2850d6e52da3d7986c950af068fbfe0fd.patch";
+      hash = "sha256-0jN3q1vTiU6YkdXrcTAOzqRqgu8sW8AWO4KkANi0XKo=";
+    })
+  ];
+
   buildInputs = [
+    cunit
     python3
     zlib
   ]
@@ -35,7 +46,10 @@ stdenv.mkDerivation rec {
   # We use $CC instead.
   configurePlatforms = [ ];
 
-  configureFlags = lib.optional withLibnbd "--enable-libnbd";
+  configureFlags = [
+    "--disable-native"
+  ]
+  ++ lib.optional withLibnbd "--enable-libnbd";
 
   dontAddStaticConfigureFlags = true;
 
@@ -50,10 +64,8 @@ stdenv.mkDerivation rec {
   enableParallelBuilding = true;
 
   postPatch = ''
-    substituteInPlace Makefile \
-      --replace "mandir = /usr/share/man" "mandir = \$(prefix)/man" \
-      --replace "sharedir = /usr/share/fio" "sharedir = \$(prefix)/share/fio"
-    substituteInPlace tools/plot/fio2gnuplot --replace /usr/share/fio $out/share/fio
+    substituteInPlace tools/plot/fio2gnuplot \
+      --replace-fail /usr/share/fio $out/share/fio
   '';
 
   pythonPath = [ python3.pkgs.six ];
@@ -63,7 +75,17 @@ stdenv.mkDerivation rec {
   ];
 
   postInstall = ''
-    wrapPythonProgramsIn "$out/bin" "$out $pythonPath"
+    wrapPythonProgramsIn "$out/bin" "$out ''${pythonPath[*]}"
+  '';
+
+  doCheck = true;
+
+  checkPhase = ''
+    runHook preCheck
+
+    ./unittests/unittest
+
+    runHook postCheck
   '';
 
   meta = {
@@ -72,4 +94,4 @@ stdenv.mkDerivation rec {
     license = lib.licenses.gpl2Plus;
     platforms = lib.platforms.unix;
   };
-}
+})

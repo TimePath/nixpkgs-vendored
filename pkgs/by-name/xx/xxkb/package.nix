@@ -2,10 +2,10 @@
   lib,
   stdenv,
   fetchurl,
-  libX11,
-  libXt,
-  libXext,
-  libXpm,
+  libx11,
+  libxt,
+  libxext,
+  libxpm,
   imake,
   gccmakedep,
   svgSupport ? false,
@@ -15,12 +15,12 @@
   pkg-config,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "xxkb";
   version = "1.11.1";
 
   src = fetchurl {
-    url = "mirror://sourceforge/xxkb/xxkb-${version}-src.tar.gz";
+    url = "mirror://sourceforge/xxkb/xxkb-${finalAttrs.version}-src.tar.gz";
     sha256 = "0hl1i38z9xnbgfjkaz04vv1n8xbgfg88g5z8fyzyb2hxv2z37anf";
   };
 
@@ -31,10 +31,10 @@ stdenv.mkDerivation rec {
   ];
 
   buildInputs = [
-    libX11
-    libXt
-    libXext
-    libXpm
+    libx11
+    libxt
+    libxext
+    libxpm
   ]
   ++ lib.optionals svgSupport [
     librsvg
@@ -67,8 +67,8 @@ stdenv.mkDerivation rec {
     description = "Keyboard layout indicator and switcher";
     homepage = "http://xxkb.sourceforge.net/";
     license = lib.licenses.artistic2;
-    maintainers = with lib.maintainers; [ rasendubi ];
+    maintainers = [ ];
     platforms = lib.platforms.linux;
     mainProgram = "xxkb";
   };
-}
+})

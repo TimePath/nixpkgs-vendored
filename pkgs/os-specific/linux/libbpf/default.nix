@@ -13,22 +13,16 @@
   tracee,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "libbpf";
-  version = "1.6.2";
+  version = "1.7.0";
 
   src = fetchFromGitHub {
     owner = "libbpf";
     repo = "libbpf";
-    rev = "v${version}";
-    hash = "sha256-igjjwirg3O5mC3DzGCAO9OgrH2drnE/gV6NH7ZLNnFE=";
+    rev = "v${finalAttrs.version}";
+    hash = "sha256-F92msxkYp4yZA3qUoSwS5GKUhcEO6DrYNln7w6U+jt0=";
   };
-
-  patches = [
-    # Fix redefinition when using linux/netlink.h from libbpf with musl
-    # https://github.com/libbpf/libbpf/pull/919
-    ./sync-uapi-move-constants-from-linux-kernel-h-to-linux-const-h.patch
-  ];
 
   nativeBuildInputs = [ pkg-config ];
   buildInputs = [
@@ -39,7 +33,7 @@ stdenv.mkDerivation rec {
   enableParallelBuilding = true;
   makeFlags = [
     "PREFIX=$(out)"
-    "-C src"
+    "--directory=src"
   ];
 
   passthru.tests = {
@@ -59,6 +53,8 @@ stdenv.mkDerivation rec {
 
   # outputs = [ "out" "dev" ];
 
+  __structuredAttrs = true;
+
   meta = {
     description = "Library for loading eBPF programs and reading and manipulating eBPF objects from user-space";
     homepage = "https://github.com/libbpf/libbpf";
@@ -73,5 +69,6 @@ stdenv.mkDerivation rec {
       martinetd
     ];
     platforms = lib.platforms.linux;
+    identifiers.cpeParts = lib.meta.cpeFullVersionWithVendor "libbpf_project" finalAttrs.version;
   };
-}
+})

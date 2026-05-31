@@ -13,14 +13,14 @@
   teensy-loader-cli,
 }:
 
-python3.pkgs.buildPythonApplication rec {
+python3.pkgs.buildPythonApplication (finalAttrs: {
   pname = "qmk";
-  version = "1.1.8";
-  format = "pyproject";
+  version = "1.2.0";
+  pyproject = true;
 
   src = fetchPypi {
-    inherit pname version;
-    hash = "sha256-C0Jra/IK61tngGsuEnMD4mySRc/iZVgdYEbMXtwpBZ0=";
+    inherit (finalAttrs) pname version;
+    hash = "sha256-FkvRbExAGyt2XuTwF7z6gUGULd82KWHEy6GXXYyyikg=";
   };
 
   nativeBuildInputs = with python3.pkgs; [
@@ -77,10 +77,7 @@ python3.pkgs.buildPythonApplication rec {
       - ... and many more!
     '';
     license = lib.licenses.mit;
-    maintainers = with lib.maintainers; [
-      bhipple
-      ekleog
-    ];
+    maintainers = [ ];
     mainProgram = "qmk";
   };
-}
+})

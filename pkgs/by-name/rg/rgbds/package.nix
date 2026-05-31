@@ -8,14 +8,14 @@
   libpng,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "rgbds";
-  version = "0.9.4";
+  version = "1.0.1";
   src = fetchFromGitHub {
     owner = "gbdev";
     repo = "rgbds";
-    rev = "v${version}";
-    hash = "sha256-PFnU6vWfwvtnB93J+PcxZk000hbHnbe7GR+HCvH26dg=";
+    tag = "v${finalAttrs.version}";
+    hash = "sha256-amTlFuk+j4lupBmXt+2A2XNn3CIqKhar+JfpFFhg834=";
   };
   nativeBuildInputs = [
     bison
@@ -43,9 +43,9 @@ stdenv.mkDerivation rec {
       This is a fork of the original RGBDS which aims to make the programs more like other UNIX tools.
     '';
     maintainers = with lib.maintainers; [
-      matthewbauer
       NieDzejkob
+      mattcurrie
     ];
     platforms = lib.platforms.all;
   };
-}
+})

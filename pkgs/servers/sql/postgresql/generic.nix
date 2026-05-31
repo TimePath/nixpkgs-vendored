@@ -6,10 +6,8 @@ let
       stdenv,
       fetchFromGitHub,
       fetchurl,
-      fetchpatch2,
       lib,
       replaceVars,
-      writeShellScriptBin,
 
       # source specification
       hash,
@@ -45,9 +43,7 @@ let
       buildPackages,
       newScope,
       nixosTests,
-      postgresqlTestHook,
       self,
-      stdenvNoCC,
       testers,
 
       # Block size
@@ -306,8 +302,7 @@ let
         nukeReferences
       ];
 
-      # Just a temporary hack for persistent errors on Hydra.
-      enableParallelBuilding = !(stdenv.system == "aarch64-darwin" && version == "17.7");
+      enableParallelBuilding = true;
 
       separateDebugInfo = true;
 
@@ -565,7 +560,7 @@ let
 
           psqlSchema = lib.versions.major version;
 
-          withJIT = this.withPackages (_: [ this.jit ]);
+          withJIT = if jitSupport then this.withPackages (_: [ this.jit ]) else null;
           withoutJIT = this;
 
           pkgs =
@@ -605,6 +600,7 @@ let
 
           tests = {
             postgresql = nixosTests.postgresql.postgresql.passthru.override finalAttrs.finalPackage;
+            postgresql-replication = nixosTests.postgresql.postgresql-replication.passthru.override finalAttrs.finalPackage;
             postgresql-tls-client-cert = nixosTests.postgresql.postgresql-tls-client-cert.passthru.override finalAttrs.finalPackage;
             postgresql-wal-receiver = nixosTests.postgresql.postgresql-wal-receiver.passthru.override finalAttrs.finalPackage;
             pkg-config = testers.testMetaPkgConfig finalAttrs.finalPackage;
@@ -655,8 +651,17 @@ let
     f:
     let
       installedExtensions = f postgresql.pkgs;
+      recurse = postgresqlWithPackages {
+        inherit
+          buildEnv
+          lib
+          makeBinaryWrapper
+          postgresql
+          ;
+      };
       finalPackage = buildEnv {
-        name = "${postgresql.pname}-and-plugins-${postgresql.version}";
+        pname = "${postgresql.pname}-and-plugins";
+        inherit (postgresql) version;
         paths = installedExtensions ++ [
           # consider keeping in-sync with `postBuild` below
           postgresql
@@ -686,7 +691,6 @@ let
           inherit (postgresql)
             pkgs
             psqlSchema
-            version
             ;
 
           pg_config = postgresql.pg_config.override {
@@ -696,33 +700,10 @@ let
             };
           };
 
-          withJIT = postgresqlWithPackages {
-            inherit
-              buildEnv
-              lib
-              makeBinaryWrapper
-              postgresql
-              ;
-          } (_: installedExtensions ++ [ postgresql.jit ]);
-          withoutJIT = postgresqlWithPackages {
-            inherit
-              buildEnv
-              lib
-              makeBinaryWrapper
-              postgresql
-              ;
-          } (_: lib.remove postgresql.jit installedExtensions);
+          withJIT = recurse (_: installedExtensions ++ [ postgresql.jit ]);
+          withoutJIT = recurse (_: lib.remove postgresql.jit installedExtensions);
 
-          withPackages =
-            f':
-            postgresqlWithPackages {
-              inherit
-                buildEnv
-                lib
-                makeBinaryWrapper
-                postgresql
-                ;
-            } (ps: installedExtensions ++ f' ps);
+          withPackages = f': recurse (ps: installedExtensions ++ f' ps);
         };
       };
     in

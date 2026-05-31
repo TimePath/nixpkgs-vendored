@@ -21,6 +21,7 @@ let
       avrSuffixSalt = avrgcc.suffixSalt;
     };
   } ./setup-hook-darwin.sh;
+
 in
 stdenv.mkDerivation rec {
   pname = "simavr";
@@ -68,7 +69,10 @@ stdenv.mkDerivation rec {
     homepage = "https://github.com/buserror/simavr";
     license = lib.licenses.gpl3;
     platforms = lib.platforms.unix;
-    maintainers = with lib.maintainers; [ goodrone ];
-  };
 
+    maintainers = with lib.maintainers; [
+      goodrone
+      patryk27
+    ];
+  };
 }

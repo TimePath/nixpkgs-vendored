@@ -2,6 +2,7 @@
   lib,
   buildNpmPackage,
   fetchFromGitHub,
+  nix-update-script,
 }:
 
 buildNpmPackage (finalAttrs: {
@@ -22,12 +23,14 @@ buildNpmPackage (finalAttrs: {
     rm $out/bin/_mocha
   '';
 
+  passthru.updateScript = nix-update-script { };
+
   meta = {
     changelog = "https://github.com/mochajs/mocha/blob/v${finalAttrs.version}/CHANGELOG.md";
     description = "Simple, flexible, fun Javascript test framework for Node.js & the browser";
     homepage = "https://mochajs.org";
     license = lib.licenses.mit;
-    maintainers = with lib.maintainers; [ pyrox0 ];
+    maintainers = [ ];
     mainProgram = "mocha";
   };
 })

@@ -12,7 +12,13 @@
   libsoup_3,
   json-glib,
   libsecret,
+  libglycin,
+  libglycin-gtk4,
+  libportal,
+  libportal-gtk4,
   glib-networking,
+  glycin-loaders,
+  nix-update-script,
 
   # Per the upstream request. Key owned by Aleksana
   lastfmKey ? "b5027c5178ca2abfcc31bd04397c3c0e",
@@ -21,13 +27,13 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "turntable";
-  version = "0.3.3";
+  version = "0.5.1";
 
   src = fetchFromCodeberg {
     owner = "GeopJr";
     repo = "Turntable";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-fBduW49eNOEzRVBb72zcB5arTjTiRUy8jE3sSMjPITE=";
+    hash = "sha256-OXZjCkVf1XOh1joDE5SBKaQmblfu+zNr+EXaqWP7HhM=";
   };
 
   nativeBuildInputs = [
@@ -44,7 +50,12 @@ stdenv.mkDerivation (finalAttrs: {
     libsoup_3
     json-glib
     libsecret
+    libglycin
+    libglycin-gtk4
+    glycin-loaders
     glib-networking
+    libportal
+    libportal-gtk4
   ];
 
   mesonFlags = [
@@ -53,6 +64,8 @@ stdenv.mkDerivation (finalAttrs: {
   ];
 
   strictDeps = true;
+
+  passthru.updateScript = nix-update-script { };
 
   meta = {
     description = "Scrobbles your music to multiple services with playback controls for MPRIS players";

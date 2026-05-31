@@ -10,7 +10,7 @@
   nodejs,
   openssl,
   pkg-config,
-  pnpm_10,
+  pnpm_10_29_2,
   fetchPnpmDeps,
   pnpmConfigHook,
   rustc,
@@ -58,7 +58,7 @@ let
     # buildRustPackage sets strictDeps = true;
     nativeCheckInputs = finalAttrs.buildInputs;
 
-    OPENSSL_NO_VENDOR = "1";
+    env.OPENSSL_NO_VENDOR = "1";
 
     postInstall = ''
       mkdir -p $out/include
@@ -81,8 +81,8 @@ let
         pname
         version
         ;
-      pnpm = pnpm_10;
-      fetcherVersion = 2;
+      pnpm = pnpm_10_29_2;
+      fetcherVersion = 3;
       hash = pnpmHash;
     };
 
@@ -91,7 +91,7 @@ let
       cargo
       nodejs
       pnpmConfigHook
-      pnpm_10
+      pnpm_10_29_2
       rustc
       rustc.llvmPackages.lld
       rustPlatform.cargoSetupHook

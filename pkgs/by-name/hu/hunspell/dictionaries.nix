@@ -88,7 +88,7 @@ let
            --replace /dev/stderr stderr.log
 
         substituteInPlace ortograf/herramientas/remover_comentarios.sh \
-           --replace /bin/bash ${bash}/bin/bash \
+           --replace /bin/bash ${bash}/bin/bash
       '';
       buildPhase = ''
         cd ortograf/herramientas
@@ -194,7 +194,7 @@ let
     }:
     mkDict rec {
       inherit src srcFileName dictFileName;
-      version = "2018.04.16";
+      version = "2026.02.25";
       pname = "hunspell-dict-${shortName}-wordlist";
       srcReadmeFile = "README_" + srcFileName + ".txt";
       readmeFile = "README_" + dictFileName + ".txt";
@@ -376,8 +376,8 @@ rec {
     srcFileName = "en_US";
     dictFileName = "en_US";
     src = fetchurl {
-      url = "mirror://sourceforge/wordlist/speller/2018.04.16/hunspell-en_US-2018.04.16.zip";
-      sha256 = "18hbncvqnckzqarrmnzk58plymjqyi93k4qj98fac5mr71jbmzaf";
+      url = "mirror://sourceforge/wordlist/speller/2026.02.25/hunspell-en_US-2026.02.25.zip";
+      hash = "sha256-rI5zMQ6VHYjFLCzyulTOrKNPhIaoFjCsinXcX5MRefk=";
     };
   };
 
@@ -388,8 +388,8 @@ rec {
     srcFileName = "en_US-large";
     dictFileName = "en_US";
     src = fetchurl {
-      url = "mirror://sourceforge/wordlist/speller/2018.04.16/hunspell-en_US-large-2018.04.16.zip";
-      sha256 = "1xm9jgqbivp5cb78ykjxg47vzq1yqj82l7r4q5cjpivrv99s49qc";
+      url = "mirror://sourceforge/wordlist/speller/2026.02.25/hunspell-en_US-large-2026.02.25.zip";
+      hash = "sha256-BqtaKhLCkDPxAJiNOwpeU9ytQL8kc8y3gnBhnR2pkyE=";
     };
   };
 
@@ -400,8 +400,8 @@ rec {
     srcFileName = "en_CA";
     dictFileName = "en_CA";
     src = fetchurl {
-      url = "mirror://sourceforge/wordlist/speller/2018.04.16/hunspell-en_CA-2018.04.16.zip";
-      sha256 = "06yf3s7y1215jmikbs18cn4j8a13csp4763w3jfgah8zlim6vc47";
+      url = "mirror://sourceforge/wordlist/speller/2026.02.25/hunspell-en_CA-2026.02.25.zip";
+      hash = "sha256-Kf4AUECMNWFPIr6oQzi0JWliyJ9e8l2sUDgyW8uG9CQ=";
     };
   };
 
@@ -412,8 +412,8 @@ rec {
     srcFileName = "en_CA-large";
     dictFileName = "en_CA";
     src = fetchurl {
-      url = "mirror://sourceforge/wordlist/speller/2018.04.16/hunspell-en_CA-large-2018.04.16.zip";
-      sha256 = "1200xxyvv6ni8nk52v3059c367817vnrkm0cdh38rhiigb5flfha";
+      url = "mirror://sourceforge/wordlist/speller/2026.02.25/hunspell-en_CA-large-2026.02.25.zip";
+      hash = "sha256-tLe/SniF3hw1+hs6poMXIJr6WPBNYOigfhJGk0hcWeM=";
     };
   };
 
@@ -424,8 +424,8 @@ rec {
     srcFileName = "en_AU";
     dictFileName = "en_AU";
     src = fetchurl {
-      url = "mirror://sourceforge/wordlist/speller/2018.04.16/hunspell-en_AU-2018.04.16.zip";
-      sha256 = "1kp06npl1kd05mm9r52cg2iwc13x02zwqgpibdw15b6x43agg6f5";
+      url = "mirror://sourceforge/wordlist/speller/2026.02.25/hunspell-en_AU-2026.02.25.zip";
+      hash = "sha256-+FRxWTuXRPZCmMAtB/ti1Ykmv4H7XkVS4rrGRb+kAeA=";
     };
   };
 
@@ -436,8 +436,8 @@ rec {
     srcFileName = "en_AU-large";
     dictFileName = "en_AU";
     src = fetchurl {
-      url = "mirror://sourceforge/wordlist/speller/2018.04.16/hunspell-en_AU-large-2018.04.16.zip";
-      sha256 = "14l1w4dpk0k1js2wwq5ilfil89ni8cigph95n1rh6xi4lzxj7h6g";
+      url = "mirror://sourceforge/wordlist/speller/2026.02.25/hunspell-en_AU-large-2026.02.25.zip";
+      hash = "sha256-RqJliD0dAciJtxc7ocq64MqRWqQD1qL5PO5MxmEIfbQ=";
     };
   };
 
@@ -448,8 +448,8 @@ rec {
     srcFileName = "en_GB-ise";
     dictFileName = "en_GB";
     src = fetchurl {
-      url = "mirror://sourceforge/wordlist/speller/2018.04.16/hunspell-en_GB-ise-2018.04.16.zip";
-      sha256 = "0ylg1zvfvsawamymcc9ivrqcb9qhlpgpnizm076xc56jz554xc2l";
+      url = "mirror://sourceforge/wordlist/speller/2026.02.25/hunspell-en_GB-ise-2026.02.25.zip";
+      hash = "sha256-1vu5GueCTFL7AvdNe8LNkJLxMPrsYPQjJqWUN/pyR6M=";
     };
   };
 
@@ -460,8 +460,8 @@ rec {
     srcFileName = "en_GB-ize";
     dictFileName = "en_GB";
     src = fetchurl {
-      url = "mirror://sourceforge/wordlist/speller/2018.04.16/hunspell-en_GB-ize-2018.04.16.zip";
-      sha256 = "1rmwy6sxmd400cwjf58az6g14sq28p18f5mlq8ybg8y33q9m42ps";
+      url = "mirror://sourceforge/wordlist/speller/2026.02.25/hunspell-en_GB-ize-2026.02.25.zip";
+      hash = "sha256-xb3ZL8HiHadQOTn+QTnzbyjwHBisNeL8kLUmobe/sJk=";
     };
   };
 
@@ -472,8 +472,8 @@ rec {
     srcFileName = "en_GB-large";
     dictFileName = "en_GB";
     src = fetchurl {
-      url = "mirror://sourceforge/wordlist/speller/2018.04.16/hunspell-en_GB-large-2018.04.16.zip";
-      sha256 = "1y4d7x5vvi1qh1s3i09m0vvqrpdzzqhsdngr8nsh7hc5bnlm37mi";
+      url = "mirror://sourceforge/wordlist/speller/2026.02.25/hunspell-en_GB-large-2026.02.25.zip";
+      hash = "sha256-cEpJQ4o6nU8RzXbbQzprIwuc6HcO4T+ihwAFLEUX3cE=";
     };
   };
 
@@ -844,7 +844,12 @@ rec {
       license = with lib.licenses; [
         gpl3Plus
       ];
-      teams = [ lib.teams.uzinfocom ];
+      maintainers = with lib.maintainers; [
+        orzklv
+        shakhzodkudratov
+        bahrom04
+        bemeritus
+      ];
     };
   };
 
@@ -969,14 +974,14 @@ rec {
   th_TH = th-th;
   th-th = mkDict {
     pname = "hunspell-dict-th-th";
-    version = "experimental-2024-04-15";
+    version = "0-unstable-2025-12-29";
     dictFileName = "th_TH";
     readmeFile = "README.md";
     src = fetchFromGitHub {
       owner = "SyafiqHadzir";
       repo = "Hunspell-TH";
-      rev = "419eb32115b936da9c949e35b35c29b8187f6c93";
-      sha256 = "sha256-aXjof5dcEoCmep3PtvVkBhcgcd2NtqUpUEu37wsi1Uk=";
+      rev = "a23b0521438f2735dc73efaee61391c6106ae196";
+      sha256 = "sha256-fRHtglTVoUgeQ8v/+pBWxfk+EgZv/uAt9Ka6tK1GJgA=";
     };
     meta = {
       description = "Hunspell dictionary for Central Thai (Thailand)";
@@ -1244,6 +1249,37 @@ rec {
         mpl11
       ];
       maintainers = with lib.maintainers; [ honnip ];
+    };
+  };
+
+  # According to https://en.wikipedia.org/wiki/List_of_ISO_639_language_codes
+  # we should use `cy` for Cymraeg but it's cy_GB in Hunspell.
+  # WELSH / CYMRAEG
+  cy_GB = cy-gb;
+  cy-gb = mkDict rec {
+    pname = "hunspell-dict-cy-gb";
+    version = "25.03";
+
+    src = fetchFromGitHub {
+      owner = "techiaith";
+      repo = "hunspell-cy";
+      tag = version;
+      hash = "sha256-T1p0LbCUTKN7xfogbI2RqxdONgcMxDpjjFW+dN8IGa4=";
+    };
+
+    shortName = "cy-GB";
+    dictFileName = "cy_GB";
+    readmeFile = "README.md";
+
+    meta = {
+      description = "Hunspell dictionary for Welsh (Cymraeg)";
+      homepage = "https://github.com/techiaith/hunspell-cy";
+      license = with lib.licenses; [
+        lgpl3
+      ];
+      maintainers = with lib.maintainers; [
+        fin-w
+      ];
     };
   };
 }

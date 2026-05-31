@@ -18,9 +18,6 @@
   tensorstore,
   typing-extensions,
 
-  # optional-dependencies
-  matplotlib,
-
   # tests
   cloudpickle,
   keras,
@@ -36,16 +33,17 @@
   tomlq,
 }:
 
-buildPythonPackage rec {
+buildPythonPackage (finalAttrs: {
   pname = "flax";
-  version = "0.12.1";
+  version = "0.12.7";
   pyproject = true;
+  __structuredAttrs = true;
 
   src = fetchFromGitHub {
     owner = "google";
     repo = "flax";
-    tag = "v${version}";
-    hash = "sha256-AUgNU1ww1Ic+lfdHtdP4fdFuvIatAXqs7AX615aVPKM=";
+    tag = "v${finalAttrs.version}";
+    hash = "sha256-a78KiTsCCARWZvbxz9QKdUKnjkDJGXcPVVJu5rU4m/U=";
   };
 
   build-system = [
@@ -66,10 +64,6 @@ buildPythonPackage rec {
     treescope
     typing-extensions
   ];
-
-  optional-dependencies = {
-    all = [ matplotlib ];
-  };
 
   pythonImportsCheck = [ "flax" ];
 
@@ -127,8 +121,8 @@ buildPythonPackage rec {
   meta = {
     description = "Neural network library for JAX";
     homepage = "https://github.com/google/flax";
-    changelog = "https://github.com/google/flax/releases/tag/v${version}";
+    changelog = "https://github.com/google/flax/releases/tag/${finalAttrs.src.tag}";
     license = lib.licenses.asl20;
     maintainers = with lib.maintainers; [ ndl ];
   };
-}
+})

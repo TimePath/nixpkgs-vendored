@@ -2,29 +2,41 @@
   lib,
   stdenv,
   fetchFromGitLab,
-  extra-cmake-modules,
+  cmake,
   kdePackages,
   qtbase,
   qtdeclarative,
+  opencv,
 }:
 
 stdenv.mkDerivation rec {
   pname = "kquickimageeditor";
-  version = "0.5.1";
+  version = "0.6.1";
 
   src = fetchFromGitLab {
     domain = "invent.kde.org";
     owner = "libraries";
     repo = "kquickimageeditor";
     rev = "v${version}";
-    sha256 = "sha256-8TJBg42E9lNbLpihjtc5Z/drmmSGQmic8yO45yxSNQ4=";
+    sha256 = "sha256-MluY8nkMtg1uLAStDZFDxyJoeDrcp3smZ4U5IG5sXMk=";
   };
 
-  nativeBuildInputs = [ extra-cmake-modules ];
+  nativeBuildInputs = [
+    cmake
+    kdePackages.extra-cmake-modules
+  ];
   buildInputs = [
     kdePackages.kirigami
     qtbase
     qtdeclarative
+    (opencv.override {
+      enableCuda = false; # fails to compile, disabled in case someone sets config.cudaSupport
+      enabledModules = [
+        "core"
+        "imgproc"
+      ];
+      runAccuracyTests = false; # tests will fail because of missing plugins but that's okay
+    })
   ];
   dontWrapQtApps = true;
 

@@ -11,15 +11,15 @@ let
     ps.pyqt6
   ]);
 in
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "lxqt-panel-profiles";
-  version = "1.3";
+  version = "1.4.1";
 
   src = fetchFromCodeberg {
     owner = "MrReplikant";
     repo = "lxqt-panel-profiles";
-    rev = "v${version}";
-    hash = "sha256-mI/Rg3YeK64R3cCn+xz4+CHZldGteZ4Id4h/YUcreW4=";
+    rev = "v${finalAttrs.version}";
+    hash = "sha256-JDDscKjRbqQXinEwlrwYNwzzuLm9aokNAu8sZY7hGQk=";
   };
 
   postPatch = ''
@@ -45,10 +45,10 @@ stdenv.mkDerivation rec {
   meta = {
     description = "";
     homepage = "https://codeberg.org/MrReplikant/lxqt-panel-profiles/";
-    changelog = "https://codeberg.org/MrReplikant/lxqt-panel-profiles/releases/tag/${version}";
+    changelog = "https://codeberg.org/MrReplikant/lxqt-panel-profiles/releases/tag/${finalAttrs.version}";
     license = lib.licenses.gpl2Plus;
     maintainers = with lib.maintainers; [ linuxissuper ];
     mainProgram = "lxqt-panel-profiles";
     platforms = lib.platforms.linux;
   };
-}
+})

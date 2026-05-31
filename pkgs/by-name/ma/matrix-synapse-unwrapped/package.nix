@@ -14,19 +14,19 @@
 
 python3Packages.buildPythonApplication rec {
   pname = "matrix-synapse";
-  version = "1.148.0";
+  version = "1.153.0";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "element-hq";
     repo = "synapse";
     rev = "v${version}";
-    hash = "sha256-MQOjuVBxwOKO11wc/FafqndI0QgZT3jaigpjRsJXxRA=";
+    hash = "sha256-2/KzRPUMfOOmI8j8WZsVU2ubNxidTb+FW0MZF+ktSSQ=";
   };
 
   cargoDeps = rustPlatform.fetchCargoVendor {
     inherit pname version src;
-    hash = "sha256-LKO4Qa81AeUxEcUdvm43Bc8ANJJqtYEv5ucV0743yy0=";
+    hash = "sha256-Cu5bXS6BprXr/dwkNXDjcP9hOfqQddoC5BxOus4rteM=";
   };
 
   build-system =
@@ -134,7 +134,7 @@ python3Packages.buildPythonApplication rec {
     mock
     parameterized
   ])
-  ++ lib.filter (pkg: !pkg.meta.broken) (lib.flatten (lib.attrValues optional-dependencies));
+  ++ lib.filter (pkg: !pkg.meta.broken) (lib.concatAttrValues optional-dependencies);
 
   doCheck = !stdenv.hostPlatform.isDarwin;
 

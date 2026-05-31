@@ -6,14 +6,14 @@
   cmake,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "eigen";
   version = "3.4.0";
 
   src = fetchFromGitLab {
     owner = "libeigen";
     repo = "eigen";
-    rev = version;
+    rev = finalAttrs.version;
     hash = "sha256-1/4xMetKMDOgZgzz3WMxfHUEpmdAm52RqZvz6i0mLEw=";
   };
 
@@ -41,10 +41,9 @@ stdenv.mkDerivation rec {
     description = "C++ template library for linear algebra: vectors, matrices, and related algorithms";
     license = lib.licenses.lgpl3Plus;
     maintainers = with lib.maintainers; [
-      sander
       raskin
       pbsds
     ];
     platforms = lib.platforms.unix;
   };
-}
+})

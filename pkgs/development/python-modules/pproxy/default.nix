@@ -8,15 +8,12 @@
   aioquic,
   python-daemon,
   setuptools,
-  pythonOlder,
 }:
 
 buildPythonPackage rec {
   pname = "pproxy";
   version = "2.7.9";
   pyproject = true;
-
-  disabled = pythonOlder "3.6";
 
   src = fetchFromGitHub {
     owner = "qwj";
@@ -37,7 +34,7 @@ buildPythonPackage rec {
     daemon = [ python-daemon ];
   };
 
-  nativeCheckInputs = lib.flatten (lib.attrValues optional-dependencies);
+  nativeCheckInputs = lib.concatAttrValues optional-dependencies;
 
   pythonImportsCheck = [ "pproxy" ];
 

@@ -96,6 +96,6 @@ stdenv.mkDerivation rec {
     homepage = "https://people.freedesktop.org/~hughsient/appstream-glib/";
     license = lib.licenses.lgpl2Plus;
     platforms = lib.platforms.unix;
-    maintainers = with lib.maintainers; [ matthewbauer ];
+    maintainers = [ ];
   };
 }

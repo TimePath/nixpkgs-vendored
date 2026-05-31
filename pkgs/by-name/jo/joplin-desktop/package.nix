@@ -20,6 +20,8 @@
   libGL,
   clang_20,
   jq,
+  glib,
+  gsettings-desktop-schemas,
 }:
 
 let
@@ -45,10 +47,21 @@ stdenv.mkDerivation (finalAttrs: {
     inherit (releaseData) hash;
   };
 
+  patches = [
+    # Remove after upstream updates to Yarn 4.14
+    # https://github.com/laurent22/joplin/blob/dev/package.json#L103
+    ./yarn-4.14-support.patch
+  ];
+
   missingHashes = ./missing-hashes.json;
 
   offlineCache = yarn-berry.fetchYarnBerryDeps {
-    inherit (finalAttrs) src missingHashes postPatch;
+    inherit (finalAttrs)
+      src
+      missingHashes
+      patches
+      postPatch
+      ;
     hash = releaseData.deps_hash;
   };
 
@@ -183,6 +196,7 @@ stdenv.mkDerivation (finalAttrs: {
 
       makeWrapper "$outdir"/joplin $out/bin/joplin-desktop \
         --prefix LD_LIBRARY_PATH : "${lib.makeLibraryPath [ libGL ]}" \
+        --prefix XDG_DATA_DIRS : "${glib.getSchemaDataDirPath gsettings-desktop-schemas}" \
         --add-flags "--no-sandbox" \
         --add-flags "\''${NIXOS_OZONE_WL:+\''${WAYLAND_DISPLAY:+--enable-wayland-ime --ozone-platform=wayland --enable-features=WaylandWindowDecorations}}" \
         --inherit-argv0
@@ -196,6 +210,15 @@ stdenv.mkDerivation (finalAttrs: {
 
     runHook postInstall
   '';
+
+  # Necessary for builtin Backup plugin
+  postFixup =
+    lib.optionalString stdenv.hostPlatform.isLinux ''
+      chmod a+x $out/share/joplin-desktop/resources/build/7zip/7za
+    ''
+    + lib.optionalString stdenv.hostPlatform.isDarwin ''
+      chmod a+x $out/Applications/Joplin.app/Contents/Resources/build/7zip/7za
+    '';
 
   desktopItems = [
     (makeDesktopItem {

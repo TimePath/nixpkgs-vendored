@@ -9,15 +9,15 @@
   setuptools,
 }:
 
-buildPythonPackage rec {
+buildPythonPackage (finalAttrs: {
   pname = "bloodhound-py";
-  version = "1.8.0";
+  version = "1.9.0";
   pyproject = true;
 
   src = fetchPypi {
-    inherit version;
+    inherit (finalAttrs) version;
     pname = "bloodhound";
-    hash = "sha256-Ne0PH92isdeaTp2JHKvixVMJoydDru0W2IXz2An0CbM=";
+    hash = "sha256-n1+0jv73lrn2FMNhDVUPDJxgUATa2oRO4S5P7/xQyFw=";
   };
 
   nativeBuildInputs = [ setuptools ];
@@ -41,4 +41,4 @@ buildPythonPackage rec {
     license = lib.licenses.mit;
     maintainers = with lib.maintainers; [ exploitoverload ];
   };
-}
+})

@@ -5,14 +5,14 @@
   installShellFiles,
 }:
 
-rustPlatform.buildRustPackage rec {
+rustPlatform.buildRustPackage (finalAttrs: {
   pname = "tydra";
   version = "1.0.3";
 
   src = fetchFromGitHub {
     owner = "Mange";
     repo = "tydra";
-    rev = "v${version}";
+    rev = "v${finalAttrs.version}";
     sha256 = "sha256-bH/W54b7UHdkbgLXAd+l5I6UAKjWDMW+I5mfwT4yEEY=";
   };
 
@@ -34,7 +34,6 @@ rustPlatform.buildRustPackage rec {
     description = "Shortcut menu-based task runner, inspired by Emacs Hydra";
     homepage = "https://github.com/Mange/tydra";
     license = lib.licenses.mit;
-    maintainers = with lib.maintainers; [ Br1ght0ne ];
     mainProgram = "tydra";
   };
-}
+})

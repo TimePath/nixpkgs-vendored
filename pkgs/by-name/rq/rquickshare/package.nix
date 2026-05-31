@@ -29,11 +29,14 @@ rustPlatform.buildRustPackage rec {
     hash = "sha256-DZdzk0wqKhVa51PgQf8UsAY6EbGKvRIGru71Z8rvrwA=";
   };
 
-  patches = [ ./fix-pnpm-outdated-lockfile.patch ];
+  patches = [
+    ./fix-pnpm-outdated-lockfile.patch
+    ./fix-pnpm-lock-file-tauri-minor-verison-mismatch.patch
+  ];
 
   # from https://github.com/NixOS/nixpkgs/blob/04e40bca2a68d7ca85f1c47f00598abb062a8b12/pkgs/by-name/ca/cargo-tauri/test-app.nix#L23-L26
   postPatch = lib.optionalString stdenv.hostPlatform.isLinux ''
-    substituteInPlace $cargoDepsCopy/libappindicator-sys-*/src/lib.rs \
+    substituteInPlace $cargoDepsCopy/*/libappindicator-sys-*/src/lib.rs \
       --replace-fail "libayatana-appindicator3.so.1" "${libayatana-appindicator}/lib/libayatana-appindicator3.so.1"
   '';
 
@@ -47,8 +50,8 @@ rustPlatform.buildRustPackage rec {
       ;
     pnpm = pnpm_9;
     postPatch = "cd ${pnpmRoot}";
-    fetcherVersion = 1;
-    hash = "sha256-V46V/VPwCKEe3sAp8zK0UUU5YigqgYh1GIOorqIAiNE=";
+    fetcherVersion = 3;
+    hash = "sha256-ESm7YVVbsfjpgYeNf3aVhJawpWhbeNdo0u7cBzLmEMw=";
   };
 
   cargoRoot = "app/main/src-tauri";
@@ -84,7 +87,7 @@ rustPlatform.buildRustPackage rec {
 
   env.OPENSSL_NO_VENDOR = 1;
 
-  passthru.updateScript = nix-update-script;
+  passthru.updateScript = nix-update-script { };
 
   meta = {
     description = "Rust implementation of NearbyShare/QuickShare from Android for Linux and macOS";
@@ -93,8 +96,9 @@ rustPlatform.buildRustPackage rec {
     license = lib.licenses.gpl3Plus;
     mainProgram = "rquickshare";
     maintainers = with lib.maintainers; [
-      perchun
+      PerchunPak
       luftmensch-luftmensch
+      sarunint
     ];
   };
 }

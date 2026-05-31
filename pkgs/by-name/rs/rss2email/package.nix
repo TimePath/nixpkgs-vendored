@@ -6,13 +6,13 @@
   nixosTests,
 }:
 
-python3Packages.buildPythonApplication rec {
+python3Packages.buildPythonApplication (finalAttrs: {
   pname = "rss2email";
   version = "3.14";
   pyproject = true;
 
   src = fetchPypi {
-    inherit pname version;
+    inherit (finalAttrs) pname version;
     hash = "sha256-RwORS2PHquxBZLNKqCJtR5XX4SHqPCb/Fn+Y68dfI/g=";
   };
 
@@ -75,10 +75,9 @@ python3Packages.buildPythonApplication rec {
     description = "Tool that converts RSS/Atom newsfeeds to email";
     homepage = "https://pypi.python.org/pypi/rss2email";
     license = lib.licenses.gpl2;
-    maintainers = with lib.maintainers; [ ekleog ];
     mainProgram = "r2e";
   };
   passthru.tests = {
     smoke-test = nixosTests.rss2email;
   };
-}
+})

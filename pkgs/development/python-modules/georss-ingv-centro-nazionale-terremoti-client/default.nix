@@ -4,7 +4,6 @@
   fetchFromGitHub,
   georss-client,
   pytestCheckHook,
-  pythonOlder,
   setuptools,
 }:
 
@@ -12,8 +11,6 @@ buildPythonPackage rec {
   pname = "georss-ingv-centro-nazionale-terremoti-client";
   version = "0.7";
   pyproject = true;
-
-  disabled = pythonOlder "3.7";
 
   src = fetchFromGitHub {
     owner = "exxamalte";
@@ -36,5 +33,6 @@ buildPythonPackage rec {
     changelog = "https://github.com/exxamalte/python-georss-ingv-centro-nazionale-terremoti-client/releases/tag/v${version}";
     license = with lib.licenses; [ asl20 ];
     maintainers = with lib.maintainers; [ fab ];
+    broken = true; # Sends a dict to georss_client.xml_parser which expects a string or character stream
   };
 }

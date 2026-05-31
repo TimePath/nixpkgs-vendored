@@ -10,24 +10,16 @@
   gitUpdater,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "opencc";
-  version = "1.1.9";
+  version = "1.3.0";
 
   src = fetchFromGitHub {
     owner = "BYVoid";
     repo = "OpenCC";
-    rev = "ver.${version}";
-    sha256 = "sha256-JBTegQs9ALp4LdKKYMNp9GYEgqR9O8IkX6LqatvaTic=";
+    tag = "ver.${finalAttrs.version}";
+    hash = "sha256-88u9bMJgycaR3MWKIUxiOuKmeVvbp4eWwCX7LgguwIU=";
   };
-
-  patches = [
-    (fetchpatch {
-      name = "CVE-2025-15536.patch";
-      url = "https://github.com/BYVoid/OpenCC/commit/345c9a50ab07018f1b4439776bad78a0d40778ec.patch";
-      hash = "sha256-lwzVRcCkMjHniaOQeoicO9fpEhyku2yhiPREk0WoXVM=";
-    })
-  ];
 
   nativeBuildInputs = [
     cmake
@@ -63,4 +55,4 @@ stdenv.mkDerivation rec {
     maintainers = with lib.maintainers; [ sifmelcara ];
     platforms = with lib.platforms; linux ++ darwin;
   };
-}
+})

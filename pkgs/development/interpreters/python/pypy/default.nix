@@ -18,7 +18,7 @@
   tcl,
   tk,
   tclPackages,
-  libX11,
+  libx11,
   gdbm,
   db,
   xz,
@@ -101,7 +101,7 @@ stdenv.mkDerivation rec {
     sqlite
     tk
     tcl
-    libX11
+    libx11
     gdbm
     db
   ]
@@ -171,6 +171,11 @@ stdenv.mkDerivation rec {
       inherit (sqlite) out dev;
       libsqlite = "${sqlite.out}/lib/libsqlite3${stdenv.hostPlatform.extensions.sharedLibrary}";
     })
+
+    # PyPy sets an explicit minimum SDK version for darwin that is much older
+    # than what we default to on nixpkgs.
+    # Simply removing the explicit flag makes it use our default instead.
+    ./darwin_version_min.patch
   ];
 
   postPatch = ''
@@ -348,13 +353,6 @@ stdenv.mkDerivation rec {
         "test_inspect"
         "test_pydoc"
         "test_warnings"
-      ]
-      ++ lib.optionals isPy310 [
-        "test_contextlib_async"
-        "test_future"
-        "test_lzma"
-        "test_module"
-        "test_typing"
       ];
     in
     ''
@@ -392,7 +390,7 @@ stdenv.mkDerivation rec {
 
   meta = {
     homepage = "https://www.pypy.org/";
-    changelog = "https://doc.pypy.org/en/stable/release-v${version}.html";
+    changelog = "https://doc.pypy.org/release-v${version}.html";
     description = "Fast, compliant alternative implementation of the Python language (${pythonVersion})";
     mainProgram = "pypy";
     license = lib.licenses.mit;

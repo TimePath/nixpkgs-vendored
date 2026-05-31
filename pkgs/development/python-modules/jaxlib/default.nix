@@ -66,7 +66,7 @@ let
 
   meta = {
     description = "Source-built JAX backend. JAX is Autograd and XLA, brought together for high-performance machine learning research";
-    homepage = "https://github.com/google/jax";
+    homepage = "https://github.com/jax-ml/jax";
     license = lib.licenses.asl20;
     maintainers = with lib.maintainers; [ ndl ];
 
@@ -230,7 +230,7 @@ let
       owner = "google";
       repo = "jax";
       # google/jax contains tags for jax and jaxlib. Only use jaxlib tags!
-      rev = "refs/tags/${pname}-v${version}";
+      tag = "${pname}-v${version}";
       hash = "sha256-qSHPwi3is6Ts7pz5s4KzQHBMbcjGp+vAOsejW3o36Ek=";
     };
 

@@ -21,7 +21,7 @@
   kirigami ? null,
   kirigami2 ? null,
   isocodes,
-  xkeyboardconfig,
+  xkeyboard-config,
   libxkbfile,
   libplasma ? null,
   plasma-framework ? null,
@@ -31,13 +31,13 @@
 
 stdenv.mkDerivation rec {
   pname = "fcitx5-configtool";
-  version = "5.1.11";
+  version = "5.1.13";
 
   src = fetchFromGitHub {
     owner = "fcitx";
     repo = pname;
     rev = version;
-    hash = "sha256-SEQelUMigcqs0C+jY+A/dfncEogzU1e5tjP+wK+MylM=";
+    hash = "sha256-STx2S5fuaZCsGoM8nsihYoW+C1GdkD3K7pT84aMRI9c=";
   };
 
   cmakeFlags = [
@@ -61,7 +61,7 @@ stdenv.mkDerivation rec {
     kitemviews
     kwidgetsaddons
     isocodes
-    xkeyboardconfig
+    xkeyboard-config
     libxkbfile
   ]
   ++ lib.optionals (lib.versions.major qtbase.version == "5") [

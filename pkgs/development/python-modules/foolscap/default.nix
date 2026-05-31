@@ -5,7 +5,6 @@
   mock,
   pyopenssl,
   pytestCheckHook,
-  pythonOlder,
   setuptools,
   six,
   twisted,
@@ -23,8 +22,6 @@ buildPythonPackage rec {
     setuptools
     versioneer
   ];
-
-  disabled = pythonOlder "3.7";
 
   src = fetchPypi {
     inherit pname version;
@@ -52,7 +49,7 @@ buildPythonPackage rec {
     mock
     pytestCheckHook
   ]
-  ++ lib.flatten (lib.attrValues optional-dependencies);
+  ++ lib.concatAttrValues optional-dependencies;
 
   pythonImportsCheck = [ "foolscap" ];
 

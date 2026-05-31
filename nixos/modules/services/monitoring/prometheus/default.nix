@@ -66,7 +66,7 @@ let
     rule_files = optionals (!(cfg.enableAgentMode)) (
       map (promtoolCheck "check rules" "rules") (
         cfg.ruleFiles
-        ++ [
+        ++ optionals (builtins.length cfg.rules > 0) [
           (pkgs.writeText "prometheus.rules" (concatStringsSep "\n" cfg.rules))
         ]
       )
@@ -1969,7 +1969,7 @@ in
       after = [ "network.target" ];
       serviceConfig = {
         ExecStart =
-          "${cfg.package}/bin/prometheus"
+          "${lib.getExe cfg.package}"
           + optionalString (length cmdlineArgs != 0) (" \\\n  " + concatStringsSep " \\\n  " cmdlineArgs);
         ExecReload = mkIf cfg.enableReload "+${reload}/bin/reload-prometheus";
         User = "prometheus";
@@ -1980,6 +1980,7 @@ in
         StateDirectory = cfg.stateDir;
         StateDirectoryMode = "0700";
         # Hardening
+        CapabilityBoundingSet = [ "" ];
         DeviceAllow = [ "/dev/null rw" ];
         DevicePolicy = "strict";
         LockPersonality = true;

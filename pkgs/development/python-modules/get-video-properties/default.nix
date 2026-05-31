@@ -34,6 +34,6 @@ buildPythonPackage {
     description = "Get video properties";
     homepage = "https://github.com/mvasilkov/python-get-video-properties";
     license = lib.licenses.mit;
-    maintainers = with lib.maintainers; [ globin ];
+    maintainers = [ ];
   };
 }

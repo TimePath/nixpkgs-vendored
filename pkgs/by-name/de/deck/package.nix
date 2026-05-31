@@ -7,15 +7,15 @@
   nix-update-script,
 }:
 
-buildGoModule rec {
+buildGoModule (finalAttrs: {
   pname = "deck";
-  version = "1.53.2";
+  version = "1.60.0";
 
   src = fetchFromGitHub {
     owner = "Kong";
     repo = "deck";
-    tag = "v${version}";
-    hash = "sha256-txALVamKm1ADwSsSNei04LNqKr5lkEYB4OyxpjvMk90=";
+    tag = "v${finalAttrs.version}";
+    hash = "sha256-5L1kY8EE3+IGP20fL1oBbc7rWqHcseyw+qYKND4AnMg=";
   };
 
   nativeBuildInputs = [ installShellFiles ];
@@ -23,12 +23,12 @@ buildGoModule rec {
   env.CGO_ENABLED = 0;
 
   ldflags = [
-    "-s -w -X github.com/kong/deck/cmd.VERSION=${version}"
-    "-X github.com/kong/deck/cmd.COMMIT=${src.rev}"
+    "-s -w -X github.com/kong/deck/cmd.VERSION=${finalAttrs.version}"
+    "-X github.com/kong/deck/cmd.COMMIT=${finalAttrs.src.rev}"
   ];
 
   proxyVendor = true; # darwin/linux hash mismatch
-  vendorHash = "sha256-eg9Ks3IGNzGIanY3jsGtAPb/iYYDitskt0slaX8b+qs=";
+  vendorHash = "sha256-C6JqlW50vJVmwEPOtljgPxRWcJ12IpTzGVCHVC57+J0=";
 
   postInstall = lib.optionalString (stdenv.buildPlatform.canExecute stdenv.hostPlatform) ''
     installShellCompletion --cmd deck \
@@ -46,4 +46,4 @@ buildGoModule rec {
     mainProgram = "deck";
     maintainers = with lib.maintainers; [ liyangau ];
   };
-}
+})

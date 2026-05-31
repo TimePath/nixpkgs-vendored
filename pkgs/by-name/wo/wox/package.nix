@@ -2,7 +2,7 @@
   lib,
   stdenv,
   fetchFromGitHub,
-  flutter335,
+  flutter341,
   keybinder3,
   nodejs,
   pnpm_9,
@@ -13,8 +13,10 @@
   buildGoModule,
   pkg-config,
   autoPatchelfHook,
-  xorg,
+  libxtst,
+  libx11,
   libxkbcommon,
+  xorgproto,
   libayatana-appindicator,
   gtk3,
   desktop-file-utils,
@@ -24,13 +26,13 @@
 }:
 
 let
-  version = "2.0.0-beta.5";
+  version = "2.0.2";
 
   src = fetchFromGitHub {
     owner = "Wox-launcher";
     repo = "Wox";
     tag = "v${version}";
-    hash = "sha256-ZuKsIWooLqGeEex8uRiMVYVxnAJyiQt0soZ9OP6+qq0=";
+    hash = "sha256-Qav2RhmhJQr2D1D3okshIrnnQuOh7V1gWbZwXR3LBAc=";
   };
 
   metaCommon = {
@@ -40,7 +42,7 @@ let
     maintainers = [ ];
   };
 
-  ui-flutter = flutter335.buildFlutterApplication {
+  ui-flutter = flutter341.buildFlutterApplication {
     pname = "wox-ui-flutter";
     inherit version src;
 
@@ -48,9 +50,19 @@ let
 
     pubspecLock = lib.importJSON ./pubspec.lock.json;
 
+    postPatch = ''
+      substituteInPlace linux/runner/my_application.cc \
+        --replace-fail "X11/Xkeysym.h" "X11/keysym.h"
+    '';
+
     nativeBuildInputs = [ autoPatchelfHook ];
 
-    buildInputs = [ keybinder3 ];
+    buildInputs = [
+      keybinder3
+      xorgproto
+      libx11
+      libxtst
+    ];
 
     meta = metaCommon // {
       mainProgram = "wox";
@@ -78,8 +90,8 @@ let
         sourceRoot
         ;
       pnpm = pnpm_9;
-      fetcherVersion = 2;
-      hash = "sha256-HhdMwVNt7178EQlZGpTiTySBp8GR9tBpUaikEWt1BGY=";
+      fetcherVersion = 3;
+      hash = "sha256-cbuVQV8ih8rztERFLUHGnK63MBz8+QVmzeegYLDwcj4=";
     };
 
     buildPhase = ''
@@ -156,9 +168,10 @@ buildGoModule {
       --replace-fail "update-desktop-database" "${desktop-file-utils}/bin/update-desktop-database" \
       --replace-fail "xdg-mime" "${xdg-utils}/bin/xdg-mime" \
       --replace-fail "Exec=%s" "Exec=wox"
+    sed -i '/^	"path"$/d' plugin/host/host_python.go
   '';
 
-  vendorHash = "sha256-Ft4X2woSf0ib0Z8dAwf0VAFQv0ck9nVs7EnpWgGi2+0=";
+  vendorHash = "sha256-IDcIEZVCJp1ls5c2fblgX+I+MhfRDXqFbf0GhgcFiTo=";
 
   proxyVendor = true;
 
@@ -169,8 +182,8 @@ buildGoModule {
   ];
 
   buildInputs = [
-    xorg.libX11
-    xorg.libXtst
+    libx11
+    libxtst
     libxkbcommon
     libayatana-appindicator
     gtk3
@@ -204,7 +217,7 @@ buildGoModule {
   ];
 
   postInstall = ''
-    install -Dm644 ../assets/app.png $out/share/icons/hicolor/1024x1024/apps/wox.png
+    install -Dm644 ../assets/app.png $out/share/icons/wox.png
   '';
 
   meta = metaCommon // {

@@ -9,7 +9,7 @@
 
 * Use `nix-shell --run treefmt` to format the VSCode extensions.
 
-* Respect `alphabetical order` whenever adding extensions. On disorder, please, kindly open a PR re-establishing the order.
+* Respect `alphabetical order` whenever adding extensions. If out of order, please kindly open a PR re-establishing the order.
 
 * Avoid [unnecessary](https://nix.dev/guides/best-practices.html#with-scopes) use of `with`, particularly `nested with`.
 
@@ -27,7 +27,7 @@
       - maintainers are listed in alphabetical order.
   - verify `license` in upstream.
 
-* On commit messages:
+* Commit messages:
   - Naming convention for:
     - Adding a new extension:
 

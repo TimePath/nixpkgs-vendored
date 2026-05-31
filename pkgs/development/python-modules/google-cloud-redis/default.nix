@@ -7,24 +7,25 @@
   protobuf,
   pytest-asyncio,
   pytestCheckHook,
-  pythonOlder,
   setuptools,
 }:
 
 buildPythonPackage rec {
   pname = "google-cloud-redis";
-  version = "2.18.1";
+  version = "2.21.0";
   pyproject = true;
-
-  disabled = pythonOlder "3.7";
 
   src = fetchPypi {
     pname = "google_cloud_redis";
     inherit version;
-    hash = "sha256-o64V2KL/Gmeg2LOXR3XCsGypf4Tz8zyHYoIiGR7+rJw=";
+    hash = "sha256-6ulUf+zR5wLWoc5wHGgZ1Rp+bEjNUmdZlIRXx+EkEUI=";
   };
 
   build-system = [ setuptools ];
+
+  pythonRelaxDeps = [
+    "protobuf"
+  ];
 
   dependencies = [
     google-api-core

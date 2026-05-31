@@ -5,11 +5,12 @@
   copyDesktopItems,
   makeDesktopItem,
   openjdk,
+  writeScript,
 }:
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "visual-paradigm-ce";
-  version = "17.3.20251162";
+  version = "18.0.20260511";
 
   src =
     let
@@ -21,8 +22,19 @@ stdenv.mkDerivation (finalAttrs: {
       url = "https://eu10-dl.visual-paradigm.com/visual-paradigm/vpce${majorMinor}/${suffix}/Visual_Paradigm_CE_${
         builtins.replaceStrings [ "." ] [ "_" ] majorMinor
       }_${suffix}_Linux64_InstallFree.tar.gz";
-      hash = "sha256-Af1aYb00OOsPP0vRqExr40GcvZQv5OZ2LJye8HOof1U=";
+      hash = "sha256-K3eJhS+hz0AlVB0a17Chf/PNa5bFXjVIaFHt9thlabo=";
     };
+
+  passthru.updateScript = writeScript "update-visual-paradigm-ce" ''
+    #!/usr/bin/env nix-shell
+    #!nix-shell -i bash -p curl gnused common-updater-scripts
+
+    set -eu -o pipefail
+
+    version="$(curl -Ls -o /dev/null -w %{url_effective} https://www.visual-paradigm.com/downloads/vpce/checksum.html | sed -E 's#.*/vpce([0-9]+\.[0-9]+)/([0-9]+)/.*#\1.\2#')"
+
+    update-source-version visual-paradigm-ce "$version"
+  '';
 
   nativeBuildInputs = [
     copyDesktopItems

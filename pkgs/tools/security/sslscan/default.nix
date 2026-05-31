@@ -7,13 +7,13 @@
 
 stdenv.mkDerivation rec {
   pname = "sslscan";
-  version = "2.2.0";
+  version = "2.2.2";
 
   src = fetchFromGitHub {
     owner = "rbsec";
     repo = "sslscan";
     tag = version;
-    hash = "sha256-i8nrGni7mClJQIlkDt20JXyhlJALKCR0MZk51ACtev0=";
+    hash = "sha256-qrd0NJS7M3nKFpAOpd8raGLrMj6PixTqiuus25lv+PA=";
   };
 
   buildInputs = [ openssl ];
@@ -31,7 +31,6 @@ stdenv.mkDerivation rec {
     license = lib.licenses.gpl3Only;
     maintainers = with lib.maintainers; [
       fpletz
-      globin
     ];
   };
 }

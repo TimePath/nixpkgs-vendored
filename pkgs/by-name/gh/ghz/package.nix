@@ -6,18 +6,18 @@
   ghz,
 }:
 
-buildGoModule rec {
+buildGoModule (finalAttrs: {
   pname = "ghz";
-  version = "0.120.0";
+  version = "0.121.0";
 
   src = fetchFromGitHub {
     owner = "bojand";
     repo = "ghz";
-    rev = "v${version}";
-    sha256 = "sha256-EzyQbMoR4veHbc9VaNfiXMi18wXbTbDPfDxo5NCk7CE=";
+    rev = "v${finalAttrs.version}";
+    sha256 = "sha256-hfHhsargP/odmpbfO24aDXr5m9VeDNOYyi1n9ji2trU=";
   };
 
-  vendorHash = "sha256-7TrYWmVKxHKVTyiIak7tRYKE4hgG/4zfsM76bJRxnAk=";
+  vendorHash = "sha256-eu0YPKddYfjbOkF0yrUPu2PsjsyIn2pBm9+CDrRlB2k=";
 
   subPackages = [
     "cmd/ghz"
@@ -27,7 +27,7 @@ buildGoModule rec {
   ldflags = [
     "-s"
     "-w"
-    "-X=main.version=${version}"
+    "-X=main.version=${finalAttrs.version}"
   ];
 
   passthru.tests = {
@@ -45,4 +45,4 @@ buildGoModule rec {
     homepage = "https://ghz.sh";
     license = lib.licenses.asl20;
   };
-}
+})

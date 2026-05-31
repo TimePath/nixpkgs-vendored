@@ -12,7 +12,6 @@
   paho-mqtt,
   pytest-mock,
   pytestCheckHook,
-  pythonOlder,
   pyyaml,
   requests,
   requests-oauthlib,
@@ -22,16 +21,14 @@
   testers,
 }:
 
-buildPythonPackage rec {
+buildPythonPackage (finalAttrs: {
   pname = "apprise";
-  version = "1.9.5";
+  version = "1.10.0";
   pyproject = true;
 
-  disabled = pythonOlder "3.7";
-
   src = fetchPypi {
-    inherit pname version;
-    hash = "sha256-jzvjGLtCnCAXRw4zkoouMTy/dgD8dLgYR4KjcGDbNmo=";
+    inherit (finalAttrs) pname version;
+    hash = "sha256-t2jzLZnkXtX0w+7x9nkD6APJf5e6YaUxpdCkXUDfkKg=";
   };
 
   postPatch = lib.optionalString stdenv.hostPlatform.isDarwin ''
@@ -71,16 +68,16 @@ buildPythonPackage rec {
   passthru = {
     tests.version = testers.testVersion {
       package = apprise;
-      version = "v${version}";
+      version = "v${finalAttrs.version}";
     };
   };
 
   meta = {
     description = "Push Notifications that work with just about every platform";
-    homepage = "https://github.com/caronc/apprise";
-    changelog = "https://github.com/caronc/apprise/releases/tag/v${version}";
+    homepage = "https://appriseit.com/";
+    changelog = "https://github.com/caronc/apprise/releases/tag/v${finalAttrs.version}";
     license = lib.licenses.bsd2;
     maintainers = with lib.maintainers; [ getchoo ];
     mainProgram = "apprise";
   };
-}
+})

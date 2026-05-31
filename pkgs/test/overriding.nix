@@ -5,7 +5,13 @@
 }:
 
 let
-  tests = tests-stdenv // test-extendMkDerivation // tests-fetchhg // tests-go // tests-python;
+  tests =
+    tests-stdenv
+    // test-extendMkDerivation
+    // tests-fetchhg
+    // tests-fetchurl
+    // tests-go
+    // tests-python;
 
   tests-stdenv =
     let
@@ -61,6 +67,16 @@ let
             pname = "hello-no-final-attrs-overridden";
           }).pname;
         expected = "hello-no-final-attrs-overridden";
+      };
+      structuredAttrs-allowedRequisites-nullability = {
+        expr =
+          lib.hasPrefix builtins.storeDir
+            (pkgs.stdenv.mkDerivation {
+              __structuredAttrs = true;
+              inherit (pkgs.hello) pname version src;
+              allowedRequisites = null;
+            }).drvPath;
+        expected = true;
       };
     };
 
@@ -128,6 +144,98 @@ let
       extendMkDerivation-helloLocal-specialArg = {
         expr = hiLocal.greeting;
         expected = "Hi!";
+      };
+    };
+
+  tests-fetchgit =
+    let
+      src-with-sha256 = pkgs.fetchgit {
+        url = "https://example.com/source.git";
+        sha256 = lib.fakeSha256;
+      };
+    in
+    {
+      test-fetchgit-hash-compat = {
+        expr = {
+          inherit (src-with-sha256)
+            outputHash
+            outputHashAlgo
+            ;
+        };
+        expected = {
+          outputHash = lib.fakeSha256;
+          outputHashAlgo = "sha256";
+        };
+      };
+      test-fetchgit-overrideAttrs-hash = {
+        expr = {
+          inherit (src-with-sha256.overrideAttrs { hash = pkgs.nix.src.hash; })
+            outputHash
+            outputHashAlgo
+            ;
+        };
+        expected = {
+          outputHash = pkgs.nix.src.hash;
+          outputHashAlgo = null;
+        };
+      };
+      test-fetchurl-overrideAttrs-hash-empty = {
+        expr = {
+          inherit (src-with-sha256.overrideAttrs { hash = ""; })
+            outputHash
+            outputHashAlgo
+            ;
+        };
+        expected = {
+          outputHash = lib.fakeHash;
+          outputHashAlgo = null;
+        };
+      };
+    };
+
+  tests-fetchurl =
+    let
+      src-with-sha256 = pkgs.fetchurl {
+        url = "https://example.com/source.tar.gz";
+        sha256 = lib.fakeSha256;
+      };
+    in
+    {
+      test-fetchurl-hash-compat = {
+        expr = {
+          inherit (src-with-sha256)
+            outputHash
+            outputHashAlgo
+            ;
+        };
+        expected = {
+          outputHash = lib.fakeSha256;
+          outputHashAlgo = "sha256";
+        };
+      };
+      test-fetchurl-overrideAttrs-hash = {
+        expr = {
+          inherit (src-with-sha256.overrideAttrs { hash = pkgs.hello.src.hash; })
+            outputHash
+            outputHashAlgo
+            ;
+        };
+        expected = {
+          outputHash = pkgs.hello.src.hash;
+          outputHashAlgo = null;
+        };
+      };
+      test-fetchurl-overrideAttrs-hash-empty = {
+        expr = {
+          inherit (src-with-sha256.overrideAttrs { hash = ""; })
+            outputHash
+            outputHashAlgo
+            ;
+        };
+        expected = {
+          outputHash = lib.fakeHash;
+          outputHashAlgo = null;
+        };
       };
     };
 
@@ -326,6 +434,14 @@ let
         p.overridePythonAttrs (previousAttrs: {
           overridePythonAttrsFlag = previousAttrs.overridePythonAttrsFlag or 0 + 1;
         });
+      applyOverridePythonAttrsFP =
+        p:
+        p.overridePythonAttrs (
+          finalAttrs: previousAttrs: {
+            overridePythonAttrsFlag = previousAttrs.overridePythonAttrsFlag or 0 + 1;
+            overridePythonAttrsFlagP1 = finalAttrs.overridePythonAttrsFlag + 1;
+          }
+        );
       overrideAttrsFooBar =
         drv:
         drv.overrideAttrs (
@@ -348,20 +464,6 @@ let
         expr = package-stub-libcxx.stdenv;
         expected = pkgs.libcxxStdenv;
       };
-      overridePythonAttrs-stdenv-deprecated = {
-        expr =
-          (package-stub.overridePythonAttrs (_: {
-            stdenv = pkgs.clangStdenv;
-          })).stdenv;
-        expected = pkgs.clangStdenv;
-      };
-      overridePythonAttrs-override-clangStdenv-deprecated-nested = {
-        expr =
-          (package-stub-gcc.overridePythonAttrs {
-            stdenv = pkgs.clangStdenv;
-          }).stdenv;
-        expected = pkgs.clangStdenv;
-      };
 
       overridePythonAttrs = {
         expr = (applyOverridePythonAttrs package-stub).overridePythonAttrsFlag;
@@ -370,6 +472,22 @@ let
       overridePythonAttrs-nested = {
         expr = (applyOverridePythonAttrs (applyOverridePythonAttrs package-stub)).overridePythonAttrsFlag;
         expected = 2;
+      };
+      overridePythonAttrs-plain = {
+        expr = (package-stub.overridePythonAttrs { overridePythonAttrsFlag = 0; }).overridePythonAttrsFlag;
+        expected = 0;
+      };
+      overridePythonAttrs-finalAttrs = {
+        expr = {
+          inherit (applyOverridePythonAttrsFP package-stub)
+            overridePythonAttrsFlag
+            overridePythonAttrsFlagP1
+            ;
+        };
+        expected = {
+          overridePythonAttrsFlag = 1;
+          overridePythonAttrsFlagP1 = 2;
+        };
       };
       overrideAttrs-overridePythonAttrs-test-overrideAttrs = {
         expr = {

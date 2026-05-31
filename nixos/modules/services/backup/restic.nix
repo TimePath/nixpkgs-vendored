@@ -494,7 +494,7 @@ in
               ${pkgs.writeScript "backupCleanupCommand" backup.backupCleanupCommand}
             ''}
             ${lib.optionalString fileBackup ''
-              rm ${filesFromTmpFile}
+              rm -f ${filesFromTmpFile}
             ''}
           '';
         }
@@ -505,6 +505,7 @@ in
       lib.nameValuePair "restic-backups-${name}" {
         wantedBy = [ "timers.target" ];
         inherit (backup) timerConfig;
+        unitConfig.X-OnlyManualStart = true;
       }
     ) (lib.filterAttrs (_: backup: backup.timerConfig != null) config.services.restic.backups);
 

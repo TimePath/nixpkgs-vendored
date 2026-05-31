@@ -15,7 +15,6 @@
   pyshp,
   pytest-mpl,
   pytestCheckHook,
-  pythonOlder,
   scipy,
   setuptools-scm,
   shapely,
@@ -25,8 +24,6 @@ buildPythonPackage rec {
   pname = "cartopy";
   version = "0.25.0";
   pyproject = true;
-
-  disabled = pythonOlder "3.10";
 
   src = fetchPypi {
     inherit pname version;
@@ -70,7 +67,7 @@ buildPythonPackage rec {
     pytest-mpl
     pytestCheckHook
   ]
-  ++ lib.flatten (lib.attrValues optional-dependencies);
+  ++ lib.concatAttrValues optional-dependencies;
 
   preCheck = ''
     export FONTCONFIG_FILE=${fontconfig.out}/etc/fonts/fonts.conf

@@ -15,9 +15,9 @@
   xdg-utils,
   versionCheckHook,
 
-  version ? "1.6.1",
-  srcHash ? "sha256-7kwtWuYdYG3MDHThCkY5OZmx4pWaQXMYoOlJszmV2rM=",
-  cargoHash ? "sha256-59RyfSUJNoQ7EtQK3OSYOIO/YVEjeeM9ovbojHFX4pI=",
+  version ? "1.9.1",
+  srcHash ? "sha256-8wLVNHF9qkKBK2s6RdH0/2To2zamx8RON5iBjkQoQY4=",
+  cargoHash ? "sha256-holYrCL0FApbnFRj0+bVnjkiNL14jclaM8xIqRHfEkc=",
   updateScript ? ./update.sh,
 }:
 
@@ -27,7 +27,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
   pname = "radicle-node";
 
   src = fetchFromRadicle {
-    seed = "seed.radicle.xyz";
+    seed = "seed.radicle.dev";
     repo = "z3gqcJUoA1n9HaHKufZs5FCSGazv5";
     tag = "releases/${finalAttrs.version}";
     hash = srcHash;
@@ -68,6 +68,12 @@ rustPlatform.buildRustPackage (finalAttrs: {
     export PATH=$PATH:$PWD/target/${stdenv.hostPlatform.rust.rustcTargetSpec}/release
     # Tests want to open many files.
     ulimit -n 4096
+    # Cap test threads to avoid timing issues on loaded builders (sync timeout is 5s)
+    max_threads=4
+    if [[ -n "$NIX_BUILD_CORES" && "$NIX_BUILD_CORES" -lt "$max_threads" ]]; then
+      max_threads=$NIX_BUILD_CORES
+    fi
+    export RUST_TEST_THREADS=$max_threads
   '';
   checkFlags = [
     "--skip=service::message::tests::test_node_announcement_validate"
@@ -93,7 +99,6 @@ rustPlatform.buildRustPackage (finalAttrs: {
   '';
 
   nativeInstallCheckInputs = [ versionCheckHook ];
-  versionCheckProgramArg = "--version";
   doInstallCheck = true;
 
   postFixup = ''
@@ -144,6 +149,11 @@ rustPlatform.buildRustPackage (finalAttrs: {
           services.radicle.package = finalAttrs.finalPackage;
         };
       };
+      ci-broker = nixosTests.radicle-ci-broker.extendNixOS {
+        module = {
+          services.radicle.package = finalAttrs.finalPackage;
+        };
+      };
     };
   };
 
@@ -154,17 +164,14 @@ rustPlatform.buildRustPackage (finalAttrs: {
       Unlike centralized code hosting platforms, there is no single entity controlling the network.
       Repositories are replicated across peers in a decentralized manner, and users are in full control of their data and workflow.
     '';
-    homepage = "https://radicle.xyz";
+    homepage = "https://radicle.dev";
+    changelog = "https://radicle.network/nodes/seed.radicle.dev/rad:z3gqcJUoA1n9HaHKufZs5FCSGazv5/tree/CHANGELOG.md";
     license = with lib.licenses; [
       asl20
       mit
     ];
     platforms = lib.platforms.unix;
-    maintainers = with lib.maintainers; [
-      amesgen
-      lorenzleutgeb
-      defelo
-    ];
+    teams = [ lib.teams.radicle ];
     mainProgram = "rad";
   };
 })

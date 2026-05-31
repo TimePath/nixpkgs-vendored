@@ -11,13 +11,13 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "easycrypt";
-  version = "2026.02";
+  version = "2026.05";
 
   src = fetchFromGitHub {
     owner = "easycrypt";
     repo = "easycrypt";
     tag = "r${finalAttrs.version}";
-    hash = "sha256-ii/msqNUPZ7jQXG2fEkEpsGXc4sw6DcyaTIw21lrl7M=";
+    hash = "sha256-+tVGJAfngTHpn7qFGwl36verbcxOqH21zwojgOxcuuY=";
   };
 
   nativeBuildInputs =
@@ -56,7 +56,7 @@ stdenv.mkDerivation (finalAttrs: {
     runHook preInstall
     dune install --prefix $out easycrypt
     rm $out/bin/ec-runtest
-    wrapPythonProgramsIn "$out/lib/easycrypt/commands" "$pythonPath"
+    wrapPythonProgramsIn "$out/lib/easycrypt/commands" "''${pythonPath[*]}"
     runHook postInstall
   '';
 

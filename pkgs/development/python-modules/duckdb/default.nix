@@ -3,7 +3,6 @@
   stdenv,
   buildPythonPackage,
   fetchFromGitHub,
-  pythonOlder,
   cmake,
   ninja,
   duckdb,
@@ -16,6 +15,7 @@
   psutil,
   pyarrow,
   pybind11,
+  pytz,
   scikit-build-core,
   setuptools-scm,
   pytest-reraise,
@@ -72,16 +72,11 @@ buildPythonPackage rec {
   ];
 
   optional-dependencies = {
-    # Note: ipython and adbc_driver_manager currently excluded despite inclusion in upstream
-    # https://github.com/duckdb/duckdb-python/blob/v1.4.0/pyproject.toml#L44-L52
     all = [
+      # FIXME package adbc_driver_manager
       ipython
       fsspec
       numpy
-    ]
-    ++ lib.optionals (pythonOlder "3.14") [
-      # https://github.com/duckdb/duckdb-python/blob/0ee500cfa35fc07bf81ed02e8ab6984ea1f665fd/pyproject.toml#L49-L51
-      # adbc_driver_manager noted for migration to duckdb C source
       pandas
       pyarrow
     ];
@@ -104,6 +99,7 @@ buildPythonPackage rec {
     psutil
     pytest-reraise
     pytestCheckHook
+    pytz
   ]
   ++ optional-dependencies.all;
 
@@ -149,6 +145,9 @@ buildPythonPackage rec {
     description = "Python binding for DuckDB";
     homepage = "https://duckdb.org/";
     license = lib.licenses.mit;
-    maintainers = with lib.maintainers; [ cpcloud ];
+    maintainers = with lib.maintainers; [
+      cameronraysmith
+      cpcloud
+    ];
   };
 }

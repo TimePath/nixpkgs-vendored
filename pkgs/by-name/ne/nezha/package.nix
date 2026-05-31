@@ -1,6 +1,6 @@
 {
   lib,
-  buildGo126Module,
+  buildGoModule,
   fetchFromGitHub,
   go-swag,
   versionCheckHook,
@@ -46,15 +46,15 @@ let
     in
     (formats.yaml { }).generate "frontend-templates.yaml" (officialThemes ++ communityThemes);
 in
-buildGo126Module (finalAttrs: {
+buildGoModule (finalAttrs: {
   pname = "nezha";
-  version = "2.0.4";
+  version = "2.0.11";
 
   src = fetchFromGitHub {
     owner = "nezhahq";
     repo = "nezha";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-JzdjIAeWswW/6ZnwfRZAexzl/ehvzKmyiNyzCHBDqgA=";
+    hash = "sha256-XZPyzIiqf2UG1gE6uHiYSVPCP6G/lrKK+Y3vRgkPk20=";
   };
 
   proxyVendor = true;
@@ -94,7 +94,7 @@ buildGo126Module (finalAttrs: {
     GOROOT=''${GOROOT-$(go env GOROOT)} swag init --pd -d cmd/dashboard -g main.go -o cmd/dashboard/docs
   '';
 
-  vendorHash = "sha256-k1Xcmsx1QnkDCmSijtdG+rB34L6d1AbNLuU14zWTDhY=";
+  vendorHash = "sha256-x347CkS4nw8hFUhmuewvrqNDE2a2lT3KmIQ1hc98NJE=";
 
   ldflags = [
     "-s"

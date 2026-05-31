@@ -4,7 +4,7 @@
   fetchFromGitHub,
   python3,
   makeWrapper,
-  unstableGitUpdater,
+  nix-update-script,
   nixosTests,
   useGpiod ? false,
 }:
@@ -35,13 +35,13 @@ let
 in
 stdenvNoCC.mkDerivation rec {
   pname = "moonraker";
-  version = "0.9.3-unstable-2025-11-10";
+  version = "0.10.0";
 
   src = fetchFromGitHub {
     owner = "Arksine";
     repo = "moonraker";
-    rev = "abd2026b90d86fb738c6619be3ceefcedee2006c";
-    sha256 = "sha256-Vmrvpj5Bdhn9czrswqtFiRL7GoplMcBvVs1FJTZwQxs=";
+    tag = "v${version}";
+    hash = "sha256-jprhbO3wQF/ozOf6VUrDYqNK0TstmLc4nZsZrB6hjOY=";
   };
 
   nativeBuildInputs = [ makeWrapper ];
@@ -55,10 +55,7 @@ stdenvNoCC.mkDerivation rec {
   '';
 
   passthru = {
-    updateScript = unstableGitUpdater {
-      url = meta.homepage;
-      tagPrefix = "v";
-    };
+    updateScript = nix-update-script { };
     tests.moonraker = nixosTests.moonraker;
   };
 

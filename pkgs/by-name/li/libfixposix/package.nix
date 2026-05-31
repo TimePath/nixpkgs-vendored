@@ -7,14 +7,14 @@
   getconf,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "libfixposix";
   version = "0.5.1";
 
   src = fetchFromGitHub {
     owner = "sionescu";
     repo = "libfixposix";
-    rev = "v${version}";
+    rev = "v${finalAttrs.version}";
     sha256 = "sha256-5qA6ytbqE+/05XQGxP9/4vEs9gFcuI3k7eJJYucW7fM=";
   };
 
@@ -29,9 +29,8 @@ stdenv.mkDerivation rec {
     description = "Thin wrapper over POSIX syscalls and some replacement functionality";
     license = lib.licenses.boost;
     maintainers = with lib.maintainers; [
-      orivej
       raskin
     ];
     platforms = lib.platforms.linux ++ lib.platforms.darwin;
   };
-}
+})

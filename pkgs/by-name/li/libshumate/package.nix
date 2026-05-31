@@ -23,7 +23,7 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "libshumate";
-  version = "1.5.1";
+  version = "1.6.1";
 
   outputs = [
     "out"
@@ -34,7 +34,7 @@ stdenv.mkDerivation (finalAttrs: {
 
   src = fetchurl {
     url = "mirror://gnome/sources/libshumate/${lib.versions.majorMinor finalAttrs.version}/libshumate-${finalAttrs.version}.tar.xz";
-    hash = "sha256-2q34twATQ4jH6TPgtiNYaqp/L76LOmJZOHUTMDuYduY=";
+    hash = "sha256-s2qtNFAHkXhfVGaE0PLtZE5IGf9Oha5noiRfFZ7MstQ=";
   };
 
   depsBuildBuild = [
@@ -88,6 +88,8 @@ stdenv.mkDerivation (finalAttrs: {
     # Cannot be in postInstall, otherwise _multioutDocs hook in preFixup will move right back.
     moveToOutput share/doc/libshumate-1.0 "$devdoc"
   '';
+
+  strictDeps = true;
 
   passthru = {
     updateScript = gnome.updateScript {

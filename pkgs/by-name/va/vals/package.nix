@@ -6,25 +6,25 @@
   vals,
 }:
 
-buildGoModule rec {
+buildGoModule (finalAttrs: {
   pname = "vals";
-  version = "0.42.5";
+  version = "0.44.0";
 
   src = fetchFromGitHub {
-    rev = "v${version}";
+    rev = "v${finalAttrs.version}";
     owner = "helmfile";
     repo = "vals";
-    sha256 = "sha256-rCy2fEg/qAnieW8ptK8Zw6S2V5PzxQ27NUXig+lDvuQ=";
+    sha256 = "sha256-t13qzIE1nl+AjxdFISD61ScahWuFJV7ROqtSr22Tscs=";
   };
 
-  vendorHash = "sha256-PTw9l9/IZjkgyDd5m9DfN1L8PEFvqaBltyclX9BZ+98=";
+  vendorHash = "sha256-xBOac8rDMsn+gX5QWdIoP9BdqBmdZ7tvtRG677uiCpM=";
 
   proxyVendor = true;
 
   ldflags = [
     "-s"
     "-w"
-    "-X main.version=${version}"
+    "-X main.version=${finalAttrs.version}"
   ];
 
   # Tests require connectivity to various backends.
@@ -40,7 +40,7 @@ buildGoModule rec {
     mainProgram = "vals";
     license = lib.licenses.asl20;
     homepage = "https://github.com/helmfile/vals";
-    changelog = "https://github.com/helmfile/vals/releases/v${version}";
+    changelog = "https://github.com/helmfile/vals/releases/v${finalAttrs.version}";
     maintainers = with lib.maintainers; [ stehessel ];
   };
-}
+})

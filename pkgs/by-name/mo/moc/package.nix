@@ -162,7 +162,6 @@ stdenv.mkDerivation {
     maintainers = with lib.maintainers; [
       aethelz
       pSub
-      jagajaga
     ];
     platforms = lib.platforms.unix;
     mainProgram = "mocp";

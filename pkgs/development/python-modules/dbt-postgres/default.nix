@@ -8,15 +8,12 @@
   dbt-core,
   hatchling,
   psycopg2,
-  pythonOlder,
 }:
 
 buildPythonPackage rec {
   pname = "dbt-postgres";
   version = "1.9.0";
   pyproject = true;
-
-  disabled = pythonOlder "3.9";
 
   src = fetchFromGitHub {
     owner = "dbt-labs";
@@ -46,6 +43,5 @@ buildPythonPackage rec {
     description = "Plugin enabling dbt to work with a Postgres database";
     homepage = "https://github.com/dbt-labs/dbt-core";
     license = lib.licenses.asl20;
-    maintainers = with lib.maintainers; [ tjni ];
   };
 }

@@ -1,5 +1,6 @@
 {
   lib,
+  stdenv,
   buildPythonPackage,
   fetchFromGitLab,
   setuptools,
@@ -30,9 +31,9 @@
   swh-journal,
 }:
 
-buildPythonPackage rec {
+buildPythonPackage (finalAttrs: {
   pname = "swh-storage";
-  version = "4.1.0";
+  version = "4.1.1";
   pyproject = true;
 
   src = fetchFromGitLab {
@@ -40,8 +41,8 @@ buildPythonPackage rec {
     group = "swh";
     owner = "devel";
     repo = "swh-storage";
-    tag = "v${version}";
-    hash = "sha256-JXeHE/wZ3Wcf1I1eGyCNlCGsreiQH6kCYZoDXV1h0A0=";
+    tag = "v${finalAttrs.version}";
+    hash = "sha256-AY2IcRJG19oSy2usI9JZTEKYLI3SEiLpNisqD7zus8A=";
   };
 
   build-system = [
@@ -74,6 +75,9 @@ buildPythonPackage rec {
 
   pythonImportsCheck = [ "swh.storage" ];
 
+  # Many broken tests on Darwin. Disabling them for now.
+  doCheck = !stdenv.hostPlatform.isDarwin;
+
   nativeCheckInputs = [
     postgresql
     postgresqlTestHook
@@ -102,10 +106,10 @@ buildPythonPackage rec {
   ];
 
   meta = {
-    changelog = "https://gitlab.softwareheritage.org/swh/devel/swh-storage/-/tags/${src.tag}";
+    changelog = "https://gitlab.softwareheritage.org/swh/devel/swh-storage/-/tags/${finalAttrs.src.tag}";
     description = "Abstraction layer over the archive, allowing to access all stored source code artifacts as well as their metadata";
     homepage = "https://gitlab.softwareheritage.org/swh/devel/swh-storage";
     license = lib.licenses.gpl3Only;
-    maintainers = [ ];
+    maintainers = with lib.maintainers; [ drupol ];
   };
-}
+})

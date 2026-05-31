@@ -48,6 +48,7 @@ rec {
   inherit (callPackage ../development/interpreters/lua-5/hooks { })
     luarocksMoveDataFolder
     luarocksCheckHook
+    bustedCheckHook
     ;
 
   inherit lua;
@@ -65,9 +66,7 @@ rec {
     ;
 
   # wraps programs in $out/bin with valid LUA_PATH/LUA_CPATH
-  wrapLua = callPackage ../development/interpreters/lua-5/wrap-lua.nix {
-    inherit (pkgs.buildPackages) makeSetupHook makeWrapper;
-  };
+  wrapLua = callPackage ../development/interpreters/lua-5/wrap-lua.nix { };
 
   luarocks_bootstrap = toLuaModule (callPackage ../development/tools/misc/luarocks/default.nix { });
 
@@ -114,6 +113,8 @@ rec {
 
   image-nvim = callPackage ../development/lua-modules/image-nvim { };
 
+  lua-https = callPackage ../development/lua-modules/lua-https { };
+
   lua-pam = callPackage (
     {
       fetchFromGitHub,
@@ -133,7 +134,7 @@ rec {
       };
 
       # The makefile tries to link to `-llua<luaversion>`
-      LUA_LIBS = "-llua";
+      env.LUA_LIBS = "-llua";
 
       buildInputs =
         lib.optionals stdenv.hostPlatform.isLinux [ linux-pam ]
@@ -162,13 +163,13 @@ rec {
     { fetchFromGitHub }:
     buildLuaPackage rec {
       pname = "lua-resty-core";
-      version = "0.1.31";
+      version = "0.1.32";
 
       src = fetchFromGitHub {
         owner = "openresty";
         repo = "lua-resty-core";
         rev = "v${version}";
-        sha256 = "sha256-WUiBFJ8L8NzSGoEwTAw/iHAzPqJqaOUSFyqGeEf+f94==";
+        sha256 = "sha256-ba/ahIl8BDfyXIbaN6zVCh3UwY6JbAqqZEpXktOfeYo=";
       };
 
       propagatedBuildInputs = [ lua-resty-lrucache ];
@@ -280,8 +281,8 @@ rec {
 
       meta = {
         description = "Modular widget library for the awesome window manager";
-        homepage = "https://vicious.rtfd.io";
-        changelog = "https://vicious.rtfd.io/en/v${version}/changelog.html";
+        homepage = "https://vicious.readthedocs.io";
+        changelog = "https://vicious.readthedocs.io/changelog.html";
         license = lib.licenses.gpl2Plus;
         maintainers = with lib.maintainers; [
           makefu

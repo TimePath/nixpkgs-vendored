@@ -84,7 +84,6 @@ stdenv.mkDerivation rec {
   # compatibility with OpenPGP.
   #
   freepgPatches = fetchFromGitLab {
-    domain = "gitlab.com";
     owner = "freepg";
     repo = "gnupg";
     tag = "source-2.4.9-freepg";
@@ -167,6 +166,13 @@ stdenv.mkDerivation rec {
   ++ lib.optional withTpm2Tss "--with-tss=intel"
   ++ lib.optional stdenv.hostPlatform.isDarwin "--disable-ccid-driver";
 
+  outputs = [
+    "out"
+    "info"
+    "man"
+    "doc"
+  ];
+
   postInstall =
     if enableMinimal then
       ''
@@ -218,7 +224,9 @@ stdenv.mkDerivation rec {
       fpletz
       sgo
     ];
+    teams = [ lib.teams.security-review ];
     platforms = lib.platforms.all;
     mainProgram = "gpg";
+    identifiers.cpeParts = lib.meta.cpeFullVersionWithVendor "gnupg" version;
   };
 }

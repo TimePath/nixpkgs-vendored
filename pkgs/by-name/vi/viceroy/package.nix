@@ -4,21 +4,22 @@
   lib,
 }:
 
-rustPlatform.buildRustPackage rec {
+rustPlatform.buildRustPackage (finalAttrs: {
   pname = "viceroy";
-  version = "0.16.0";
+  version = "0.16.5";
 
   src = fetchFromGitHub {
     owner = "fastly";
     repo = "viceroy";
-    rev = "v${version}";
-    hash = "sha256-uZdzQ3YW3RYyJMLnyzmYi+b2rMeK7gdxXZ9QPHuu8/w=";
+    rev = "v${finalAttrs.version}";
+    hash = "sha256-66wRKZgEPey8umpO/P9bFy6PIA6BwktDl39rKUlAFCU=";
   };
 
-  cargoHash = "sha256-A/XQZ/stc3sUL60aBZWfHADiCLVQRD7RmZ3bUHoVtgg=";
+  cargoHash = "sha256-88+/musBwAafwJ4XguFUvhmo77HsZTkCdBk+h0436yE=";
 
   cargoTestFlags = [
-    "--package viceroy-lib"
+    "--package"
+    "viceroy-lib"
   ];
 
   meta = {
@@ -31,4 +32,4 @@ rustPlatform.buildRustPackage rec {
     ];
     platforms = lib.platforms.unix;
   };
-}
+})

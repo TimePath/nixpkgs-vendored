@@ -100,7 +100,7 @@ python3.pkgs.buildPythonApplication rec {
   makeWrapperArgs = [
     "--set"
     "YOSYS"
-    "${yosys}/bin/yosys"
+    (lib.getExe yosys)
     "--set"
     "ICEPACK"
     "${icestorm}/bin/icepack"

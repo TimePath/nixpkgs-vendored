@@ -17,7 +17,7 @@
   qtbase,
   stdenv,
   websocketpp,
-  libXScrnSaver,
+  libxscrnsaver,
   libusb1,
   pkg-config,
   # #FIXME: Could not get cmake to pick up on these dependencies
@@ -36,13 +36,13 @@ let
 in
 stdenv.mkDerivation rec {
   pname = "advanced-scene-switcher";
-  version = "1.31.0";
+  version = "1.32.6";
 
   src = fetchFromGitHub {
     owner = "WarmUpTill";
     repo = "SceneSwitcher";
     rev = version;
-    hash = "sha256-9gCGzIvVMQewphThdNJKUVgJYzrfkn18A97RL+4IHM8=";
+    hash = "sha256-BQnu7zRk1zOsEqFjmRrOeK/jE+rmnsB1ktW+OfH+L3I=";
   };
 
   nativeBuildInputs = [
@@ -64,7 +64,7 @@ stdenv.mkDerivation rec {
     procps
     qtbase
     websocketpp
-    libXScrnSaver
+    libxscrnsaver
     libusb1
   ];
 

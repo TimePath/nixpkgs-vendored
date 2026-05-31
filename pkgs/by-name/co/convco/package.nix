@@ -9,18 +9,18 @@
   pkg-config,
 }:
 
-rustPlatform.buildRustPackage rec {
+rustPlatform.buildRustPackage (finalAttrs: {
   pname = "convco";
-  version = "0.6.1";
+  version = "0.6.3";
 
   src = fetchFromGitHub {
     owner = "convco";
     repo = "convco";
-    rev = "v${version}";
-    hash = "sha256-s0rcSekJLe99oxi6JD8VL1S6nqQTUFTn5pdgxnknbaY=";
+    rev = "v${finalAttrs.version}";
+    hash = "sha256-fJrP4XtlUX0RvH8T76YxqUCM/R+QvUpsaumn3Z1SOh0=";
   };
 
-  cargoHash = "sha256-ClkpGHN2me+R3jX7S5hFR1FlsXGhHZ/y6iIGK08Mdfc=";
+  cargoHash = "sha256-ySTXy8Jqw/EZl/olbWjMaDD8dryUFyWFvyapfvglFHI=";
 
   nativeBuildInputs = [
     cmake
@@ -37,6 +37,8 @@ rustPlatform.buildRustPackage rec {
   checkFlags = [
     # disable test requiring networking
     "--skip=git::tests::test_find_last_unordered_prerelease"
+    "--skip=git::tests::test_find_matching_prerelease"
+    "--skip=git::tests::test_find_matching_prerelease_without_matching_release"
   ];
 
   meta = {
@@ -49,4 +51,4 @@ rustPlatform.buildRustPackage rec {
       cafkafk
     ];
   };
-}
+})

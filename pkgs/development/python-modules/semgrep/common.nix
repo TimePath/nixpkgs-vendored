@@ -1,9 +1,13 @@
 { lib }:
 
 rec {
-  version = "1.143.0";
+  version = "1.161.0";
 
-  srcHash = "sha256-macw+LuC24sT1xM1F8ovuZlBmm2lYbRifaDbSIpfmkQ=";
+  srcHash = "sha256-WvvEn5PUEXgwtYd72IuEljHUxcJRJh7uHzNLFqaVEbc=";
+
+  # This tag is used to select the correct wheel from PyPI.
+  # It is updated by the update.sh script.
+  pythonWheelTag = "cp310.cp311.cp312.cp313.cp314.py310.py311.py312.py313.py314";
 
   # submodule dependencies
   # these are fetched so we:
@@ -13,8 +17,8 @@ rec {
     "cli/src/semgrep/semgrep_interfaces" = {
       owner = "semgrep";
       repo = "semgrep-interfaces";
-      rev = "b13a50d6524bf4fc1ae395792188d5cd9396146d";
-      hash = "sha256-amsLr8kpxs6xPIh2E0/ae8KDQEjK5WiG9Hvi8ajj+Bo=";
+      rev = "8a09b2ed5838118f0ecc45305eb9d956aabcd700";
+      hash = "sha256-jWv0/DADhYmBGJdMpxX8Rq2KQ2wlYIrJGGeYikcskOM=";
     };
   };
 
@@ -24,20 +28,20 @@ rec {
   # on github releases
   core = {
     x86_64-linux = {
-      platform = "musllinux_1_0_x86_64.manylinux2014_x86_64";
-      hash = "sha256-M7Sn5vkk9a7xs+MbtfE+0iWHbKt8fDrDANTLkgf2kh4=";
+      platform = "manylinux_2_35_x86_64";
+      hash = "sha256-ioIlfWVDSPlCUPQQcB8RJNxwoMQzhGGsxe5xPhAbDZ0=";
     };
     aarch64-linux = {
-      platform = "musllinux_1_0_aarch64.manylinux2014_aarch64";
-      hash = "sha256-zmWdOcLloisg2SNn9RHPmTe81ktMPeNF28S8dGmSXXE=";
+      platform = "manylinux_2_35_aarch64";
+      hash = "sha256-yDFnKdVIgt7eFNcWb0za9hdJJ7BYldEoiK46D0eRx4U=";
     };
     x86_64-darwin = {
       platform = "macosx_10_14_x86_64";
-      hash = "sha256-l2rtdXZmvnHLJeFBAckVDaN+APkrbKMARUbu1oYiorU=";
+      hash = "sha256-NFBo32ZfO0h0KunOaWefWRnyuu1XkYku5RTxOpCfWWQ=";
     };
     aarch64-darwin = {
       platform = "macosx_11_0_arm64";
-      hash = "sha256-vMJH9P2ZfHQ0FapwhSSbk/l0v+s1bDooVpBM8ILlAv4=";
+      hash = "sha256-H51DqX94yMqbwvDrlIa3D64hBtvYAvelK7HLnVj588g=";
     };
   };
 
@@ -57,6 +61,7 @@ rec {
     maintainers = with lib.maintainers; [
       jk
       ambroisie
+      caverav
     ];
   };
 }

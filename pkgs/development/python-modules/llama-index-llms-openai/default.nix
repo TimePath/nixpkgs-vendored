@@ -5,26 +5,18 @@
   llama-index-core,
   openai,
   hatchling,
-  pythonOlder,
 }:
 
-buildPythonPackage rec {
+buildPythonPackage (finalAttrs: {
   pname = "llama-index-llms-openai";
-  version = "0.6.9";
+  version = "0.7.7";
   pyproject = true;
-
-  disabled = pythonOlder "3.8";
 
   src = fetchPypi {
     pname = "llama_index_llms_openai";
-    inherit version;
-    hash = "sha256-TIyRpeWw5ZtE7Nj+QxVuk8ar8cnKjh5K0+SDTIT1EZk=";
+    inherit (finalAttrs) version;
+    hash = "sha256-rp1vpf8ZguIY1ATDKLiDonbBI3ThsS2BEBrCVMvladE=";
   };
-
-  pythonRemoveDeps = [
-    # Circular dependency
-    "llama-index-agent-openai"
-  ];
 
   build-system = [ hatchling ];
 
@@ -44,4 +36,4 @@ buildPythonPackage rec {
     license = lib.licenses.mit;
     maintainers = with lib.maintainers; [ fab ];
   };
-}
+})

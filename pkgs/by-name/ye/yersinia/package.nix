@@ -2,6 +2,7 @@
   stdenv,
   lib,
   fetchFromGitHub,
+  fetchDebianPatch,
   autoreconfHook,
   pkg-config,
   ncurses,
@@ -25,6 +26,16 @@ stdenv.mkDerivation {
     sha256 = "sha256-VShg9Nzd8dzUNiqYnKcDzRgqjwar/8XRGEJCJL25aR0=";
   };
 
+  patches = [
+    (fetchDebianPatch {
+      pname = "yersinia";
+      version = "0.8.2";
+      debianRevision = "2.3";
+      patch = "fix-ftbfs.patch";
+      hash = "sha256-qoD627fcIGmlWT2Uz+85tgIf7KtD11gtUu1N+Ol4T/A=";
+    })
+  ];
+
   nativeBuildInputs = [
     autoreconfHook
     pkg-config
@@ -39,8 +50,8 @@ stdenv.mkDerivation {
   autoreconfPhase = "./autogen.sh";
 
   configureFlags = [
-    "--with-pcap-includes=${libpcap}/include"
-    "--with-libnet-includes=${libnet}/include"
+    "--with-pcap-includes=${lib.getDev libpcap}/include"
+    "--with-libnet-includes=${lib.getDev libnet}/include"
   ]
   ++ lib.optional (!enableAdmin) "--disable-admin"
   ++ lib.optional (!withGtk) "--disable-gtk";

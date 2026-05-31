@@ -8,14 +8,14 @@
 
 buildPythonPackage rec {
   pname = "pyahocorasick";
-  version = "2.2.0";
-  format = "setuptools";
+  version = "2.3.1";
+  pyproject = true;
 
   src = fetchFromGitHub {
     owner = "WojciechMula";
     repo = "pyahocorasick";
     tag = "v${version}";
-    hash = "sha256-lFJhHDN9QAKw5dqzgjRxcs+7+LuTqP9qQ68B5LlCNmU=";
+    hash = "sha256-lExpRJlRoYS45Bw9FQwa7GKELBljKA83ZhXg7e5vPwM=";
   };
 
   build-system = [ setuptools ];

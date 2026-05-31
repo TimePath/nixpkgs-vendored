@@ -10,7 +10,6 @@
   pytest-cov-stub,
   pytest-timeout,
   pytestCheckHook,
-  pythonOlder,
   pyyaml,
   setuptools,
   xlrd,
@@ -21,8 +20,6 @@ buildPythonPackage rec {
   pname = "canmatrix";
   version = "1.2";
   pyproject = true;
-
-  disabled = pythonOlder "3.9";
 
   src = fetchFromGitHub {
     owner = "ebroecker";
@@ -57,7 +54,7 @@ buildPythonPackage rec {
     pytest-timeout
     pytestCheckHook
   ]
-  ++ lib.flatten (builtins.attrValues optional-dependencies);
+  ++ lib.concatAttrValues optional-dependencies;
 
   pytestFlags = [
     # long_envvar_name_imports requires stable key value pair ordering

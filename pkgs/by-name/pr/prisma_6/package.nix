@@ -14,13 +14,13 @@
 }:
 stdenv.mkDerivation (finalAttrs: {
   pname = "prisma_6";
-  version = "6.18.0";
+  version = "6.19.3";
 
   src = fetchFromGitHub {
     owner = "prisma";
     repo = "prisma";
     tag = finalAttrs.version;
-    hash = "sha256-+WRWa59HlHN2CsYZfr/ptdW3iOuOPfDil8sLR5dWRA4=";
+    hash = "sha256-1U0eBCnvVj8IVIDgw7n/hAWOZatTjl+nrCJMbhgRSV4=";
   };
 
   nativeBuildInputs = [
@@ -35,8 +35,8 @@ stdenv.mkDerivation (finalAttrs: {
   pnpmDeps = fetchPnpmDeps {
     inherit (finalAttrs) pname version src;
     pnpm = pnpm_10;
-    fetcherVersion = 1;
-    hash = "sha256-Et1UiZO2zyw9FHW0OuYK7AMfhIy5j7Q7GDQjaL6gjyg=";
+    fetcherVersion = 3;
+    hash = "sha256-0aWIWXkQNkvJB2DZ9BP/Yrqsbrx4BdEAebRwoqLHPR8=";
   };
 
   patchPhase = ''
@@ -65,7 +65,7 @@ stdenv.mkDerivation (finalAttrs: {
 
     # Fetch CLI workspace dependencies
     deps_json=$(pnpm list --filter ./packages/cli --prod --depth Infinity --json)
-    deps=$(jq -r '[.. | strings | select(startswith("link:../")) | sub("^link:../"; "")] | unique[]' <<< "$deps_json")
+    deps=$(jq -r '[del(.. | .unsavedDependencies?) | .. | strings | select(startswith("link:../")) | sub("^link:../"; "")] | unique[]' <<< "$deps_json")
 
     # Remove unnecessary external dependencies
     find . -name node_modules -type d -prune -exec rm -rf {} +

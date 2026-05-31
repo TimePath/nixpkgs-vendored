@@ -7,6 +7,7 @@
   yarnBuildHook,
   yarnInstallHook,
   nodejs,
+  nix-update-script,
 }:
 
 stdenv.mkDerivation (finalAttrs: {
@@ -36,12 +37,14 @@ stdenv.mkDerivation (finalAttrs: {
     nodejs
   ];
 
+  passthru.updateScript = nix-update-script { };
+
   meta = {
     changelog = "https://codeberg.org/keyoxide/keyoxide-cli/releases/tag/${finalAttrs.version}";
     description = "Command-line interface to locally verify decentralized identities";
     homepage = "https://codeberg.org/keyoxide/keyoxide-cli";
     license = lib.licenses.agpl3Plus;
-    maintainers = [ lib.maintainers.pyrox0 ];
+    maintainers = [ ];
     mainProgram = "keyoxide";
   };
 })

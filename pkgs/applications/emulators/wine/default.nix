@@ -6,13 +6,19 @@
 # };
 # Make additional configurations on demand:
 # wine.override { wineBuild = "wine32"; wineRelease = "staging"; };
-{
+args@{
   lib,
   stdenv,
   callPackage,
   darwin,
   wineRelease ? "stable",
-  wineBuild ? if stdenv.hostPlatform.system == "x86_64-linux" then "wineWow" else "wine32",
+  wineBuild ?
+    if stdenv.hostPlatform.system == "x86_64-linux" then
+      "wineWow"
+    else if stdenv.hostPlatform.isAarch64 then
+      "wine64"
+    else
+      "wine32",
   gettextSupport ? false,
   fontconfigSupport ? false,
   alsaSupport ? false,
@@ -39,7 +45,7 @@
   vulkanSupport ? false,
   sdlSupport ? false,
   usbSupport ? false,
-  mingwSupport ? stdenv.hostPlatform.isDarwin,
+  mingwSupport ? stdenv.hostPlatform.isDarwin || stdenv.hostPlatform.isAarch64,
   waylandSupport ? false,
   x11Support ? false,
   ffmpegSupport ? false,
@@ -50,14 +56,22 @@
 let
   sources = callPackage ./sources.nix { };
 
+  supportFlags = lib.filterAttrs (
+    name: _:
+    !builtins.elem name [
+      "lib"
+      "stdenv"
+      "callPackage"
+      "darwin"
+      "wineRelease"
+      "wineBuild"
+    ]
+  ) args;
+
   # Map user-facing release names to sources, pname suffix, and staging flag
   releaseInfo = {
     stable = {
       src = sources.stable;
-      useStaging = false;
-    };
-    stable_11 = {
-      src = sources.stable_11;
       useStaging = false;
     };
     unstable = {
@@ -71,11 +85,6 @@ let
       pnameSuffix = "-staging";
       useStaging = true;
     };
-    staging_11 = {
-      src = sources.unstable_11;
-      pnameSuffix = "-staging";
-      useStaging = true;
-    };
     # "yabridge" enables staging too --- we are not interested in
     # yabridge without the staging patches applied.
     yabridge = {
@@ -85,48 +94,15 @@ let
     };
   };
 
+  baseWine = lib.getAttr wineBuild (
+    callPackage ./packages.nix (releaseInfo.${wineRelease} // supportFlags)
+  );
 in
-
-lib.getAttr wineBuild (
-  callPackage ./packages.nix (
-    releaseInfo.${wineRelease}
-    // {
-      supportFlags = {
-        inherit
-          alsaSupport
-          cairoSupport
-          cupsSupport
-          cursesSupport
-          dbusSupport
-          embedInstallers
-          fontconfigSupport
-          gettextSupport
-          gphoto2Support
-          gstreamerSupport
-          gtkSupport
-          krb5Support
-          mingwSupport
-          netapiSupport
-          odbcSupport
-          openclSupport
-          openglSupport
-          pcapSupport
-          pulseaudioSupport
-          saneSupport
-          sdlSupport
-          tlsSupport
-          udevSupport
-          usbSupport
-          v4lSupport
-          vaSupport
-          vulkanSupport
-          waylandSupport
-          x11Support
-          ffmpegSupport
-          xineramaSupport
-          ;
-      };
-      inherit moltenvk;
-    }
-  )
-)
+if wineRelease == "yabridge" then
+  baseWine.overrideAttrs (old: {
+    env = old.env // {
+      NIX_CFLAGS_COMPILE = "-std=gnu17";
+    };
+  })
+else
+  baseWine

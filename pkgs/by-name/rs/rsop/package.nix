@@ -9,18 +9,18 @@
   rsop,
 }:
 
-rustPlatform.buildRustPackage rec {
+rustPlatform.buildRustPackage (finalAttrs: {
   pname = "rsop";
-  version = "0.9.1";
+  version = "0.10.0";
 
   src = fetchFromCodeberg {
     owner = "heiko";
     repo = "rsop";
-    rev = "rsop/v${version}";
-    hash = "sha256-LlTKPiBqc0mED3co/d4elo/QkBOhjppOQrrsn3Kwfv4=";
+    rev = "rsop/v${finalAttrs.version}";
+    hash = "sha256-UEXSYfbbnEV0GL0Q6wFNoERWp3jjEZ2ia/UhOGo1dn8=";
   };
 
-  cargoHash = "sha256-UFgGMmDeeIKK3L/1f+UCaZKykC7ORIFpMU31Pi1JtHQ=";
+  cargoHash = "sha256-Sa9ZRUsTLXLYQJYmGhkMqnWTHey5shy/w0l90xa+ck8=";
 
   nativeBuildInputs = [ pkg-config ];
 
@@ -45,4 +45,4 @@ rustPlatform.buildRustPackage rec {
     maintainers = with lib.maintainers; [ nikstur ];
     mainProgram = "rsop";
   };
-}
+})

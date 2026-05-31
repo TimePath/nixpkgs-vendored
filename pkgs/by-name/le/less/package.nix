@@ -11,7 +11,7 @@
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "less";
-  version = "679";
+  version = "692";
 
   # `less` is provided by the following sources:
   # - meta.homepage
@@ -20,7 +20,7 @@ stdenv.mkDerivation (finalAttrs: {
   # homepage, and only those not marked as beta.
   src = fetchurl {
     url = "https://www.greenwoodsoftware.com/less/less-${finalAttrs.version}.tar.gz";
-    hash = "sha256-m2iCDDT6igr2sOAbdPApi83UCgSJxhZJtHBYkIoVPXg=";
+    hash = "sha256-YTAPYDeY7PHXeGVweJ8P8/WhrPB1pvufdWg30WbjfRQ=";
   };
 
   buildInputs = [
@@ -44,7 +44,6 @@ stdenv.mkDerivation (finalAttrs: {
   nativeInstallCheckInputs = [
     versionCheckHook
   ];
-  versionCheckProgramArg = "--version";
   doInstallCheck = true;
 
   meta = {
@@ -54,9 +53,8 @@ stdenv.mkDerivation (finalAttrs: {
     license = lib.licenses.gpl3Plus;
     mainProgram = "less";
     maintainers = with lib.maintainers; [
-      # dtzWill is not active
-      dtzWill
       mdaniels5757
+      yiyu
     ];
     platforms = lib.platforms.unix;
   };

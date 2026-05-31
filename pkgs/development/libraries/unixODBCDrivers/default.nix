@@ -1,8 +1,9 @@
 {
   config,
+  fetchpatch,
   fetchurl,
   stdenv,
-  unixODBC,
+  unixodbc,
   cmake,
   mariadb,
   sqlite,
@@ -60,11 +61,19 @@
       ./mariadb-connector-odbc-unistd.patch
 
       ./mariadb-connector-odbc-musl.patch
+
+      # Fix build with gcc15
+      # https://github.com/mariadb-corporation/mariadb-connector-odbc/pull/63
+      (fetchpatch {
+        name = "mariadb-connector-odbc-add-include-cstdint-gcc15.patch";
+        url = "https://github.com/mariadb-corporation/mariadb-connector-odbc/commit/a3ced654db2ef93de0a818f2d66171f6084e5f2d.patch";
+        hash = "sha256-GZITSryfRdAgNxZehasoBModGNZo575Dd5aokwNWzpY=";
+      })
     ];
 
     nativeBuildInputs = [ cmake ];
     buildInputs = [
-      unixODBC
+      unixodbc
       openssl
       libiconv
       zlib
@@ -73,10 +82,10 @@
 
     cmakeFlags = [
       "-DWITH_EXTERNAL_ZLIB=ON"
-      "-DODBC_LIB_DIR=${lib.getLib unixODBC}/lib"
-      "-DODBC_INCLUDE_DIR=${lib.getDev unixODBC}/include"
+      "-DODBC_LIB_DIR=${lib.getLib unixodbc}/lib"
+      "-DODBC_INCLUDE_DIR=${lib.getDev unixodbc}/include"
       "-DWITH_OPENSSL=ON"
-      # on darwin this defaults to ON but we want to build against unixODBC
+      # on darwin this defaults to ON but we want to build against unixodbc
       "-DWITH_IODBC=OFF"
     ];
 
@@ -104,22 +113,31 @@
 
   sqlite = stdenv.mkDerivation rec {
     pname = "sqlite-connector-odbc";
-    version = "0.9993";
+    version = "0.99991";
 
     src = fetchurl {
       url = "http://www.ch-werner.de/sqliteodbc/sqliteodbc-${version}.tar.gz";
-      sha256 = "0dgsj28sc7f7aprmdd0n5a1rmcx6pv7170c8dfjl0x1qsjxim6hs";
+      hash = "sha256-TZStuNPN4fqUoorrDfzHvnMUW8383z1eIlQ02zHcilw=";
     };
 
+    patches = [
+      # Fix build with gcc15
+      (fetchpatch {
+        name = "sqlite-connector-odbc-fix-incompatible-pointer-compilation-error.patch";
+        url = "https://src.fedoraproject.org/rpms/sqliteodbc/raw/e3d93f5909c884fd8846b36b71ba67a3ad65da2a/f/sqliteodbc-0.99991-Fix-incompatible-pointer-compilation-error.patch";
+        hash = "sha256-IAZDujEkAyU40sKa4GC+upURNt7vplCDAx91Eeny+bU=";
+      })
+    ];
+
     buildInputs = [
-      unixODBC
+      unixodbc
       sqlite
       zlib
       libxml2
     ];
 
     configureFlags = [
-      "--with-odbc=${unixODBC}"
+      "--with-odbc=${unixodbc}"
       "--with-sqlite3=${sqlite.dev}"
     ];
 
@@ -140,6 +158,7 @@
     meta = {
       description = "ODBC driver for SQLite";
       homepage = "http://www.ch-werner.de/sqliteodbc";
+      changelog = "http://www.ch-werner.de/sqliteodbc/html/index.html#changelog";
       license = lib.licenses.bsd2;
       platforms = lib.platforms.unix;
       maintainers = with lib.maintainers; [ vlstill ];
@@ -176,7 +195,7 @@
     postFixup = ''
       patchelf --set-rpath ${
         lib.makeLibraryPath [
-          unixODBC
+          unixodbc
           openssl
           libkrb5
           libuuid
@@ -264,14 +283,14 @@
     fixupPhase = lib.optionalString stdenv.hostPlatform.isDarwin ''
       ${stdenv.cc.bintools.targetPrefix}install_name_tool \
         -change /usr/lib/libiconv.2.dylib ${libiconv}/lib/libiconv.2.dylib \
-        -change /opt/homebrew/lib/libodbcinst.2.dylib ${unixODBC}/lib/libodbcinst.2.dylib \
+        -change /opt/homebrew/lib/libodbcinst.2.dylib ${unixodbc}/lib/libodbcinst.2.dylib \
         $out/${finalAttrs.passthru.driver}
     '';
 
     postFixup = lib.optionalString stdenv.hostPlatform.isLinux ''
       patchelf --set-rpath ${
         lib.makeLibraryPath [
-          unixODBC
+          unixodbc
           openssl
           libkrb5
           libuuid
@@ -318,18 +337,18 @@
       cd src
     '';
 
-    # `unixODBC` is loaded with `dlopen`, so `autoPatchElfHook` cannot see it, and `patchELF` phase would strip the manual patchelf. Thus:
+    # `unixodbc` is loaded with `dlopen`, so `autoPatchElfHook` cannot see it, and `patchELF` phase would strip the manual patchelf. Thus:
     # - Manually patchelf with `unixODCB` libraries
     # - Disable automatic `patchELF` phase
     installPhase = ''
       mkdir -p $out/lib
       cp opt/amazon/redshiftodbc/lib/64/* $out/lib
-      patchelf --set-rpath ${unixODBC}/lib/ $out/lib/libamazonredshiftodbc64.so
+      patchelf --set-rpath ${unixodbc}/lib/ $out/lib/libamazonredshiftodbc64.so
     '';
 
     dontPatchELF = true;
 
-    buildInputs = [ unixODBC ];
+    buildInputs = [ unixodbc ];
 
     # see the top of the file for an explanation
     passthru = {
@@ -349,5 +368,5 @@
   };
 }
 // lib.optionalAttrs config.allowAliases {
-  mysql = throw "unixODBCDrivers.mysql has been removed because it has been marked as broken since 2016."; # Added 2025-10-11
+  mysql = throw "unixodbcDrivers.mysql has been removed because it has been marked as broken since 2016."; # Added 2025-10-11
 }

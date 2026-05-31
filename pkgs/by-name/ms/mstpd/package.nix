@@ -6,15 +6,15 @@
   autoreconfHook,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "mstpd";
-  version = "0.1.0";
+  version = "0.2.0";
 
   src = fetchFromGitHub {
     owner = "mstpd";
     repo = "mstpd";
-    rev = version;
-    hash = "sha256-m4gbVXAPIYGQvTFaSziFuOO6say5kgUsk7NSdqXgKmA=";
+    rev = finalAttrs.version;
+    hash = "sha256-G/QScCFUVw0+a3GiiIv7NuAlwNRc6k6USd5dckfeaGQ=";
   };
 
   nativeBuildInputs = [ autoreconfHook ];
@@ -47,4 +47,4 @@ stdenv.mkDerivation rec {
     license = lib.licenses.gpl2Plus;
     platforms = lib.platforms.linux;
   };
-}
+})

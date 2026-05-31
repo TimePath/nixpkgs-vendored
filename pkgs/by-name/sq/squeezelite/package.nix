@@ -39,13 +39,13 @@ stdenv.mkDerivation {
   pname = binName;
   # versions are specified in `squeezelite.h`
   # see https://github.com/ralph-irving/squeezelite/issues/29
-  version = "2.0.0.1541";
+  version = "2.0.0.1563";
 
   src = fetchFromGitHub {
     owner = "ralph-irving";
     repo = "squeezelite";
-    rev = "72e1fd8abfa9b2f8e9636f033247526920878718";
-    hash = "sha256-1uzkf7vkzfHdsWvWcXnUv279kgtzrHLU0hAPaTKRWI8=";
+    rev = "39fe3c8b1dd4e852fd8410bc480d7d709056859d";
+    hash = "sha256-0zBppeMSK/1m4Nxla6wdWeVPDFOUfVCaMKFHZGLqbrE=";
   };
 
   buildInputs = [
@@ -72,23 +72,31 @@ stdenv.mkDerivation {
       --replace "<opusfile.h>" "<opus/opusfile.h>"
   '';
 
-  EXECUTABLE = binName;
+  env = {
+    EXECUTABLE = binName;
 
-  OPTS = [
-    "-DLINKALL"
-    "-DGPIO"
-  ]
-  ++ optional dsdSupport "-DDSD"
-  ++ optional (!faad2Support) "-DNO_FAAD"
-  ++ optional ffmpegSupport "-DFFMPEG"
-  ++ optional opusSupport "-DOPUS"
-  ++ optional portaudioSupport "-DPORTAUDIO"
-  ++ optional pulseSupport "-DPULSEAUDIO"
-  ++ optional resampleSupport "-DRESAMPLE"
-  ++ optional sslSupport "-DUSE_SSL"
-  ++ optional (stdenv.hostPlatform.isAarch32 or stdenv.hostPlatform.isAarch64) "-DRPI";
-
-  env = lib.optionalAttrs stdenv.hostPlatform.isDarwin { LDADD = "-lportaudio -lpthread"; };
+    OPTS = toString (
+      [
+        "-DLINKALL"
+        "-DGPIO"
+      ]
+      ++ optional dsdSupport "-DDSD"
+      ++ optional (!faad2Support) "-DNO_FAAD"
+      ++ optional ffmpegSupport "-DFFMPEG"
+      ++ optional opusSupport "-DOPUS"
+      ++ optional portaudioSupport "-DPORTAUDIO"
+      ++ optional pulseSupport "-DPULSEAUDIO"
+      ++ optional resampleSupport "-DRESAMPLE"
+      ++ optional sslSupport "-DUSE_SSL"
+      ++ optional (stdenv.hostPlatform.isAarch32 or stdenv.hostPlatform.isAarch64) "-DRPI"
+    );
+  }
+  // lib.optionalAttrs stdenv.hostPlatform.isDarwin {
+    LDADD = toString [
+      "-lportaudio"
+      "-lpthread"
+    ];
+  };
 
   installPhase = ''
     runHook preInstall

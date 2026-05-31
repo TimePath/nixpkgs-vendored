@@ -15,12 +15,12 @@
   libGLU,
   libpulseaudio,
   libv4l,
-  libX11,
-  libXdmcp,
-  libXext,
+  libx11,
+  libxdmcp,
+  libxext,
   libxkbcommon,
   libxml2,
-  libXxf86vm,
+  libxxf86vm,
   makeBinaryWrapper,
   mbedtls,
   libgbm,
@@ -44,7 +44,7 @@
   retroarch-assets,
   retroarch-bare,
   retroarch-joypad-autoconfig,
-  runCommand,
+  writeText,
   symlinkJoin,
   # params
   enableNvidiaCgToolkit ? false,
@@ -57,15 +57,15 @@ let
   runtimeLibs =
     lib.optional withVulkan vulkan-loader ++ lib.optional withGamemode (lib.getLib gamemode);
 in
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "retroarch-bare";
-  version = "1.21.0";
+  version = "1.22.2";
 
   src = fetchFromGitHub {
     owner = "libretro";
     repo = "RetroArch";
-    hash = "sha256-OewUmnYpRByOgTi42G2reoaSuwxyPGHwP0+Uts/pg54=";
-    rev = "v${version}";
+    hash = "sha256-+3jgoh6OVbPzW5/nCvpB1CRgkMTBxLkYMm6UV16/cfU=";
+    rev = "v${finalAttrs.version}";
   };
 
   nativeBuildInputs = [
@@ -99,10 +99,10 @@ stdenv.mkDerivation rec {
   ++ lib.optionals stdenv.hostPlatform.isLinux [
     alsa-lib
     dbus
-    libX11
-    libXdmcp
-    libXext
-    libXxf86vm
+    libx11
+    libxdmcp
+    libxext
+    libxxf86vm
     libdrm
     libpulseaudio
     libv4l
@@ -119,7 +119,8 @@ stdenv.mkDerivation rec {
     "--disable-builtinmbedtls"
     "--enable-systemmbedtls"
     "--disable-builtinzlib"
-    "--disable-builtinflac"
+    # https://github.com/libretro/RetroArch/issues/18370
+    # "--disable-builtinflac"
     "--disable-update_assets"
     "--disable-update_core_info"
   ]
@@ -137,6 +138,10 @@ stdenv.mkDerivation rec {
     + lib.optionalString enableNvidiaCgToolkit ''
       wrapProgram $out/bin/retroarch-cg2glsl \
         --prefix PATH ':' ${lib.makeBinPath [ nvidia_cg_toolkit ]}
+    ''
+    + ''
+      mkdir -p $out/share/icons/hicolor/scalable
+      mv $out/share/{pixmaps,icons/hicolor/scalable/apps}
     '';
 
   preFixup = lib.optionalString (!enableNvidiaCgToolkit) ''
@@ -160,7 +165,7 @@ stdenv.mkDerivation rec {
           libretro
           makeBinaryWrapper
           retroarch-bare
-          runCommand
+          writeText
           symlinkJoin
           cores
           ;
@@ -178,9 +183,8 @@ stdenv.mkDerivation rec {
     description = "Multi-platform emulator frontend for libretro cores";
     license = lib.licenses.gpl3Plus;
     platforms = lib.platforms.unix;
-    changelog = "https://github.com/libretro/RetroArch/blob/v${version}/CHANGES.md";
+    changelog = "https://github.com/libretro/RetroArch/blob/v${finalAttrs.version}/CHANGES.md";
     maintainers = with lib.maintainers; [
-      matthewbauer
       kolbycrouch
     ];
     teams = [ lib.teams.libretro ];
@@ -191,4 +195,4 @@ stdenv.mkDerivation rec {
     # https://github.com/libretro/RetroArch/blob/71eb74d256cb4dc5b8b43991aec74980547c5069/.gitlab-ci.yml#L330
     broken = stdenv.hostPlatform.isDarwin;
   };
-}
+})

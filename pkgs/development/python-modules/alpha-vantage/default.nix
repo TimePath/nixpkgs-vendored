@@ -9,15 +9,12 @@
   requests,
   requests-mock,
   setuptools,
-  pythonOlder,
 }:
 
 buildPythonPackage rec {
   pname = "alpha-vantage";
   version = "3.0.0";
   pyproject = true;
-
-  disabled = pythonOlder "3.7";
 
   src = fetchFromGitHub {
     owner = "RomelTorres";
@@ -50,7 +47,7 @@ buildPythonPackage rec {
     requests-mock
     pytestCheckHook
   ]
-  ++ lib.flatten (builtins.attrValues optional-dependencies);
+  ++ lib.concatAttrValues optional-dependencies;
 
   # Starting with 3.0.0 most tests require an API key
   doCheck = false;

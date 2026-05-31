@@ -17,7 +17,7 @@
 buildPythonPackage rec {
   pname = "ufolib2";
   version = "0.18.1";
-  format = "pyproject";
+  pyproject = true;
 
   src = fetchFromGitHub {
     owner = "fonttools";
@@ -50,7 +50,7 @@ buildPythonPackage rec {
   nativeCheckInputs = [
     pytestCheckHook
   ]
-  ++ lib.flatten (lib.attrValues optional-dependencies);
+  ++ lib.concatAttrValues optional-dependencies;
 
   pythonImportsCheck = [ "ufoLib2" ];
 

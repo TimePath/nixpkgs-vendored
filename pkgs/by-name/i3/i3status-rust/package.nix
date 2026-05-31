@@ -20,18 +20,18 @@
   withNotmuch ? false,
 }:
 
-rustPlatform.buildRustPackage rec {
+rustPlatform.buildRustPackage (finalAttrs: {
   pname = "i3status-rust";
-  version = "0.34.0";
+  version = "0.36.1";
 
   src = fetchFromGitHub {
     owner = "greshake";
     repo = "i3status-rust";
-    rev = "refs/tags/v${version}";
-    hash = "sha256-E0HGF7oyffBWUT61fQZ+tjwDi7q9IhtV6DiF8TGeVsU=";
+    tag = "v${finalAttrs.version}";
+    hash = "sha256-tCMoYbsiVBX7GZZVhzAKuMFS1L7DITQZSUfQ6iQMofg=";
   };
 
-  cargoHash = "sha256-S6GdPntLC0351GaPmirxVsngOtbcWaPNkzax0yZNNb4=";
+  cargoHash = "sha256-mnLl+JegA96z95VQqZ5d8bGYCf1PG/ip2LVyPm4HjVI=";
 
   nativeBuildInputs = [
     pkg-config
@@ -93,8 +93,7 @@ rustPlatform.buildRustPackage rec {
     mainProgram = "i3status-rs";
     maintainers = with lib.maintainers; [
       backuitist
-      globin
     ];
     platforms = lib.platforms.linux;
   };
-}
+})

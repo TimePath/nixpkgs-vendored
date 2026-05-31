@@ -6,14 +6,14 @@
   pkg-config,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "capnproto-java";
   version = "0.1.16";
 
   src = fetchFromGitHub {
     owner = "capnproto";
     repo = "capnproto-java";
-    rev = "v${version}";
+    rev = "v${finalAttrs.version}";
     hash = "sha256-7uYtRHKsJvbE1b0HbNXGbRXpkUHHLjMDIWLlOUcQWDk=";
   };
 
@@ -30,8 +30,7 @@ stdenv.mkDerivation rec {
     homepage = "https://dwrensha.github.io/capnproto-java/index.html";
     license = lib.licenses.mit;
     maintainers = with lib.maintainers; [
-      bhipple
       solson
     ];
   };
-}
+})

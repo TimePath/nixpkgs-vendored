@@ -10,7 +10,6 @@
   mypy-boto3-ebs,
   poetry-core,
   pytestCheckHook,
-  pythonOlder,
   typer,
   urllib3,
 }:
@@ -19,8 +18,6 @@ buildPythonPackage rec {
   pname = "dsnap";
   version = "1.0.1";
   pyproject = true;
-
-  disabled = pythonOlder "3.7";
 
   src = fetchFromGitHub {
     owner = "RhinoSecurityLabs";
@@ -56,7 +53,7 @@ buildPythonPackage rec {
     mypy-boto3-ebs
     pytestCheckHook
   ]
-  ++ lib.flatten (builtins.attrValues optional-dependencies);
+  ++ lib.concatAttrValues optional-dependencies;
 
   # https://github.com/RhinoSecurityLabs/dsnap/issues/26
   # ImportError: cannot import name 'mock_iam' from 'moto'

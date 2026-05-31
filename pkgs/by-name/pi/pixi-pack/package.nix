@@ -10,23 +10,23 @@
 
 rustPlatform.buildRustPackage (finalAttrs: {
   pname = "pixi-pack";
-  version = "0.7.5";
+  version = "0.7.8";
 
   src = fetchFromGitHub {
     owner = "Quantco";
     repo = "pixi-pack";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-zMrr/47oTej6uyiRpPRVlfUIFtl0wesCm+qN6Y7iUkE=";
+    hash = "sha256-/r1jiEH/6TKUA4WJBH+h7Ktn13Woqz36U+ARmWbCbrU=";
   };
 
-  cargoHash = "sha256-FnKmUNCmLcTTYqagOYhJFp7d/qbc0OBCb8nT7ZKx3n0=";
+  cargoHash = "sha256-etcfU+KU8y7KeWXRUXe+lig+9BxnZf1cGfS8WHxlbn0=";
 
   buildInputs = [ openssl ];
 
   nativeBuildInputs = [ pkg-config ];
 
   # Needed to get openssl-sys to use pkgconfig.
-  OPENSSL_NO_VENDOR = 1;
+  env.OPENSSL_NO_VENDOR = 1;
 
   # Tests require downloading artifacts from conda.
   doCheck = false;
@@ -34,7 +34,6 @@ rustPlatform.buildRustPackage (finalAttrs: {
   nativeInstallCheckInputs = [
     versionCheckHook
   ];
-  versionCheckProgramArg = "--version";
   doInstallCheck = true;
 
   passthru.updateScript = nix-update-script { };

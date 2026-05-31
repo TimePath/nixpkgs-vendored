@@ -1,7 +1,7 @@
 {
   lib,
   stdenv,
-  fetchurl,
+  fetchFromGitHub,
   meson,
   ninja,
   wrapGAppsHook3,
@@ -28,16 +28,17 @@
   librsvg,
   gtk-mac-integration,
   webp-pixbuf-loader,
-  fetchpatch,
 }:
 
 stdenv.mkDerivation (finalAttrs: {
   pname = "zathura";
-  version = "0.5.13";
+  version = "2026.05.20";
 
-  src = fetchurl {
-    url = "https://pwmt.org/projects/zathura/download/zathura-${finalAttrs.version}.tar.xz";
-    hash = "sha256-YwIXO81G+JflIJyIOltRrR2rSUbC84YcujdKO4DY88E=";
+  src = fetchFromGitHub {
+    owner = "pwmt";
+    repo = "zathura";
+    tag = finalAttrs.version;
+    hash = "sha256-ChrIJKPVukkW6d/grGcMJ6sZ9sctIOmyJv6TAehh1T8=";
   };
 
   outputs = [
@@ -60,13 +61,6 @@ stdenv.mkDerivation (finalAttrs: {
     # (lib.mesonEnable "tests" finalAttrs.finalPackage.doCheck)
     (lib.mesonEnable "seccomp" stdenv.hostPlatform.isLinux)
     (lib.mesonEnable "landlock" stdenv.hostPlatform.isLinux)
-  ];
-
-  patches = [
-    (fetchpatch {
-      url = "https://github.com/pwmt/zathura/commit/8e5f1580c3baa629da56cfa42cb2b1c5d0d4ce9d.patch";
-      hash = "sha256-p1Cvszs+9O0qU+FKtgG4YGxf1W0S4nCpjd0MN5TF+pA=";
-    })
   ];
 
   nativeBuildInputs = [
@@ -115,6 +109,6 @@ stdenv.mkDerivation (finalAttrs: {
     description = "Core component for zathura PDF viewer";
     license = lib.licenses.zlib;
     platforms = lib.platforms.unix;
-    maintainers = with lib.maintainers; [ globin ];
+    maintainers = with lib.maintainers; [ mithicspirit ];
   };
 })

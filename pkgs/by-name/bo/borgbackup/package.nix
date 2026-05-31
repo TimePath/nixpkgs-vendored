@@ -9,26 +9,27 @@
   openssh,
   openssl,
   python3,
-  xxHash,
+  xxhash,
   zstd,
   installShellFiles,
   nixosTests,
+  nix-update-script,
   versionCheckHook,
 }:
 
 let
   python = python3;
 in
-python.pkgs.buildPythonApplication rec {
+python.pkgs.buildPythonApplication (finalAttrs: {
   pname = "borgbackup";
-  version = "1.4.3";
+  version = "1.4.4";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "borgbackup";
     repo = "borg";
-    tag = version;
-    hash = "sha256-v42Mv2wz34w2VYu2mPT/K7VtGSYsUDr+NUM99AzpSB0=";
+    tag = finalAttrs.version;
+    hash = "sha256-pMZr9cVr84b948b5Iuevpy6AtMeYo/Ma8uFLuagAYy4=";
   };
 
   postPatch = ''
@@ -61,7 +62,7 @@ python.pkgs.buildPythonApplication rec {
   buildInputs = [
     libb2
     lz4
-    xxHash
+    xxhash
     zstd
     openssl
   ]
@@ -69,11 +70,15 @@ python.pkgs.buildPythonApplication rec {
     acl
   ];
 
-  dependencies = with python.pkgs; [
-    msgpack
-    packaging
-    (if stdenv.hostPlatform.isLinux then pyfuse3 else llfuse)
-  ];
+  dependencies =
+    with python.pkgs;
+    [
+      msgpack
+      packaging
+    ]
+    ++ lib.optionals stdenv.hostPlatform.isLinux [
+      pyfuse3
+    ];
 
   makeWrapperArgs = [
     ''--prefix PATH ':' "${openssh}/bin"''
@@ -143,8 +148,16 @@ python.pkgs.buildPythonApplication rec {
     "man"
   ];
 
+  passthru.updateScript = nix-update-script {
+    # Only match tags formatted as x.y.z (e.g., 1.2.3)
+    extraArgs = [
+      "--version-regex"
+      "^([0-9]+\\.[0-9]+\\.[0-9]+)$"
+    ];
+  };
+
   meta = {
-    changelog = "https://github.com/borgbackup/borg/blob/${src.rev}/docs/changes.rst";
+    changelog = "https://github.com/borgbackup/borg/blob/${finalAttrs.src.rev}/docs/changes.rst";
     description = "Deduplicating archiver with compression and encryption";
     homepage = "https://www.borgbackup.org";
     license = lib.licenses.bsd3;
@@ -152,7 +165,6 @@ python.pkgs.buildPythonApplication rec {
     mainProgram = "borg";
     maintainers = with lib.maintainers; [
       dotlambda
-      globin
     ];
   };
-}
+})

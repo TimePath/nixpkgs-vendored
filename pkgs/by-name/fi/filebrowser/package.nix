@@ -12,13 +12,13 @@
 }:
 
 let
-  version = "2.61.2";
+  version = "2.63.3";
 
   src = fetchFromGitHub {
     owner = "filebrowser";
     repo = "filebrowser";
     rev = "v${version}";
-    hash = "sha256-/8bBYRzWJ00FpcLMB8M6hkyMUEM/0PM8jsvR+m7jfpc=";
+    hash = "sha256-v3cC8opClvt91MqUIKNZdvCv0hPeCvWPi0IlOMHlWbQ=";
   };
 
   frontend = buildNpmPackage rec {
@@ -41,7 +41,7 @@ let
         ;
       fetcherVersion = 3;
       pnpm = pnpm_10;
-      hash = "sha256-2e3Gr5/pdOsT3cSTdOz5mAjZaWB1C3qGDikpoa5BoII=";
+      hash = "sha256-g8BWDEymQNOkLYBws0ii4iLnpjB7X4EQl0OzR3GXeq0=";
     };
 
     installPhase = ''
@@ -59,7 +59,7 @@ buildGoModule {
   pname = "filebrowser";
   inherit version src;
 
-  vendorHash = "sha256-aY3OIr0Kbno38Y/PZ03JK5wCCD4HRdnznJ3OaaH/WVA=";
+  vendorHash = "sha256-ofeQkbvBfCpu2g1CLAwUZAZISyAOz+0smEZRx/koj/8=";
 
   excludedPackages = [ "tools" ];
 
@@ -72,7 +72,12 @@ buildGoModule {
   ];
 
   passthru = {
-    updateScript = nix-update-script { };
+    updateScript = nix-update-script {
+      extraArgs = [
+        "--subpackage"
+        "frontend"
+      ];
+    };
     inherit frontend;
     tests = {
       inherit (nixosTests) filebrowser;

@@ -5,7 +5,6 @@
   python,
   runCommand,
   fetchFromGitHub,
-  fetchpatch,
   configargparse,
   acme,
   configobj,
@@ -25,25 +24,17 @@
 
 buildPythonPackage rec {
   pname = "certbot";
-  version = "5.1.0";
+  version = "5.4.0";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "certbot";
     repo = "certbot";
     tag = "v${version}";
-    hash = "sha256-jKhdclLBeWv6IxIZQtD8VWbSQ3SDZePA/kTxjiBXJ4o=";
+    hash = "sha256-Tu46Wybod89TiwsVccNuQcweWoeQE1wbH+pDWNC9+kE=";
   };
 
-  patches = [
-    (fetchpatch {
-      name = "fix-test_rollback_too_many.patch";
-      url = "https://github.com/certbot/certbot/commit/4c61a450d4a843c66baab6d5d9a42ce0554e99d7.patch";
-      hash = "sha256-PSh2JXoEWNUrqxNh8X5QchyIP8KRHT60T/cLax6VRWo=";
-    })
-  ];
-
-  postPatch = "cd certbot"; # using sourceRoot would interfere with patches
+  sourceRoot = "${src.name}/certbot";
 
   build-system = [ setuptools ];
 
@@ -96,11 +87,15 @@ buildPythonPackage rec {
     let
       pythonEnv = python.withPackages f;
     in
-    runCommand "certbot-with-plugins" { } ''
-      mkdir -p $out/bin
-      cd $out/bin
-      ln -s ${pythonEnv}/bin/certbot
-    '';
+    runCommand "certbot-with-plugins-${version}"
+      {
+        inherit pname version;
+      }
+      ''
+        mkdir -p $out/bin
+        cd $out/bin
+        ln -s ${pythonEnv}/bin/certbot
+      '';
 
   meta = {
     homepage = "https://github.com/certbot/certbot";

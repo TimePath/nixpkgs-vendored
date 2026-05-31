@@ -9,15 +9,15 @@
   nlohmann_json,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "KDDockWidgets";
-  version = "2.3.0";
+  version = "2.4.0";
 
   src = fetchFromGitHub {
     owner = "KDAB";
     repo = "KDDockWidgets";
-    rev = "v${version}";
-    sha256 = "sha256-NNGIR2MTaNs2zFeN9vmHxoRuss2IR7FQ8F34b00L9z4=";
+    rev = "v${finalAttrs.version}";
+    sha256 = "sha256-/ioCX/Txqr84uJJYPhVLrZKug6VdWQDVirmsTg42PXs=";
   };
 
   nativeBuildInputs = [ cmake ];
@@ -47,4 +47,4 @@ stdenv.mkDerivation rec {
       tmarkus
     ];
   };
-}
+})

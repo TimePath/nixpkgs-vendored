@@ -7,8 +7,8 @@
   geopy,
   packaging,
   pysolr,
+  pythonAtLeast,
   python-dateutil,
-  pythonOlder,
   requests,
   setuptools-scm,
   setuptools,
@@ -20,8 +20,6 @@ buildPythonPackage rec {
   pname = "django-haystack";
   version = "3.3.0";
   pyproject = true;
-
-  disabled = pythonOlder "3.8";
 
   src = fetchPypi {
     pname = "django_haystack";
@@ -61,6 +59,8 @@ buildPythonPackage rec {
   '';
 
   meta = {
+    # crashes in threading during tests
+    broken = pythonAtLeast "3.14";
     description = "Pluggable search for Django";
     homepage = "http://haystacksearch.org/";
     changelog = "https://github.com/django-haystack/django-haystack/releases/tag/v${version}";

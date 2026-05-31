@@ -29,6 +29,5 @@ buildPythonPackage rec {
     description = "Teeny Python library for creating Python dicts from protocol buffers and the reverse";
     homepage = "https://github.com/kaporzhu/protobuf-to-dict";
     license = lib.licenses.publicDomain;
-    maintainers = with lib.maintainers; [ nequissimus ];
   };
 }

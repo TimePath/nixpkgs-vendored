@@ -14,12 +14,12 @@
 
 buildPythonPackage rec {
   pname = "smtpdfix";
-  version = "0.5.2";
-  format = "pyproject";
+  version = "0.5.3";
+  pyproject = true;
 
   src = fetchPypi {
     inherit pname version;
-    hash = "sha256-5NGs6Q83EqGRJ+2IdOaXqGFIwfSNKy2wwHIJaOjj7JU=";
+    hash = "sha256-LqSbIv4ITJy5KlLlboNRx1PJhe7PcTx38IUW7F4uf9A=";
   };
 
   nativeBuildInputs = [ setuptools ];
@@ -46,6 +46,5 @@ buildPythonPackage rec {
     homepage = "https://github.com/bebleo/smtpdfix";
     changelog = "https://github.com/bebleo/smtpdfix/releases/tag/v${version}";
     license = lib.licenses.mit;
-    teams = [ lib.teams.wdz ];
   };
 }

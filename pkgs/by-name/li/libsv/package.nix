@@ -5,15 +5,15 @@
   cmake,
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation (finalAttrs: {
   pname = "libsv";
   version = "1.2";
 
   src = fetchFromGitHub {
     owner = "uael";
     repo = "sv";
-    rev = "v${version}";
-    sha256 = "sha256-sc7WTRY8XTm5+J+zlS7tGa2f+2d7apj+XHyBafZXXeE=";
+    tag = "v${finalAttrs.version}";
+    hash = "sha256-sc7WTRY8XTm5+J+zlS7tGa2f+2d7apj+XHyBafZXXeE=";
   };
 
   nativeBuildInputs = [ cmake ];
@@ -25,4 +25,4 @@ stdenv.mkDerivation rec {
     maintainers = [ lib.maintainers.sigmanificient ];
     platforms = lib.platforms.unix;
   };
-}
+})

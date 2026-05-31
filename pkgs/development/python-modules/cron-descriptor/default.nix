@@ -2,34 +2,28 @@
   lib,
   fetchFromGitHub,
   buildPythonPackage,
-  unittestCheckHook,
-  mock,
+  pytestCheckHook,
   setuptools,
+  typing-extensions,
 }:
 
 buildPythonPackage rec {
   pname = "cron-descriptor";
-  version = "1.4.5";
+  version = "2.0.8";
   pyproject = true;
 
   src = fetchFromGitHub {
     owner = "Salamek";
     repo = "cron-descriptor";
     tag = version;
-    hash = "sha256-ElYma6RH2u1faIgOvGpMQA26dSIibWcO4mWU6NAA5PQ=";
+    hash = "sha256-apU+5RMyO6QQ5+i+wgLJtIni6dJoq4oxCqkCo5w9uLo=";
   };
-
-  # remove tests_require, as we don't do linting anyways
-  postPatch = ''
-    sed -i "/'pep8\|flake8\|pep8-naming',/d" setup.py
-  '';
 
   build-system = [ setuptools ];
 
-  nativeCheckInputs = [
-    mock
-    unittestCheckHook
-  ];
+  dependencies = [ typing-extensions ];
+
+  nativeCheckInputs = [ pytestCheckHook ];
 
   pythonImportsCheck = [ "cron_descriptor" ];
 
